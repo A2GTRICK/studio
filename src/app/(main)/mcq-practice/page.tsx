@@ -98,8 +98,7 @@ export default function McqPracticePage() {
   const [answers, setAnswers] = useState<AnswersState>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
-  const [sessionQuestionCount, setSessionQuestionCount] = useState(0);
-  const [dailyQuestionCount, setDailyQuestionCount] = useState(0);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [submissionCount, setSubmissionCount] = useState(0);
   const { toast } = useToast();
   
@@ -108,6 +107,7 @@ export default function McqPracticePage() {
   const [paymentDetails, setPaymentDetails] = useState({ title: '', price: '' });
   const [error, setError] = useState<string | null>(null);
   
+  const [dailyQuestionCount, setDailyQuestionCount] = useState(0);
   const dailyLimit = 30;
 
   useEffect(() => {
@@ -163,6 +163,7 @@ export default function McqPracticePage() {
   const resetQuiz = (showToast = false) => {
     setIsSubmitted(false);
     setAiFeedback(null);
+    setFeedbackError(null);
     setAnswers(new Array(questions?.length || 0).fill(null));
     if (showToast) {
         toast({ title: "Quiz Reset!", description: "You can now attempt the quiz again." });
@@ -174,7 +175,7 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
-    setSessionQuestionCount(0);
+    setFeedbackError(null);
     setError(null);
     form.reset({
       examType: 'GPAT',
@@ -198,6 +199,7 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
+    setFeedbackError(null);
     setError(null);
     
     const requestData = {
@@ -214,8 +216,6 @@ export default function McqPracticePage() {
       setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
       
-      setSessionQuestionCount(prev => prev + result.length);
-
       updateDailyCount(dailyQuestionCount + result.length);
 
     } catch (e: any) {
@@ -250,6 +250,7 @@ export default function McqPracticePage() {
     setIsSubmitted(true);
     setIsFeedbackLoading(true);
     setAiFeedback(null);
+    setFeedbackError(null);
 
     if (!questions) {
         setIsFeedbackLoading(false);
@@ -279,7 +280,7 @@ export default function McqPracticePage() {
         const errorMessage = error.message.includes('503')
           ? 'The AI model is currently overloaded, so feedback could not be generated. You can still review your answers.'
           : "Sorry, an error occurred while generating feedback. You can still review your answers and explanations.";
-        setAiFeedback(errorMessage);
+        setFeedbackError(errorMessage);
     } finally {
         setIsFeedbackLoading(false);
     }
@@ -497,7 +498,7 @@ export default function McqPracticePage() {
               <Card key={index} className={isSubmitted ? 'border-2' : ''} style={{ borderColor: isSubmitted && answers[index] === q.correctAnswer ? 'hsl(var(--primary))' : isSubmitted ? 'hsl(var(--border))' : 'transparent' }}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle>Question {sessionQuestionCount - questions.length + index + 1}</CardTitle>
+                    <CardTitle>Question {index + 1}</CardTitle>
                     {isSubmitted && getResultIcon(answers[index] === q.correctAnswer)}
                   </div>
                   <CardDescription className="pt-2 text-base text-foreground">{q.question}</CardDescription>
@@ -574,6 +575,15 @@ export default function McqPracticePage() {
                             <div className="p-4 bg-background rounded-lg border">
                                 {renderAiResult(aiFeedback)}
                             </div>
+                        )}
+                        {!isFeedbackLoading && feedbackError && (
+                             <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Feedback Error</AlertTitle>
+                                <AlertDescription>
+                                    {feedbackError}
+                                </AlertDescription>
+                            </Alert>
                         )}
                     </CardContent>
                     <CardFooter className="grid sm:grid-cols-2 gap-2">
