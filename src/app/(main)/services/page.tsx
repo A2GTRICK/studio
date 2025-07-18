@@ -72,9 +72,12 @@ export default function ServicesPage() {
         try {
             const result = await generateServiceOutline(data);
             setAiResult(result.outline);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error generating service outline:", error);
-            setAiResult("Sorry, an error occurred. Please try again.");
+            const errorMessage = error.message.includes('503')
+                ? 'The AI model is currently overloaded. Please try again in a few moments.'
+                : 'Sorry, an error occurred while generating the outline. Please try again.';
+            setAiResult(errorMessage);
         } finally {
             setIsLoading(false);
         }
