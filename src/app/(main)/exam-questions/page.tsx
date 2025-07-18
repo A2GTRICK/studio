@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { NotebookPen, Loader2, Gem, ArrowRight, Check } from 'lucide-react';
+import { NotebookPen, Loader2, Gem, ArrowRight, Check, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -25,7 +25,7 @@ const examQuestionsFormSchema = z.object({
 type ExamQuestionsFormValues = z.infer<typeof examQuestionsFormSchema>;
 
 const premiumFeatures = [
-    "Generate multiple unique question sets",
+    "Download generated questions as PDF",
     "Create full-length AI mock tests",
     "Detailed performance analysis (coming soon)",
     "Access to ALL premium library notes",
@@ -164,8 +164,8 @@ export default function ExamQuestionsPage() {
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Button size="lg" onClick={() => setShowPremiumDialog(true)}>
-                                    <Gem className="mr-2 h-4 w-4" />
-                                    Generate 3 More Question Sets
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download Questions (PDF)
                                 </Button>
                                 <Button size="lg" variant="outline" onClick={() => setShowPremiumDialog(true)}>
                                     <Gem className="mr-2 h-4 w-4" />
