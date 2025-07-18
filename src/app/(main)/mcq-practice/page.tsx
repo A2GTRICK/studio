@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generateMcqPractice, type GenerateMcqPracticeOutput } from '@/ai/flows/generate-mcq-practice';
@@ -12,12 +12,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle, Lightbulb, RefreshCw } from 'lucide-react';
+import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle, Lightbulb, RefreshCw, Gem, ArrowRight, ShoppingCart } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import { marked } from 'marked';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import Link from 'next/link';
+import { PaymentDialog } from '@/components/payment-dialog';
 
 
 const mcqFormSchema = z.object({
@@ -73,6 +76,13 @@ const scoreFeedbacks = {
     ]
 };
 
+const premiumFeatures = [
+    "Unlimited MCQ practice questions",
+    "Access to ALL premium library notes",
+    "AI Note & Exam Question Generation",
+    "Ask follow-up questions to our AI Tutor",
+];
+
 const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
     return feedbacks[Math.floor(Math.random() * feedbacks.length)];
 };
@@ -88,6 +98,13 @@ export default function McqPracticePage() {
   const [sessionQuestionCount, setSessionQuestionCount] = useState(0);
   const [submissionCount, setSubmissionCount] = useState(0);
   const { toast } = useToast();
+  
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  
+  const freeTierLimit = 30;
+  const questionsLeft = freeTierLimit - sessionQuestionCount;
+  const usageProgress = (sessionQuestionCount / freeTierLimit) * 100;
 
   const form = useForm<McqFormValues>({
     resolver: zodResolver(mcqFormSchema),
@@ -129,6 +146,12 @@ export default function McqPracticePage() {
   }
 
   async function onSubmit(data: McqFormValues, isRegeneration = false) {
+    const questionsToGenerate = data.numberOfQuestions;
+    if (sessionQuestionCount + questionsToGenerate > freeTierLimit) {
+        setShowPremiumDialog(true);
+        return;
+    }
+
     setIsLoading(true);
     setQuestions(null);
     setIsSubmitted(false);
@@ -136,7 +159,7 @@ export default function McqPracticePage() {
     setAiFeedback(null);
 
     if (!isRegeneration) {
-        setSessionQuestionCount(0);
+        // This is a new quiz generation, not a retry of the same topic
     }
     
     const requestData = {
@@ -152,6 +175,8 @@ export default function McqPracticePage() {
       }));
       setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
+      setSessionQuestionCount(prev => prev + result.length);
+
     } catch (error) {
       console.error('Error generating MCQs:', error);
       toast({
@@ -166,8 +191,9 @@ export default function McqPracticePage() {
 
   const practiceSameTopic = () => {
     const currentValues = form.getValues();
-    if (questions) {
-      setSessionQuestionCount(prev => prev + questions.length);
+     if (sessionQuestionCount + currentValues.numberOfQuestions > freeTierLimit) {
+        setShowPremiumDialog(true);
+        return;
     }
     onSubmit(currentValues, true);
   }
@@ -202,7 +228,7 @@ export default function McqPracticePage() {
         const feedbackResult = await generateMcqFeedback({
             examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
             subject: currentFormValues.subject,
-            topic: currentFormValues.topic,
+            topic: currentFormValues.topic ?? '',
             performance: quizPerformance,
         });
 
@@ -231,8 +257,10 @@ export default function McqPracticePage() {
       : <X className="h-5 w-5 text-destructive" />;
   }
 
-  const getResultColorClass = (isCorrect: boolean) => {
-    return isCorrect ? 'border-green-500 bg-green-500/10' : 'border-destructive bg-destructive/10';
+  const getResultColorClass = (isCorrect: boolean, isUserChoice: boolean) => {
+     if (isCorrect) return 'border-green-500 bg-green-500/20';
+     if (isUserChoice && !isCorrect) return 'border-destructive bg-destructive/20';
+     return 'border-border';
   }
 
   const scoreFeedback = useMemo(() => {
@@ -260,6 +288,11 @@ export default function McqPracticePage() {
         description: "Your score and a link to the app have been copied. Share it with your friends!",
     });
   }
+  
+  const handleBuyNow = () => {
+    setShowPremiumDialog(false);
+    setShowPaymentDialog(true);
+  };
 
   const renderAiResult = (content: string | null) => {
     if (!content) return null;
@@ -269,6 +302,7 @@ export default function McqPracticePage() {
 
 
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       <div className="lg:col-span-1 lg:sticky top-20">
         <Card>
@@ -347,6 +381,17 @@ export default function McqPracticePage() {
               </form>
             </Form>
           </CardContent>
+          <CardFooter className="flex flex-col gap-2 pt-4 border-t">
+              <div className="w-full text-center">
+                  <p className="text-sm font-medium text-muted-foreground">
+                      {questionsLeft > 0 ? `${questionsLeft} free questions remaining in this session.` : "You've used all your free questions."}
+                  </p>
+                  <Progress value={usageProgress} className="h-2 mt-2" />
+              </div>
+              <Button asChild variant="outline" className="w-full mt-2">
+                 <Link href="/premium"><Gem className="mr-2 h-4 w-4"/> Go Premium for Unlimited Practice</Link>
+              </Button>
+          </CardFooter>
         </Card>
       </div>
 
@@ -362,7 +407,7 @@ export default function McqPracticePage() {
               <div className="flex flex-col items-center justify-center h-96 text-center text-muted-foreground/50 border-2 border-dashed rounded-lg">
                   <BrainCircuit className="h-16 w-16 mb-4" />
                   <h3 className="text-xl font-semibold">Your Smart Quiz Awaits</h3>
-                  <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs for your exam preparation.</p>
+                  <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs for your exam preparation. You get 30 free questions per session.</p>
               </div>
           )}
 
@@ -395,10 +440,10 @@ export default function McqPracticePage() {
             )}
 
             {questions.map((q, index) => (
-              <Card key={index} className={isSubmitted ? getResultColorClass(answers[index] === q.correctAnswer) : ''}>
+              <Card key={index} className={isSubmitted ? 'border-2' : ''} style={{ borderColor: isSubmitted && answers[index] === q.correctAnswer ? 'hsl(var(--primary))' : 'transparent' }}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle>Question {sessionQuestionCount + index + 1}</CardTitle>
+                    <CardTitle>Question {sessionQuestionCount - questions.length + index + 1}</CardTitle>
                     {isSubmitted && getResultIcon(answers[index] === q.correctAnswer)}
                   </div>
                   <CardDescription className="pt-2 text-base text-foreground">{q.question}</CardDescription>
@@ -409,7 +454,7 @@ export default function McqPracticePage() {
                        const isCorrect = option === q.correctAnswer;
                        const isUserChoice = answers[index] === option;
                       return (
-                      <FormItem key={optIndex} className={`flex items-center space-x-3 space-y-0 p-3 rounded-md border transition-colors ${ isSubmitted && isCorrect ? 'border-green-500 bg-green-500/20' : isSubmitted && isUserChoice && !isCorrect ? 'border-destructive bg-destructive/20' : 'border-border' }`}>
+                      <FormItem key={optIndex} className={`flex items-center space-x-3 space-y-0 p-3 rounded-md border transition-colors ${ isSubmitted ? getResultColorClass(isCorrect, isUserChoice) : 'border-border' }`}>
                         <FormControl><RadioGroupItem value={option} id={`q${index}-opt${optIndex}`} /></FormControl>
                         <FormLabel htmlFor={`q${index}-opt${optIndex}`} className="font-normal flex-1 cursor-pointer">
                           {option}
@@ -488,5 +533,49 @@ export default function McqPracticePage() {
         </div>
       </div>
     </div>
+    
+    <Dialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog}>
+        <DialogContent className="max-w-md">
+            <DialogHeader>
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+                    <Gem className="h-6 w-6 text-primary" />
+                </div>
+                <DialogTitle className="text-center font-headline text-2xl">Free Limit Reached</DialogTitle>
+                <DialogDescription className="text-center text-base">
+                   You've used all your free practice questions. Upgrade to premium for unlimited access.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <p className="font-semibold mb-3">Upgrading to premium gives you:</p>
+                <ul className="space-y-3">
+                    {premiumFeatures.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-3">
+                            <Check className="h-5 w-5 text-green-500" />
+                            <span className="text-muted-foreground">{feature}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+            <div className="flex flex-col gap-2">
+                 <Button asChild size="lg">
+                    <Link href="/premium">Upgrade to Full Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+                <Button size="lg" variant="outline" onClick={handleBuyNow}>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Buy Unlimited MCQ Access for ₹99
+                </Button>
+            </div>
+        </DialogContent>
+    </Dialog>
+
+    <PaymentDialog 
+        isOpen={showPaymentDialog} 
+        setIsOpen={setShowPaymentDialog}
+        title="Unlimited MCQ Practice"
+        price="₹99"
+    />
+    </>
   );
 }
+
+    
