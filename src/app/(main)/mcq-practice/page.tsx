@@ -1,7 +1,7 @@
 
 'use client';
 import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generateMcqPractice, type GenerateMcqPracticeOutput } from '@/ai/flows/generate-mcq-practice';
@@ -181,7 +181,7 @@ export default function McqPracticePage() {
           )}
 
           {questions && (
-            <>
+            <FormProvider {...form}>
             {isSubmitted && (
                 <Card>
                     <CardHeader>
@@ -248,7 +248,7 @@ export default function McqPracticePage() {
                 </Button>
             )}
 
-            </>
+            </FormProvider>
           )}
 
         </div>
