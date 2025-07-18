@@ -4,3 +4,4 @@ config();
 import '@/ai/flows/generate-exam-questions.ts';
 import '@/ai/flows/generate-notes-from-topic.ts';
 import '@/ai/flows/answer-follow-up-question.ts';
+import '@/ai/flows/subscribe-to-newsletter.ts';

@@ -1,11 +1,51 @@
+'use client';
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download } from 'lucide-react';
+import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { subscribeToNewsletter } from '@/ai/flows/subscribe-to-newsletter';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LandingPage() {
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [downloadLink, setDownloadLink] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address to subscribe.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSubscribing(true);
+    try {
+      const result = await subscribeToNewsletter({ email });
+      setDownloadLink(result.downloadLink);
+      toast({
+        title: "Success!",
+        description: "You're subscribed. Your download will begin shortly.",
+      });
+    } catch (error) {
+      console.error("Subscription error:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -119,13 +159,34 @@ export default function LandingPage() {
               <p className="mt-2 text-muted-foreground text-lg">Download our free "Top 20 Most Asked Pharmacology Questions" PDF and see the quality for yourself.</p>
             </div>
             <div className="flex-1 w-full">
-               <form className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto md:mx-0">
-                  <Input type="email" placeholder="Enter your email address" className="flex-grow bg-background" />
-                  <Button size="lg" type="submit">
-                    <Download className="mr-2 h-5 w-5"/>
-                    Download Now
-                  </Button>
-               </form>
+               {downloadLink ? (
+                 <div className="flex flex-col items-center justify-center text-center bg-background p-6 rounded-lg shadow-md max-w-md mx-auto md:mx-0">
+                    <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
+                    <h4 className="text-xl font-headline font-bold">Thank you for subscribing!</h4>
+                    <p className="text-muted-foreground mb-4">Your download is ready.</p>
+                    <Button size="lg" asChild>
+                      <a href={downloadLink} download="Top-20-Pharmacology-Questions.pdf">
+                        <Download className="mr-2 h-5 w-5"/>
+                        Download PDF
+                      </a>
+                    </Button>
+                 </div>
+               ) : (
+                <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto md:mx-0">
+                    <Input 
+                      type="email"
+                      placeholder="Enter your email address"
+                      className="flex-grow bg-background"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isSubscribing}
+                    />
+                    <Button size="lg" type="submit" disabled={isSubscribing}>
+                      <Download className="mr-2 h-5 w-5"/>
+                      {isSubscribing ? 'Subscribing...' : 'Download Now'}
+                    </Button>
+                </form>
+               )}
                <p className="text-sm text-muted-foreground mt-2 text-center md:text-left">We respect your privacy. No spam.</p>
             </div>
           </div>
