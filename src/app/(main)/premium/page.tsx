@@ -10,6 +10,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 
+// --- PAYMENT DETAILS: EDIT HERE ---
+// 1. Add your UPI ID here
+const UPI_ID = "a2gtrickacademy@upi";
+
+// 2. Add your QR code image to the `public` folder and put the path here.
+//    For example, if your QR code image is `public/my-qr-code.png`, the path should be "/my-qr-code.png"
+const QR_CODE_IMAGE_PATH = "https://placehold.co/250x250.png";
+// ------------------------------------
+
+
 const freePlanFeatures = [
     "Access to free library notes",
     "Limited AI tool usage",
@@ -52,7 +62,6 @@ export default function PremiumPage() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const { toast } = useToast();
-  const upiId = "a2gtrickacademy@upi";
 
   const handleChoosePlan = (plan: Plan) => {
     setSelectedPlan(plan);
@@ -60,7 +69,7 @@ export default function PremiumPage() {
   };
 
   const handleCopyUpiId = () => {
-    navigator.clipboard.writeText(upiId);
+    navigator.clipboard.writeText(UPI_ID);
     toast({
         title: "Copied!",
         description: "UPI ID copied to clipboard.",
@@ -148,11 +157,11 @@ export default function PremiumPage() {
             <div className="py-4 space-y-4">
                 <p className="text-center text-muted-foreground text-sm">Scan the QR code below with any UPI app or copy the UPI ID.</p>
                 <div className="flex justify-center">
-                    <Image src="https://placehold.co/250x250.png" alt="UPI QR Code" width={250} height={250} data-ai-hint="qr code"/>
+                    <Image src={QR_CODE_IMAGE_PATH} alt="UPI QR Code" width={250} height={250} data-ai-hint="qr code"/>
                 </div>
                 <Card>
                     <CardContent className="p-3 flex items-center justify-between">
-                        <p className="text-sm font-mono text-muted-foreground">{upiId}</p>
+                        <p className="text-sm font-mono text-muted-foreground">{UPI_ID}</p>
                         <Button variant="ghost" size="icon" onClick={handleCopyUpiId}>
                             <Copy className="h-4 w-4" />
                         </Button>
