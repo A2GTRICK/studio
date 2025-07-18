@@ -130,7 +130,7 @@ export default function AiNotesPage() {
 
   return (
     <>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1">
         <Card>
           <CardHeader>
@@ -190,13 +190,13 @@ export default function AiNotesPage() {
         </Card>
       </div>
       <div className="lg:col-span-2">
-        <Card className="h-full flex flex-col max-h-[80vh]">
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="font-headline">Generated Content</CardTitle>
             <CardDescription>Your AI-generated notes and conversation will appear here.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-grow min-h-0">
-             <ScrollArea className="h-[calc(80vh-250px)] w-full pr-4">
+          <CardContent className="flex-grow">
+             <ScrollArea className="h-[70vh] lg:h-[calc(100vh-320px)] w-full pr-4">
               {isLoading && (
                   <div className="flex flex-col items-center justify-center h-full">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -263,7 +263,7 @@ export default function AiNotesPage() {
           </CardContent>
           {generatedNotes && (
             <CardFooter>
-              <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2">
+              <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2 pt-4 border-t">
                   <Input 
                       value={followUp}
                       onChange={(e) => setFollowUp(e.target.value)}
