@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -11,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Gem, X, Check, ArrowRight } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Gem, Check, ArrowRight } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Link from 'next/link';
@@ -206,13 +207,20 @@ export default function AiNotesPage() {
               )}
               <div className="space-y-4">
                 {chatHistory.map((msg, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className={`p-2 rounded-full ${msg.role === 'user' ? 'bg-muted' : 'bg-primary text-primary-foreground'}`}>
-                        {msg.role === 'user' ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
+                  <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                    {msg.role === 'assistant' && (
+                       <div className="p-2 rounded-full bg-primary text-primary-foreground self-start">
+                         <Bot className="h-5 w-5" />
+                       </div>
+                    )}
+                     <div className={`prose prose-sm dark:prose-invert max-w-none p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-card'}`}>
+                      <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.content.replace(/```/g, '') }} />
                     </div>
-                    <div className="prose prose-sm dark:prose-invert max-w-none p-4 rounded-lg bg-card flex-1">
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
-                    </div>
+                     {msg.role === 'user' && (
+                       <div className="p-2 rounded-full bg-muted self-start">
+                          <User className="h-5 w-5" />
+                       </div>
+                    )}
                   </div>
                 ))}
               </div>
