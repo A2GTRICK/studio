@@ -13,11 +13,11 @@ export default function NoteDetailPage() {
   const id = typeof params.id === 'string' ? parseInt(params.id, 10) : NaN;
   const note = notesData.find(n => n.id === id);
 
-  if (!note) {
+  if (isNaN(id) || !note) {
     notFound();
   }
 
-  // If a user tries to access a premium note directly via URL
+  // A user could still try to access a premium note directly via URL
   if (note.isPremium) {
     return (
         <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-[60vh] text-center">
