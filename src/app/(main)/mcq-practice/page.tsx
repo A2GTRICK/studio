@@ -5,17 +5,19 @@ import { useForm, Controller, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generateMcqPractice, type GenerateMcqPracticeOutput } from '@/ai/flows/generate-mcq-practice';
+import { generateMcqFeedback } from '@/ai/flows/generate-mcq-feedback';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle } from 'lucide-react';
+import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle, Lightbulb } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
+import { marked } from 'marked';
 
 
 const mcqFormSchema = z.object({
@@ -31,9 +33,11 @@ type AnswersState = (string | null)[];
 
 export default function McqPracticePage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
   const [questions, setQuestions] = useState<GenerateMcqPracticeOutput | null>(null);
   const [answers, setAnswers] = useState<AnswersState>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<McqFormValues>({
@@ -49,6 +53,7 @@ export default function McqPracticePage() {
 
   const resetQuiz = (showToast = false) => {
     setIsSubmitted(false);
+    setAiFeedback(null);
     setAnswers(new Array(questions?.length || 0).fill(null));
     if (showToast) {
         toast({ title: "Quiz Reset!", description: "You can now attempt the quiz again." });
@@ -59,6 +64,7 @@ export default function McqPracticePage() {
     setQuestions(null);
     setIsSubmitted(false);
     setAnswers([]);
+    setAiFeedback(null);
     form.reset();
   }
 
@@ -67,6 +73,7 @@ export default function McqPracticePage() {
     setQuestions(null);
     setIsSubmitted(false);
     setAnswers([]);
+    setAiFeedback(null);
     try {
       const result = await generateMcqPractice(data);
       setQuestions(result);
@@ -89,8 +96,38 @@ export default function McqPracticePage() {
     setAnswers(newAnswers);
   };
 
-  const handleSubmitQuiz = () => {
+  const handleSubmitQuiz = async () => {
     setIsSubmitted(true);
+    setIsFeedbackLoading(true);
+    setAiFeedback(null);
+
+    if (!questions) {
+        setIsFeedbackLoading(false);
+        return;
+    }
+
+    try {
+        const quizPerformance = questions.map((q, index) => ({
+            question: q.question,
+            userAnswer: answers[index] ?? "Not Answered",
+            correctAnswer: q.correctAnswer,
+            isCorrect: answers[index] === q.correctAnswer,
+        }));
+
+        const feedbackResult = await generateMcqFeedback({
+            examType: form.getValues('examType'),
+            subject: form.getValues('subject'),
+            topic: form.getValues('topic'),
+            performance: quizPerformance,
+        });
+
+        setAiFeedback(feedbackResult.feedback);
+    } catch (error) {
+        console.error("Error generating feedback:", error);
+        setAiFeedback("Sorry, an error occurred while generating feedback. You can still review your answers and explanations.");
+    } finally {
+        setIsFeedbackLoading(false);
+    }
   };
 
   const calculateScore = () => {
@@ -148,6 +185,12 @@ export default function McqPracticePage() {
         description: "Your score and a link to the app have been copied. Share it with your friends!",
     });
   }
+
+  const renderAiResult = (content: string | null) => {
+    if (!content) return null;
+    const htmlContent = marked.parse(content);
+    return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+  };
 
 
   return (
@@ -253,7 +296,7 @@ export default function McqPracticePage() {
                         <Progress value={scorePercentage} className="h-3 my-4 bg-background/50" />
                         <p className="font-semibold">{scorePercentage.toFixed(0)}% Correct</p>
                     </CardContent>
-                    <CardFooter className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <CardFooter className="grid grid-cols-2 gap-2">
                         <Button onClick={() => resetQuiz(true)} variant="outline" className="w-full">
                             <RefreshCcw className="mr-2 h-4 w-4"/>
                             Retry Quiz
@@ -261,10 +304,6 @@ export default function McqPracticePage() {
                          <Button onClick={handleShare} variant="outline" className="w-full">
                             <Share2 className="mr-2 h-4 w-4"/>
                             Share Score
-                        </Button>
-                        <Button onClick={practiceMore} className="w-full sm:col-span-1">
-                            <PlusCircle className="mr-2 h-4 w-4"/>
-                            Practice More
                         </Button>
                     </CardFooter>
                 </Card>
@@ -324,9 +363,39 @@ export default function McqPracticePage() {
                 </Button>
             )}
 
+            {isSubmitted && (
+                <Card className="bg-primary/5 border-primary/20">
+                     <CardHeader>
+                        <CardTitle className="font-headline flex items-center gap-2 text-primary">
+                           <Lightbulb/> AI Feedback & Next Steps
+                        </CardTitle>
+                        <CardDescription>
+                            Here are some personalized tips from your AI tutor to help you improve.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isFeedbackLoading && (
+                            <div className="flex items-center justify-center min-h-[100px]">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary"/>
+                                <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
+                            </div>
+                        )}
+                        {!isFeedbackLoading && aiFeedback && (
+                            <div className="p-4 bg-background rounded-lg border">
+                                {renderAiResult(aiFeedback)}
+                            </div>
+                        )}
+                    </CardContent>
+                    <CardFooter>
+                         <Button onClick={practiceMore} className="w-full">
+                            <PlusCircle className="mr-2 h-4 w-4"/>
+                            Practice Another Topic
+                        </Button>
+                    </CardFooter>
+                </Card>
+            )}
             </FormProvider>
           )}
-
         </div>
       </div>
     </div>

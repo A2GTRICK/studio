@@ -9,3 +9,4 @@ import '@/ai/flows/generate-question-sets.ts';
 import '@/ai/flows/generate-mock-test.ts';
 import '@/ai/flows/generate-service-outline.ts';
 import '@/ai/flows/generate-mcq-practice.ts';
+import '@/ai/flows/generate-mcq-feedback.ts';
