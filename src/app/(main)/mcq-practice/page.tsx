@@ -52,6 +52,7 @@ export default function McqPracticePage() {
   const [answers, setAnswers] = useState<AnswersState>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [sessionQuestionCount, setSessionQuestionCount] = useState(0);
   const { toast } = useToast();
 
   const form = useForm<McqFormValues>({
@@ -79,6 +80,7 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
+    setSessionQuestionCount(0); // Reset for new topic
     form.reset({
       examType: 'GPAT',
       subject: '',
@@ -88,12 +90,18 @@ export default function McqPracticePage() {
     });
   }
 
-  async function onSubmit(data: McqFormValues) {
+  async function onSubmit(data: McqFormValues, isRegeneration = false) {
     setIsLoading(true);
     setQuestions(null);
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
+
+    // If it's a new topic, reset the session count
+    if (!isRegeneration) {
+        setSessionQuestionCount(0);
+    }
+    
     try {
       const result = await generateMcqPractice(data);
       const shuffledResult = result.map(q => ({
@@ -116,7 +124,10 @@ export default function McqPracticePage() {
 
   const regenerateQuiz = () => {
     const currentValues = form.getValues();
-    onSubmit(currentValues);
+    if (questions) {
+      setSessionQuestionCount(prev => prev + questions.length);
+    }
+    onSubmit(currentValues, true);
   }
   
   const handleAnswerChange = (questionIndex: number, value: string) => {
@@ -232,7 +243,7 @@ export default function McqPracticePage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-4">
                  <FormField control={form.control} name="examType" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Target Exam</FormLabel>
@@ -342,7 +353,7 @@ export default function McqPracticePage() {
               <Card key={index} className={isSubmitted ? getResultColorClass(answers[index] === q.correctAnswer) : ''}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle>Question {index + 1}</CardTitle>
+                    <CardTitle>Question {sessionQuestionCount + index + 1}</CardTitle>
                     {isSubmitted && getResultIcon(answers[index] === q.correctAnswer)}
                   </div>
                   <CardDescription className="pt-2 text-base text-foreground">{q.question}</CardDescription>
@@ -386,7 +397,7 @@ export default function McqPracticePage() {
             ))}
 
             {!isSubmitted && (
-                <Button onClick={handleSubmitQuiz} className="w-full" size="lg" disabled={!questions || answers.every(a => a === null)}>
+                <Button onClick={handleSubmitQuiz} className="w-full" size="lg">
                    {answers.some(a => a === null) && !answers.every(a => a === null) && <AlertCircle className="mr-2 h-4 w-4"/>}
                    Submit Quiz & View Results
                 </Button>
