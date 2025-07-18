@@ -11,11 +11,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle } from 'lucide-react';
+import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+
 
 const mcqFormSchema = z.object({
   examType: z.string().min(1, 'Exam type is required'),
@@ -33,6 +34,7 @@ export default function McqPracticePage() {
   const [questions, setQuestions] = useState<GenerateMcqPracticeOutput | null>(null);
   const [answers, setAnswers] = useState<AnswersState>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<McqFormValues>({
     resolver: zodResolver(mcqFormSchema),
@@ -45,6 +47,14 @@ export default function McqPracticePage() {
     },
   });
 
+  const resetQuiz = (showToast = false) => {
+    setIsSubmitted(false);
+    setAnswers(new Array(questions?.length || 0).fill(null));
+    if (showToast) {
+        toast({ title: "Quiz Reset!", description: "You can now attempt the quiz again." });
+    }
+  }
+
   async function onSubmit(data: McqFormValues) {
     setIsLoading(true);
     setQuestions(null);
@@ -56,7 +66,11 @@ export default function McqPracticePage() {
       setAnswers(new Array(result.length).fill(null));
     } catch (error) {
       console.error('Error generating MCQs:', error);
-      // You can add a toast notification here
+      toast({
+          title: "Error",
+          description: "Failed to generate the quiz. Please try again.",
+          variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -93,17 +107,40 @@ export default function McqPracticePage() {
   }
 
   const getScoreFeedback = () => {
-    if (scorePercentage >= 80) {
-      return { emoji: '🎉', message: 'Excellent Work!' };
-    }
-    if (scorePercentage >= 60) {
-      return { emoji: '👍', message: 'Good Job!' };
+    if (scorePercentage > 70) {
+      return { 
+          emoji: '🎉', 
+          message: "Mogambo khush hua!",
+          taunt: "Mummy: Aaj kuch zyada hi intelligent lag raha hai tu!",
+          cardClass: "bg-green-500/10 border-green-500"
+        };
     }
     if (scorePercentage >= 40) {
-      return { emoji: '🤔', message: 'Keep Practicing!' };
+      return { 
+          emoji: '🤔', 
+          message: "Pushpa... I hate tears 😭",
+          taunt: "Bas thoda aur practice... warna mains mein 'bye' ho jayega!",
+          cardClass: "bg-yellow-500/10 border-yellow-500"
+        };
     }
-    return { emoji: '📚', message: 'Time to Hit the Books!' };
+    return { 
+        emoji: '😒', 
+        message: "Tera toh kuch nahi ho sakta, beta.",
+        taunt: "Padhai se zyada toh tu reels scroll karta hai!",
+        cardClass: "bg-destructive/10 border-destructive"
+    };
   };
+
+  const handleShare = () => {
+    const feedback = getScoreFeedback();
+    const text = `I just scored ${score}/${questions?.length} on my ${form.getValues('examType')} practice quiz! ${feedback.message} - Check out A2G Smart Notes!`;
+    navigator.clipboard.writeText(text);
+    toast({
+        title: "Copied to Clipboard!",
+        description: "Your score and a link to the app have been copied. Share it with your friends!",
+    });
+  }
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -196,19 +233,28 @@ export default function McqPracticePage() {
           {questions && (
             <FormProvider {...form}>
             {isSubmitted && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Quiz Results</CardTitle>
-                        <CardDescription>Here's how you performed.</CardDescription>
+                <Card className={getScoreFeedback().cardClass}>
+                    <CardHeader className="text-center">
+                        <div className="text-6xl mb-4">{getScoreFeedback().emoji}</div>
+                        <CardTitle className="font-headline text-3xl">{getScoreFeedback().message}</CardTitle>
+                        <CardDescription className="text-base">{getScoreFeedback().taunt}</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
-                        <div className="text-6xl mb-2">{getScoreFeedback().emoji}</div>
-                        <p className="text-2xl font-bold">{getScoreFeedback().message}</p>
                         <p className="text-lg text-muted-foreground mt-2">You scored</p>
-                        <p className="text-6xl font-bold text-primary my-2">{score} / {questions.length}</p>
-                        <Progress value={scorePercentage} className="h-3 my-4" />
+                        <p className="text-6xl font-bold text-foreground my-2">{score} / {questions.length}</p>
+                        <Progress value={scorePercentage} className="h-3 my-4 bg-background/50" />
                         <p className="font-semibold">{scorePercentage.toFixed(0)}% Correct</p>
                     </CardContent>
+                    <CardFooter className="flex-col sm:flex-row gap-2">
+                        <Button onClick={() => resetQuiz(true)} variant="outline" className="w-full">
+                            <RefreshCcw className="mr-2 h-4 w-4"/>
+                            Retry Quiz
+                        </Button>
+                         <Button onClick={handleShare} className="w-full">
+                            <Share2 className="mr-2 h-4 w-4"/>
+                            Share Score
+                        </Button>
+                    </CardFooter>
                 </Card>
             )}
 
