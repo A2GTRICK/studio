@@ -1,7 +1,10 @@
+
+'use client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 const freePlanFeatures = [
     "Access to free library notes",
@@ -40,6 +43,13 @@ const plans = [
 ];
 
 export default function PremiumPage() {
+
+  const createMailToLink = (planName: string, price: string) => {
+    const subject = `Inquiry for ${planName} Plan`;
+    const body = `Hello, I am interested in purchasing the ${planName} plan for ${price}. Please provide me with the payment details.`;
+    return `mailto:support@a2g.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+  
   return (
     <div className="space-y-12">
       <div className="text-center max-w-3xl mx-auto">
@@ -98,7 +108,9 @@ export default function PremiumPage() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" variant={plan.popular ? 'default' : 'outline'}>Choose Plan</Button>
+              <Button asChild className="w-full" variant={plan.popular ? 'default' : 'outline'}>
+                <a href={createMailToLink(plan.name, plan.price)}>Choose Plan</a>
+              </Button>
             </CardFooter>
           </Card>
         ))}
