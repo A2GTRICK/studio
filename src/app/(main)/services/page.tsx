@@ -2,11 +2,20 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, BrainCircuit, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { services } from "@/lib/services-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { generateServiceOutline } from "@/ai/flows/generate-service-outline";
+import { marked } from "marked";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 const ServiceCard = ({ service }: { service: typeof services[0] }) => (
     <Card className="flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
@@ -32,11 +41,47 @@ const ServiceCard = ({ service }: { service: typeof services[0] }) => (
     </Card>
 );
 
+const outlineFormSchema = z.object({
+    serviceType: z.string().min(3, "Please specify a service type (e.g., Report, Dissertation)"),
+    topic: z.string().min(5, "Please provide a specific topic"),
+});
+
+type OutlineFormValues = z.infer<typeof outlineFormSchema>;
+
+
 export default function ServicesPage() {
+    const [isLoading, setIsLoading] = useState(false);
+    const [aiResult, setAiResult] = useState<string | null>(null);
+
     const categories = useMemo(() => {
         const cats = new Set(services.map(s => s.category));
         return ['All', ...Array.from(cats)];
     }, []);
+
+    const form = useForm<OutlineFormValues>({
+        resolver: zodResolver(outlineFormSchema),
+        defaultValues: { serviceType: "", topic: "" },
+    });
+    
+    async function onGenerateOutline(data: OutlineFormValues) {
+        setIsLoading(true);
+        setAiResult(null);
+        try {
+            const result = await generateServiceOutline(data);
+            setAiResult(result.outline);
+        } catch (error) {
+            console.error("Error generating service outline:", error);
+            setAiResult("Sorry, an error occurred. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    
+    const renderAiResult = () => {
+        if (!aiResult) return null;
+        const htmlContent = marked.parse(aiResult);
+        return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+    };
 
     return (
         <div className="space-y-8">
@@ -44,6 +89,72 @@ export default function ServicesPage() {
                 <h1 className="text-4xl font-headline font-bold">Academic Services Hub</h1>
                 <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">Expert academic and project support to guide you through complex tasks and ensure your success.</p>
             </div>
+            
+            <Card className="bg-primary/5 border-primary/20">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2 text-primary"><BrainCircuit /> AI Service Assistant</CardTitle>
+                    <CardDescription>Not sure where to start? Describe your task and our AI will generate a preliminary outline to guide you.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                       <div>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onGenerateOutline)} className="space-y-4">
+                                    <FormField control={form.control} name="serviceType" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Service Type</FormLabel>
+                                            <FormControl><Input placeholder="e.g., Internship Report, Dissertation" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name="topic" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Your Topic</FormLabel>
+                                            <FormControl><Input placeholder="e.g., Analysis of Paracetamol Tablets" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                    <Button type="submit" disabled={isLoading} className="w-full">
+                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Generate Outline
+                                    </Button>
+                                </form>
+                            </Form>
+                       </div>
+                       <div className="bg-background p-4 rounded-lg border min-h-[200px]">
+                           <ScrollArea className="h-64">
+                             {isLoading && (
+                                <div className="flex flex-col items-center justify-center h-full">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    <p className="mt-4 text-muted-foreground">AI is drafting your outline...</p>
+                                </div>
+                             )}
+                             {!isLoading && !aiResult && (
+                                <div className="flex flex-col items-center justify-center h-full text-center">
+                                    <p className="text-muted-foreground">Your generated outline will appear here.</p>
+                                </div>
+                             )}
+                             {aiResult && renderAiResult()}
+                           </ScrollArea>
+                       </div>
+                   </div>
+                </CardContent>
+                {aiResult && !isLoading && (
+                    <CardFooter className="flex-col items-start gap-4 bg-primary/10 p-4 rounded-b-lg">
+                        <h3 className="font-headline text-lg font-semibold text-primary">Need an expert to handle the rest?</h3>
+                        <p className="text-primary/80 -mt-2">This outline is a great start. Our professional services can provide the detailed work, research, and writing to ensure your success. Check out our related services:</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 w-full">
+                            {services.slice(0,3).map(service => (
+                                <Button asChild key={service.slug} variant="secondary">
+                                    <Link href={service.link}>
+                                        <service.icon className="mr-2 h-4 w-4"/> {service.title}
+                                    </Link>
+                                </Button>
+                            ))}
+                        </div>
+                    </CardFooter>
+                )}
+            </Card>
 
             <Tabs defaultValue="All" className="w-full">
                 <div className="flex justify-center">
