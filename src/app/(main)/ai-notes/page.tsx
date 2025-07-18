@@ -155,7 +155,7 @@ export default function AiNotesPage() {
                 <FormField control={form.control} name="year" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Year</FormLabel>
-                    <Select onValuechange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                        <FormControl><SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger></FormControl>
                        <SelectContent>
                         <SelectItem value="1st Year">1st Year</SelectItem>
@@ -235,7 +235,7 @@ export default function AiNotesPage() {
                                 Continue Your Learning
                             </CardTitle>
                             <CardDescription>
-                                Found these notes helpful? Unlock our detailed, expert-written premium notes on related topics.
+                                Found these notes helpful? Unlock our detailed, expert-written premium notes on related topics to boost your study.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -311,3 +311,5 @@ export default function AiNotesPage() {
     </>
   );
 }
+
+    
