@@ -259,6 +259,5 @@ export default function AiNotesPage() {
         </Card>
       </div>
     </div>
-    </>
   );
 }
