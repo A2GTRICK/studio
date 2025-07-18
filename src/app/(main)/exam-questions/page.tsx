@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { NotebookPen, Loader2, Gem, ArrowRight, Check, Download, ShoppingCart } from 'lucide-react';
+import { NotebookPen, Loader2, Gem, ArrowRight, Check, Download, ShoppingCart, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -182,10 +182,18 @@ export default function ExamQuestionsPage() {
                                     <Download className="mr-2 h-4 w-4" />
                                     Download Questions (PDF)
                                 </Button>
-                                <Button size="lg" variant="outline" onClick={() => setShowPremiumDialog('mock_test')}>
-                                    <Gem className="mr-2 h-4 w-4" />
-                                    Generate AI Mock Test
-                                </Button>
+                                <div className="space-y-2">
+                                    <Button size="lg" className="w-full" onClick={() => setShowPremiumDialog('mock_test')}>
+                                        <Gem className="mr-2 h-4 w-4" />
+                                        Generate AI Mock Test
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="w-full" asChild>
+                                        <a href="/assets/Sample-Mock-Test.pdf" target="_blank" rel="noopener noreferrer">
+                                           <Eye className="mr-2 h-4 w-4" />
+                                           View Sample Mock Test
+                                        </a>
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                   </div>
