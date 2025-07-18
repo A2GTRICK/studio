@@ -3,11 +3,12 @@
 
 import { services } from '@/lib/services-data';
 import { notFound, useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, Mail } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 export default function ServiceDetailPage() {
   const params = useParams();
@@ -34,13 +35,14 @@ export default function ServiceDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-5">
           <div className="md:col-span-3 order-2 md:order-1 p-6 md:p-8 flex flex-col">
             <CardHeader className="p-0 mb-6">
-                <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 rounded-lg bg-primary/10 text-primary shrink-0">
+                <Badge variant="secondary" className="mb-2 self-start">{service.category}</Badge>
+                <div className="flex items-start gap-4 mb-2">
+                    <div className="p-3 rounded-lg bg-primary/10 text-primary shrink-0 mt-1">
                         <service.icon className="h-8 w-8" />
                     </div>
                     <CardTitle className="font-headline text-4xl">{service.title}</CardTitle>
                 </div>
-                <p className="text-muted-foreground text-lg">{service.description}</p>
+                <CardDescription className="text-lg">{service.description}</CardDescription>
             </CardHeader>
             
             <CardContent className="p-0 flex-grow">
