@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to generate a service outline or methodology based on user input.
@@ -38,11 +39,14 @@ Academic Level: {{{academicLevel}}}
 Service Type Requested: {{{serviceType}}}
 Topic: {{{topic}}}
 
-Generate a professional outline in Markdown format. The complexity and depth of the outline should be appropriate for the specified academic level.
-For example, if they ask for an "Internship Report" for a B.Pharm student, you should provide standard section headings like "Introduction," "Company Profile," "Work Performed," etc.
-If they ask for a "Dissertation" for an M.Pharm or PhD student, provide a more detailed research methodology outline.
+Generate a professional, fully structured outline in Markdown format. The complexity and depth of the outline must be appropriate for the specified academic level.
+This should be a complete outline model, covering all the standard points and parameters the student will need to address.
 
-The outline should be high-level but comprehensive enough to be genuinely useful.
+For example, if they ask for an "Internship Report" for a B.Pharm student, you must provide standard section headings like "Introduction," "Company Profile," "Aims and Objectives," "Work Performed," "Results and Discussion," "Conclusion," and "References."
+
+If they ask for a "Dissertation" for an M.Pharm or PhD student, provide a much more detailed research methodology outline, including sections like "Introduction/Literature Review," "Problem Statement," "Research Questions/Hypotheses," "Methodology (Research Design, Sampling, Data Collection Instruments, Data Analysis Plan)," "Expected Outcomes," and "Timeline."
+
+The outline must be comprehensive enough to be genuinely useful and serve as a strong foundation for their work.
 `,
 });
 
