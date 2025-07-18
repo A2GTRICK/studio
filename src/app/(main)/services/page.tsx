@@ -2,7 +2,7 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BrainCircuit, Loader2 } from 'lucide-react';
+import { ArrowRight, BrainCircuit, Loader2, Expand } from 'lucide-react';
 import Link from 'next/link';
 import { services } from "@/lib/services-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +16,7 @@ import { generateServiceOutline } from "@/ai/flows/generate-service-outline";
 import { marked } from "marked";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 
 const ServiceCard = ({ service }: { service: typeof services[0] }) => (
@@ -79,9 +80,9 @@ export default function ServicesPage() {
         }
     }
     
-    const renderAiResult = () => {
-        if (!aiResult) return null;
-        const htmlContent = marked.parse(aiResult);
+    const renderAiResult = (content: string | null) => {
+        if (!content) return null;
+        const htmlContent = marked.parse(content);
         return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
     };
 
@@ -140,7 +141,7 @@ export default function ServicesPage() {
                                 </form>
                             </Form>
                        </div>
-                       <div className="bg-background p-4 rounded-lg border min-h-[300px]">
+                       <div className="bg-background p-4 rounded-lg border min-h-[300px] relative">
                            <ScrollArea className="h-72 w-full pr-4">
                              {isLoading && (
                                 <div className="flex flex-col items-center justify-center h-full">
@@ -153,8 +154,28 @@ export default function ServicesPage() {
                                     <p className="text-muted-foreground">Your generated outline will appear here.</p>
                                 </div>
                              )}
-                             {aiResult && renderAiResult()}
+                             {aiResult && renderAiResult(aiResult)}
                            </ScrollArea>
+                            {aiResult && !isLoading && (
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="absolute top-2 right-2">
+                                            <Expand className="h-4 w-4" />
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-3xl h-[80vh]">
+                                        <DialogHeader>
+                                            <DialogTitle>Generated Service Outline</DialogTitle>
+                                            <DialogDescription>
+                                                Here is the full AI-generated outline for your topic.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <ScrollArea className="h-full pr-6">
+                                            {renderAiResult(aiResult)}
+                                        </ScrollArea>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
                        </div>
                    </div>
                 </CardContent>
