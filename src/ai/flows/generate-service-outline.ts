@@ -11,6 +11,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateServiceOutlineInputSchema = z.object({
+  academicLevel: z.string().describe('The academic level of the student (e.g., B.Pharm, M.Pharm, PhD).'),
   serviceType: z.string().describe('The type of academic service the user needs (e.g., Internship Report, Dissertation).'),
   topic: z.string().describe('The specific topic or subject for the service.'),
 });
@@ -33,10 +34,13 @@ const prompt = ai.definePrompt({
 Your goal is to provide a clear, structured, and helpful outline or methodology for their project based on their input.
 This will demonstrate your expertise and help them get started.
 
+Academic Level: {{{academicLevel}}}
 Service Type Requested: {{{serviceType}}}
 Topic: {{{topic}}}
 
-Generate a professional outline in Markdown format. For example, if they ask for an "Internship Report," you should provide standard section headings like "Introduction," "Company Profile," "Work Performed," etc. If they ask for a "Dissertation," provide a research methodology outline.
+Generate a professional outline in Markdown format. The complexity and depth of the outline should be appropriate for the specified academic level.
+For example, if they ask for an "Internship Report" for a B.Pharm student, you should provide standard section headings like "Introduction," "Company Profile," "Work Performed," etc.
+If they ask for a "Dissertation" for an M.Pharm or PhD student, provide a more detailed research methodology outline.
 
 The outline should be high-level but comprehensive enough to be genuinely useful.
 `,

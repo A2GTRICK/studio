@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { generateServiceOutline } from "@/ai/flows/generate-service-outline";
 import { marked } from "marked";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const ServiceCard = ({ service }: { service: typeof services[0] }) => (
@@ -42,6 +43,7 @@ const ServiceCard = ({ service }: { service: typeof services[0] }) => (
 );
 
 const outlineFormSchema = z.object({
+    academicLevel: z.string().min(1, "Please select an academic level"),
     serviceType: z.string().min(3, "Please specify a service type (e.g., Report, Dissertation)"),
     topic: z.string().min(5, "Please provide a specific topic"),
 });
@@ -60,7 +62,7 @@ export default function ServicesPage() {
 
     const form = useForm<OutlineFormValues>({
         resolver: zodResolver(outlineFormSchema),
-        defaultValues: { serviceType: "", topic: "" },
+        defaultValues: { academicLevel: "", serviceType: "", topic: "" },
     });
     
     async function onGenerateOutline(data: OutlineFormValues) {
@@ -100,6 +102,23 @@ export default function ServicesPage() {
                        <div>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onGenerateOutline)} className="space-y-4">
+                                    <FormField control={form.control} name="academicLevel" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Academic Level</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger><SelectValue placeholder="Select your academic level" /></SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="D.Pharm">D.Pharm</SelectItem>
+                                                    <SelectItem value="B.Pharm">B.Pharm</SelectItem>
+                                                    <SelectItem value="M.Pharm">M.Pharm</SelectItem>
+                                                    <SelectItem value="PhD">PhD</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
                                     <FormField control={form.control} name="serviceType" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Service Type</FormLabel>
