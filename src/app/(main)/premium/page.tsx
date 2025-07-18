@@ -1,10 +1,14 @@
 
 'use client';
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Check, X, Copy, QrCode } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import Image from "next/image";
+import { useToast } from "@/hooks/use-toast";
 
 const freePlanFeatures = [
     "Access to free library notes",
@@ -42,16 +46,29 @@ const plans = [
   },
 ];
 
-export default function PremiumPage() {
+type Plan = typeof plans[0];
 
-  const createMailToLink = (planName: string, price: string) => {
-    const subject = `Inquiry for ${planName} Plan`;
-    const body = `Hello, I am interested in purchasing the ${planName} plan for ${price}. Please provide me with the payment details.`;
-    const email = "a2gtrickacademy@gmail.com";
-    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+export default function PremiumPage() {
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const { toast } = useToast();
+  const upiId = "a2gtrickacademy@upi";
+
+  const handleChoosePlan = (plan: Plan) => {
+    setSelectedPlan(plan);
+    setShowPaymentDialog(true);
   };
-  
+
+  const handleCopyUpiId = () => {
+    navigator.clipboard.writeText(upiId);
+    toast({
+        title: "Copied!",
+        description: "UPI ID copied to clipboard.",
+    });
+  };
+
   return (
+    <>
     <div className="space-y-12">
       <div className="text-center max-w-3xl mx-auto">
         <h1 className="text-4xl font-headline font-bold">Unlock Your Potential</h1>
@@ -109,13 +126,50 @@ export default function PremiumPage() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button asChild className="w-full" variant={plan.popular ? 'default' : 'outline'}>
-                <a href={createMailToLink(plan.name, plan.price)}>Choose Plan</a>
+              <Button onClick={() => handleChoosePlan(plan)} className="w-full" variant={plan.popular ? 'default' : 'outline'}>
+                Choose Plan
               </Button>
             </CardFooter>
           </Card>
         ))}
       </div>
     </div>
+    <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-md">
+            <DialogHeader>
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+                    <QrCode className="h-6 w-6 text-primary" />
+                </div>
+                <DialogTitle className="text-center font-headline text-2xl">Complete Your Payment</DialogTitle>
+                <DialogDescription className="text-center text-base">
+                   You've selected the <strong>{selectedPlan?.name} Plan</strong> for <strong>{selectedPlan?.price}</strong>.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+                <p className="text-center text-muted-foreground text-sm">Scan the QR code below with any UPI app or copy the UPI ID.</p>
+                <div className="flex justify-center">
+                    <Image src="https://placehold.co/250x250.png" alt="UPI QR Code" width={250} height={250} data-ai-hint="qr code"/>
+                </div>
+                <Card>
+                    <CardContent className="p-3 flex items-center justify-between">
+                        <p className="text-sm font-mono text-muted-foreground">{upiId}</p>
+                        <Button variant="ghost" size="icon" onClick={handleCopyUpiId}>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="flex flex-col gap-2">
+                <Button size="lg" onClick={() => {
+                    setShowPaymentDialog(false);
+                    toast({title: "Payment Submitted!", description: "We will verify your payment and activate your plan shortly."});
+                }}>
+                  I Have Paid
+                </Button>
+                <Button size="lg" variant="ghost" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
+            </div>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
