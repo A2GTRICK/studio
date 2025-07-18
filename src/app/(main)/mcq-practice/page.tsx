@@ -364,15 +364,15 @@ export default function McqPracticePage() {
                        const isCorrect = option === q.correctAnswer;
                        const isUserChoice = answers[index] === option;
                       return (
-                      <FormItem key={optIndex} className={`flex items-center space-x-3 space-y-0 p-3 rounded-md border transition-colors ${ isSubmitted && isCorrect ? 'border-green-500 bg-green-500/10' : isSubmitted && isUserChoice && !isCorrect ? 'border-destructive bg-destructive/10' : 'border-border' }`}>
+                      <FormItem key={optIndex} className={`flex items-center space-x-3 space-y-0 p-3 rounded-md border transition-colors ${ isSubmitted && isCorrect ? 'border-green-500 bg-green-500/20' : isSubmitted && isUserChoice && !isCorrect ? 'border-destructive bg-destructive/20' : 'border-border' }`}>
                         <FormControl><RadioGroupItem value={option} id={`q${index}-opt${optIndex}`} /></FormControl>
                         <FormLabel htmlFor={`q${index}-opt${optIndex}`} className="font-normal flex-1 cursor-pointer">
                           {option}
                         </FormLabel>
                         {isSubmitted && (
                             <>
-                            {isCorrect && <Check className="h-5 w-5 text-green-500" />}
-                            {isUserChoice && !isCorrect && <X className="h-5 w-5 text-destructive" />}
+                            {isCorrect && <span role="img" aria-label="Correct">✅</span>}
+                            {isUserChoice && !isCorrect && <span role="img" aria-label="Incorrect">❌</span>}
                             </>
                         )}
                       </FormItem>
