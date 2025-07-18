@@ -268,9 +268,9 @@ export default function AiNotesPage() {
                       value={followUp}
                       onChange={(e) => setFollowUp(e.target.value)}
                       placeholder={isPremiumUser ? "Ask a follow-up question..." : "Upgrade to Premium to ask follow-up questions"}
-                      disabled={isFollowupLoading || !isPremiumUser}
+                      disabled={isFollowupLoading}
                   />
-                  <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim() || !isPremiumUser}>
+                  <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()}>
                       {isFollowupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
               </form>
