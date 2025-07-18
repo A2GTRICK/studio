@@ -18,6 +18,8 @@ export default function ServiceDetailPage() {
     notFound();
   }
 
+  const mailToLink = `mailto:support@a2g.com?subject=Quote%20Request%20for%20${encodeURIComponent(service.title)}`;
+
   return (
     <div className="max-w-4xl mx-auto">
       <Button asChild variant="ghost" className="mb-4">
@@ -27,9 +29,9 @@ export default function ServiceDetailPage() {
         </Link>
       </Button>
 
-      <Card>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-          <div className="p-6 md:p-8 flex flex-col">
+      <Card className="overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          <div className="order-2 md:order-1 p-6 md:p-8 flex flex-col">
             <div className="flex items-center gap-4 mb-4">
               <div className="p-3 rounded-lg bg-primary/10 text-primary">
                 <service.icon className="h-8 w-8" />
@@ -55,20 +57,22 @@ export default function ServiceDetailPage() {
                     <CardContent className="p-4">
                         <p className="font-bold text-lg">Starting from {service.price}</p>
                         <p className="text-sm text-muted-foreground mb-4">Pricing varies based on complexity and requirements.</p>
-                        <Button className="w-full">Get a Quote</Button>
+                        <Button asChild className="w-full">
+                          <a href={mailToLink}>Get a Quote</a>
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
 
           </div>
           
-          <div className="hidden md:block">
+          <div className="order-1 md:order-2 h-64 md:h-auto">
              <Image 
                 src={service.imageUrl}
                 alt={service.title}
                 width={600}
                 height={800}
-                className="object-cover w-full h-full rounded-r-lg"
+                className="object-cover w-full h-full"
                 data-ai-hint={service.dataAiHint}
               />
           </div>
