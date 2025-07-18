@@ -15,9 +15,6 @@ const GenerateNotesFromTopicInputSchema = z.object({
   year: z.string().describe('The year of study for which the notes are being generated.'),
   subject: z.string().describe('The subject for which the notes are being generated.'),
   topic: z.string().describe('The specific topic for which notes are to be generated.'),
-  detailLevel: z
-    .enum(['Standard', 'Detailed', 'Competitive Exam Focus'])
-    .describe('The desired level of detail for the generated notes.'),
 });
 export type GenerateNotesFromTopicInput = z.infer<typeof GenerateNotesFromTopicInputSchema>;
 
@@ -34,17 +31,16 @@ const prompt = ai.definePrompt({
   name: 'generateNotesFromTopicPrompt',
   input: {schema: GenerateNotesFromTopicInputSchema},
   output: {schema: GenerateNotesFromTopicOutputSchema},
-  prompt: `You are an expert pharmacy tutor, skilled at creating concise and informative notes for pharmacy students.
+  prompt: `You are an expert pharmacy tutor, renowned for creating detailed, accurate, and easy-to-understand study materials for pharmacy students. Your knowledge is based on standard, authoritative reference textbooks in the field of pharmacy.
 
-  Based on the following information, generate well-structured notes in Markdown format.
+  Generate a comprehensive set of notes on the given topic. The notes must be well-structured, using clear headings, subheadings, bullet points, and bold text for key terms. The output must be in Markdown format.
 
   Course: {{{course}}}
   Year: {{{year}}}
   Subject: {{{subject}}}
   Topic: {{{topic}}}
-  Level of Detail: {{{detailLevel}}}
 
-  Ensure the notes are accurate, easy to understand, and cover the key concepts of the topic.
+  Ensure the notes are thorough, accurate, and cover all critical concepts related to the topic, as a student would find in a reliable textbook.
   `,
 });
 

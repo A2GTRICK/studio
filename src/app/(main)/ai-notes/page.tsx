@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,17 +12,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Gem, Check, ArrowRight, Lock } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Gem, Check, ArrowRight, Lock, Sparkles, BookOpen } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Link from 'next/link';
+import { notesData } from '@/lib/notes-data';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
   year: z.string().min(1, 'Year is required'),
   subject: z.string().min(1, 'Subject is required'),
   topic: z.string().min(1, 'Topic is required'),
-  detailLevel: z.enum(['Standard', 'Detailed', 'Competitive Exam Focus']),
 });
 
 type NotesFormValues = z.infer<typeof notesFormSchema>;
@@ -45,15 +45,14 @@ export default function AiNotesPage() {
   const [generatedNotes, setGeneratedNotes] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [followUp, setFollowUp] = useState('');
+  const [lastTopic, setLastTopic] = useState<NotesFormValues | null>(null);
   
   // --- MOCK STATE ---
-  // In a real app, these would come from your auth/user state
+  // In a real app, this would come from your auth/user state
   const [isPremiumUser, setIsPremiumUser] = useState(false); 
-  const [freeGenerationsUsed, setFreeGenerationsUsed] = useState(0);
   // ------------------
 
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
-  const hasUsedFreeGeneration = freeGenerationsUsed >= 1;
 
   const form = useForm<NotesFormValues>({
     resolver: zodResolver(notesFormSchema),
@@ -62,28 +61,30 @@ export default function AiNotesPage() {
       year: '1st Year',
       subject: '',
       topic: '',
-      detailLevel: 'Standard',
     },
   });
+
+  const relatedNotes = useMemo(() => {
+    if (!lastTopic) return [];
+    return notesData
+        .filter(note => 
+            note.isPremium &&
+            (note.subject.toLowerCase().includes(lastTopic.subject.toLowerCase()) || 
+             lastTopic.subject.toLowerCase().includes(note.subject.toLowerCase()))
+        )
+        .slice(0, 2);
+  }, [lastTopic]);
   
-  const detailLevelValue = form.watch('detailLevel');
 
   async function onSubmit(data: NotesFormValues) {
-    if (!isPremiumUser && (hasUsedFreeGeneration || data.detailLevel !== 'Standard')) {
-        setShowPremiumDialog(true);
-        return;
-    }
-
     setIsLoading(true);
     setGeneratedNotes(null);
     setChatHistory([]);
+    setLastTopic(data);
     try {
       const result = await generateNotesFromTopic(data);
       setGeneratedNotes(result.notes);
       setChatHistory([{ role: 'assistant', content: result.notes }]);
-      if (!isPremiumUser) {
-          setFreeGenerationsUsed(prev => prev + 1);
-      }
     } catch (error) {
       console.error('Error generating notes:', error);
       setChatHistory([{ role: 'assistant', content: 'Sorry, an error occurred while generating notes. Please try again.' }]);
@@ -123,36 +124,22 @@ export default function AiNotesPage() {
     }
   }
 
-  const isFormDisabled = isLoading || (!isPremiumUser && hasUsedFreeGeneration);
-
   return (
     <>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
       <div className="lg:col-span-1">
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><BrainCircuit className="text-primary"/> AI Notes Generator</CardTitle>
-            <CardDescription>Get one free standard note generation, or upgrade for unlimited use and premium features.</CardDescription>
+            <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> AI Notes Generator</CardTitle>
+            <CardDescription>Generate high-quality, detailed notes on any topic for free to kickstart your studies.</CardDescription>
           </CardHeader>
           <CardContent>
-            {isFormDisabled && !isLoading ? (
-                <Card className="bg-primary/10 border-primary text-center p-6">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 mb-4">
-                        <Gem className="h-6 w-6 text-primary" />
-                    </div>
-                    <CardTitle className="font-headline text-xl">You've Used Your Free Generation!</CardTitle>
-                    <CardDescription className="mt-2 mb-4">Upgrade to Premium to unlock unlimited notes, detailed analysis, and the ability to ask follow-up questions.</CardDescription>
-                    <Button onClick={() => setShowPremiumDialog(true)}>
-                       Upgrade to Premium
-                    </Button>
-                </Card>
-            ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="course" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Course</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isFormDisabled}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="B.Pharm">B.Pharm</SelectItem>
@@ -164,7 +151,7 @@ export default function AiNotesPage() {
                 <FormField control={form.control} name="year" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Year</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isFormDisabled}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                        <FormControl><SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger></FormControl>
                        <SelectContent>
                         <SelectItem value="1st Year">1st Year</SelectItem>
@@ -178,48 +165,23 @@ export default function AiNotesPage() {
                 <FormField control={form.control} name="subject" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Subject</FormLabel>
-                    <FormControl><Input placeholder="e.g., Pharmaceutics" {...field} disabled={isFormDisabled}/></FormControl>
+                    <FormControl><Input placeholder="e.g., Pharmaceutics" {...field} disabled={isLoading}/></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}/>
                 <FormField control={form.control} name="topic" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Topic</FormLabel>
-                    <FormControl><Textarea placeholder="e.g., Introduction to Dosage Forms" {...field} disabled={isFormDisabled}/></FormControl>
+                    <FormControl><Textarea placeholder="e.g., Introduction to Dosage Forms" {...field} disabled={isLoading}/></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}/>
-                <FormField control={form.control} name="detailLevel" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Level of Detail</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isFormDisabled}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select Detail Level" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="Standard">Standard {isPremiumUser ? '' : '(1 Free Use)'}</SelectItem>
-                        <SelectItem value="Detailed">
-                            <div className="flex items-center gap-2">
-                                {!isPremiumUser && <Lock className="h-3 w-3 text-muted-foreground"/>}
-                                Detailed (Premium)
-                            </div>
-                        </SelectItem>
-                        <SelectItem value="Competitive Exam Focus">
-                            <div className="flex items-center gap-2">
-                                {!isPremiumUser && <Lock className="h-3 w-3 text-muted-foreground"/>}
-                                Competitive Exam Focus (Premium)
-                            </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {!isPremiumUser && detailLevelValue !== 'Standard' && <FormMessage>This is a premium feature.</FormMessage>}
-                  </FormItem>
-                )}/>
-                <Button type="submit" disabled={isFormDisabled} className="w-full">
+                <Button type="submit" disabled={isLoading} className="w-full">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isPremiumUser ? 'Generate Notes' : 'Generate Free Note'}
+                  Generate Notes
                 </Button>
               </form>
             </Form>
-            )}
           </CardContent>
         </Card>
       </div>
@@ -227,7 +189,7 @@ export default function AiNotesPage() {
         <Card className="h-full flex flex-col max-h-[80vh]">
           <CardHeader>
             <CardTitle className="font-headline">Generated Content</CardTitle>
-            <CardDescription>Your notes and conversation will appear here.</CardDescription>
+            <CardDescription>Your AI-generated notes and conversation will appear here.</CardDescription>
           </CardHeader>
           <CardContent className="flex-grow min-h-0">
              <ScrollArea className="h-[calc(80vh-250px)] w-full pr-4">
@@ -251,7 +213,7 @@ export default function AiNotesPage() {
                          <Bot className="h-5 w-5" />
                        </div>
                     )}
-                     <div className={`prose prose-sm dark:prose-invert max-w-none p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background'}`}>
+                     <div className={`prose prose-sm dark:prose-invert max-w-none p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background border'}`}>
                       <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.content.replace(/```/g, '') }} />
                     </div>
                      {msg.role === 'user' && (
@@ -261,6 +223,37 @@ export default function AiNotesPage() {
                     )}
                   </div>
                 ))}
+                 {relatedNotes.length > 0 && !isLoading && (
+                    <Card className="bg-primary/5 border-primary/20">
+                        <CardHeader>
+                            <CardTitle className="font-headline flex items-center gap-2 text-primary text-lg">
+                                <BookOpen/>
+                                Continue Your Learning
+                            </CardTitle>
+                            <CardDescription>
+                                Found these notes helpful? Unlock our detailed, expert-written premium notes on related topics.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {relatedNotes.map(note => (
+                                <Card key={note.id} className="bg-background">
+                                    <CardHeader>
+                                        <CardTitle className="text-base">{note.title}</CardTitle>
+                                        <CardDescription>{note.subject}</CardDescription>
+                                    </CardHeader>
+                                    <CardFooter>
+                                        <Button asChild className="w-full" onClick={() => setShowPremiumDialog(true)}>
+                                          <Link href="#">
+                                              <Lock className="mr-2 h-4 w-4"/>
+                                              Unlock Premium Note
+                                          </Link>
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
               </div>
              </ScrollArea>
           </CardContent>
