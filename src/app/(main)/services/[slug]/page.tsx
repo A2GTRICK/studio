@@ -18,8 +18,7 @@ export default function ServiceDetailPage() {
     notFound();
   }
   
-  // You can replace this email with your actual business email address.
-  const email = "sales@a2gsmartnotes.com";
+  const email = "a2gtrickacademy@gmail.com";
   const mailToLink = `mailto:${email}?subject=Quote%20Request%20for%20${encodeURIComponent(service.title)}`;
 
   return (
