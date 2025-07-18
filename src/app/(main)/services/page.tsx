@@ -140,8 +140,8 @@ export default function ServicesPage() {
                                 </form>
                             </Form>
                        </div>
-                       <div className="bg-background p-4 rounded-lg border min-h-[200px]">
-                           <ScrollArea className="h-64">
+                       <div className="bg-background p-4 rounded-lg border min-h-[300px]">
+                           <ScrollArea className="h-72 w-full pr-4">
                              {isLoading && (
                                 <div className="flex flex-col items-center justify-center h-full">
                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -159,7 +159,7 @@ export default function ServicesPage() {
                    </div>
                 </CardContent>
                 {aiResult && !isLoading && (
-                    <CardFooter className="flex-col items-start gap-4 bg-primary/10 p-4 rounded-b-lg">
+                    <CardFooter className="flex-col items-start gap-4 bg-primary/10 p-4 rounded-b-lg mt-4">
                         <h3 className="font-headline text-lg font-semibold text-primary">Need an expert to handle the rest?</h3>
                         <p className="text-primary/80 -mt-2">This outline is a great start. Our professional services can provide the detailed work, research, and writing to ensure your success. Check out our related services:</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 w-full">
