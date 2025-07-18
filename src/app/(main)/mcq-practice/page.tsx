@@ -92,6 +92,19 @@ export default function McqPracticePage() {
     return isCorrect ? 'border-green-500 bg-green-500/10' : 'border-destructive bg-destructive/10';
   }
 
+  const getScoreFeedback = () => {
+    if (scorePercentage >= 80) {
+      return { emoji: '🎉', message: 'Excellent Work!' };
+    }
+    if (scorePercentage >= 60) {
+      return { emoji: '👍', message: 'Good Job!' };
+    }
+    if (scorePercentage >= 40) {
+      return { emoji: '🤔', message: 'Keep Practicing!' };
+    }
+    return { emoji: '📚', message: 'Time to Hit the Books!' };
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       <div className="lg:col-span-1 lg:sticky top-20">
@@ -189,7 +202,9 @@ export default function McqPracticePage() {
                         <CardDescription>Here's how you performed.</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
-                        <p className="text-lg text-muted-foreground">You scored</p>
+                        <div className="text-6xl mb-2">{getScoreFeedback().emoji}</div>
+                        <p className="text-2xl font-bold">{getScoreFeedback().message}</p>
+                        <p className="text-lg text-muted-foreground mt-2">You scored</p>
                         <p className="text-6xl font-bold text-primary my-2">{score} / {questions.length}</p>
                         <Progress value={scorePercentage} className="h-3 my-4" />
                         <p className="font-semibold">{scorePercentage.toFixed(0)}% Correct</p>
@@ -242,9 +257,9 @@ export default function McqPracticePage() {
             ))}
 
             {!isSubmitted && (
-                <Button onClick={handleSubmitQuiz} className="w-full" size="lg" disabled={answers.some(a => a === null)}>
+                <Button onClick={handleSubmitQuiz} className="w-full" size="lg">
                    {answers.some(a => a === null) && <AlertCircle className="mr-2 h-4 w-4"/>}
-                   {answers.some(a => a === null) ? 'Please Answer All Questions' : 'Submit Quiz & View Results'}
+                   Submit Quiz & View Results
                 </Button>
             )}
 
