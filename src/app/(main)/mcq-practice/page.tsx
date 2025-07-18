@@ -86,6 +86,12 @@ const premiumFeatures = [
     "Ask follow-up questions to our AI Tutor",
 ];
 
+type PurchaseDetails = {
+    title: string;
+    price: string;
+    questions: number;
+}
+
 const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
     return feedbacks[Math.floor(Math.random() * feedbacks.length)];
 };
@@ -98,47 +104,57 @@ export default function McqPracticePage() {
   const [answers, setAnswers] = useState<AnswersState>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
-  const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [submissionCount, setSubmissionCount] = useState(0);
   const { toast } = useToast();
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentDetails, setPaymentDetails] = useState({ title: '', price: '' });
+  const [paymentDetails, setPaymentDetails] = useState<PurchaseDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const [dailyQuestionCount, setDailyQuestionCount] = useState(0);
-  const dailyLimit = 30;
+  const [dailyLimit, setDailyLimit] = useState(30);
 
   useEffect(() => {
     try {
         const storedData = localStorage.getItem('mcqUsage');
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         if (storedData) {
-            const { date, count } = JSON.parse(storedData);
+            const { date, count, limit } = JSON.parse(storedData);
             if (date === today) {
                 setDailyQuestionCount(count);
+                setDailyLimit(limit || 30);
             } else {
                 // It's a new day, reset the counter
-                localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0 }));
+                localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0, limit: 30 }));
                 setDailyQuestionCount(0);
+                setDailyLimit(30);
             }
         } else {
             // No data stored, initialize for today
-            localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0 }));
+            localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0, limit: 30 }));
         }
-    } catch (error) {
-        console.warn("Could not access localStorage for daily quiz limit.");
+    } catch (e) {
+        console.warn("Could not access localStorage for daily quiz limit. Usage tracking will be session-based.");
     }
   }, []);
 
-  const updateDailyCount = (newCount: number) => {
+  const updateDailyUsage = (newQuestions: number, newLimit?: number) => {
     const today = new Date().toISOString().split('T')[0];
+    const newTotalCount = dailyQuestionCount + newQuestions;
+    const newTotalLimit = newLimit || dailyLimit;
     try {
-        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: newCount }));
-        setDailyQuestionCount(newCount);
-    } catch (error) {
+        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: newTotalCount, limit: newTotalLimit }));
+        setDailyQuestionCount(newTotalCount);
+        if (newLimit) {
+            setDailyLimit(newLimit);
+        }
+    } catch (e) {
         console.warn("Could not access localStorage for daily quiz limit.");
+        setDailyQuestionCount(newTotalCount);
+        if (newLimit) {
+            setDailyLimit(newLimit);
+        }
     }
   };
 
@@ -163,7 +179,6 @@ export default function McqPracticePage() {
   const resetQuiz = (showToast = false) => {
     setIsSubmitted(false);
     setAiFeedback(null);
-    setFeedbackError(null);
     setAnswers(new Array(questions?.length || 0).fill(null));
     if (showToast) {
         toast({ title: "Quiz Reset!", description: "You can now attempt the quiz again." });
@@ -175,7 +190,6 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
-    setFeedbackError(null);
     setError(null);
     form.reset({
       examType: 'GPAT',
@@ -186,8 +200,8 @@ export default function McqPracticePage() {
       difficulty: 'Medium',
     });
   }
-
-  async function onSubmit(data: McqFormValues) {
+  
+  const handleQuizGeneration = async (data: McqFormValues) => {
     const questionsToGenerate = data.numberOfQuestions;
     if ((dailyQuestionCount + questionsToGenerate) > dailyLimit) {
         setShowPremiumDialog(true);
@@ -199,7 +213,6 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
-    setFeedbackError(null);
     setError(null);
     
     const requestData = {
@@ -215,9 +228,7 @@ export default function McqPracticePage() {
       }));
       setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
-      
-      updateDailyCount(dailyQuestionCount + result.length);
-
+      updateDailyUsage(result.length);
     } catch (e: any) {
       console.error('Error generating MCQs:', e);
       const errorMessage = e.message.includes('503') 
@@ -228,15 +239,9 @@ export default function McqPracticePage() {
       setIsLoading(false);
     }
   }
-
+  
   const practiceSameTopic = () => {
-    const currentValues = form.getValues();
-    const questionsToGenerate = currentValues.numberOfQuestions;
-    if ((dailyQuestionCount + questionsToGenerate) > dailyLimit) {
-        setShowPremiumDialog(true);
-        return;
-    }
-    onSubmit(currentValues);
+    handleQuizGeneration(form.getValues());
   }
   
   const handleAnswerChange = (questionIndex: number, value: string) => {
@@ -250,7 +255,6 @@ export default function McqPracticePage() {
     setIsSubmitted(true);
     setIsFeedbackLoading(true);
     setAiFeedback(null);
-    setFeedbackError(null);
 
     if (!questions) {
         setIsFeedbackLoading(false);
@@ -280,7 +284,7 @@ export default function McqPracticePage() {
         const errorMessage = error.message.includes('503')
           ? 'The AI model is currently overloaded, so feedback could not be generated. You can still review your answers.'
           : "Sorry, an error occurred while generating feedback. You can still review your answers and explanations.";
-        setFeedbackError(errorMessage);
+        setAiFeedback(`<div class="p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">${errorMessage}</div>`);
     } finally {
         setIsFeedbackLoading(false);
     }
@@ -334,8 +338,8 @@ export default function McqPracticePage() {
     });
   }
   
-  const handleBuyNow = (title: string, price: string) => {
-    setPaymentDetails({ title, price });
+  const handleBuyNow = (details: PurchaseDetails) => {
+    setPaymentDetails(details);
     setShowPremiumDialog(false);
     setShowPaymentDialog(true);
   };
@@ -358,7 +362,7 @@ export default function McqPracticePage() {
           </CardHeader>
           <CardContent>
             <FormProvider {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(handleQuizGeneration)} className="space-y-4">
                  <FormField control={form.control} name="examType" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Target Exam</FormLabel>
@@ -434,8 +438,8 @@ export default function McqPracticePage() {
                   </p>
                   <Progress value={usageProgress} className="h-2 mt-2" />
               </div>
-              <Button asChild variant="outline" className="w-full mt-2">
-                 <Link href="/premium"><Gem className="mr-2 h-4 w-4"/> Go Premium for Unlimited Practice</Link>
+              <Button asChild variant="outline" className="w-full mt-2" onClick={() => setShowPremiumDialog(true)}>
+                 <div><Gem className="mr-2 h-4 w-4"/> Upgrade for More</div>
               </Button>
           </CardFooter>
         </Card>
@@ -462,7 +466,7 @@ export default function McqPracticePage() {
               <div className="flex flex-col items-center justify-center h-96 text-center text-muted-foreground/50 border-2 border-dashed rounded-lg">
                   <BrainCircuit className="h-16 w-16 mb-4" />
                   <h3 className="text-xl font-semibold">Your Smart Quiz Awaits</h3>
-                  <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs for your exam preparation. You get {dailyLimit} free questions per day.</p>
+                  <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs. You get {dailyLimit} free questions per day.</p>
               </div>
           )}
 
@@ -576,15 +580,6 @@ export default function McqPracticePage() {
                                 {renderAiResult(aiFeedback)}
                             </div>
                         )}
-                        {!isFeedbackLoading && feedbackError && (
-                             <Alert variant="destructive">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle>Feedback Error</AlertTitle>
-                                <AlertDescription>
-                                    {feedbackError}
-                                </AlertDescription>
-                            </Alert>
-                        )}
                     </CardContent>
                     <CardFooter className="grid sm:grid-cols-2 gap-2">
                          <Button onClick={startNewQuiz} variant="outline" className="w-full">
@@ -610,7 +605,7 @@ export default function McqPracticePage() {
                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
                     <Gem className="h-6 w-6 text-primary" />
                 </div>
-                <DialogTitle className="text-center font-headline text-2xl">Daily Limit Reached</DialogTitle>
+                <DialogTitle className="text-center font-headline text-2xl">Get More Questions</DialogTitle>
                 <DialogDescription className="text-center text-base">
                    You've used all your {dailyLimit} free practice questions for today. Upgrade for more.
                 </DialogDescription>
@@ -628,15 +623,15 @@ export default function McqPracticePage() {
                 <p className="font-semibold text-center">Buy a Question Pack</p>
                 
                 <div className="grid grid-cols-1 gap-2">
-                    <Button size="lg" variant="outline" onClick={() => handleBuyNow('100 MCQs', '₹5')}>
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: '₹5', questions: 100})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 100 MCQs for ₹5
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow('200 MCQs', '₹10')}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: '₹10', questions: 200})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 200 MCQs for ₹10
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow('400 MCQs', '₹15')}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '400 MCQs', price: '₹15', questions: 400})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 400 MCQs for ₹15
                     </Button>
@@ -649,9 +644,21 @@ export default function McqPracticePage() {
     <PaymentDialog 
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
-        title={paymentDetails.title}
-        price={paymentDetails.price}
+        title={`Buy ${paymentDetails?.title}`}
+        price={paymentDetails?.price || ''}
+        onPaymentSuccess={() => {
+            if (paymentDetails) {
+                updateDailyUsage(0, dailyLimit + paymentDetails.questions);
+                toast({
+                    title: "Questions Added!",
+                    description: `You have successfully added ${paymentDetails.questions} more questions to your daily limit.`
+                })
+            }
+            setPaymentDetails(null);
+        }}
     />
     </>
   );
 }
+
+    
