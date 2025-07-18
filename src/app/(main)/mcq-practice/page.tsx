@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -96,15 +96,50 @@ export default function McqPracticePage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const [sessionQuestionCount, setSessionQuestionCount] = useState(0);
+  const [dailyQuestionCount, setDailyQuestionCount] = useState(0);
   const [submissionCount, setSubmissionCount] = useState(0);
   const { toast } = useToast();
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   
-  const freeTierLimit = 30;
-  const questionsLeft = Math.max(0, freeTierLimit - sessionQuestionCount);
-  const usageProgress = (sessionQuestionCount / freeTierLimit) * 100;
+  const dailyLimit = 200;
+
+  useEffect(() => {
+    try {
+        const storedData = localStorage.getItem('mcqUsage');
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        if (storedData) {
+            const { date, count } = JSON.parse(storedData);
+            if (date === today) {
+                setDailyQuestionCount(count);
+            } else {
+                // It's a new day, reset the counter
+                localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0 }));
+                setDailyQuestionCount(0);
+            }
+        } else {
+            // No data stored, initialize for today
+            localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0 }));
+        }
+    } catch (error) {
+        console.warn("Could not access localStorage for daily quiz limit.");
+    }
+  }, []);
+
+  const updateDailyCount = (newCount: number) => {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: newCount }));
+        setDailyQuestionCount(newCount);
+    } catch (error) {
+        console.warn("Could not access localStorage for daily quiz limit.");
+    }
+  };
+
+
+  const questionsLeft = Math.max(0, dailyLimit - dailyQuestionCount);
+  const usageProgress = (dailyQuestionCount / dailyLimit) * 100;
 
   const form = useForm<McqFormValues>({
     resolver: zodResolver(mcqFormSchema),
@@ -134,6 +169,7 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
+    setSessionQuestionCount(0);
     form.reset({
       examType: 'GPAT',
       subject: '',
@@ -146,7 +182,7 @@ export default function McqPracticePage() {
 
   async function onSubmit(data: McqFormValues) {
     const questionsToGenerate = data.numberOfQuestions;
-    if ((sessionQuestionCount + questionsToGenerate) > freeTierLimit) {
+    if ((dailyQuestionCount + questionsToGenerate) > dailyLimit) {
         setShowPremiumDialog(true);
         return;
     }
@@ -170,7 +206,15 @@ export default function McqPracticePage() {
       }));
       setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
-      setSessionQuestionCount(prev => prev + result.length);
+      
+      if (form.formState.isSubmitSuccessful) {
+        // Reset session count only for a completely new quiz generation
+        setSessionQuestionCount(result.length);
+      } else {
+        setSessionQuestionCount(prev => prev + result.length);
+      }
+
+      updateDailyCount(dailyQuestionCount + result.length);
 
     } catch (error) {
       console.error('Error generating MCQs:', error);
@@ -375,7 +419,7 @@ export default function McqPracticePage() {
           <CardFooter className="flex flex-col gap-2 pt-4 border-t">
               <div className="w-full text-center">
                   <p className="text-sm font-medium text-muted-foreground">
-                      {questionsLeft > 0 ? `${questionsLeft} free questions remaining in this session.` : "You've used all your free questions."}
+                      {questionsLeft > 0 ? `${questionsLeft} of ${dailyLimit} free questions left today.` : "You've used all your free questions for today."}
                   </p>
                   <Progress value={usageProgress} className="h-2 mt-2" />
               </div>
@@ -398,7 +442,7 @@ export default function McqPracticePage() {
               <div className="flex flex-col items-center justify-center h-96 text-center text-muted-foreground/50 border-2 border-dashed rounded-lg">
                   <BrainCircuit className="h-16 w-16 mb-4" />
                   <h3 className="text-xl font-semibold">Your Smart Quiz Awaits</h3>
-                  <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs for your exam preparation. You get 30 free questions per session.</p>
+                  <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs for your exam preparation. You get {dailyLimit} free questions per day.</p>
               </div>
           )}
 
@@ -531,9 +575,9 @@ export default function McqPracticePage() {
                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
                     <Gem className="h-6 w-6 text-primary" />
                 </div>
-                <DialogTitle className="text-center font-headline text-2xl">Free Limit Reached</DialogTitle>
+                <DialogTitle className="text-center font-headline text-2xl">Daily Limit Reached</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                   You've used all your free practice questions. Upgrade to premium for unlimited access.
+                   You've used all your free practice questions for today. Upgrade to premium for unlimited access.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -568,3 +612,5 @@ export default function McqPracticePage() {
     </>
   );
 }
+
+    
