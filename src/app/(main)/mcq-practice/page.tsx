@@ -103,7 +103,7 @@ export default function McqPracticePage() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   
   const freeTierLimit = 30;
-  const questionsLeft = freeTierLimit - sessionQuestionCount;
+  const questionsLeft = Math.max(0, freeTierLimit - sessionQuestionCount);
   const usageProgress = (sessionQuestionCount / freeTierLimit) * 100;
 
   const form = useForm<McqFormValues>({
@@ -144,28 +144,18 @@ export default function McqPracticePage() {
     });
   }
 
-  async function onSubmit(data: McqFormValues, isRegeneration = false) {
+  async function onSubmit(data: McqFormValues) {
     const questionsToGenerate = data.numberOfQuestions;
-    if (!isRegeneration && (sessionQuestionCount + questionsToGenerate > freeTierLimit)) {
+    if ((sessionQuestionCount + questionsToGenerate) > freeTierLimit) {
         setShowPremiumDialog(true);
         return;
     }
-    
-    if (isRegeneration && (sessionQuestionCount >= freeTierLimit)) {
-        setShowPremiumDialog(true);
-        return;
-    }
-
 
     setIsLoading(true);
     setQuestions(null);
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
-
-    if (!isRegeneration) {
-        // This is a new quiz generation, not a retry of the same topic
-    }
     
     const requestData = {
         ...data,
@@ -196,11 +186,7 @@ export default function McqPracticePage() {
 
   const practiceSameTopic = () => {
     const currentValues = form.getValues();
-     if (sessionQuestionCount >= freeTierLimit) {
-        setShowPremiumDialog(true);
-        return;
-    }
-    onSubmit(currentValues, true);
+    onSubmit(currentValues);
   }
   
   const handleAnswerChange = (questionIndex: number, value: string) => {
@@ -316,8 +302,8 @@ export default function McqPracticePage() {
             <CardDescription>Generate high-standard MCQs for competitive exams like GPAT, NIPER, and more.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-4">
+            <FormProvider {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                  <FormField control={form.control} name="examType" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Target Exam</FormLabel>
@@ -384,7 +370,7 @@ export default function McqPracticePage() {
                   Generate Quiz
                 </Button>
               </form>
-            </Form>
+            </FormProvider>
           </CardContent>
           <CardFooter className="flex flex-col gap-2 pt-4 border-t">
               <div className="w-full text-center">
