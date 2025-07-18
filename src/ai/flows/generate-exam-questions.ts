@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to generate exam questions based on user input.
@@ -40,7 +41,9 @@ const generateExamQuestionsPrompt = ai.definePrompt({
   output: {schema: GenerateExamQuestionsOutputSchema},
   prompt: `You are an expert pharmacy exam analyst. Your task is to generate a list of high-probability exam questions based on deep analysis of past papers and the current syllabus for the provided details. Your goal is to achieve over 95% accuracy in predicting questions that will appear in the upcoming exams.
 
-Generate a list of at least 5 potential exam questions based on the following information:
+FIRST, verify and confirm you have access to the latest, up-to-date syllabus for the provided university/exam board.
+
+THEN, generate a list of at least 5 potential exam questions based on the following information:
 
 Course: {{{course}}}
 Year: {{{year}}}
@@ -54,7 +57,7 @@ For each question, provide the following AI-generated metadata based on your ana
 
 CRITICAL INSTRUCTIONS:
 1.  **Format:** Structure the questions exactly like a real university exam paper (e.g., "Q1. a) Explain the mechanism of action of... (10 marks)").
-2.  **Relevance:** The questions must be perfectly aligned with the specified topic and syllabus.
+2.  **Relevance:** The questions must be perfectly aligned with the specified topic and the most current, verified syllabus.
 3.  **High-Probability:** Focus on generating questions that are most expected to appear based on recurring themes, important topics, and historical data.
 `,
 });
@@ -70,3 +73,4 @@ const generateExamQuestionsFlow = ai.defineFlow(
     return output!;
   }
 );
+
