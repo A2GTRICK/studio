@@ -13,7 +13,7 @@ import {z} from 'genkit';
 const GenerateMcqPracticeInputSchema = z.object({
   examType: z.string().describe('The target competitive exam (e.g., GPAT, NIPER, Pharmacist Exam).'),
   subject: z.string().describe('The subject within the exam syllabus.'),
-  topic: z.string().describe('The specific topic for the questions.'),
+  topic: z.string().optional().describe('The specific topic for the questions. If not provided, questions will be from the general subject.'),
   numberOfQuestions: z.number().int().min(1).max(20).describe('The number of questions to generate.'),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe('The difficulty level of the questions.'),
 });
@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   Generate a practice set of MCQs based on these parameters:
   - Target Exam: {{{examType}}}
   - Subject: {{{subject}}}
-  - Topic: {{{topic}}}
+  {{#if topic}}- Topic: {{{topic}}}{{/if}}
   - Number of Questions: {{{numberOfQuestions}}}
   - Difficulty Level: {{{difficulty}}}
 

@@ -24,7 +24,7 @@ const mcqFormSchema = z.object({
   examType: z.string().min(1, 'Exam type is required'),
   otherExamType: z.string().optional(),
   subject: z.string().min(1, 'Subject is required'),
-  topic: z.string().min(1, 'Topic is required'),
+  topic: z.string().optional(),
   numberOfQuestions: z.number().min(5).max(20),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
 }).refine(data => {
@@ -54,6 +54,29 @@ const shuffleArray = (array: any[]) => {
   }
   return array;
 }
+
+const scoreFeedbacks = {
+    bad: [
+        { emoji: '😒', message: "Tera toh kuch nahi ho sakta, beta.", taunt: "Padhai se zyada toh tu reels scroll karta hai!" },
+        { emoji: '🤦‍♂️', message: "Ye performance dekh ke... ", taunt: "Mera sir dukhne laga hai. Jaake thoda padh le!" },
+        { emoji: '🥺', message: "Itna galat kaise ho sakta hai?", taunt: "Lagta hai 'options' aur 'sapne' dono galat choose kar rahe ho." },
+    ],
+    medium: [
+        { emoji: '🤔', message: "Pushpa... I hate tears 😭", taunt: "Bas thoda aur practice... warna mains mein 'bye' ho jayega!" },
+        { emoji: '😅', message: "Thoda aur zor lagao!", taunt: "Abhi 'borderline' pe ho, 'topper' banne ke liye thoda aur grind karna padega." },
+        { emoji: '😬', message: "Not bad, but not great either.", taunt: "Currently in the 'Sharmaji ka beta can still beat you' zone." },
+    ],
+    good: [
+        { emoji: '🎉', message: "Mogambo khush hua!", taunt: "Mummy: Aaj kuch zyada hi intelligent lag raha hai tu!" },
+        { emoji: '😎', message: "Kya baat hai! Cha gaye guru!", taunt: "Keep it up! The only thing you're testing positive for is success." },
+        { emoji: '🥳', message: "Excellent! You nailed it!", taunt: "Your brain cells are clearly working overtime. Nice!" },
+    ]
+};
+
+const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
+    return feedbacks[Math.floor(Math.random() * feedbacks.length)];
+};
+
 
 export default function McqPracticePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -211,38 +234,24 @@ export default function McqPracticePage() {
     return isCorrect ? 'border-green-500 bg-green-500/10' : 'border-destructive bg-destructive/10';
   }
 
-  const getScoreFeedback = () => {
+  const scoreFeedback = useMemo(() => {
+    if (!isSubmitted) return null;
     if (scorePercentage > 70) {
-      return { 
-          emoji: '🎉', 
-          message: "Mogambo khush hua!",
-          taunt: "Mummy: Aaj kuch zyada hi intelligent lag raha hai tu!",
-          cardClass: "bg-green-500/10 border-green-500"
-        };
+      return { ...getRandomFeedback(scoreFeedbacks.good), cardClass: "bg-green-500/10 border-green-500" };
     }
     if (scorePercentage >= 40) {
-      return { 
-          emoji: '🤔', 
-          message: "Pushpa... I hate tears 😭",
-          taunt: "Bas thoda aur practice... warna mains mein 'bye' ho jayega!",
-          cardClass: "bg-yellow-500/10 border-yellow-500"
-        };
+      return { ...getRandomFeedback(scoreFeedbacks.medium), cardClass: "bg-yellow-500/10 border-yellow-500" };
     }
-    return { 
-        emoji: '😒', 
-        message: "Tera toh kuch nahi ho sakta, beta.",
-        taunt: "Padhai se zyada toh tu reels scroll karta hai!",
-        cardClass: "bg-destructive/10 border-destructive"
-    };
-  };
+    return { ...getRandomFeedback(scoreFeedbacks.bad), cardClass: "bg-destructive/10 border-destructive" };
+  }, [scorePercentage, isSubmitted]);
+
 
   const handleShare = () => {
-    if (!questions) return;
-    const feedback = getScoreFeedback();
+    if (!questions || !scoreFeedback) return;
     const currentFormValues = form.getValues();
     const examName = currentFormValues.examType === 'Other' ? currentFormValues.otherExamType : currentFormValues.examType;
 
-    const text = `I just scored ${score}/${questions.length} on my ${examName} practice quiz! ${feedback.message} - Check out A2G Smart Notes!`;
+    const text = `I just scored ${score}/${questions.length} on my ${examName} practice quiz! ${scoreFeedback.message} - Check out A2G Smart Notes!`;
     navigator.clipboard.writeText(text);
     toast({
         title: "Copied to Clipboard!",
@@ -301,7 +310,7 @@ export default function McqPracticePage() {
                   <FormItem><FormLabel>Subject</FormLabel><FormControl><Input placeholder="e.g., Pharmacology" {...field} disabled={isLoading}/></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="topic" render={({ field }) => (
-                  <FormItem><FormLabel>Topic</FormLabel><FormControl><Input placeholder="e.g., Diuretics" {...field} disabled={isLoading}/></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Topic (Optional)</FormLabel><FormControl><Input placeholder="e.g., Diuretics" {...field} disabled={isLoading}/></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="difficulty" render={({ field }) => (
                   <FormItem>
@@ -357,12 +366,12 @@ export default function McqPracticePage() {
 
           {questions && (
             <FormProvider {...form}>
-            {isSubmitted && (
-                <Card className={getScoreFeedback().cardClass}>
+            {isSubmitted && scoreFeedback && (
+                <Card className={scoreFeedback.cardClass}>
                     <CardHeader className="text-center">
-                        <div className="text-6xl mb-4">{getScoreFeedback().emoji}</div>
-                        <CardTitle className="font-headline text-3xl">{getScoreFeedback().message}</CardTitle>
-                        <CardDescription className="text-base">{getScoreFeedback().taunt}</CardDescription>
+                        <div className="text-6xl mb-4">{scoreFeedback.emoji}</div>
+                        <CardTitle className="font-headline text-3xl">{scoreFeedback.message}</CardTitle>
+                        <CardDescription className="text-base">{scoreFeedback.taunt}</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
                         <p className="text-lg text-muted-foreground mt-2">You scored</p>
