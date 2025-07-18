@@ -19,60 +19,61 @@ type Notification = {
   };
 };
 
+// Updated, more official-sounding notifications
 const notifications: Notification[] = [
   {
     id: 1,
-    title: "B.Pharm 2nd Sem Exam Dates Announced",
-    date: "2024-07-20",
-    content: "The university has officially announced the examination schedule for the 2nd semester of B.Pharm. Exams will commence from August 15th, 2024. Download the full schedule from the university website.",
+    title: "Official Schedule for B.Pharm 2nd Semester Theory Exams",
+    date: "2024-07-22",
+    content: "The examination authority has released the final schedule for the upcoming B.Pharm 2nd Semester theory examinations. The exams are set to commence on August 20, 2024. Students are advised to download the official timetable from the university's portal. Refer to Circular No. EXM/2024/112.",
     category: "University Update",
     target: { course: "B.Pharm", year: "1st Year" } 
   },
   {
     id: 2,
-    title: "GPAT 2025 Application Window is Open",
-    date: "2024-07-18",
-    content: "The application window for the Graduate Pharmacy Aptitude Test (GPAT) 2025 is now open. The last date to apply is August 30th, 2024.",
+    title: "GPAT 2025: Application Portal Now Live",
+    date: "2024-07-21",
+    content: "The National Testing Agency (NTA) has started accepting applications for the Graduate Pharmacy Aptitude Test (GPAT) 2025. The deadline for online submission is August 31, 2024. No extensions will be granted.",
     category: "Exam Alert",
     target: {}
   },
   {
     id: 3,
-    title: "New Notes Added: Physical Pharmaceutics",
-    date: "2024-07-15",
-    content: "We've just added a new set of premium notes for Physical Pharmaceutics (B.Pharm 2nd Year). Unlock them with your premium subscription today!",
+    title: "Content Update: New Premium Notes for Medicinal Chemistry",
+    date: "2024-07-20",
+    content: "Our academic team has just published a new set of comprehensive premium notes for Medicinal Chemistry III (B.Pharm 3rd Year), covering SAR of antibiotics and anticancer agents.",
     category: "Content Update",
-    target: { course: "B.Pharm", year: "2nd Year" }
+    target: { course: "B.Pharm", year: "3rd Year" }
   },
   {
     id: 4,
-    title: "D.Pharm 1st Year Sessional Exams",
-    date: "2024-07-14",
-    content: "Sessional exams for D.Pharm 1st year students are scheduled to begin next week. Please consult your department for the detailed timetable.",
+    title: "D.Pharm 1st Year: Sessional Examination Timetable",
+    date: "2024-07-19",
+    content: "This is to inform all D.Pharm 1st year students that the sessional examinations will be conducted from August 5th to August 10th. Please contact your respective department heads for the detailed internal schedule.",
     category: "University Update",
     target: { course: "D.Pharm", year: "1st Year" }
   },
   {
     id: 5,
-    title: "Maintenance Alert: AI Tools",
-    date: "2024-07-12",
-    content: "Our AI generation tools will be temporarily unavailable this Sunday from 2 AM to 4 AM for scheduled maintenance to improve performance.",
+    title: "Scheduled Maintenance for AI Services",
+    date: "2024-07-18",
+    content: "Please be advised that our AI-powered tools (Notes & Exam Question Generators) will undergo scheduled maintenance on Sunday, July 28th, from 2:00 AM to 4:00 AM IST to enhance performance and accuracy.",
     category: "General",
     target: {}
   },
   {
     id: 6,
-    title: "Pharmacist Exam (State Govt) New Vacancies",
-    date: "2024-07-10",
-    content: "The state government has announced 250 new vacancies for the role of Pharmacist. The application portal opens on July 25th.",
+    title: "Alert: State Govt. Pharmacist Recruitment (250 Posts)",
+    date: "2024-07-17",
+    content: "The State Health Department has issued a notification for the recruitment of 250 Pharmacists. The official application portal will be open from July 25th to August 25th, 2024. Eligibility criteria and syllabus are available on the department's official website.",
     category: "Exam Alert",
     target: {}
   },
   {
     id: 7,
-    title: "Welcome to A2G Smart Notes!",
-    date: "2024-07-01",
-    content: "Welcome to the platform! Explore our notes library, try our AI tools, and don't hesitate to reach out for academic services.",
+    title: "Platform Update: Enhanced User Dashboard",
+    date: "2024-07-15",
+    content: "We have rolled out a new and improved user dashboard. Track your progress, get AI-powered suggestions, and view your performance analytics all in one place. We welcome your feedback on this new feature.",
     category: "General",
     target: {}
   }
@@ -167,7 +168,7 @@ export default function NotificationsPage() {
                 <CardContent className="p-10 flex flex-col items-center justify-center text-center">
                     <Bell className="h-20 w-20 text-muted-foreground/30 mb-4" />
                     <h3 className="text-xl font-semibold">No Notifications Found</h3>
-                    <p className="text-muted-foreground mt-2">Try adjusting your filters to find what you're looking for.</p>
+                    <p className="text-muted-foreground mt-2">No relevant announcements match your current filter settings.</p>
                 </CardContent>
             </Card>
         )}
