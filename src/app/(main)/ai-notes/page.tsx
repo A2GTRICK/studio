@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Gem, Check, ArrowRight } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Gem, Check, ArrowRight, Lock } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Link from 'next/link';
@@ -45,8 +45,15 @@ export default function AiNotesPage() {
   const [generatedNotes, setGeneratedNotes] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [followUp, setFollowUp] = useState('');
-  const [isPremiumUser, setIsPremiumUser] = useState(false); // Mock state
+  
+  // --- MOCK STATE ---
+  // In a real app, these would come from your auth/user state
+  const [isPremiumUser, setIsPremiumUser] = useState(false); 
+  const [freeGenerationsUsed, setFreeGenerationsUsed] = useState(0);
+  // ------------------
+
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const hasUsedFreeGeneration = freeGenerationsUsed >= 1;
 
   const form = useForm<NotesFormValues>({
     resolver: zodResolver(notesFormSchema),
@@ -58,9 +65,11 @@ export default function AiNotesPage() {
       detailLevel: 'Standard',
     },
   });
+  
+  const detailLevelValue = form.watch('detailLevel');
 
   async function onSubmit(data: NotesFormValues) {
-    if (!isPremiumUser) {
+    if (!isPremiumUser && (hasUsedFreeGeneration || data.detailLevel !== 'Standard')) {
         setShowPremiumDialog(true);
         return;
     }
@@ -72,6 +81,9 @@ export default function AiNotesPage() {
       const result = await generateNotesFromTopic(data);
       setGeneratedNotes(result.notes);
       setChatHistory([{ role: 'assistant', content: result.notes }]);
+      if (!isPremiumUser) {
+          setFreeGenerationsUsed(prev => prev + 1);
+      }
     } catch (error) {
       console.error('Error generating notes:', error);
       setChatHistory([{ role: 'assistant', content: 'Sorry, an error occurred while generating notes. Please try again.' }]);
@@ -111,6 +123,8 @@ export default function AiNotesPage() {
     }
   }
 
+  const isFormDisabled = isLoading || (!isPremiumUser && hasUsedFreeGeneration);
+
   return (
     <>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
@@ -118,15 +132,27 @@ export default function AiNotesPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><BrainCircuit className="text-primary"/> AI Notes Generator</CardTitle>
-            <CardDescription>Create detailed notes on any topic. This is a premium feature.</CardDescription>
+            <CardDescription>Get one free standard note generation, or upgrade for unlimited use and premium features.</CardDescription>
           </CardHeader>
           <CardContent>
+            {isFormDisabled && !isLoading ? (
+                <Card className="bg-primary/10 border-primary text-center p-6">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 mb-4">
+                        <Gem className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="font-headline text-xl">You've Used Your Free Generation!</CardTitle>
+                    <CardDescription className="mt-2 mb-4">Upgrade to Premium to unlock unlimited notes, detailed analysis, and the ability to ask follow-up questions.</CardDescription>
+                    <Button onClick={() => setShowPremiumDialog(true)}>
+                       Upgrade to Premium
+                    </Button>
+                </Card>
+            ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="course" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Course</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isFormDisabled}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="B.Pharm">B.Pharm</SelectItem>
@@ -138,7 +164,7 @@ export default function AiNotesPage() {
                 <FormField control={form.control} name="year" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Year</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isFormDisabled}>
                        <FormControl><SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger></FormControl>
                        <SelectContent>
                         <SelectItem value="1st Year">1st Year</SelectItem>
@@ -152,36 +178,48 @@ export default function AiNotesPage() {
                 <FormField control={form.control} name="subject" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Subject</FormLabel>
-                    <FormControl><Input placeholder="e.g., Pharmaceutics" {...field} /></FormControl>
+                    <FormControl><Input placeholder="e.g., Pharmaceutics" {...field} disabled={isFormDisabled}/></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}/>
                 <FormField control={form.control} name="topic" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Topic</FormLabel>
-                    <FormControl><Textarea placeholder="e.g., Introduction to Dosage Forms" {...field} /></FormControl>
+                    <FormControl><Textarea placeholder="e.g., Introduction to Dosage Forms" {...field} disabled={isFormDisabled}/></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}/>
                 <FormField control={form.control} name="detailLevel" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Level of Detail</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isFormDisabled}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select Detail Level" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="Standard">Standard</SelectItem>
-                        <SelectItem value="Detailed">Detailed</SelectItem>
-                        <SelectItem value="Competitive Exam Focus">Competitive Exam Focus</SelectItem>
+                        <SelectItem value="Standard">Standard {isPremiumUser ? '' : '(1 Free Use)'}</SelectItem>
+                        <SelectItem value="Detailed">
+                            <div className="flex items-center gap-2">
+                                {!isPremiumUser && <Lock className="h-3 w-3 text-muted-foreground"/>}
+                                Detailed (Premium)
+                            </div>
+                        </SelectItem>
+                        <SelectItem value="Competitive Exam Focus">
+                            <div className="flex items-center gap-2">
+                                {!isPremiumUser && <Lock className="h-3 w-3 text-muted-foreground"/>}
+                                Competitive Exam Focus (Premium)
+                            </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+                    {!isPremiumUser && detailLevelValue !== 'Standard' && <FormMessage>This is a premium feature.</FormMessage>}
                   </FormItem>
                 )}/>
-                <Button type="submit" disabled={isLoading} className="w-full">
+                <Button type="submit" disabled={isFormDisabled} className="w-full">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isPremiumUser ? 'Generate Notes' : <> <Gem className="mr-2 h-4 w-4"/> Generate Notes (Premium)</>}
+                  {isPremiumUser ? 'Generate Notes' : 'Generate Free Note'}
                 </Button>
               </form>
             </Form>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -209,15 +247,15 @@ export default function AiNotesPage() {
                 {chatHistory.map((msg, index) => (
                   <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                     {msg.role === 'assistant' && (
-                       <div className="p-2 rounded-full bg-primary text-primary-foreground self-start">
+                       <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
                          <Bot className="h-5 w-5" />
                        </div>
                     )}
-                     <div className={`prose prose-sm dark:prose-invert max-w-none p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-card'}`}>
+                     <div className={`prose prose-sm dark:prose-invert max-w-none p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background'}`}>
                       <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.content.replace(/```/g, '') }} />
                     </div>
                      {msg.role === 'user' && (
-                       <div className="p-2 rounded-full bg-muted self-start">
+                       <div className="p-2 rounded-full bg-muted self-start shrink-0">
                           <User className="h-5 w-5" />
                        </div>
                     )}
