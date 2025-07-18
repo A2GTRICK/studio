@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2 } from 'lucide-react';
+import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -53,6 +53,13 @@ export default function McqPracticePage() {
     if (showToast) {
         toast({ title: "Quiz Reset!", description: "You can now attempt the quiz again." });
     }
+  }
+
+  const practiceMore = () => {
+    setQuestions(null);
+    setIsSubmitted(false);
+    setAnswers([]);
+    form.reset();
   }
 
   async function onSubmit(data: McqFormValues) {
@@ -132,8 +139,9 @@ export default function McqPracticePage() {
   };
 
   const handleShare = () => {
+    if (!questions) return;
     const feedback = getScoreFeedback();
-    const text = `I just scored ${score}/${questions?.length} on my ${form.getValues('examType')} practice quiz! ${feedback.message} - Check out A2G Smart Notes!`;
+    const text = `I just scored ${score}/${questions.length} on my ${form.getValues('examType')} practice quiz! ${feedback.message} - Check out A2G Smart Notes!`;
     navigator.clipboard.writeText(text);
     toast({
         title: "Copied to Clipboard!",
@@ -245,14 +253,18 @@ export default function McqPracticePage() {
                         <Progress value={scorePercentage} className="h-3 my-4 bg-background/50" />
                         <p className="font-semibold">{scorePercentage.toFixed(0)}% Correct</p>
                     </CardContent>
-                    <CardFooter className="flex-col sm:flex-row gap-2">
+                    <CardFooter className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <Button onClick={() => resetQuiz(true)} variant="outline" className="w-full">
                             <RefreshCcw className="mr-2 h-4 w-4"/>
                             Retry Quiz
                         </Button>
-                         <Button onClick={handleShare} className="w-full">
+                         <Button onClick={handleShare} variant="outline" className="w-full">
                             <Share2 className="mr-2 h-4 w-4"/>
                             Share Score
+                        </Button>
+                        <Button onClick={practiceMore} className="w-full sm:col-span-1">
+                            <PlusCircle className="mr-2 h-4 w-4"/>
+                            Practice More
                         </Button>
                     </CardFooter>
                 </Card>
@@ -269,30 +281,33 @@ export default function McqPracticePage() {
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={answers[index] || ''} onValueChange={(val) => handleAnswerChange(index, val)} disabled={isSubmitted}>
-                    {q.options.map((option, optIndex) => (
-                      <FormItem key={optIndex} className={`flex items-center space-x-3 space-y-0 p-3 rounded-md border ${ isSubmitted && (option === q.correctAnswer ? 'border-green-500 bg-green-500/10' : (answers[index] === option ? 'border-destructive bg-destructive/10' : '')) }`}>
+                    {q.options.map((option, optIndex) => {
+                       const isCorrect = option === q.correctAnswer;
+                       const isUserChoice = answers[index] === option;
+                      return (
+                      <FormItem key={optIndex} className={`flex items-center space-x-3 space-y-0 p-3 rounded-md border transition-colors ${ isSubmitted && isCorrect ? 'border-green-500 bg-green-500/10' : isSubmitted && isUserChoice && !isCorrect ? 'border-destructive bg-destructive/10' : 'border-border' }`}>
                         <FormControl><RadioGroupItem value={option} id={`q${index}-opt${optIndex}`} /></FormControl>
                         <FormLabel htmlFor={`q${index}-opt${optIndex}`} className="font-normal flex-1 cursor-pointer">
                           {option}
                         </FormLabel>
                         {isSubmitted && (
                             <>
-                            {option === q.correctAnswer && <Check className="h-5 w-5 text-green-500" />}
-                            {answers[index] === option && option !== q.correctAnswer && <X className="h-5 w-5 text-destructive" />}
+                            {isCorrect && <Check className="h-5 w-5 text-green-500" />}
+                            {isUserChoice && !isCorrect && <X className="h-5 w-5 text-destructive" />}
                             </>
                         )}
                       </FormItem>
-                    ))}
+                    )})}
                   </RadioGroup>
                 </CardContent>
                 {isSubmitted && (
                     <CardFooter>
                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value="explanation">
-                            <AccordionTrigger>
-                               <span className="flex items-center gap-2"><BookCheck className="h-4 w-4"/> View Explanation</span>
+                          <AccordionItem value="explanation" className="border-t border-b-0">
+                            <AccordionTrigger className="hover:no-underline">
+                               <span className="flex items-center gap-2 text-primary hover:text-primary/80"><BookCheck className="h-4 w-4"/> View Explanation</span>
                             </AccordionTrigger>
-                            <AccordionContent className="prose prose-sm dark:prose-invert max-w-none">
+                            <AccordionContent className="prose prose-sm dark:prose-invert max-w-none pt-2 text-muted-foreground">
                                 <p>{q.explanation}</p>
                             </AccordionContent>
                           </AccordionItem>
