@@ -6,7 +6,7 @@ import { notesData, type Note } from '@/lib/notes-data';
 import { notFound, useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileText, Gem, AlertTriangle, ShoppingCart, ArrowRight, Check } from 'lucide-react';
+import { ArrowLeft, FileText, Gem, AlertTriangle, ShoppingCart, ArrowRight, Check, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PaymentDialog } from '@/components/payment-dialog';
