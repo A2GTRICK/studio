@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useMemo } from 'react';
-import { useForm, FormProvider } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generateMcqPractice, type GenerateMcqPracticeOutput } from '@/ai/flows/generate-mcq-practice';
@@ -134,7 +134,6 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
-    setSessionQuestionCount(0);
     form.reset({
       examType: 'GPAT',
       subject: '',
@@ -147,10 +146,16 @@ export default function McqPracticePage() {
 
   async function onSubmit(data: McqFormValues, isRegeneration = false) {
     const questionsToGenerate = data.numberOfQuestions;
-    if (sessionQuestionCount + questionsToGenerate > freeTierLimit) {
+    if (!isRegeneration && (sessionQuestionCount + questionsToGenerate > freeTierLimit)) {
         setShowPremiumDialog(true);
         return;
     }
+    
+    if (isRegeneration && (sessionQuestionCount >= freeTierLimit)) {
+        setShowPremiumDialog(true);
+        return;
+    }
+
 
     setIsLoading(true);
     setQuestions(null);
@@ -191,7 +196,7 @@ export default function McqPracticePage() {
 
   const practiceSameTopic = () => {
     const currentValues = form.getValues();
-     if (sessionQuestionCount + currentValues.numberOfQuestions > freeTierLimit) {
+     if (sessionQuestionCount >= freeTierLimit) {
         setShowPremiumDialog(true);
         return;
     }
@@ -577,5 +582,3 @@ export default function McqPracticePage() {
     </>
   );
 }
-
-    
