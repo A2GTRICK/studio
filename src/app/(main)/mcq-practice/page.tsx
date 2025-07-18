@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 
 const mcqFormSchema = z.object({
@@ -105,6 +106,7 @@ export default function McqPracticePage() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState({ title: '', price: '' });
+  const [error, setError] = useState<string | null>(null);
   
   const dailyLimit = 30;
 
@@ -173,6 +175,7 @@ export default function McqPracticePage() {
     setAnswers([]);
     setAiFeedback(null);
     setSessionQuestionCount(0);
+    setError(null);
     form.reset({
       examType: 'GPAT',
       subject: '',
@@ -195,6 +198,7 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
+    setError(null);
     
     const requestData = {
         ...data,
@@ -214,13 +218,12 @@ export default function McqPracticePage() {
 
       updateDailyCount(dailyQuestionCount + result.length);
 
-    } catch (error) {
-      console.error('Error generating MCQs:', error);
-      toast({
-          title: "Error",
-          description: "Failed to generate the quiz. Please try again.",
-          variant: "destructive",
-      });
+    } catch (e: any) {
+      console.error('Error generating MCQs:', e);
+      const errorMessage = e.message.includes('503') 
+        ? 'The AI model is currently overloaded. Please try again in a few moments.'
+        : 'Failed to generate the quiz. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -228,7 +231,7 @@ export default function McqPracticePage() {
 
   const practiceSameTopic = () => {
     const currentValues = form.getValues();
-     const questionsToGenerate = currentValues.numberOfQuestions;
+    const questionsToGenerate = currentValues.numberOfQuestions;
     if ((dailyQuestionCount + questionsToGenerate) > dailyLimit) {
         setShowPremiumDialog(true);
         return;
@@ -271,9 +274,12 @@ export default function McqPracticePage() {
         });
 
         setAiFeedback(feedbackResult.feedback);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error generating feedback:", error);
-        setAiFeedback("Sorry, an error occurred while generating feedback. You can still review your answers and explanations.");
+        const errorMessage = error.message.includes('503')
+          ? 'The AI model is currently overloaded, so feedback could not be generated. You can still review your answers.'
+          : "Sorry, an error occurred while generating feedback. You can still review your answers and explanations.";
+        setAiFeedback(errorMessage);
     } finally {
         setIsFeedbackLoading(false);
     }
@@ -442,7 +448,16 @@ export default function McqPracticePage() {
                   <p className="mt-4 text-muted-foreground">Generating your custom quiz... please wait.</p>
               </div>
           )}
-          {!questions && !isLoading && (
+          {error && !isLoading && (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error Generating Quiz</AlertTitle>
+                <AlertDescription>
+                    {error}
+                </AlertDescription>
+            </Alert>
+          )}
+          {!questions && !isLoading && !error && (
               <div className="flex flex-col items-center justify-center h-96 text-center text-muted-foreground/50 border-2 border-dashed rounded-lg">
                   <BrainCircuit className="h-16 w-16 mb-4" />
                   <h3 className="text-xl font-semibold">Your Smart Quiz Awaits</h3>

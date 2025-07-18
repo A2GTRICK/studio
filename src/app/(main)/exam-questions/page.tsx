@@ -9,12 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { NotebookPen, Loader2, Gem, ArrowRight, Check, Download, ShoppingCart, Eye } from 'lucide-react';
+import { NotebookPen, Loader2, Gem, ArrowRight, Check, Download, ShoppingCart, Eye, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 const examQuestionsFormSchema = z.object({
@@ -38,6 +39,7 @@ const premiumFeatures = [
 export default function ExamQuestionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [questions, setQuestions] = useState<GenerateExamQuestionsOutput | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState<PremiumAction>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
@@ -54,11 +56,16 @@ export default function ExamQuestionsPage() {
   async function onSubmit(data: ExamQuestionsFormValues) {
     setIsLoading(true);
     setQuestions(null);
+    setError(null);
     try {
       const result = await generateExamQuestions(data);
       setQuestions(result);
-    } catch (error) {
-      console.error('Error generating exam questions:', error);
+    } catch (e: any) {
+      console.error('Error generating exam questions:', e);
+      const errorMessage = e.message.includes('503') 
+        ? 'The AI model is currently overloaded. Please try again in a few moments.'
+        : 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +153,14 @@ export default function ExamQuestionsPage() {
                       <p className="mt-4 text-muted-foreground">Analyzing patterns and generating questions...</p>
                   </div>
               )}
-              {!questions && !isLoading && (
+              {error && (
+                 <Alert variant="destructive" className="my-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                 </Alert>
+              )}
+              {!questions && !isLoading && !error && (
                   <div className="flex flex-col items-center justify-center h-full text-center">
                       <NotebookPen className="h-16 w-16 text-muted-foreground/30" />
                       <p className="mt-4 text-muted-foreground">Your generated questions will appear here.</p>

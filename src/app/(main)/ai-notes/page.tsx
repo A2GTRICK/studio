@@ -70,9 +70,12 @@ export default function AiNotesPage() {
       const assistantMessage = { role: 'assistant', content: result.notes };
       setGeneratedNotes(result.notes);
       setChatHistory([assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating notes:', error);
-      setChatHistory([{ role: 'assistant', content: 'Sorry, an error occurred while generating notes. Please try again.' }]);
+       const errorMessage = error.message.includes('503') 
+        ? 'The AI model is currently overloaded. Please try again in a few moments.'
+        : 'Sorry, an error occurred while generating notes. Please try again.';
+      setChatHistory([{ role: 'assistant', content: errorMessage }]);
     } finally {
       setIsLoading(false);
     }
@@ -95,9 +98,12 @@ export default function AiNotesPage() {
       });
       const newAnswer: ChatMessage = { role: 'assistant', content: result.answer };
       setChatHistory(prev => [...prev, newAnswer]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error with follow-up:', error);
-      const errorAnswer: ChatMessage = { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' };
+      const errorMessage = error.message.includes('503')
+        ? 'The AI model is currently overloaded. Please try again in a few moments.'
+        : 'Sorry, I encountered an error. Please try again.';
+      const errorAnswer: ChatMessage = { role: 'assistant', content: errorMessage };
       setChatHistory(prev => [...prev, errorAnswer]);
     } finally {
       setIsFollowupLoading(false);
