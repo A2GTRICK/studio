@@ -111,12 +111,12 @@ export default function McqPracticePage() {
     }
   }
 
-  const practiceAnotherTopic = () => {
+  const startNewQuiz = () => {
     setQuestions(null);
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
-    setSessionQuestionCount(0); // Reset for new topic
+    setSessionQuestionCount(0);
     form.reset({
       examType: 'GPAT',
       subject: '',
@@ -134,7 +134,6 @@ export default function McqPracticePage() {
     setAnswers([]);
     setAiFeedback(null);
 
-    // If it's a new topic, reset the session count
     if (!isRegeneration) {
         setSessionQuestionCount(0);
     }
@@ -164,7 +163,7 @@ export default function McqPracticePage() {
     }
   }
 
-  const regenerateQuiz = () => {
+  const practiceSameTopic = () => {
     const currentValues = form.getValues();
     if (questions) {
       setSessionQuestionCount(prev => prev + questions.length);
@@ -470,13 +469,13 @@ export default function McqPracticePage() {
                         )}
                     </CardContent>
                     <CardFooter className="grid sm:grid-cols-2 gap-2">
-                         <Button onClick={regenerateQuiz} variant="outline" className="w-full">
-                            <RefreshCw className="mr-2 h-4 w-4"/>
-                            Regenerate Quiz
-                        </Button>
-                         <Button onClick={practiceAnotherTopic} className="w-full">
+                         <Button onClick={startNewQuiz} variant="outline" className="w-full">
                             <PlusCircle className="mr-2 h-4 w-4"/>
-                            Practice Another Topic
+                            Start New Quiz
+                        </Button>
+                         <Button onClick={practiceSameTopic} className="w-full">
+                            <RefreshCw className="mr-2 h-4 w-4"/>
+                            Practice Same Topic
                         </Button>
                     </CardFooter>
                 </Card>
