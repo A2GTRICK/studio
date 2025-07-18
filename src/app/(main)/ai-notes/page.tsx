@@ -168,7 +168,7 @@ export default function AiNotesPage() {
             </Form>
           </CardContent>
         </Card>
-         {relatedNotes.length > 0 && (
+         {generatedNotes && relatedNotes.length > 0 && (
             <Card className="mt-8 bg-primary/5 border-primary/20">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2 text-primary text-lg">
