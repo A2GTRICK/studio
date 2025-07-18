@@ -86,6 +86,7 @@ export default function McqPracticePage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const [sessionQuestionCount, setSessionQuestionCount] = useState(0);
+  const [submissionCount, setSubmissionCount] = useState(0);
   const { toast } = useToast();
 
   const form = useForm<McqFormValues>({
@@ -178,6 +179,7 @@ export default function McqPracticePage() {
   };
 
   const handleSubmitQuiz = async () => {
+    setSubmissionCount(prev => prev + 1);
     setIsSubmitted(true);
     setIsFeedbackLoading(true);
     setAiFeedback(null);
@@ -242,7 +244,8 @@ export default function McqPracticePage() {
       return { ...getRandomFeedback(scoreFeedbacks.medium), cardClass: "bg-yellow-500/10 border-yellow-500" };
     }
     return { ...getRandomFeedback(scoreFeedbacks.bad), cardClass: "bg-destructive/10 border-destructive" };
-  }, [scorePercentage, isSubmitted]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scorePercentage, isSubmitted, submissionCount]);
 
 
   const handleShare = () => {
