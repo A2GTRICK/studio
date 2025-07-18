@@ -1,7 +1,7 @@
 
 'use client';
-import { useState } from 'react';
-import { useForm, Controller, FormProvider } from 'react-hook-form';
+import { useState, useMemo } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generateMcqPractice, type GenerateMcqPracticeOutput } from '@/ai/flows/generate-mcq-practice';
@@ -29,12 +29,26 @@ const mcqFormSchema = z.object({
 });
 
 type McqFormValues = z.infer<typeof mcqFormSchema>;
+
+type ShuffledQuestion = GenerateMcqPracticeOutput[0] & { shuffledOptions: string[] };
+
 type AnswersState = (string | null)[];
+
+// Helper function to shuffle an array
+const shuffleArray = (array: any[]) => {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
 
 export default function McqPracticePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
-  const [questions, setQuestions] = useState<GenerateMcqPracticeOutput | null>(null);
+  const [questions, setQuestions] = useState<ShuffledQuestion[] | null>(null);
   const [answers, setAnswers] = useState<AnswersState>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
@@ -82,7 +96,11 @@ export default function McqPracticePage() {
     setAiFeedback(null);
     try {
       const result = await generateMcqPractice(data);
-      setQuestions(result);
+      const shuffledResult = result.map(q => ({
+        ...q,
+        shuffledOptions: shuffleArray([...q.options]),
+      }));
+      setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
     } catch (error) {
       console.error('Error generating MCQs:', error);
@@ -331,7 +349,7 @@ export default function McqPracticePage() {
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={answers[index] || ''} onValueChange={(val) => handleAnswerChange(index, val)} disabled={isSubmitted}>
-                    {q.options.map((option, optIndex) => {
+                    {q.shuffledOptions.map((option, optIndex) => {
                        const isCorrect = option === q.correctAnswer;
                        const isUserChoice = answers[index] === option;
                       return (
