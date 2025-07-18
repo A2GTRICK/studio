@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, Gem, Lock, ArrowRight, Check } from "lucide-react";
+import { Search, BookOpen, Gem, Lock, ArrowRight, Check, ShoppingCart } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { notesData } from '@/lib/notes-data';
+import { notesData, type Note } from '@/lib/notes-data';
+import { PaymentDialog } from '@/components/payment-dialog';
 
 
 const premiumFeatures = [
@@ -20,7 +21,7 @@ const premiumFeatures = [
     "In-depth competitive exam preparation",
 ];
 
-const NoteCard = ({ note, onPremiumClick }: { note: typeof notesData[0]; onPremiumClick: () => void; }) => {
+const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
     const { id, title, subject, isPremium, preview } = note;
     
     return (
@@ -43,7 +44,7 @@ const NoteCard = ({ note, onPremiumClick }: { note: typeof notesData[0]; onPremi
         </CardContent>
         <CardFooter>
             {isPremium ? (
-                 <Button onClick={onPremiumClick} className="w-full" variant="outline">
+                 <Button onClick={onUnlockClick} className="w-full" variant="outline">
                     <Lock className="mr-2 h-4 w-4" />
                     Unlock Note
                  </Button>
@@ -64,8 +65,19 @@ export default function NotesPage() {
     const [yearFilter, setYearFilter] = useState('All');
     const [subjectFilter, setSubjectFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
-    const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+    const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+    const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
+    const handleUnlockClick = (note: Note) => {
+        setSelectedNote(note);
+    };
+
+    const handleBuyNow = () => {
+        if (selectedNote) {
+            setShowPaymentDialog(true);
+        }
+    };
+    
     const getUniqueValues = (key: 'course' | 'year' | 'subject') => {
         const values = new Set(notesData.map(note => note[key]));
         return ['All', ...Array.from(values).sort()];
@@ -168,7 +180,7 @@ export default function NotesPage() {
       <div>
         {filteredNotes.length > 0 ? (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredNotes.map(note => <NoteCard key={note.id} note={note} onPremiumClick={() => setShowPremiumDialog(true)} />)}
+                {filteredNotes.map(note => <NoteCard key={note.id} note={note} onUnlockClick={() => handleUnlockClick(note)} />)}
              </div>
         ) : (
             <Card className="mt-8">
@@ -181,15 +193,16 @@ export default function NotesPage() {
         )}
       </div>
     </div>
-    <Dialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog}>
+    
+    <Dialog open={!!selectedNote && !showPaymentDialog} onOpenChange={(isOpen) => !isOpen && setSelectedNote(null)}>
         <DialogContent className="max-w-md">
             <DialogHeader>
                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
                     <Gem className="h-6 w-6 text-primary" />
                 </div>
-                <DialogTitle className="text-center font-headline text-2xl">Unlock This Note & More!</DialogTitle>
+                <DialogTitle className="text-center font-headline text-2xl">Unlock "{selectedNote?.title}"</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                   This note is part of our premium collection. Upgrade to get instant access.
+                   Choose how you want to access this premium note.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -207,10 +220,23 @@ export default function NotesPage() {
                 <Button asChild size="lg">
                     <Link href="/premium">Upgrade to Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-                <Button size="lg" variant="ghost" onClick={() => setShowPremiumDialog(false)}>Maybe Later</Button>
+                <Button size="lg" variant="outline" onClick={handleBuyNow}>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Buy Just This Note for ₹19
+                </Button>
             </div>
         </DialogContent>
     </Dialog>
+    
+    <PaymentDialog 
+        isOpen={showPaymentDialog} 
+        setIsOpen={setShowPaymentDialog}
+        title={`Buy "${selectedNote?.title}"`}
+        price="₹19"
+        onPaymentSuccess={() => {
+            setSelectedNote(null);
+        }}
+    />
     </>
   )
 }

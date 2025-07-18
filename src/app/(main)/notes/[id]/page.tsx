@@ -1,36 +1,54 @@
 
 'use client';
 
-import { notesData } from '@/lib/notes-data';
+import { useState } from 'react';
+import { notesData, type Note } from '@/lib/notes-data';
 import { notFound, useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileText, Gem, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, FileText, Gem, AlertTriangle, ShoppingCart, ArrowRight, Check } from 'lucide-react';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PaymentDialog } from '@/components/payment-dialog';
+
+
+const premiumFeatures = [
+    "Access to ALL detailed library notes",
+    "AI Note & Exam Question Generation",
+    "Ask follow-up questions to our AI Tutor",
+    "In-depth competitive exam preparation",
+];
 
 export default function NoteDetailPage() {
   const params = useParams();
   const id = typeof params.id === 'string' ? parseInt(params.id, 10) : NaN;
   const note = notesData.find(n => n.id === id);
 
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+
   if (isNaN(id) || !note) {
     notFound();
+  }
+
+  const handleBuyNow = () => {
+    setShowUnlockDialog(false);
+    setShowPaymentDialog(true);
   }
 
   // A user could still try to access a premium note directly via URL
   if (note.isPremium) {
     return (
+        <>
         <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-[60vh] text-center">
             <div className="p-4 rounded-full bg-destructive/10 mb-4">
                 <AlertTriangle className="h-10 w-10 text-destructive" />
             </div>
             <h1 className="text-3xl font-headline font-bold">Access Denied</h1>
-            <p className="text-muted-foreground mt-2">This is a premium note. Please upgrade your plan to view this content.</p>
-            <Button asChild className="mt-6">
-                <Link href="/premium">
-                    <Gem className="mr-2 h-4 w-4"/>
-                    View Premium Plans
-                </Link>
+            <p className="text-muted-foreground mt-2">This is a premium note. Please upgrade your plan or purchase it individually to view this content.</p>
+            <Button onClick={() => setShowUnlockDialog(true)} className="mt-6">
+                <Lock className="mr-2 h-4 w-4"/>
+                Unlock This Note
             </Button>
             <Button asChild variant="ghost" className="mt-2">
                  <Link href="/notes">
@@ -39,6 +57,48 @@ export default function NoteDetailPage() {
                 </Link>
             </Button>
         </div>
+
+        <Dialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+                        <Gem className="h-6 w-6 text-primary" />
+                    </div>
+                    <DialogTitle className="text-center font-headline text-2xl">Unlock "{note?.title}"</DialogTitle>
+                    <DialogDescription className="text-center text-base">
+                       Choose how you want to access this premium note.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <p className="font-semibold mb-3">Premium benefits include:</p>
+                    <ul className="space-y-3">
+                        {premiumFeatures.map((feature, i) => (
+                            <li key={i} className="flex items-center gap-3">
+                                <Check className="h-5 w-5 text-green-500" />
+                                <span className="text-muted-foreground">{feature}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div className="flex flex-col gap-2">
+                    <Button asChild size="lg">
+                        <Link href="/premium">Upgrade to Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    </Button>
+                    <Button size="lg" variant="outline" onClick={handleBuyNow}>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Buy Just This Note for ₹19
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+        
+        <PaymentDialog 
+            isOpen={showPaymentDialog} 
+            setIsOpen={setShowPaymentDialog}
+            title={`Buy "${note?.title}"`}
+            price="₹19"
+        />
+        </>
     );
   }
 

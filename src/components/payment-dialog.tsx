@@ -1,0 +1,78 @@
+
+'use client';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { QrCode, Copy } from "lucide-react";
+import Image from "next/image";
+import { useToast } from "@/hooks/use-toast";
+
+// --- PAYMENT DETAILS: EDIT HERE ---
+const UPI_ID = "a2gtrickacademy@upi";
+const QR_CODE_IMAGE_PATH = "https://placehold.co/250x250.png";
+// ------------------------------------
+
+interface PaymentDialogProps {
+    isOpen: boolean;
+    setIsOpen: (isOpen: boolean) => void;
+    title: string;
+    price: string;
+    onPaymentSuccess?: () => void;
+}
+
+export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSuccess }: PaymentDialogProps) {
+    const { toast } = useToast();
+
+    const handleCopyUpiId = () => {
+        navigator.clipboard.writeText(UPI_ID);
+        toast({
+            title: "Copied!",
+            description: "UPI ID copied to clipboard.",
+        });
+    };
+
+    const handlePaymentConfirmation = () => {
+        setIsOpen(false);
+        toast({ title: "Payment Submitted!", description: "We will verify your payment and activate your purchase shortly." });
+        if (onPaymentSuccess) {
+            onPaymentSuccess();
+        }
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+                        <QrCode className="h-6 w-6 text-primary" />
+                    </div>
+                    <DialogTitle className="text-center font-headline text-2xl">Complete Your Payment</DialogTitle>
+                    <DialogDescription className="text-center text-base">
+                        You are purchasing <strong>{title}</strong> for <strong>{price}</strong>.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <p className="text-center text-muted-foreground text-sm">Scan the QR code below with any UPI app or copy the UPI ID.</p>
+                    <div className="flex justify-center">
+                        <Image src={QR_CODE_IMAGE_PATH} alt="UPI QR Code" width={250} height={250} data-ai-hint="qr code"/>
+                    </div>
+                    <Card>
+                        <CardContent className="p-3 flex items-center justify-between">
+                            <p className="text-sm font-mono text-muted-foreground">{UPI_ID}</p>
+                            <Button variant="ghost" size="icon" onClick={handleCopyUpiId}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="flex flex-col gap-2">
+                    <Button size="lg" onClick={handlePaymentConfirmation}>
+                        I Have Paid
+                    </Button>
+                    <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}

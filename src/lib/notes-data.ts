@@ -1,6 +1,16 @@
 
 // --- ACCURATE PLACEHOLDER DATA based on Pharmacy Curriculum ---
-export const notesData = [
+export type Note = {
+  id: number;
+  title: string;
+  course: string;
+  year: string;
+  subject: string;
+  isPremium: boolean;
+  preview: string;
+};
+
+export const notesData: Note[] = [
   // B.Pharm 1st Year
   { id: 1, title: "Human Anatomy and Physiology I", course: "B.Pharm", year: "1st Year", subject: "HAP I", isPremium: false, preview: "Cellular level of organization, tissues, osseous system, blood, and lymphatic system." },
   { id: 2, title: "Pharmaceutical Analysis I", course: "B.Pharm", year: "1st Year", subject: "Analysis", isPremium: true, preview: "Unlock detailed notes on different techniques of pharmaceutical analysis, errors, acid-base titration, and non-aqueous titrations." },

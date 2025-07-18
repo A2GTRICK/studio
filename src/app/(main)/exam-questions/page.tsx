@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { NotebookPen, Loader2, Gem, ArrowRight, Check, Download } from 'lucide-react';
+import { NotebookPen, Loader2, Gem, ArrowRight, Check, Download, ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Link from 'next/link';
+import { PaymentDialog } from '@/components/payment-dialog';
+
 
 const examQuestionsFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -23,6 +25,8 @@ const examQuestionsFormSchema = z.object({
 });
 
 type ExamQuestionsFormValues = z.infer<typeof examQuestionsFormSchema>;
+
+type PremiumAction = 'download' | 'mock_test' | null;
 
 const premiumFeatures = [
     "Download generated questions as PDF",
@@ -34,7 +38,8 @@ const premiumFeatures = [
 export default function ExamQuestionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [questions, setQuestions] = useState<GenerateExamQuestionsOutput | null>(null);
-  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [showPremiumDialog, setShowPremiumDialog] = useState<PremiumAction>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   const form = useForm<ExamQuestionsFormValues>({
     resolver: zodResolver(examQuestionsFormSchema),
@@ -67,6 +72,16 @@ export default function ExamQuestionsPage() {
         default: return 'default';
     }
   }
+
+  const handleBuyNow = () => {
+    setShowPremiumDialog(null);
+    setShowPaymentDialog(true);
+  };
+
+  const dialogTitle = showPremiumDialog === 'download' 
+    ? "Download Questions PDF" 
+    : "Generate AI Mock Test";
+  const dialogPrice = showPremiumDialog === 'download' ? '₹29' : '₹49';
 
   return (
     <>
@@ -163,11 +178,11 @@ export default function ExamQuestionsPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Button size="lg" onClick={() => setShowPremiumDialog(true)}>
+                                <Button size="lg" onClick={() => setShowPremiumDialog('download')}>
                                     <Download className="mr-2 h-4 w-4" />
                                     Download Questions (PDF)
                                 </Button>
-                                <Button size="lg" variant="outline" onClick={() => setShowPremiumDialog(true)}>
+                                <Button size="lg" variant="outline" onClick={() => setShowPremiumDialog('mock_test')}>
                                     <Gem className="mr-2 h-4 w-4" />
                                     Generate AI Mock Test
                                 </Button>
@@ -180,19 +195,19 @@ export default function ExamQuestionsPage() {
         </Card>
       </div>
     </div>
-    <Dialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog}>
+    <Dialog open={!!showPremiumDialog} onOpenChange={(isOpen) => !isOpen && setShowPremiumDialog(null)}>
         <DialogContent className="max-w-md">
             <DialogHeader>
                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
                     <Gem className="h-6 w-6 text-primary" />
                 </div>
-                <DialogTitle className="text-center font-headline text-2xl">Upgrade to Unlock More Power</DialogTitle>
+                <DialogTitle className="text-center font-headline text-2xl">{dialogTitle}</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                   This is a premium feature. Upgrade your plan to get instant access.
+                   Choose how you want to unlock this premium feature.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-                <p className="font-semibold mb-3">Premium exam tools include:</p>
+                <p className="font-semibold mb-3">Upgrading to premium gives you:</p>
                 <ul className="space-y-3">
                     {premiumFeatures.map((feature, i) => (
                         <li key={i} className="flex items-center gap-3">
@@ -203,13 +218,23 @@ export default function ExamQuestionsPage() {
                 </ul>
             </div>
             <div className="flex flex-col gap-2">
-                <Button asChild size="lg">
+                 <Button asChild size="lg">
                     <Link href="/premium">Upgrade to Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-                <Button size="lg" variant="ghost" onClick={() => setShowPremiumDialog(false)}>Maybe Later</Button>
+                <Button size="lg" variant="outline" onClick={handleBuyNow}>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Buy Just This for {dialogPrice}
+                </Button>
             </div>
         </DialogContent>
     </Dialog>
+    
+    <PaymentDialog 
+        isOpen={showPaymentDialog} 
+        setIsOpen={setShowPaymentDialog}
+        title={`Buy ${dialogTitle}`}
+        price={dialogPrice}
+    />
     </>
   );
 }
