@@ -17,8 +17,10 @@ export default function ServiceDetailPage() {
   if (!service) {
     notFound();
   }
-
-  const mailToLink = `mailto:support@a2g.com?subject=Quote%20Request%20for%20${encodeURIComponent(service.title)}`;
+  
+  // You can replace this email with your actual business email address.
+  const email = "sales@a2gsmartnotes.com";
+  const mailToLink = `mailto:${email}?subject=Quote%20Request%20for%20${encodeURIComponent(service.title)}`;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -54,10 +56,12 @@ export default function ServiceDetailPage() {
 
             <div className="mt-auto pt-6">
                 <Card className="bg-secondary/50">
-                    <CardContent className="p-4">
-                        <p className="font-bold text-lg">Starting from {service.price}</p>
-                        <p className="text-sm text-muted-foreground mb-4">Pricing varies based on complexity and requirements.</p>
-                        <Button asChild className="w-full">
+                    <CardContent className="p-4 md:flex md:items-center md:justify-between">
+                       <div className="mb-4 md:mb-0">
+                         <p className="font-bold text-lg">Starting from {service.price}</p>
+                         <p className="text-sm text-muted-foreground">Pricing varies based on complexity.</p>
+                       </div>
+                        <Button asChild className="w-full md:w-auto flex-shrink-0">
                           <a href={mailToLink}>Get a Quote</a>
                         </Button>
                     </CardContent>

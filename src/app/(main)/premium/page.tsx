@@ -47,7 +47,9 @@ export default function PremiumPage() {
   const createMailToLink = (planName: string, price: string) => {
     const subject = `Inquiry for ${planName} Plan`;
     const body = `Hello, I am interested in purchasing the ${planName} plan for ${price}. Please provide me with the payment details.`;
-    return `mailto:support@a2g.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // You can replace this email with your actual business email address.
+    const email = "sales@a2gsmartnotes.com";
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
   
   return (
