@@ -86,11 +86,19 @@ export default function DashboardPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const getProgressColor = (progress: number) => {
+  const getProgressColorClass = (progress: number) => {
     if (progress > 75) return 'bg-green-500';
     if (progress > 50) return 'bg-yellow-500';
     return 'bg-red-500';
   };
+  
+  const getStatusBadge = (status: 'completed' | 'pending') => {
+    if (status === 'completed') {
+        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">✔️ Completed</Badge>
+    }
+    return <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-300">❌ Pending</Badge>
+  }
+
 
   return (
     <div className="space-y-6">
@@ -115,7 +123,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                   <div className="text-2xl font-bold">{summaryData.totalProgress}%</div>
-                  <Progress value={summaryData.totalProgress} className={`h-2 mt-2 ${getProgressColor(summaryData.totalProgress)}`} />
+                  <Progress value={summaryData.totalProgress} indicatorClassName={getProgressColorClass(summaryData.totalProgress)} className="h-2 mt-2" />
               </CardContent>
           </Card>
           <Card>
@@ -216,8 +224,8 @@ export default function DashboardPage() {
                     <p className="text-sm text-muted-foreground mt-2">Overall class progress: <span className="font-bold text-primary">76%</span></p>
                 </CardContent>
                 <CardContent className="flex flex-col sm:flex-row gap-2 pt-4">
-                    <Button className="w-full"><Download className="mr-2"/> Export PDF</Button>
-                    <Button variant="outline" className="w-full"><Share2 className="mr-2"/> Share</Button>
+                    <Button className="w-full"><Download className="mr-2 h-4 w-4"/> Export PDF</Button>
+                    <Button variant="outline" className="w-full"><Share2 className="mr-2 h-4 w-4"/> Share</Button>
                 </CardContent>
             </Card>
         </div>
@@ -246,9 +254,7 @@ export default function DashboardPage() {
                                 <TableRow key={topic.title}>
                                     <TableCell className="font-medium">{topic.title}</TableCell>
                                     <TableCell>
-                                        <Badge variant={topic.status === 'completed' ? 'default' : 'secondary'} className={topic.status === 'completed' ? 'bg-green-100 text-green-800' : ''}>
-                                            {topic.status === 'completed' ? '✔️ Completed' : '❌ Pending'}
-                                        </Badge>
+                                        {getStatusBadge(topic.status as 'completed' | 'pending')}
                                     </TableCell>
                                     <TableCell>{topic.lastAccessed}</TableCell>
                                     <TableCell className="text-muted-foreground">{topic.estTime}</TableCell>
