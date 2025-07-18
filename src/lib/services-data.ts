@@ -11,7 +11,7 @@ export const services = [
     target: "B.Pharm & D.Pharm Students",
     link: "/services/internship-reports",
     price: "₹1,499",
-    imageUrl: "https://placehold.co/600x800",
+    imageUrl: "/assets/internship-reports.png",
     dataAiHint: "student report",
     features: [
         "Structured according to university guidelines",
@@ -42,7 +42,7 @@ Thank you!`
     target: "M.Pharm Students",
     link: "/services/dissertation-support",
     price: "₹9,999",
-    imageUrl: "https://placehold.co/600x800",
+    imageUrl: "/assets/dissertation-support.png",
     dataAiHint: "research science",
     features: [
         "Research topic assistance",
@@ -72,7 +72,7 @@ Thank you!`
     target: "PG & PhD Aspirants",
     link: "/services/synopsis-writing",
     price: "₹2,499",
-    imageUrl: "https://placehold.co/600x800",
+    imageUrl: "https://placehold.co/600x800.png",
     dataAiHint: "document writing",
     features: [
         "Clear problem statement",
@@ -102,7 +102,7 @@ Thank you!`
     target: "Graduates & Job Seekers",
     link: "/services/resume-sop",
     price: "₹999",
-    imageUrl: "https://placehold.co/600x800",
+    imageUrl: "https://placehold.co/600x800.png",
     dataAiHint: "professional resume",
     features: [
         "ATS-friendly resume design",
@@ -131,7 +131,7 @@ Thank you!`
     target: "All Health Science Students",
     link: "/services/content-writing",
     price: "Contact Us",
-    imageUrl: "https://placehold.co/600x800",
+    imageUrl: "https://placehold.co/600x800.png",
     dataAiHint: "typing keyboard",
     features: [
         "Well-researched articles",
@@ -161,7 +161,7 @@ Thank you!`
     target: "All Students",
     link: "/services/presentation-design",
     price: "₹1,999",
-    imageUrl: "https://placehold.co/600x800",
+    imageUrl: "https://placehold.co/600x800.png",
     dataAiHint: "business presentation",
     features: [
         "Professional slide design",
