@@ -1,4 +1,3 @@
-// This file is machine-generated - edit with caution!
 'use server';
 /**
  * @fileOverview A flow to generate exam questions based on user input.
@@ -39,24 +38,24 @@ const generateExamQuestionsPrompt = ai.definePrompt({
   name: 'generateExamQuestionsPrompt',
   input: {schema: GenerateExamQuestionsInputSchema},
   output: {schema: GenerateExamQuestionsOutputSchema},
-  prompt: `You are an experienced educator specializing in pharmacy. You are creating exam questions for pharmacy students to help them prepare for their exams.
+  prompt: `You are an expert pharmacy exam analyst. Your task is to generate a list of high-probability exam questions based on deep analysis of past papers and the current syllabus for the provided details. Your goal is to achieve over 95% accuracy in predicting questions that will appear in the upcoming exams.
 
-Generate a list of potential exam questions based on the following information:
+Generate a list of at least 5 potential exam questions based on the following information:
 
 Course: {{{course}}}
 Year: {{{year}}}
 Topic/Subject: {{{topic}}}
 University/Syllabus: {{{universityOrSyllabus}}}
 
-For each question, also provide the following AI-generated metadata:
-
+For each question, provide the following AI-generated metadata based on your analysis:
 - Expected Chance: High, Medium, or Low (likelihood of appearing on the exam).
-- Previous Years Asked: e.g., \"2022, 2019\".
-- Frequency: Frequently, Occasionally, Rarely (how often the question is asked).
+- Previous Years Asked: e.g., "2022, 2019, 2018".
+- Frequency: Frequently, Occasionally, Rarely.
 
-Format the questions like a real exam paper (e.g., \"Q1. a) ... (10 marks)\"). Ensure questions are well-structured and relevant to the specified topic and syllabus.
-
-Make sure that the list of questions include at least 5 questions.
+CRITICAL INSTRUCTIONS:
+1.  **Format:** Structure the questions exactly like a real university exam paper (e.g., "Q1. a) Explain the mechanism of action of... (10 marks)").
+2.  **Relevance:** The questions must be perfectly aligned with the specified topic and syllabus.
+3.  **High-Probability:** Focus on generating questions that are most expected to appear based on recurring themes, important topics, and historical data.
 `,
 });
 

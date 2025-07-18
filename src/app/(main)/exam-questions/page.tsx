@@ -9,11 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { NotebookPen, Loader2, Gem, Check, ArrowRight } from 'lucide-react';
+import { NotebookPen, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import Link from 'next/link';
 
 const examQuestionsFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -24,18 +22,9 @@ const examQuestionsFormSchema = z.object({
 
 type ExamQuestionsFormValues = z.infer<typeof examQuestionsFormSchema>;
 
-const premiumFeatures = [
-  "Generate unlimited exam questions",
-  "Target specific universities and syllabi",
-  "See question frequency and chance analysis",
-  "Access to all premium features",
-];
-
 export default function ExamQuestionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [questions, setQuestions] = useState<GenerateExamQuestionsOutput | null>(null);
-  const [isPremiumUser, setIsPremiumUser] = useState(false); // Mock state
-  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
 
   const form = useForm<ExamQuestionsFormValues>({
     resolver: zodResolver(examQuestionsFormSchema),
@@ -48,10 +37,6 @@ export default function ExamQuestionsPage() {
   });
 
   async function onSubmit(data: ExamQuestionsFormValues) {
-    if (!isPremiumUser) {
-      setShowPremiumDialog(true);
-      return;
-    }
     setIsLoading(true);
     setQuestions(null);
     try {
@@ -64,12 +49,12 @@ export default function ExamQuestionsPage() {
     }
   }
   
-  const getBadgeVariant = (chance: 'High' | 'Medium' | 'Low') => {
+  const getBadgeVariant = (chance: 'High' | 'Medium' | 'Low'): 'destructive' | 'default' | 'secondary' => {
     switch (chance) {
         case 'High': return 'destructive';
         case 'Medium': return 'default';
         case 'Low': return 'secondary';
-        default: return 'outline';
+        default: return 'default';
     }
   }
 
@@ -80,7 +65,7 @@ export default function ExamQuestionsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><NotebookPen className="text-primary"/> AI Exam Question Generator</CardTitle>
-            <CardDescription>Generate high-probability exam questions. This is a premium feature.</CardDescription>
+            <CardDescription>Generate high-probability exam questions based on the latest syllabus and past papers.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -115,7 +100,7 @@ export default function ExamQuestionsPage() {
                 )}/>
                 <Button type="submit" disabled={isLoading} className="w-full">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isPremiumUser ? 'Generate Questions' : <> <Gem className="mr-2 h-4 w-4"/> Generate Questions (Premium)</>}
+                  Generate Questions
                 </Button>
               </form>
             </Form>
@@ -163,35 +148,6 @@ export default function ExamQuestionsPage() {
         </Card>
       </div>
     </div>
-    <Dialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog}>
-        <DialogContent className="max-w-md">
-            <DialogHeader>
-                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
-                    <Gem className="h-6 w-6 text-primary" />
-                </div>
-                <DialogTitle className="text-center font-headline text-2xl">Unlock Premium Insights</DialogTitle>
-                <DialogDescription className="text-center text-base">
-                   This powerful feature is reserved for our premium members. Upgrade to get a competitive edge.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-                <ul className="space-y-3">
-                    {premiumFeatures.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-3">
-                            <Check className="h-5 w-5 text-green-500" />
-                            <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            <div className="flex flex-col gap-2">
-                <Button asChild size="lg">
-                    <Link href="/premium">Upgrade to Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                </Button>
-                <Button size="lg" variant="ghost" onClick={() => setShowPremiumDialog(false)}>Maybe Later</Button>
-            </div>
-        </DialogContent>
-    </Dialog>
     </>
   );
 }
