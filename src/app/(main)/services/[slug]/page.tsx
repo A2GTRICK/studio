@@ -2,15 +2,17 @@
 'use client';
 
 import { services } from '@/lib/services-data';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function ServiceDetailPage({ params }: { params: { slug: string } }) {
-  const service = services.find(s => s.slug === params.slug);
+export default function ServiceDetailPage() {
+  const params = useParams();
+  const slug = typeof params.slug === 'string' ? params.slug : '';
+  const service = services.find(s => s.slug === slug);
 
   if (!service) {
     notFound();
