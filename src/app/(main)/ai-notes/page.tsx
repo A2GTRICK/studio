@@ -12,10 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Gem, Check, ArrowRight, Lock, Sparkles, BookOpen } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import Link from 'next/link';
 import { notesData } from '@/lib/notes-data';
 import { marked } from 'marked';
 
@@ -33,13 +31,6 @@ interface ChatMessage {
   content: string;
 }
 
-const premiumFeatures = [
-    "Unlimited AI Note Generation",
-    "Generate questions for competitive exams",
-    "Ask follow-up questions",
-    "Access all premium library notes",
-]
-
 export default function AiNotesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFollowupLoading, setIsFollowupLoading] = useState(false);
@@ -47,11 +38,6 @@ export default function AiNotesPage() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [followUp, setFollowUp] = useState('');
   const [lastTopic, setLastTopic] = useState<NotesFormValues | null>(null);
-  
-  // In a real app, this would come from your auth/user state
-  const [isPremiumUser, setIsPremiumUser] = useState(false); 
-
-  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
 
   const form = useForm<NotesFormValues>({
     resolver: zodResolver(notesFormSchema),
@@ -66,11 +52,11 @@ export default function AiNotesPage() {
   const relatedNotes = useMemo(() => {
     if (!lastTopic || !lastTopic.subject) return [];
     return notesData
-        .filter(note => 
-            note.isPremium &&
-            note.subject.toLowerCase().includes(lastTopic.subject.toLowerCase())
-        )
-        .slice(0, 2);
+      .filter(note => 
+          note.isPremium &&
+          note.subject.toLowerCase().includes(lastTopic.subject.toLowerCase())
+      )
+      .slice(0, 2);
   }, [lastTopic]);
   
 
@@ -95,11 +81,6 @@ export default function AiNotesPage() {
   async function handleFollowUpSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!followUp.trim() || !generatedNotes) return;
-
-    if (!isPremiumUser) {
-        setShowPremiumDialog(true);
-        return;
-    }
 
     const newQuestion: ChatMessage = { role: 'user', content: followUp };
     setChatHistory(prev => [...prev, newQuestion]);
@@ -129,13 +110,12 @@ export default function AiNotesPage() {
   };
 
   return (
-    <>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> AI Notes Generator</CardTitle>
-            <CardDescription>Generate high-quality, detailed notes on any topic for free to kickstart your studies.</CardDescription>
+            <CardDescription>Generate high-quality, detailed notes on any topic to kickstart your studies.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -188,9 +168,40 @@ export default function AiNotesPage() {
             </Form>
           </CardContent>
         </Card>
+         {relatedNotes.length > 0 && (
+            <Card className="mt-8 bg-primary/5 border-primary/20">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2 text-primary text-lg">
+                        <BookOpen/>
+                        Continue Your Learning
+                    </CardTitle>
+                    <CardDescription>
+                        Found these notes helpful? Unlock our detailed, expert-written premium notes on related topics to boost your study.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 gap-4">
+                    {relatedNotes.map(note => (
+                        <Card key={note.id} className="bg-background">
+                            <CardHeader>
+                                <CardTitle className="text-base">{note.title}</CardTitle>
+                                <CardDescription>{note.subject}</CardDescription>
+                            </CardHeader>
+                            <CardFooter>
+                                <Button asChild className="w-full">
+                                  <a href={`/notes`}>
+                                      <Lock className="mr-2 h-4 w-4"/>
+                                      Unlock in Library
+                                  </a>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </CardContent>
+            </Card>
+        )}
       </div>
       <div className="lg:col-span-2">
-        <Card className="flex flex-col">
+        <Card className="flex flex-col h-full">
           <CardHeader>
             <CardTitle className="font-headline">Generated Content</CardTitle>
             <CardDescription>Your AI-generated notes and conversation will appear here.</CardDescription>
@@ -227,37 +238,6 @@ export default function AiNotesPage() {
                     )}
                   </div>
                 ))}
-                 {relatedNotes.length > 0 && chatHistory.length > 0 && !isLoading && (
-                    <Card className="bg-primary/5 border-primary/20">
-                        <CardHeader>
-                            <CardTitle className="font-headline flex items-center gap-2 text-primary text-lg">
-                                <BookOpen/>
-                                Continue Your Learning
-                            </CardTitle>
-                            <CardDescription>
-                                Found these notes helpful? Unlock our detailed, expert-written premium notes on related topics to boost your study.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {relatedNotes.map(note => (
-                                <Card key={note.id} className="bg-background">
-                                    <CardHeader>
-                                        <CardTitle className="text-base">{note.title}</CardTitle>
-                                        <CardDescription>{note.subject}</CardDescription>
-                                    </CardHeader>
-                                    <CardFooter>
-                                        <Button asChild className="w-full" onClick={() => setShowPremiumDialog(true)}>
-                                          <button type="button">
-                                              <Lock className="mr-2 h-4 w-4"/>
-                                              Unlock Premium Note
-                                          </button>
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
-                            ))}
-                        </CardContent>
-                    </Card>
-                )}
               </div>
              </ScrollArea>
           </CardContent>
@@ -267,7 +247,7 @@ export default function AiNotesPage() {
                   <Input 
                       value={followUp}
                       onChange={(e) => setFollowUp(e.target.value)}
-                      placeholder={isPremiumUser ? "Ask a follow-up question..." : "Upgrade to Premium to ask follow-up questions"}
+                      placeholder="Ask a follow-up question..."
                       disabled={isFollowupLoading}
                   />
                   <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()}>
@@ -279,35 +259,6 @@ export default function AiNotesPage() {
         </Card>
       </div>
     </div>
-    <Dialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog}>
-        <DialogContent className="max-w-md">
-            <DialogHeader>
-                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
-                    <Gem className="h-6 w-6 text-primary" />
-                </div>
-                <DialogTitle className="text-center font-headline text-2xl">Unlock Your Full Potential</DialogTitle>
-                <DialogDescription className="text-center text-base">
-                   This is a premium feature. Upgrade now to get instant access to our most powerful tools.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-                <ul className="space-y-3">
-                    {premiumFeatures.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-3">
-                            <Check className="h-5 w-5 text-green-500" />
-                            <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            <div className="flex flex-col gap-2">
-                <Button asChild size="lg">
-                    <Link href="/premium">Upgrade to Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                </Button>
-                <Button size="lg" variant="ghost" onClick={() => setShowPremiumDialog(false)}>Maybe Later</Button>
-            </div>
-        </DialogContent>
-    </Dialog>
     </>
   );
 }
