@@ -5,7 +5,7 @@ import { services } from '@/lib/services-data';
 import { notFound, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, Mail } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Mail, Eye } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,7 @@ export default function ServiceDetailPage() {
   }
   
   const email = "a2gtrickacademy@gmail.com";
-  const mailToLink = `mailto:${email}?subject=Quote%20Request%20for%20${encodeURIComponent(service.title)}`;
+  const mailToLink = `mailto:${email}?subject=${encodeURIComponent(`Quote Request for ${service.title}`)}&body=${encodeURIComponent(service.emailBody)}`;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -57,12 +57,17 @@ export default function ServiceDetailPage() {
 
             <div className="mt-8 pt-6 border-t">
                 <Card className="bg-secondary/50">
-                    <CardContent className="p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
-                       <div className="mb-4 sm:mb-0 text-center sm:text-left">
-                         <p className="font-bold text-lg">Starting from {service.price}</p>
-                         <p className="text-sm text-muted-foreground">Final price depends on project complexity.</p>
-                       </div>
-                        <Button asChild className="w-full sm:w-auto flex-shrink-0" size="lg">
+                    <CardHeader>
+                        <p className="font-bold text-lg">Starting from {service.price}</p>
+                        <p className="text-sm text-muted-foreground">Final price depends on project complexity.</p>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                       <Button asChild size="lg">
+                          <Link href={service.sampleUrl} target="_blank" rel="noopener noreferrer">
+                            <Eye className="mr-2 h-4 w-4" /> View Sample
+                          </Link>
+                        </Button>
+                        <Button asChild size="lg">
                           <a href={mailToLink}><Mail className="mr-2 h-4 w-4" /> Get a Quote</a>
                         </Button>
                     </CardContent>

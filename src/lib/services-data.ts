@@ -18,7 +18,20 @@ export const services = [
         "Plagiarism-free content",
         "Proper formatting and citation",
         "Includes all necessary sections"
-    ]
+    ],
+    sampleUrl: "/assets/sample-report.pdf",
+    emailBody: `Hello,
+
+I'm interested in your Internship Report service. Please provide a quote based on the following details:
+
+- Course: [e.g., B.Pharm]
+- Year/Semester: [e.g., 4th Year]
+- University/College: [Your University Name]
+- Internship Field: [e.g., Hospital, Industry]
+- Report Deadline: [Date]
+- Any specific requirements or guidelines: [Please describe]
+
+Thank you!`
   },
   {
     icon: BookCopy,
@@ -36,7 +49,19 @@ export const services = [
         "Methodology design",
         "Data analysis and interpretation",
         "Full report writing and proofreading"
-    ]
+    ],
+    sampleUrl: "/assets/sample-report.pdf",
+    emailBody: `Hello,
+
+I'm interested in your Dissertation Support service for my M.Pharm. Please provide a quote.
+
+- Specialization: [e.g., Pharmaceutics, Pharmacology]
+- Research Area/Topic (if decided): [Your Topic]
+- Current Stage: [e.g., Topic Selection, Data Collection, Writing]
+- University: [Your University Name]
+- Specific support needed: [e.g., Full support, Data analysis, Writing only]
+
+Thank you!`
   },
   {
     icon: ScrollText,
@@ -54,7 +79,19 @@ export const services = [
         "Well-defined objectives",
         "Sound methodology outline",
         "Adherence to format"
-    ]
+    ],
+    sampleUrl: "/assets/sample-report.pdf",
+    emailBody: `Hello,
+
+I'm interested in your Synopsis Writing service. Please provide a quote.
+
+- Course: [e.g., M.Pharm, PhD]
+- Field of Research: [e.g., Medicinal Chemistry]
+- Proposed Title/Area: [Your Research Idea]
+- University/Funding Body: [Name]
+- Any specific formatting guidelines?: [Yes/No, please specify]
+
+Thank you!`
   },
   {
     icon: User,
@@ -72,7 +109,18 @@ export const services = [
         "Highlighting key skills and achievements",
         "Persuasive Statement of Purpose (SOP)",
         "Cover letter writing"
-    ]
+    ],
+    sampleUrl: "/assets/sample-report.pdf",
+    emailBody: `Hello,
+
+I'm interested in your Resume/SOP Crafting service.
+
+- Service Needed: [Resume, SOP, or both]
+- Target: [e.g., Job application for 'Role' at 'Company', Master's application at 'University']
+- Field: [e.g., Quality Assurance, Clinical Research]
+- Please attach my current resume (if any).
+
+Thank you!`
   },
   {
     icon: PenTool,
@@ -90,7 +138,19 @@ export const services = [
         "SEO-optimized content for blogs",
         "Medical and pharmaceutical topics",
         "Proofreading and editing services"
-    ]
+    ],
+    sampleUrl: "/assets/sample-report.pdf",
+    emailBody: `Hello,
+
+I'm interested in your Content Writing service. Please provide a quote.
+
+- Type of Content: [e.g., Blog Post, Research Article, Review Article]
+- Topic: [Your Topic]
+- Approximate Word Count: [Number of words]
+- Target Audience: [e.g., General public, Healthcare professionals]
+- Deadline: [Date]
+
+Thank you!`
   },
   {
     icon: Presentation,
@@ -108,6 +168,18 @@ export const services = [
         "Clear data visualization (charts, graphs)",
         "Engaging content structure",
         "Speaker notes preparation"
-    ]
+    ],
+    sampleUrl: "/assets/sample-report.pdf",
+    emailBody: `Hello,
+
+I'm interested in your Presentation Design service. Please provide a quote.
+
+- Presentation Topic: [Your Topic]
+- Number of Slides (approx): [Number]
+- Event: [e.g., Class Seminar, Final Defense, Conference]
+- Do you have the content ready?: [Yes/No]
+- Deadline: [Date]
+
+Thank you!`
   }
 ];
