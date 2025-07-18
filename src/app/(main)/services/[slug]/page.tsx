@@ -32,8 +32,8 @@ export default function ServiceDetailPage() {
       </Button>
 
       <Card className="overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-5">
-          <div className="md:col-span-3 order-2 md:order-1 p-6 md:p-8 flex flex-col">
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          <div className="p-6 md:p-8 flex flex-col">
             <CardHeader className="p-0 mb-6">
                 <Badge variant="secondary" className="mb-2 self-start">{service.category}</Badge>
                 <div className="flex items-start gap-4 mb-2">
@@ -73,7 +73,7 @@ export default function ServiceDetailPage() {
 
           </div>
           
-          <div className="md:col-span-2 order-1 md:order-2 h-64 md:h-auto min-h-[300px]">
+          <div className="h-64 md:h-auto min-h-[400px]">
              <Image 
                 src={service.imageUrl}
                 alt={service.title}
