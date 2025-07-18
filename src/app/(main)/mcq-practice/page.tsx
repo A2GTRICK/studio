@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle, Lightbulb } from 'lucide-react';
+import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle, Lightbulb, RefreshCw } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -60,12 +60,18 @@ export default function McqPracticePage() {
     }
   }
 
-  const practiceMore = () => {
+  const practiceAnotherTopic = () => {
     setQuestions(null);
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
-    form.reset();
+    form.reset({
+      examType: 'GPAT',
+      subject: '',
+      topic: '',
+      numberOfQuestions: 10,
+      difficulty: 'Medium',
+    });
   }
 
   async function onSubmit(data: McqFormValues) {
@@ -88,6 +94,11 @@ export default function McqPracticePage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  const regenerateQuiz = () => {
+    const currentValues = form.getValues();
+    onSubmit(currentValues);
   }
   
   const handleAnswerChange = (questionIndex: number, value: string) => {
@@ -357,8 +368,8 @@ export default function McqPracticePage() {
             ))}
 
             {!isSubmitted && (
-                <Button onClick={handleSubmitQuiz} className="w-full" size="lg">
-                   {answers.some(a => a === null) && <AlertCircle className="mr-2 h-4 w-4"/>}
+                <Button onClick={handleSubmitQuiz} className="w-full" size="lg" disabled={!questions || answers.every(a => a === null)}>
+                   {answers.some(a => a === null) && !answers.every(a => a === null) && <AlertCircle className="mr-2 h-4 w-4"/>}
                    Submit Quiz & View Results
                 </Button>
             )}
@@ -386,8 +397,12 @@ export default function McqPracticePage() {
                             </div>
                         )}
                     </CardContent>
-                    <CardFooter>
-                         <Button onClick={practiceMore} className="w-full">
+                    <CardFooter className="grid sm:grid-cols-2 gap-2">
+                         <Button onClick={regenerateQuiz} variant="outline" className="w-full">
+                            <RefreshCw className="mr-2 h-4 w-4"/>
+                            Regenerate Quiz
+                        </Button>
+                         <Button onClick={practiceAnotherTopic} className="w-full">
                             <PlusCircle className="mr-2 h-4 w-4"/>
                             Practice Another Topic
                         </Button>
