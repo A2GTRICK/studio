@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
@@ -110,8 +111,13 @@ export default function McqPracticePage() {
                        <SelectContent>
                         <SelectItem value="GPAT">GPAT</SelectItem>
                         <SelectItem value="NIPER">NIPER</SelectItem>
-                        <SelectItem value="Pharmacist Exam">Pharmacist Exam</SelectItem>
                         <SelectItem value="Drug Inspector">Drug Inspector</SelectItem>
+                        <SelectItem value="Pharmacist Exam">Pharmacist Exam (General)</SelectItem>
+                        <SelectItem value="Railway Pharmacist">Railway Pharmacist</SelectItem>
+                        <SelectItem value="ESIC Pharmacist">ESIC Pharmacist</SelectItem>
+                        <SelectItem value="RRB Pharmacist">RRB Pharmacist</SelectItem>
+                        <SelectItem value="AIIMS Pharmacist">AIIMS Pharmacist</SelectItem>
+                        <SelectItem value="State Govt. Pharmacist">State Govt. Pharmacist</SelectItem>
                        </SelectContent>
                     </Select>
                   </FormItem>
