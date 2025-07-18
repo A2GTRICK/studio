@@ -64,12 +64,11 @@ export default function AiNotesPage() {
   });
 
   const relatedNotes = useMemo(() => {
-    if (!lastTopic) return [];
+    if (!lastTopic || !lastTopic.subject) return [];
     return notesData
         .filter(note => 
             note.isPremium &&
-            (note.subject.toLowerCase().includes(lastTopic.subject.toLowerCase()) || 
-             lastTopic.subject.toLowerCase().includes(note.subject.toLowerCase()))
+            note.subject.toLowerCase().includes(lastTopic.subject.toLowerCase())
         )
         .slice(0, 2);
   }, [lastTopic]);
@@ -156,7 +155,7 @@ export default function AiNotesPage() {
                 <FormField control={form.control} name="year" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Year</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                    <Select onValuechange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                        <FormControl><SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger></FormControl>
                        <SelectContent>
                         <SelectItem value="1st Year">1st Year</SelectItem>
