@@ -21,6 +21,7 @@ import { marked } from 'marked';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
+import { Separator } from '@/components/ui/separator';
 
 
 const mcqFormSchema = z.object({
@@ -102,6 +103,7 @@ export default function McqPracticePage() {
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState({ title: '', price: '' });
   
   const dailyLimit = 30;
 
@@ -207,12 +209,7 @@ export default function McqPracticePage() {
       setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
       
-      if (form.formState.isSubmitSuccessful) {
-        // Reset session count only for a completely new quiz generation
-        setSessionQuestionCount(result.length);
-      } else {
-        setSessionQuestionCount(prev => prev + result.length);
-      }
+      setSessionQuestionCount(prev => prev + result.length);
 
       updateDailyCount(dailyQuestionCount + result.length);
 
@@ -329,7 +326,8 @@ export default function McqPracticePage() {
     });
   }
   
-  const handleBuyNow = () => {
+  const handleBuyNow = (title: string, price: string) => {
+    setPaymentDetails({ title, price });
     setShowPremiumDialog(false);
     setShowPaymentDialog(true);
   };
@@ -480,7 +478,7 @@ export default function McqPracticePage() {
             )}
 
             {questions.map((q, index) => (
-              <Card key={index} className={isSubmitted ? 'border-2' : ''} style={{ borderColor: isSubmitted && answers[index] === q.correctAnswer ? 'hsl(var(--primary))' : 'transparent' }}>
+              <Card key={index} className={isSubmitted ? 'border-2' : ''} style={{ borderColor: isSubmitted && answers[index] === q.correctAnswer ? 'hsl(var(--primary))' : isSubmitted ? 'hsl(var(--border))' : 'transparent' }}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle>Question {sessionQuestionCount - questions.length + index + 1}</CardTitle>
@@ -501,8 +499,8 @@ export default function McqPracticePage() {
                         </FormLabel>
                         {isSubmitted && (
                             <>
-                            {isCorrect && <span role="img" aria-label="Correct">✅</span>}
-                            {isUserChoice && !isCorrect && <span role="img" aria-label="Incorrect">❌</span>}
+                            {isCorrect && <span>✅</span>}
+                            {isUserChoice && !isCorrect && <span>❌</span>}
                             </>
                         )}
                       </FormItem>
@@ -585,25 +583,33 @@ export default function McqPracticePage() {
                    You've used all your {dailyLimit} free practice questions for today. Upgrade for more.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-                <p className="font-semibold mb-3">Upgrade to premium for:</p>
-                <ul className="space-y-3">
-                    {premiumFeatures.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-3">
-                            <Check className="h-5 w-5 text-green-500" />
-                            <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            <div className="flex flex-col gap-2">
-                 <Button asChild size="lg">
+            <div className="py-4 space-y-4">
+                <Button asChild size="lg" className="w-full">
                     <Link href="/premium">Upgrade to Full Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-                <Button size="lg" variant="outline" onClick={handleBuyNow}>
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Buy 200 More Questions for ₹29
-                </Button>
+
+                <div className="relative">
+                    <Separator />
+                    <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-background px-2 text-sm text-muted-foreground">OR</span>
+                </div>
+
+                <p className="font-semibold text-center">Buy a Question Pack</p>
+                
+                <div className="grid grid-cols-1 gap-2">
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow('100 MCQs', '₹5')}>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Buy 100 MCQs for ₹5
+                    </Button>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow('200 MCQs', '₹10')}>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Buy 200 MCQs for ₹10
+                    </Button>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow('400 MCQs', '₹15')}>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Buy 400 MCQs for ₹15
+                    </Button>
+                </div>
+
             </div>
         </DialogContent>
     </Dialog>
@@ -611,11 +617,9 @@ export default function McqPracticePage() {
     <PaymentDialog 
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
-        title="Buy 200 Practice Questions"
-        price="₹29"
+        title={paymentDetails.title}
+        price={paymentDetails.price}
     />
     </>
   );
 }
-
-    
