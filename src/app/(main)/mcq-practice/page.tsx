@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle, Lightbulb, RefreshCw, Gem, ArrowRight, ShoppingCart } from 'lucide-react';
+import { CheckSquare, Loader2, Target, BrainCircuit, Check, X, BookCheck, AlertCircle, RefreshCcw, Share2, PlusCircle, Lightbulb, RefreshCw, Gem, ArrowRight, ShoppingCart, History } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 
 const mcqFormSchema = z.object({
@@ -485,6 +486,12 @@ export default function McqPracticePage() {
                     {isSubmitted && getResultIcon(answers[index] === q.correctAnswer)}
                   </div>
                   <CardDescription className="pt-2 text-base text-foreground">{q.question}</CardDescription>
+                   {q.previouslyAsked && (
+                     <Badge variant="secondary" className="mt-2 self-start">
+                        <History className="mr-2 h-3 w-3" />
+                        Previously Asked In: {q.previouslyAsked}
+                     </Badge>
+                   )}
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={answers[index] || ''} onValueChange={(val) => handleAnswerChange(index, val)} disabled={isSubmitted}>
@@ -499,8 +506,8 @@ export default function McqPracticePage() {
                         </FormLabel>
                         {isSubmitted && (
                             <>
-                            {isCorrect && <span>✅</span>}
-                            {isUserChoice && !isCorrect && <span>❌</span>}
+                            {isCorrect && <span role="img" aria-label="Correct">✅</span>}
+                            {isUserChoice && !isCorrect && <span role="img" aria-label="Incorrect">❌</span>}
                             </>
                         )}
                       </FormItem>
