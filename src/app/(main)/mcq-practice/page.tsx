@@ -22,11 +22,21 @@ import { marked } from 'marked';
 
 const mcqFormSchema = z.object({
   examType: z.string().min(1, 'Exam type is required'),
+  otherExamType: z.string().optional(),
   subject: z.string().min(1, 'Subject is required'),
   topic: z.string().min(1, 'Topic is required'),
   numberOfQuestions: z.number().min(5).max(20),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+}).refine(data => {
+    if (data.examType === 'Other') {
+        return !!data.otherExamType && data.otherExamType.trim().length > 0;
+    }
+    return true;
+}, {
+    message: 'Please specify the exam name',
+    path: ['otherExamType'],
 });
+
 
 type McqFormValues = z.infer<typeof mcqFormSchema>;
 
@@ -61,10 +71,13 @@ export default function McqPracticePage() {
       examType: 'GPAT',
       subject: '',
       topic: '',
+      otherExamType: '',
       numberOfQuestions: 10,
       difficulty: 'Medium',
     },
   });
+
+  const watchExamType = form.watch('examType');
 
   const resetQuiz = (showToast = false) => {
     setIsSubmitted(false);
@@ -85,6 +98,7 @@ export default function McqPracticePage() {
       examType: 'GPAT',
       subject: '',
       topic: '',
+      otherExamType: '',
       numberOfQuestions: 10,
       difficulty: 'Medium',
     });
@@ -102,8 +116,13 @@ export default function McqPracticePage() {
         setSessionQuestionCount(0);
     }
     
+    const requestData = {
+        ...data,
+        examType: data.examType === 'Other' ? data.otherExamType! : data.examType,
+    };
+
     try {
-      const result = await generateMcqPractice(data);
+      const result = await generateMcqPractice(requestData);
       const shuffledResult = result.map(q => ({
         ...q,
         shuffledOptions: shuffleArray([...q.options]),
@@ -153,11 +172,13 @@ export default function McqPracticePage() {
             correctAnswer: q.correctAnswer,
             isCorrect: answers[index] === q.correctAnswer,
         }));
+        
+        const currentFormValues = form.getValues();
 
         const feedbackResult = await generateMcqFeedback({
-            examType: form.getValues('examType'),
-            subject: form.getValues('subject'),
-            topic: form.getValues('topic'),
+            examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
+            subject: currentFormValues.subject,
+            topic: currentFormValues.topic,
             performance: quizPerformance,
         });
 
@@ -218,7 +239,10 @@ export default function McqPracticePage() {
   const handleShare = () => {
     if (!questions) return;
     const feedback = getScoreFeedback();
-    const text = `I just scored ${score}/${questions.length} on my ${form.getValues('examType')} practice quiz! ${feedback.message} - Check out A2G Smart Notes!`;
+    const currentFormValues = form.getValues();
+    const examName = currentFormValues.examType === 'Other' ? currentFormValues.otherExamType : currentFormValues.examType;
+
+    const text = `I just scored ${score}/${questions.length} on my ${examName} practice quiz! ${feedback.message} - Check out A2G Smart Notes!`;
     navigator.clipboard.writeText(text);
     toast({
         title: "Copied to Clipboard!",
@@ -259,10 +283,20 @@ export default function McqPracticePage() {
                         <SelectItem value="RRB Pharmacist">RRB Pharmacist</SelectItem>
                         <SelectItem value="AIIMS Pharmacist">AIIMS Pharmacist</SelectItem>
                         <SelectItem value="State Govt. Pharmacist">State Govt. Pharmacist</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                        </SelectContent>
                     </Select>
                   </FormItem>
                 )}/>
+                {watchExamType === 'Other' && (
+                  <FormField control={form.control} name="otherExamType" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Specify Exam Name</FormLabel>
+                      <FormControl><Input placeholder="e.g., UPPSC Pharmacist" {...field} disabled={isLoading}/></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                )}
                 <FormField control={form.control} name="subject" render={({ field }) => (
                   <FormItem><FormLabel>Subject</FormLabel><FormControl><Input placeholder="e.g., Pharmacology" {...field} disabled={isLoading}/></FormControl><FormMessage /></FormItem>
                 )}/>
