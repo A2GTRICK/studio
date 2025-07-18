@@ -10,13 +10,13 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GenerateServiceOutlineInputSchema = z.object({
+const GenerateServiceOutlineInputSchema = z.object({
   serviceType: z.string().describe('The type of academic service the user needs (e.g., Internship Report, Dissertation).'),
   topic: z.string().describe('The specific topic or subject for the service.'),
 });
 export type GenerateServiceOutlineInput = z.infer<typeof GenerateServiceOutlineInputSchema>;
 
-export const GenerateServiceOutlineOutputSchema = z.object({
+const GenerateServiceOutlineOutputSchema = z.object({
   outline: z.string().describe('A structured outline or methodology for the requested service in Markdown format.'),
 });
 export type GenerateServiceOutlineOutput = z.infer<typeof GenerateServiceOutlineOutputSchema>;
