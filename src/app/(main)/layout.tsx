@@ -1,14 +1,78 @@
+
+'use client';
+
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from "@/components/ui/sidebar";
-import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare } from "lucide-react";
+import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { notifications } from "@/lib/notifications-data";
+import { Separator } from "@/components/ui/separator";
+
+function NotificationPopover() {
+    const recentNotifications = notifications.slice(0, 4);
+
+    // Helper to calculate "time ago"
+    const timeAgo = (date: string) => {
+        const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " years ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutes ago";
+        return Math.floor(seconds) + " seconds ago";
+    };
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5"/>
+                    <span className="absolute -top-0 -right-0 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                    </span>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0">
+                <div className="p-4">
+                  <h4 className="font-medium text-lg font-headline">Notifications</h4>
+                </div>
+                <Separator />
+                <div className="p-2">
+                    {recentNotifications.map(notification => (
+                        <Link href={notification.link || '/notifications'} key={notification.id} className="block">
+                            <div className="p-2 rounded-lg hover:bg-muted">
+                                <p className="text-sm font-semibold">{notification.title}</p>
+                                <p className="text-xs text-muted-foreground">{timeAgo(notification.date)}</p>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+                <Separator />
+                 <div className="p-2">
+                    <Button variant="ghost" className="w-full" asChild>
+                        <Link href="/notifications">View all notifications</Link>
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
+}
 
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const unreadNotificationCount = notifications.length;
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -99,6 +163,9 @@ export default function MainLayout({
                 <Link href="/notifications">
                   <Bell />
                   <span>Notifications</span>
+                   {unreadNotificationCount > 0 && (
+                      <SidebarMenuBadge>{unreadNotificationCount}</SidebarMenuBadge>
+                   )}
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -118,15 +185,16 @@ export default function MainLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex items-center h-16 px-4 border-b bg-background/80 backdrop-blur-sm">
+        <header className="sticky top-0 z-20 flex items-center h-16 px-4 border-b bg-background/80 backdrop-blur-sm">
           <SidebarTrigger className="md:hidden" />
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-2">
              <Button variant="outline" size="sm" asChild>
                 <Link href="/premium">
                     <Gem className="mr-2 h-4 w-4"/>
                     Go Premium
                 </Link>
             </Button>
+            <NotificationPopover />
             <Avatar className="md:hidden">
               <AvatarImage src="https://placehold.co/40x40.png" alt="User avatar" data-ai-hint="user avatar" />
               <AvatarFallback>U</AvatarFallback>

@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { subscribeToNewsletter } from '@/ai/flows/subscribe-to-newsletter';
 import { useToast } from '@/hooks/use-toast';
+import { notifications } from '@/lib/notifications-data';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ export default function LandingPage() {
   const [downloadLink, setDownloadLink] = useState<string | null>(null);
   const { toast } = useToast();
   const [userName, setUserName] = useState("Arvind"); // Placeholder for Firebase Auth user name
+  const unreadNotificationCount = notifications.length;
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,10 +56,12 @@ export default function LandingPage() {
         <h1 className="text-2xl font-headline font-bold text-primary">A2G Smart Notes</h1>
         <Button asChild variant="ghost" className="relative group">
           <Link href="/dashboard" className="px-6 py-2 text-primary-foreground bg-primary rounded-lg shadow-lg hover:shadow-primary/40 transition-shadow duration-300 transform hover:-translate-y-1">
-             <span className="absolute -top-1 -right-1 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 justify-center items-center text-xs">3</span>
-            </span>
+             {unreadNotificationCount > 0 && (
+                 <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 justify-center items-center text-xs">{unreadNotificationCount}</span>
+                </span>
+             )}
             <span>Welcome back, {userName}!</span>
             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform"/>
           </Link>
