@@ -200,7 +200,7 @@ export default function DashboardPage() {
 
         {/* Admin Panel */}
         <div className="lg:col-span-1">
-             <Card className="bg-card sticky top-20">
+             <Card className="bg-card lg:sticky top-20">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><Users /> Admin Dashboard</CardTitle>
                     <CardDescription>View and manage student progress.</CardDescription>
