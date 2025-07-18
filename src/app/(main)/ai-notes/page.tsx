@@ -17,6 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { notesData } from '@/lib/notes-data';
+import { marked } from 'marked';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -47,10 +48,8 @@ export default function AiNotesPage() {
   const [followUp, setFollowUp] = useState('');
   const [lastTopic, setLastTopic] = useState<NotesFormValues | null>(null);
   
-  // --- MOCK STATE ---
   // In a real app, this would come from your auth/user state
   const [isPremiumUser, setIsPremiumUser] = useState(false); 
-  // ------------------
 
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
 
@@ -83,8 +82,9 @@ export default function AiNotesPage() {
     setLastTopic(data);
     try {
       const result = await generateNotesFromTopic(data);
+      const assistantMessage = { role: 'assistant', content: result.notes };
       setGeneratedNotes(result.notes);
-      setChatHistory([{ role: 'assistant', content: result.notes }]);
+      setChatHistory([assistantMessage]);
     } catch (error) {
       console.error('Error generating notes:', error);
       setChatHistory([{ role: 'assistant', content: 'Sorry, an error occurred while generating notes. Please try again.' }]);
@@ -123,6 +123,11 @@ export default function AiNotesPage() {
       setIsFollowupLoading(false);
     }
   }
+  
+  const renderMessageContent = (content: string) => {
+    const htmlContent = marked.parse(content);
+    return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+  };
 
   return (
     <>
@@ -213,8 +218,8 @@ export default function AiNotesPage() {
                          <Bot className="h-5 w-5" />
                        </div>
                     )}
-                     <div className={`prose prose-sm dark:prose-invert max-w-none p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background border'}`}>
-                      <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.content.replace(/```/g, '') }} />
+                     <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background border'}`}>
+                       {renderMessageContent(msg.content)}
                     </div>
                      {msg.role === 'user' && (
                        <div className="p-2 rounded-full bg-muted self-start shrink-0">
@@ -223,7 +228,7 @@ export default function AiNotesPage() {
                     )}
                   </div>
                 ))}
-                 {relatedNotes.length > 0 && !isLoading && (
+                 {relatedNotes.length > 0 && chatHistory.length > 0 && !isLoading && (
                     <Card className="bg-primary/5 border-primary/20">
                         <CardHeader>
                             <CardTitle className="font-headline flex items-center gap-2 text-primary text-lg">
@@ -243,10 +248,10 @@ export default function AiNotesPage() {
                                     </CardHeader>
                                     <CardFooter>
                                         <Button asChild className="w-full" onClick={() => setShowPremiumDialog(true)}>
-                                          <Link href="#">
+                                          <button type="button">
                                               <Lock className="mr-2 h-4 w-4"/>
                                               Unlock Premium Note
-                                          </Link>
+                                          </button>
                                         </Button>
                                     </CardFooter>
                                 </Card>

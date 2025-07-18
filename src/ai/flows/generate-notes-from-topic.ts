@@ -35,6 +35,13 @@ const prompt = ai.definePrompt({
 
   Generate a comprehensive set of notes on the given topic. The notes must be well-structured, using clear headings, subheadings, bullet points, and bold text for key terms. The output must be in Markdown format.
 
+  Your response must be structured like a chapter from a high-quality textbook. Use Markdown for formatting:
+  - Use '#' for the main title.
+  - Use '##' for major section headings.
+  - Use '###' for sub-headings.
+  - Use '*' for bullet points.
+  - Use '**text**' for bolding key terms.
+
   Course: {{{course}}}
   Year: {{{year}}}
   Subject: {{{subject}}}
