@@ -103,7 +103,7 @@ export default function McqPracticePage() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   
-  const dailyLimit = 200;
+  const dailyLimit = 30;
 
   useEffect(() => {
     try {
@@ -230,6 +230,11 @@ export default function McqPracticePage() {
 
   const practiceSameTopic = () => {
     const currentValues = form.getValues();
+     const questionsToGenerate = currentValues.numberOfQuestions;
+    if ((dailyQuestionCount + questionsToGenerate) > dailyLimit) {
+        setShowPremiumDialog(true);
+        return;
+    }
     onSubmit(currentValues);
   }
   
@@ -577,11 +582,11 @@ export default function McqPracticePage() {
                 </div>
                 <DialogTitle className="text-center font-headline text-2xl">Daily Limit Reached</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                   You've used all your free practice questions for today. Upgrade to premium for unlimited access.
+                   You've used all your {dailyLimit} free practice questions for today. Upgrade for more.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-                <p className="font-semibold mb-3">Upgrading to premium gives you:</p>
+                <p className="font-semibold mb-3">Upgrade to premium for:</p>
                 <ul className="space-y-3">
                     {premiumFeatures.map((feature, i) => (
                         <li key={i} className="flex items-center gap-3">
@@ -597,7 +602,7 @@ export default function McqPracticePage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={handleBuyNow}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    Buy Unlimited MCQ Access for ₹99
+                    Buy 200 More Questions for ₹29
                 </Button>
             </div>
         </DialogContent>
@@ -606,8 +611,8 @@ export default function McqPracticePage() {
     <PaymentDialog 
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
-        title="Unlimited MCQ Practice"
-        price="₹99"
+        title="Buy 200 Practice Questions"
+        price="₹29"
     />
     </>
   );
