@@ -94,6 +94,10 @@ export default function LoginPage() {
         }
     }
 
+    const switchTabs = () => {
+        setError(null);
+    }
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
             <Card className="w-full max-w-md">
@@ -105,7 +109,7 @@ export default function LoginPage() {
                     <CardDescription>Your digital partner for pharmacy success.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="login" className="w-full">
+                    <Tabs defaultValue="login" className="w-full" onValueChange={switchTabs}>
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="login">Login</TabsTrigger>
                             <TabsTrigger value="signup">Sign Up</TabsTrigger>
