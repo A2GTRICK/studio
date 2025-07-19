@@ -6,7 +6,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ServerCrash } from 'lucide-react';
+import { ServerCrash } from 'lucide-react';
 
 // --- IMPORTANT: Define the admin user's email address here ---
 const ADMIN_EMAIL = 'admin@example.com';
@@ -32,7 +32,7 @@ const FirebaseConfigError = () => (
                         Ensure you have copied your Firebase project credentials into the <strong>.env</strong> file at the root of the project.
                     </li>
                     <li>
-                        Make sure the variable names match the format: <strong>NEXT_PUBLIC_FIREBASE_...</strong>
+                        Make sure the variable names in <strong>.env</strong> match the format: <strong>NEXT_PUBLIC_FIREBASE_...</strong>
                     </li>
                     <li>
                         After adding the keys, you must <strong>completely restart the development server</strong> for the changes to take effect.
@@ -129,5 +129,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    
