@@ -2,7 +2,7 @@
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarMenuBadge } from "@/components/ui/sidebar";
-import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, ArrowRight } from "lucide-react";
+import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -182,6 +182,15 @@ export default function MainLayout({
                    {unreadNotificationCount > 0 && (
                       <SidebarMenuBadge>{unreadNotificationCount}</SidebarMenuBadge>
                    )}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <Separator className="my-2" />
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Admin Panel">
+                <Link href="/admin/notes">
+                  <Shield />
+                  <span>Admin Panel</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
