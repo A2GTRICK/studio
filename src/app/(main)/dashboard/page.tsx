@@ -243,7 +243,7 @@ export default function DashboardPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[50%]">Topic</TableHead>
+                                <TableHead>Topic</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Last Accessed</TableHead>
                                 <TableHead>Est. Completion</TableHead>

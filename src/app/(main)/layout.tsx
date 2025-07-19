@@ -40,7 +40,8 @@ function NotificationPopover() {
             const minutes = Math.floor(interval);
             return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
         }
-        return `${Math.floor(seconds)} second${Math.floor(seconds) > 1 ? 's' : ''} ago`;
+        const roundedSeconds = Math.floor(seconds);
+        return `${roundedSeconds} second${roundedSeconds !== 1 ? 's' : ''} ago`;
     };
 
 
@@ -216,7 +217,7 @@ export default function MainLayout({
             </Avatar>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-auto">
           {children}
         </main>
       </SidebarInset>

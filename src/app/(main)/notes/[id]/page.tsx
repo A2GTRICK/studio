@@ -46,16 +46,18 @@ export default function NoteDetailPage() {
             </div>
             <h1 className="text-3xl font-headline font-bold">Access Denied</h1>
             <p className="text-muted-foreground mt-2">This is a premium note. Please upgrade your plan or purchase it individually to view this content.</p>
-            <Button onClick={() => setShowUnlockDialog(true)} className="mt-6">
-                <Lock className="mr-2 h-4 w-4"/>
-                Unlock This Note
-            </Button>
-            <Button asChild variant="ghost" className="mt-2">
-                 <Link href="/notes">
-                    <ArrowLeft className="mr-2 h-4 w-4"/>
-                    Back to Library
-                </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 mt-6">
+                <Button onClick={() => setShowUnlockDialog(true)} size="lg">
+                    <Lock className="mr-2 h-4 w-4"/>
+                    Unlock This Note
+                </Button>
+                <Button asChild variant="ghost" size="lg">
+                     <Link href="/notes">
+                        <ArrowLeft className="mr-2 h-4 w-4"/>
+                        Back to Library
+                    </Link>
+                </Button>
+            </div>
         </div>
 
         <Dialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
