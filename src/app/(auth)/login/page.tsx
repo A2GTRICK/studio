@@ -55,6 +55,9 @@ export default function LoginPage() {
     });
 
     const getFriendlyAuthError = (errorCode: string) => {
+        if (errorCode.includes('auth/requests-to-this-api') && errorCode.includes('are-blocked')) {
+            return 'Configuration Error: Email/Password sign-in is disabled. Please enable it in the Firebase Console under Authentication -> Sign-in method.';
+        }
         switch (errorCode) {
             case 'auth/invalid-email':
                 return 'Please enter a valid email address.';
