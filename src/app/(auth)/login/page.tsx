@@ -38,7 +38,7 @@ const GoogleIcon = () => (
 
 
 export default function LoginPage() {
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
@@ -74,7 +74,7 @@ export default function LoginPage() {
             case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
                  return 'Configuration error: The Firebase API key is invalid. Please ensure your environment variables are set up correctly.';
             case 'auth/unauthorized-domain':
-                return 'This domain is not authorized for authentication. Please add it to the list of authorized domains in your Firebase console.';
+                return 'This domain is not authorized. Go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add "localhost".';
             default:
                 console.error('Unhandled Auth Error:', errorCode);
                 return 'An unexpected error occurred. Please try again later.';
@@ -272,6 +272,5 @@ export default function LoginPage() {
             </Card>
         </div>
     );
-}
 
     
