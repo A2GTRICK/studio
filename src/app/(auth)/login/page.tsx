@@ -38,7 +38,7 @@ const GoogleIcon = () => (
 
 
 export default function LoginPage() {
-    const [isSubmitting, setIsSubmitting = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
@@ -60,8 +60,9 @@ export default function LoginPage() {
                 return 'Please enter a valid email address.';
             case 'auth/user-not-found':
             case 'auth/wrong-password':
-            case 'auth/invalid-credential':
                 return 'Invalid email or password. Please try again.';
+            case 'auth/invalid-credential':
+                 return 'Invalid credentials. Please double-check your email and password. For Google Sign-In, ensure your account is set up correctly.';
             case 'auth/email-already-in-use':
                 return 'An account with this email address already exists. Please log in or use a different email.';
             case 'auth/weak-password':
@@ -272,5 +273,4 @@ export default function LoginPage() {
             </Card>
         </div>
     );
-
-    
+}
