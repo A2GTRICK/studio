@@ -5,7 +5,7 @@ import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration is now hardcoded here to resolve environment variable issues.
 const firebaseConfig = {
-  apiKey: "AIzaSyCjxpXINGBgKj1nJj84hEAeLdQc4kIH6YE",
+  apiKey: "AIzaSyAUl7KMIEc5XDsnIGmmkiclGcz5ncKVXYs",
   authDomain: "a2g-smart-notes-fnz4e.firebaseapp.com",
   projectId: "a2g-smart-notes-fnz4e",
   storageBucket: "a2g-smart-notes-fnz4e.appspot.com",
