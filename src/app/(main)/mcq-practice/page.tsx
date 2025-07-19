@@ -96,6 +96,17 @@ const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
     return feedbacks[Math.floor(Math.random() * feedbacks.length)];
 };
 
+const loadingMessages = [
+    "Brewing up some tricky questions... ☕",
+    "Consulting with the pharma gods for the perfect questions... ✨",
+    "Did you know? The word 'drug' comes from the Dutch word 'droog', meaning 'dry'.",
+    "Shaking the pill bottle of knowledge... please wait.",
+    "AI is studying past papers harder than you are right now... 😉",
+    "Compiling questions... This is more complex than organic chemistry!",
+    "Get ready! These questions are freshly synthesized.",
+    "Fun Fact: Aspirin, one of the first drugs to be synthesized, originates from willow tree bark."
+];
+
 
 export default function McqPracticePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -114,6 +125,21 @@ export default function McqPracticePage() {
   
   const [dailyQuestionCount, setDailyQuestionCount] = useState(0);
   const [dailyLimit, setDailyLimit] = useState(30);
+
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setCurrentLoadingMessage(prev => {
+            const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
+            return loadingMessages[nextIndex];
+        });
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   useEffect(() => {
     try {
@@ -326,7 +352,7 @@ export default function McqPracticePage() {
     }
     return { ...feedback, cardClass: "bg-destructive/10 border-destructive" };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [submissionCount]);
+  }, [submissionCount, isSubmitted]);
 
 
   const handleShare = () => {
@@ -454,7 +480,7 @@ export default function McqPracticePage() {
           {isLoading && (
               <div className="flex flex-col items-center justify-center h-96 text-center">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-4 text-muted-foreground">Generating your custom quiz... please wait.</p>
+                  <p className="mt-4 text-muted-foreground h-6">{currentLoadingMessage}</p>
               </div>
           )}
           {error && !isLoading && (
@@ -659,5 +685,3 @@ export default function McqPracticePage() {
     </>
   );
 }
-
-    
