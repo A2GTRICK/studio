@@ -70,6 +70,8 @@ export default function LoginPage() {
                 return 'The sign-in window was closed. Please try again.';
              case 'auth/account-exists-with-different-credential':
                 return 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
+            case 'auth/invalid-api-key':
+                 return 'Configuration error: The Firebase API key is invalid. Please ensure your environment variables are set up correctly.';
             default:
                 console.error('Unhandled Auth Error:', errorCode);
                 return 'An unexpected error occurred. Please try again later.';
@@ -262,5 +264,4 @@ export default function LoginPage() {
             </Card>
         </div>
     );
-
-    
+}
