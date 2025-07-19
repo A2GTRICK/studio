@@ -6,9 +6,13 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 
+// --- IMPORTANT: Define the admin user's email address here ---
+const ADMIN_EMAIL = 'admin@example.com';
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean;
   logout: () => Promise<void>;
 }
 
@@ -17,12 +21,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setIsAdmin(currentUser?.email === ADMIN_EMAIL);
       setLoading(false);
     });
 
@@ -34,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const isAuthPage = pathname === '/login';
     const isLandingPage = pathname === '/';
+    const isAdminPage = pathname.startsWith('/admin');
 
     // If the user is logged in and tries to access the login page, redirect to dashboard
     if (user && isAuthPage) {
@@ -44,16 +51,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user && !isAuthPage && !isLandingPage) {
       router.push('/login');
     }
-  }, [user, loading, pathname, router]);
+      
+    // If a non-admin tries to access an admin page, redirect them
+    if (user && isAdminPage && !isAdmin) {
+        router.push('/dashboard');
+    }
+
+  }, [user, loading, pathname, router, isAdmin]);
   
   const logout = async () => {
       await signOut(auth);
       setUser(null);
+      setIsAdmin(false);
   }
 
   const value = {
     user,
     loading,
+    isAdmin,
     logout,
   };
 

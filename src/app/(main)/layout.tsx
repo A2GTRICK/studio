@@ -137,6 +137,7 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { isAdmin } = useAuth();
   const unreadNotificationCount = notifications.length;
 
   return (
@@ -235,15 +236,20 @@ export default function MainLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <Separator className="my-2" />
-             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Admin Panel">
-                <Link href="/admin/notes">
-                  <Shield />
-                  <span>Admin Panel</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            
+            {isAdmin && (
+              <>
+                <Separator className="my-2" />
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Admin Panel">
+                    <Link href="/admin/notes">
+                      <Shield />
+                      <span>Admin Panel</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
+            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
