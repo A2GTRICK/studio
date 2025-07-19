@@ -114,6 +114,8 @@ export default function ServicesPage() {
                                                     <SelectTrigger><SelectValue placeholder="Select your academic level" /></SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
+                                                    <SelectItem value="10th Grade">10th Grade</SelectItem>
+                                                    <SelectItem value="12th Grade">12th Grade</SelectItem>
                                                     <SelectItem value="D.Pharm">D.Pharm</SelectItem>
                                                     <SelectItem value="B.Pharm">B.Pharm</SelectItem>
                                                     <SelectItem value="M.Pharm">M.Pharm</SelectItem>
