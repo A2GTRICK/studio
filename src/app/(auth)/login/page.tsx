@@ -48,9 +48,6 @@ export default function LoginPage() {
     });
     
     const getFriendlyAuthError = (err: AuthError) => {
-        if (err.code.includes('auth/requests-to-this-api') && err.code.includes('are-blocked')) {
-            return 'Configuration Error: Email/Password sign-in is disabled. Please enable it in the Firebase Console under Authentication -> Sign-in method.';
-        }
         switch (err.code) {
             case 'auth/invalid-email': return 'Please enter a valid email address.';
             case 'auth/user-not-found': return 'No account found with this email. Please check your spelling or sign up.';
@@ -61,7 +58,7 @@ export default function LoginPage() {
             case 'auth/popup-closed-by-user': return 'The sign-in window was closed. Please try again.';
             case 'auth/account-exists-with-different-credential': return 'An account already exists with this email. Please sign in using the original method (e.g., Google).';
             case 'auth/invalid-api-key': case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.': return 'Configuration error: The Firebase API key is invalid. Please check your setup.';
-            case 'auth/unauthorized-domain': return 'This domain is not authorized. Go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add "localhost".';
+            case 'auth/unauthorized-domain': return 'This domain is not authorized for authentication. Please go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add "localhost".';
             default:
                 console.error('Unhandled Auth Error:', err.code, err.message);
                 return 'An unexpected error occurred. Please try again later.';
