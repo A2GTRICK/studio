@@ -2,7 +2,7 @@
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarMenuBadge } from "@/components/ui/sidebar";
-import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, ArrowRight, Shield, LogOut } from "lucide-react";
+import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, Shield, LogOut } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { User as FirebaseUser } from 'firebase/auth';
 
 function NotificationPopover() {
     const recentNotifications = notifications.slice(0, 4);
@@ -85,31 +86,20 @@ function NotificationPopover() {
     )
 }
 
-function UserProfile() {
-    const { user, loading, logout } = useAuth();
+function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promise<void> }) {
     const router = useRouter();
 
     const handleLogout = async () => {
         await logout();
         router.push('/login');
     };
-
-    if (loading) {
-        return (
-            <div className="flex items-center gap-3 p-3 border-t">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
-                </div>
-            </div>
-        )
-    }
-
-    if (!user) return null;
     
     const getInitials = (email: string | null) => {
         if (!email) return 'U';
+        const name = user.displayName;
+        if (name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase();
+        }
         return email.charAt(0).toUpperCase();
     }
     
@@ -117,11 +107,11 @@ function UserProfile() {
         <div className="flex items-center justify-between gap-3 p-3 border-t">
             <div className="flex items-center gap-3 overflow-hidden">
                 <Avatar>
-                    <AvatarImage src={user.photoURL || `https://placehold.co/40x40.png/E8D5FF/6213F2?text=${getInitials(user.email)}`} alt="User avatar" data-ai-hint="user avatar" />
+                    <AvatarImage src={user.photoURL || undefined} alt="User avatar" />
                     <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
                 </Avatar>
                 <div className="overflow-hidden">
-                    <p className="font-semibold truncate">{user.displayName || 'User'}</p>
+                    <p className="font-semibold truncate text-sm">{user.displayName || 'User'}</p>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                 </div>
             </div>
@@ -132,12 +122,25 @@ function UserProfile() {
     )
 }
 
+function UserProfileSkeleton() {
+     return (
+        <div className="flex items-center gap-3 p-3 border-t">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2 w-full">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-32" />
+            </div>
+        </div>
+    )
+}
+
+
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAdmin } = useAuth();
+  const { user, loading, isAdmin, logout } = useAuth();
   const unreadNotificationCount = notifications.length;
 
   return (
@@ -253,7 +256,7 @@ export default function MainLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-            <UserProfile />
+            {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} logout={logout} /> : null}
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
@@ -267,8 +270,8 @@ export default function MainLayout({
                 </Link>
             </Button>
             <NotificationPopover />
-            <div className="md:hidden">
-              <UserProfile />
+             <div className="md:hidden">
+                {loading ? <Skeleton className="h-8 w-8 rounded-full" /> : user ? <UserProfile user={user} logout={logout} /> : null}
             </div>
           </div>
         </header>
@@ -279,3 +282,5 @@ export default function MainLayout({
     </SidebarProvider>
   );
 }
+
+    

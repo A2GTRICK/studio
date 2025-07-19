@@ -2,11 +2,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, firebaseConfig } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ServerCrash } from 'lucide-react';
+import { Loader2, ServerCrash } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 // --- IMPORTANT: Define the admin user's email address here ---
 const ADMIN_EMAIL = 'admin@example.com';
@@ -20,22 +20,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const FullPageSpinner = () => (
+    <div className="flex justify-center items-center h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    </div>
+);
+
 const FirebaseConfigError = () => (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
         <Alert variant="destructive" className="max-w-2xl">
             <ServerCrash className="h-4 w-4" />
-            <AlertTitle className="text-xl font-bold">Configuration Error</AlertTitle>
+            <AlertTitle className="text-xl font-bold">Firebase Configuration Error</AlertTitle>
             <AlertDescription className="mt-2">
-                The application cannot connect to Firebase because the required API keys are missing or invalid.
+                The application cannot connect to Firebase.
                 <ol className="mt-4 list-decimal list-inside space-y-2">
                     <li>
-                        Ensure you have copied your Firebase project credentials into the <strong>.env</strong> file at the root of the project.
+                        Ensure you have copied your Firebase project credentials into the <strong>.env</strong> file.
                     </li>
                     <li>
-                        Make sure the variable names in <strong>.env</strong> match the format: <strong>NEXT_PUBLIC_FIREBASE_...</strong>
+                        After adding the keys, you must <strong>restart the development server</strong> for the changes to take effect.
                     </li>
-                    <li>
-                        After adding the keys, you must <strong>completely restart the development server</strong> for the changes to take effect.
+                     <li>
+                        Go to your Firebase Console -> Authentication -> Settings -> Authorized domains and ensure your deployment domain (and 'localhost') is added.
                     </li>
                 </ol>
             </AlertDescription>
@@ -51,15 +57,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
-    return <FirebaseConfigError />;
+  // Check for valid Firebase configuration from .env file
+  const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY_HERE';
+  if (!isFirebaseConfigured && pathname !== '/login') {
+     // Don't render error on login page itself, it has its own
+     if(pathname === '/login') {
+        // Render children so login page can show its specific error
+     } else {
+        return <FirebaseConfigError />;
+     }
   }
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAdmin(currentUser?.email === ADMIN_EMAIL);
+      setLoading(false);
+    }, (error) => {
+      // Catch potential auth errors (like config issues) during initialization
+      console.error("Firebase Auth Error:", error);
       setLoading(false);
     });
 
@@ -67,52 +84,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (loading) return; // Don't do anything while loading
+    if (loading) return;
 
     const isAuthPage = pathname === '/login';
     const isLandingPage = pathname === '/';
     const isAdminPage = pathname.startsWith('/admin');
 
-    // If the user is logged in and tries to access the login page, redirect to dashboard
+    // If user is logged in, redirect from login page to dashboard
     if (user && isAuthPage) {
       router.push('/dashboard');
+      return;
     }
 
-    // If the user is not logged in and tries to access a protected page, redirect to login
+    // If user is NOT logged in, redirect any protected page to login
     if (!user && !isAuthPage && !isLandingPage) {
       router.push('/login');
+      return;
     }
       
     // If a non-admin tries to access an admin page, redirect them
-    if (user && isAdminPage && !isAdmin) {
+    if (user && !isAdmin && isAdminPage) {
         router.push('/dashboard');
+        return;
     }
 
   }, [user, loading, pathname, router, isAdmin]);
   
   const logout = async () => {
       await signOut(auth);
-      setUser(null);
-      setIsAdmin(false);
+      // Let the onAuthStateChanged listener handle state updates
   }
 
-  const value = {
-    user,
-    loading,
-    isAdmin,
-    logout,
-  };
+  const value = { user, loading, isAdmin, logout };
 
-  const isAuthPage = pathname === '/login';
-  const isLandingPage = pathname === '/';
+  const isPublicPage = pathname === '/' || pathname === '/login';
 
-  // Show a global loading spinner for protected pages while auth state is resolving
-  if (loading && !isAuthPage && !isLandingPage) {
-    return (
-        <div className="flex justify-center items-center h-screen">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-        </div>
-    );
+  if (loading && !isPublicPage) {
+    return <FullPageSpinner />;
   }
 
   return (
@@ -129,3 +137,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

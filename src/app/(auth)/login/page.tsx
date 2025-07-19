@@ -57,8 +57,10 @@ export default function LoginPage() {
             case 'auth/weak-password': return 'The password is too weak. It must be at least 6 characters long.';
             case 'auth/popup-closed-by-user': return 'The sign-in window was closed. Please try again.';
             case 'auth/account-exists-with-different-credential': return 'An account already exists with this email. Please sign in using the original method (e.g., Google).';
-            case 'auth/invalid-api-key': case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.': return 'Configuration error: The Firebase API key is invalid. Please check your setup.';
-            case 'auth/unauthorized-domain': return 'This domain is not authorized for authentication. Please go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add "localhost".';
+            case 'auth/unauthorized-domain': return 'This domain is not authorized for authentication. Please go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add your domain.';
+            case 'auth/invalid-api-key':
+            case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
+                return 'Configuration error: The Firebase API key is invalid. Please check your setup.';
             default:
                 console.error('Unhandled Auth Error:', err.code, err.message);
                 return 'An unexpected error occurred. Please try again later.';
@@ -70,12 +72,15 @@ export default function LoginPage() {
         setIsSignUp(false);
         return;
       }
+      setIsSubmitting(true);
       try {
         const methods = await fetchSignInMethodsForEmail(auth, email);
         setIsSignUp(methods.length === 0);
       } catch (error) {
         // This error can happen for invalid emails, etc. Default to not showing the name field.
         setIsSignUp(false);
+      } finally {
+        setIsSubmitting(false);
       }
     };
 
@@ -254,3 +259,5 @@ export default function LoginPage() {
         </div>
     );
 }
+
+    

@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, Bell, LogIn } from 'lucide-react';
+import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { subscribeToNewsletter } from '@/ai/flows/subscribe-to-newsletter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -48,6 +50,28 @@ export default function LandingPage() {
     }
   };
 
+  const renderAuthButton = () => {
+    if (loading) {
+      return <Skeleton className="h-10 w-28" />;
+    }
+    if (user) {
+      return (
+        <Button asChild>
+          <Link href="/dashboard">
+            Go to App <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
+      );
+    }
+    return (
+      <Button asChild>
+        <Link href="/login">
+          Login / Sign Up <LogIn className="ml-2 h-4 w-4" />
+        </Link>
+      </Button>
+    );
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -56,19 +80,7 @@ export default function LandingPage() {
             A2G Smart Notes
         </Link>
          <div className="flex items-center gap-4">
-            {loading ? null : user ? (
-                <Button asChild>
-                    <Link href="/dashboard">
-                        Go to App <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                </Button>
-            ) : (
-                 <Button asChild>
-                    <Link href="/login">
-                        Login / Sign Up <LogIn className="ml-2 h-4 w-4" />
-                    </Link>
-                </Button>
-            )}
+            {renderAuthButton()}
         </div>
       </header>
 
@@ -219,3 +231,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
