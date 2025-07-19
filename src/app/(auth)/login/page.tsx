@@ -59,7 +59,7 @@ export default function LoginPage() {
             case 'auth/popup-closed-by-user': return 'The sign-in window was closed. Please try again.';
             case 'auth/account-exists-with-different-credential': return 'An account already exists with this email. Please sign in using the original method (e.g., Google).';
             case 'auth/invalid-api-key': case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.': return 'Configuration error: The Firebase API key is invalid. Please check your setup.';
-            case 'auth/unauthorized-domain': return 'This domain is not authorized. Please add "localhost" to the authorized domains in your Firebase Console.';
+            case 'auth/unauthorized-domain': return 'This domain is not authorized. Go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add "localhost".';
             default:
                 console.error('Unhandled Auth Error:', err.code, err.message);
                 return 'An unexpected error occurred. Please try again later.';
@@ -243,3 +243,5 @@ export default function LoginPage() {
         </div>
     );
 }
+
+    
