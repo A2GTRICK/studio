@@ -2,13 +2,16 @@
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarMenuBadge } from "@/components/ui/sidebar";
-import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, ArrowRight, Shield } from "lucide-react";
+import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, ArrowRight, Shield, LogOut } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { notifications } from "@/lib/notifications-data";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function NotificationPopover() {
     const recentNotifications = notifications.slice(0, 4);
@@ -79,6 +82,53 @@ function NotificationPopover() {
                 </div>
             </PopoverContent>
         </Popover>
+    )
+}
+
+function UserProfile() {
+    const { user, loading, logout } = useAuth();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        await logout();
+        router.push('/login');
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center gap-3 p-3 border-t">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-32" />
+                </div>
+            </div>
+        )
+    }
+
+    if (!user) return null;
+    
+    const getInitials = (email: string | null) => {
+        if (!email) return 'U';
+        return email.charAt(0).toUpperCase();
+    }
+    
+    return (
+        <div className="flex items-center justify-between gap-3 p-3 border-t">
+            <div className="flex items-center gap-3 overflow-hidden">
+                <Avatar>
+                    <AvatarImage src={user.photoURL || `https://placehold.co/40x40.png/E8D5FF/6213F2?text=${getInitials(user.email)}`} alt="User avatar" data-ai-hint="user avatar" />
+                    <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
+                </Avatar>
+                <div className="overflow-hidden">
+                    <p className="font-semibold truncate">{user.displayName || 'User'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
+                <LogOut className="h-4 w-4" />
+            </Button>
+        </div>
     )
 }
 
@@ -197,16 +247,7 @@ export default function MainLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-3 p-3 border-t">
-              <Avatar>
-                <AvatarImage src="https://placehold.co/40x40.png" alt="User avatar" data-ai-hint="user avatar" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-              <div className="overflow-hidden">
-                <p className="font-semibold truncate">User Name</p>
-                <p className="text-xs text-muted-foreground truncate">user@a2g.com</p>
-              </div>
-            </div>
+            <UserProfile />
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
@@ -220,10 +261,9 @@ export default function MainLayout({
                 </Link>
             </Button>
             <NotificationPopover />
-            <Avatar className="md:hidden">
-              <AvatarImage src="https://placehold.co/40x40.png" alt="User avatar" data-ai-hint="user avatar" />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
+            <div className="md:hidden">
+              <UserProfile />
+            </div>
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6 overflow-auto">

@@ -3,23 +3,22 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, Bell } from 'lucide-react';
+import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, Bell, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { subscribeToNewsletter } from '@/ai/flows/subscribe-to-newsletter';
 import { useToast } from '@/hooks/use-toast';
-import { notifications } from '@/lib/notifications-data';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [downloadLink, setDownloadLink] = useState<string | null>(null);
   const { toast } = useToast();
-  const [userName, setUserName] = useState("Arvind"); // Placeholder for Firebase Auth user name
-  const unreadNotificationCount = notifications.length;
-
+  const { user, loading } = useAuth();
+  
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
@@ -53,24 +52,24 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-        <h1 className="text-2xl font-headline font-bold text-primary">A2G Smart Notes</h1>
+        <Link href="/" className="text-2xl font-headline font-bold text-primary flex items-center gap-2">
+            <GraduationCap />
+            A2G Smart Notes
+        </Link>
          <div className="flex items-center gap-4">
-            <Button asChild variant="ghost">
-              <Link href="/dashboard">
-                Welcome back, {userName}!
-              </Link>
-            </Button>
-            <Button asChild variant="default" size="icon" className="relative group shadow-lg hover:shadow-primary/40 transition-shadow duration-300 transform hover:-translate-y-1">
-                <Link href="/dashboard">
-                    <Bell />
-                    {unreadNotificationCount > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 justify-center items-center text-xs text-white">{unreadNotificationCount}</span>
-                        </span>
-                    )}
-                </Link>
-            </Button>
+            {loading ? null : user ? (
+                <Button asChild>
+                    <Link href="/dashboard">
+                        Go to App <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+            ) : (
+                 <Button asChild>
+                    <Link href="/login">
+                        Login / Sign Up <LogIn className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+            )}
         </div>
       </header>
 
@@ -85,8 +84,8 @@ export default function LandingPage() {
             </p>
             <div className="mt-10">
               <Button size="lg" asChild>
-                <Link href="/dashboard">
-                  Enter App <ArrowRight className="ml-2" />
+                <Link href={user ? "/dashboard" : "/login"}>
+                  Get Started for Free <ArrowRight className="ml-2" />
                 </Link>
               </Button>
             </div>
