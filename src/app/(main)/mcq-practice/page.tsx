@@ -107,6 +107,13 @@ const loadingMessages = [
     "Fun Fact: Aspirin, one of the first drugs to be synthesized, originates from willow tree bark."
 ];
 
+type DisplayedFeedback = {
+  emoji: string;
+  message: string;
+  taunt: string;
+  cardClass: string;
+} | null;
+
 
 export default function McqPracticePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -115,7 +122,6 @@ export default function McqPracticePage() {
   const [answers, setAnswers] = useState<AnswersState>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
-  const [submissionCount, setSubmissionCount] = useState(0);
   const { toast } = useToast();
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -125,6 +131,8 @@ export default function McqPracticePage() {
   
   const [dailyQuestionCount, setDailyQuestionCount] = useState(0);
   const [dailyLimit, setDailyLimit] = useState(30);
+  
+  const [displayedFeedback, setDisplayedFeedback] = useState<DisplayedFeedback>(null);
 
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
 
@@ -270,7 +278,6 @@ export default function McqPracticePage() {
   };
 
   const handleSubmitQuiz = async () => {
-    setSubmissionCount(prev => prev + 1);
     setIsSubmitted(true);
     setIsFeedbackLoading(true);
     setAiFeedback(null);
@@ -279,7 +286,29 @@ export default function McqPracticePage() {
         setIsFeedbackLoading(false);
         return;
     }
+    
+    // Calculate score and select feedback dialogue
+    const newScore = questions.reduce((score, question, index) => {
+      return score + (answers[index] === question.correctAnswer ? 1 : 0);
+    }, 0);
+    const newScorePercentage = (newScore / questions.length) * 100;
+    
+    let category;
+    let cardClass;
+    if (newScorePercentage > 70) {
+      category = scoreFeedbacks.good;
+      cardClass = "bg-green-500/10 border-green-500";
+    } else if (newScorePercentage >= 40) {
+      category = scoreFeedbacks.medium;
+      cardClass = "bg-yellow-500/10 border-yellow-500";
+    } else {
+      category = scoreFeedbacks.bad;
+      cardClass = "bg-destructive/10 border-destructive";
+    }
+    const feedback = getRandomFeedback(category);
+    setDisplayedFeedback({ ...feedback, cardClass });
 
+    // Generate detailed AI feedback
     try {
         const quizPerformance = questions.map((q, index) => ({
             question: q.question,
@@ -309,14 +338,13 @@ export default function McqPracticePage() {
     }
   };
 
-  const calculateScore = () => {
-    if (!questions) return 0;
+  const score = useMemo(() => {
+    if (!questions || !isSubmitted) return 0;
     return questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
     }, 0);
-  };
+  }, [answers, questions, isSubmitted]);
 
-  const score = calculateScore();
   const scorePercentage = questions ? (score / questions.length) * 100 : 0;
   
   const getResultIcon = (isCorrect: boolean) => {
@@ -331,36 +359,12 @@ export default function McqPracticePage() {
      return 'border-border';
   }
 
-  const scoreFeedback = useMemo(() => {
-    if (!isSubmitted) return null;
-    let category;
-    if (scorePercentage > 70) {
-      category = scoreFeedbacks.good;
-    } else if (scorePercentage >= 40) {
-      category = scoreFeedbacks.medium;
-    } else {
-      category = scoreFeedbacks.bad;
-    }
-  
-    const feedback = getRandomFeedback(category);
-  
-    if (scorePercentage > 70) {
-      return { ...feedback, cardClass: "bg-green-500/10 border-green-500" };
-    }
-    if (scorePercentage >= 40) {
-      return { ...feedback, cardClass: "bg-yellow-500/10 border-yellow-500" };
-    }
-    return { ...feedback, cardClass: "bg-destructive/10 border-destructive" };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [submissionCount, isSubmitted]);
-
-
   const handleShare = () => {
-    if (!questions || !scoreFeedback) return;
+    if (!questions || !displayedFeedback) return;
     const currentFormValues = form.getValues();
     const examName = currentFormValues.examType === 'Other' ? currentFormValues.otherExamType : currentFormValues.examType;
 
-    const text = `I just scored ${score}/${questions.length} on my ${examName} practice quiz! ${scoreFeedback.message} - Check out A2G Smart Notes!`;
+    const text = `I just scored ${score}/${questions.length} on my ${examName} practice quiz! ${displayedFeedback.message} - Check out A2G Smart Notes!`;
     navigator.clipboard.writeText(text);
     toast({
         title: "Copied to Clipboard!",
@@ -502,12 +506,12 @@ export default function McqPracticePage() {
 
           {questions && (
             <FormProvider {...form}>
-            {isSubmitted && scoreFeedback && (
-                <Card className={scoreFeedback.cardClass}>
+            {isSubmitted && displayedFeedback && (
+                <Card className={displayedFeedback.cardClass}>
                     <CardHeader className="text-center">
-                        <div className="text-6xl mb-4">{scoreFeedback.emoji}</div>
-                        <CardTitle className="font-headline text-3xl">{scoreFeedback.message}</CardTitle>
-                        <CardDescription className="text-base">{scoreFeedback.taunt}</CardDescription>
+                        <div className="text-6xl mb-4">{displayedFeedback.emoji}</div>
+                        <CardTitle className="font-headline text-3xl">{displayedFeedback.message}</CardTitle>
+                        <CardDescription className="text-base">{displayedFeedback.taunt}</CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">
                         <p className="text-lg text-muted-foreground mt-2">You scored</p>
@@ -685,3 +689,5 @@ export default function McqPracticePage() {
     </>
   );
 }
+
+    
