@@ -22,16 +22,18 @@ export const services = [
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `Hello A2G Smart Notes Team,
 
-I'm interested in your Internship Report service. Please provide a quote.
+I'm interested in your Internship Report service and would like to request a quote.
 (Mujhe aapki Internship Report service mein interest hai. Kripya quote dein.)
 
-Here are my details (Meri jaankari):
+Here are my project details:
+(Mere project ki jaankari nimnlikhit hai):
+
 - Course (Kaunsa course?): [e.g., B.Pharm, D.Pharm]
 - Year/Semester (Kaunsa saal/semester?): [e.g., 4th Year, 1st Year]
 - University/College (University/College ka naam?): [Your University Name]
 - Internship Field (Internship kahan ki?): [e.g., Hospital, Industry, Community]
 - Report Deadline (Deadline kab hai?): [Date]
-- Specific Requirements (Koi khaas zaroorat?): [Please describe]
+- Specific Requirements (Koi khaas zaroorat?): [Please describe any specific guidelines or requirements here]
 
 Thank you!`
   },
@@ -57,7 +59,8 @@ Thank you!`
 
 I am writing to request a quote for your Dissertation Support service for my M.Pharm program.
 
-Please find my details below:
+Please find my details below for an accurate estimate:
+
 - Specialization: [e.g., Pharmaceutics, Pharmacology, Medicinal Chemistry]
 - Research Area/Topic (if decided): [Your Topic or Area of Interest]
 - Current Stage: [e.g., Topic Selection, Methodology, Data Collection, Writing]
@@ -65,7 +68,9 @@ Please find my details below:
 - Specific Support Needed: [e.g., Full End-to-End Support, Data Analysis Only, Writing & Formatting]
 - Project Deadline: [Date]
 
-Thank you for your time.`
+I look forward to hearing from you.
+
+Thank you.`
   },
   {
     icon: ScrollText,
@@ -90,13 +95,14 @@ Thank you for your time.`
 I would like to inquire about your Synopsis Writing service.
 
 Here are the project details:
+
 - Course: [e.g., M.Pharm, PhD]
 - Field of Research: [e.g., Medicinal Chemistry, Pharmaceutics]
 - Proposed Research Title/Area: [Your Research Idea]
 - University/Funding Body: [Name of Institution]
 - Formatting Guidelines (if any): [Please specify or attach]
 
-Could you please provide a quote and timeline?
+Could you please provide a quote and an estimated timeline for completion?
 
 Thank you.`
   },
@@ -125,9 +131,9 @@ I'm interested in your Resume/SOP Crafting service.
 - Service Needed: [Resume, SOP, Cover Letter, or a package]
 - My Goal: [e.g., Job application for 'Role' at 'Company', Master's application at 'University']
 - My Field/Specialization: [e.g., Quality Assurance, Clinical Research, Industrial Pharmacy]
-- Please find my current resume attached (if available).
+- (Optional) Please find my current resume attached for reference.
 
-Could you please confirm the next steps?
+Could you please confirm the next steps and provide a quote?
 
 Thank you.`
   },
@@ -151,15 +157,16 @@ Thank you.`
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `Hello A2G Smart Notes Team,
 
-I would like a quote for your Content Writing service.
+I would like a quote for your professional Content Writing service.
 
 Here are the details of my request:
+
 - Type of Content: [e.g., Blog Post, Research Article, Review Article, Website Content]
 - Topic: [Your Topic]
 - Approximate Word Count: [Number of words]
 - Target Audience: [e.g., General public, Healthcare professionals, Students]
 - Deadline: [Date]
-- Any keywords or specific instructions?: [Please provide details]
+- Keywords or Specific Instructions: [Please provide any relevant details]
 
 Thank you.`
   },
@@ -186,14 +193,17 @@ Thank you.`
 I am interested in your Presentation Design service.
 (Mujhe aapki Presentation Design service mein interest hai.)
 
-Here are my project details (Mere project ki jaankari):
+Here are my project details:
+(Mere project ki jaankari nimnlikhit hai):
+
 - Presentation Topic (Topic kya hai?): [Your Topic]
 - Number of Slides (Kitni slides?): [Approximate number, e.g., 15-20]
 - Event (Kiske liye hai?): [e.g., Class Seminar, Final Defense, Conference]
 - Content Status (Content taiyar hai?): [e.g., Yes, I have the full content; No, I need help with content]
 - Deadline (Kab tak chahiye?): [Date]
 
-Please provide a quote. (Kripya quote dein.)
+Please provide a quote for this service.
+(Kripya is seva ke liye quote dein.)
 
 Thank you!`
   }
