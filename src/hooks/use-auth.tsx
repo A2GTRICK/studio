@@ -21,23 +21,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
       setLoading(false);
-      
-      const isAuthPage = pathname === '/login';
-      
-      if (user && isAuthPage) {
-          router.push('/dashboard');
-      }
-      
-      if (!user && !isAuthPage && pathname !== '/') {
-          router.push('/login');
-      }
     });
 
     return () => unsubscribe();
-  }, [router, pathname]);
+  }, []);
+
+  useEffect(() => {
+    if (loading) return; // Don't do anything while loading
+
+    const isAuthPage = pathname === '/login';
+    const isLandingPage = pathname === '/';
+
+    // If the user is logged in and tries to access the login page, redirect to dashboard
+    if (user && isAuthPage) {
+      router.push('/dashboard');
+    }
+
+    // If the user is not logged in and tries to access a protected page, redirect to login
+    if (!user && !isAuthPage && !isLandingPage) {
+      router.push('/login');
+    }
+  }, [user, loading, pathname, router]);
   
   const logout = async () => {
       await signOut(auth);
@@ -51,7 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isAuthPage = pathname === '/login';
-  if (loading && !isAuthPage && pathname !== '/') {
+  const isLandingPage = pathname === '/';
+
+  // Show a global loading spinner for protected pages while auth state is resolving
+  if (loading && !isAuthPage && !isLandingPage) {
     return (
         <div className="flex justify-center items-center h-screen">
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
