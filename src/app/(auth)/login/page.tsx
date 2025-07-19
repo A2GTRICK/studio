@@ -10,13 +10,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile } from 'firebase/auth';
+import { fetchSignInMethodsForEmail } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Loader2, GraduationCap, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const authSchema = z.object({
+  name: z.string().optional(),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
@@ -32,6 +34,7 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSignUp, setIsSignUp] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
@@ -39,7 +42,7 @@ export default function LoginPage() {
 
     const form = useForm<AuthFormValues>({
         resolver: zodResolver(authSchema),
-        defaultValues: { email: "", password: "" },
+        defaultValues: { name: "", email: "", password: "" },
     });
     
     const getFriendlyAuthError = (err: AuthError) => {
@@ -48,7 +51,7 @@ export default function LoginPage() {
         }
         switch (err.code) {
             case 'auth/invalid-email': return 'Please enter a valid email address.';
-            case 'auth/user-not-found': return 'No account found with this email. A new account will be created.';
+            case 'auth/user-not-found': return 'No account found with this email. Please check your spelling or sign up.';
             case 'auth/wrong-password': return 'Invalid password. Please try again.';
             case 'auth/invalid-credential': return 'Invalid credentials. Please double-check your email and password.';
             case 'auth/email-already-in-use': return 'An account with this email address already exists. Please log in.';
@@ -63,28 +66,52 @@ export default function LoginPage() {
         }
     }
 
+    const checkEmailExists = async (email: string) => {
+      if (!email || !z.string().email().safeParse(email).success) {
+        setIsSignUp(false);
+        return;
+      }
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        setIsSignUp(methods.length === 0);
+      } catch (error) {
+        // This error can happen for invalid emails, etc. Default to not showing the name field.
+        setIsSignUp(false);
+      }
+    };
+
+
     const handleAuth = async (data: AuthFormValues) => {
         setIsSubmitting(true);
         setError(null);
-        try {
-            await signInWithEmailAndPassword(auth, data.email, data.password);
-            toast({ title: "Logged In Successfully!", description: "Welcome back." });
-            router.push('/dashboard');
-        } catch (signInError: any) {
-            if (signInError.code === 'auth/user-not-found') {
-                try {
-                    await createUserWithEmailAndPassword(auth, data.email, data.password);
-                    toast({ title: "Account Created!", description: "You have been successfully signed up." });
-                    router.push('/dashboard');
-                } catch (signUpError: any) {
-                    setError(getFriendlyAuthError(signUpError));
-                }
-            } else {
+        
+        if (isSignUp) {
+            // Sign up a new user
+            if (!data.name || data.name.trim() === '') {
+                form.setError('name', { type: 'manual', message: 'Name is required for new accounts.' });
+                setIsSubmitting(false);
+                return;
+            }
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+                await updateProfile(userCredential.user, { displayName: data.name });
+                toast({ title: "Account Created!", description: `Welcome, ${data.name}!` });
+                router.push('/dashboard');
+            } catch (signUpError: any) {
+                setError(getFriendlyAuthError(signUpError));
+            }
+
+        } else {
+            // Sign in an existing user
+            try {
+                await signInWithEmailAndPassword(auth, data.email, data.password);
+                toast({ title: "Logged In Successfully!", description: "Welcome back." });
+                router.push('/dashboard');
+            } catch (signInError: any) {
                 setError(getFriendlyAuthError(signInError));
             }
-        } finally {
-            setIsSubmitting(false);
         }
+        setIsSubmitting(false);
     };
 
     const handleGoogleSignIn = async () => {
@@ -179,10 +206,19 @@ export default function LoginPage() {
                                     <AlertDescription>{error}</AlertDescription>
                                 </Alert>
                             )}
+                            {isSignUp && (
+                                <FormField control={form.control} name="name" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Full Name</FormLabel>
+                                        <FormControl><Input placeholder="Arvind Kumar" {...field} disabled={isSubmitting} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                            )}
                             <FormField control={form.control} name="email" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
-                                    <FormControl><Input placeholder="you@example.com" {...field} disabled={isSubmitting} /></FormControl>
+                                    <FormControl><Input placeholder="you@example.com" {...field} onBlur={(e) => {field.onBlur(); checkEmailExists(e.target.value);}} disabled={isSubmitting} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}/>
@@ -198,7 +234,7 @@ export default function LoginPage() {
                             )}/>
                             <Button type="submit" disabled={isSubmitting} className="w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Continue with Email
+                                {isSignUp ? 'Create Account' : 'Continue with Email'}
                             </Button>
                         </form>
                     </Form>
