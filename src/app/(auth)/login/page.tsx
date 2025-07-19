@@ -71,6 +71,7 @@ export default function LoginPage() {
              case 'auth/account-exists-with-different-credential':
                 return 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
             case 'auth/invalid-api-key':
+            case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
                  return 'Configuration error: The Firebase API key is invalid. Please ensure your environment variables are set up correctly.';
             default:
                 console.error('Unhandled Auth Error:', errorCode);
