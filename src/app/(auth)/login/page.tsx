@@ -73,6 +73,8 @@ export default function LoginPage() {
             case 'auth/invalid-api-key':
             case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
                  return 'Configuration error: The Firebase API key is invalid. Please ensure your environment variables are set up correctly.';
+            case 'auth/unauthorized-domain':
+                return 'This domain is not authorized for authentication. Please add it to the list of authorized domains in your Firebase console.';
             default:
                 console.error('Unhandled Auth Error:', errorCode);
                 return 'An unexpected error occurred. Please try again later.';
