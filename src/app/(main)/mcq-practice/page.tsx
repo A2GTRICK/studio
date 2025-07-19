@@ -139,22 +139,15 @@ export default function McqPracticePage() {
     }
   }, []);
 
-  const updateDailyUsage = (newQuestions: number, newLimit?: number) => {
+  const updateDailyUsage = (newQuestions: number) => {
     const today = new Date().toISOString().split('T')[0];
     const newTotalCount = dailyQuestionCount + newQuestions;
-    const newTotalLimit = newLimit || dailyLimit;
     try {
-        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: newTotalCount, limit: newTotalLimit }));
+        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: newTotalCount, limit: dailyLimit }));
         setDailyQuestionCount(newTotalCount);
-        if (newLimit) {
-            setDailyLimit(newLimit);
-        }
     } catch (e) {
         console.warn("Could not access localStorage for daily quiz limit.");
         setDailyQuestionCount(newTotalCount);
-        if (newLimit) {
-            setDailyLimit(newLimit);
-        }
     }
   };
 
@@ -647,13 +640,8 @@ export default function McqPracticePage() {
         title={`Buy ${paymentDetails?.title}`}
         price={paymentDetails?.price || ''}
         onPaymentSuccess={() => {
-            if (paymentDetails) {
-                updateDailyUsage(0, dailyLimit + paymentDetails.questions);
-                toast({
-                    title: "Questions Added!",
-                    description: `You have successfully added ${paymentDetails.questions} more questions to your daily limit.`
-                })
-            }
+            // This is now just a callback for after the user has been notified.
+            // No automatic upgrade happens here.
             setPaymentDetails(null);
         }}
     />

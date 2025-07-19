@@ -34,7 +34,10 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
 
     const handlePaymentConfirmation = () => {
         setIsOpen(false);
-        toast({ title: "Payment Submitted!", description: "We will verify your payment and activate your purchase shortly." });
+        toast({ 
+            title: "Payment Submitted!", 
+            description: "We will verify your payment and activate your purchase shortly." 
+        });
         if (onPaymentSuccess) {
             onPaymentSuccess();
         }
