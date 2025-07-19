@@ -20,16 +20,18 @@ export const services = [
         "Includes all necessary sections"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello,
+    emailBody: `Hello A2G Smart Notes Team,
 
-I'm interested in your Internship Report service. Please provide a quote based on the following details:
+I'm interested in your Internship Report service. Please provide a quote.
+(Mujhe aapki Internship Report service mein interest hai. Kripya quote dein.)
 
-- Course: [e.g., B.Pharm]
-- Year/Semester: [e.g., 4th Year]
-- University/College: [Your University Name]
-- Internship Field: [e.g., Hospital, Industry]
-- Report Deadline: [Date]
-- Any specific requirements or guidelines: [Please describe]
+Here are my details (Meri jaankari):
+- Course (Kaunsa course?): [e.g., B.Pharm, D.Pharm]
+- Year/Semester (Kaunsa saal/semester?): [e.g., 4th Year, 1st Year]
+- University/College (University/College ka naam?): [Your University Name]
+- Internship Field (Internship kahan ki?): [e.g., Hospital, Industry, Community]
+- Report Deadline (Deadline kab hai?): [Date]
+- Specific Requirements (Koi khaas zaroorat?): [Please describe]
 
 Thank you!`
   },
@@ -51,17 +53,19 @@ Thank you!`
         "Full report writing and proofreading"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello,
+    emailBody: `Hello A2G Smart Notes Team,
 
-I'm interested in your Dissertation Support service for my M.Pharm. Please provide a quote.
+I am writing to request a quote for your Dissertation Support service for my M.Pharm program.
 
-- Specialization: [e.g., Pharmaceutics, Pharmacology]
-- Research Area/Topic (if decided): [Your Topic]
-- Current Stage: [e.g., Topic Selection, Data Collection, Writing]
+Please find my details below:
+- Specialization: [e.g., Pharmaceutics, Pharmacology, Medicinal Chemistry]
+- Research Area/Topic (if decided): [Your Topic or Area of Interest]
+- Current Stage: [e.g., Topic Selection, Methodology, Data Collection, Writing]
 - University: [Your University Name]
-- Specific support needed: [e.g., Full support, Data analysis, Writing only]
+- Specific Support Needed: [e.g., Full End-to-End Support, Data Analysis Only, Writing & Formatting]
+- Project Deadline: [Date]
 
-Thank you!`
+Thank you for your time.`
   },
   {
     icon: ScrollText,
@@ -81,17 +85,20 @@ Thank you!`
         "Adherence to format"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello,
+    emailBody: `Hello A2G Smart Notes Team,
 
-I'm interested in your Synopsis Writing service. Please provide a quote.
+I would like to inquire about your Synopsis Writing service.
 
+Here are the project details:
 - Course: [e.g., M.Pharm, PhD]
-- Field of Research: [e.g., Medicinal Chemistry]
-- Proposed Title/Area: [Your Research Idea]
-- University/Funding Body: [Name]
-- Any specific formatting guidelines?: [Yes/No, please specify]
+- Field of Research: [e.g., Medicinal Chemistry, Pharmaceutics]
+- Proposed Research Title/Area: [Your Research Idea]
+- University/Funding Body: [Name of Institution]
+- Formatting Guidelines (if any): [Please specify or attach]
 
-Thank you!`
+Could you please provide a quote and timeline?
+
+Thank you.`
   },
   {
     icon: User,
@@ -111,16 +118,18 @@ Thank you!`
         "Cover letter writing"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello,
+    emailBody: `Hello A2G Smart Notes Team,
 
 I'm interested in your Resume/SOP Crafting service.
 
-- Service Needed: [Resume, SOP, or both]
-- Target: [e.g., Job application for 'Role' at 'Company', Master's application at 'University']
-- Field: [e.g., Quality Assurance, Clinical Research]
-- Please attach my current resume (if any).
+- Service Needed: [Resume, SOP, Cover Letter, or a package]
+- My Goal: [e.g., Job application for 'Role' at 'Company', Master's application at 'University']
+- My Field/Specialization: [e.g., Quality Assurance, Clinical Research, Industrial Pharmacy]
+- Please find my current resume attached (if available).
 
-Thank you!`
+Could you please confirm the next steps?
+
+Thank you.`
   },
   {
     icon: PenTool,
@@ -140,17 +149,19 @@ Thank you!`
         "Proofreading and editing services"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello,
+    emailBody: `Hello A2G Smart Notes Team,
 
-I'm interested in your Content Writing service. Please provide a quote.
+I would like a quote for your Content Writing service.
 
-- Type of Content: [e.g., Blog Post, Research Article, Review Article]
+Here are the details of my request:
+- Type of Content: [e.g., Blog Post, Research Article, Review Article, Website Content]
 - Topic: [Your Topic]
 - Approximate Word Count: [Number of words]
-- Target Audience: [e.g., General public, Healthcare professionals]
+- Target Audience: [e.g., General public, Healthcare professionals, Students]
 - Deadline: [Date]
+- Any keywords or specific instructions?: [Please provide details]
 
-Thank you!`
+Thank you.`
   },
   {
     icon: Presentation,
@@ -170,15 +181,19 @@ Thank you!`
         "Speaker notes preparation"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello,
+    emailBody: `Hello A2G Smart Notes Team,
 
-I'm interested in your Presentation Design service. Please provide a quote.
+I am interested in your Presentation Design service.
+(Mujhe aapki Presentation Design service mein interest hai.)
 
-- Presentation Topic: [Your Topic]
-- Number of Slides (approx): [Number]
-- Event: [e.g., Class Seminar, Final Defense, Conference]
-- Do you have the content ready?: [Yes/No]
-- Deadline: [Date]
+Here are my project details (Mere project ki jaankari):
+- Presentation Topic (Topic kya hai?): [Your Topic]
+- Number of Slides (Kitni slides?): [Approximate number, e.g., 15-20]
+- Event (Kiske liye hai?): [e.g., Class Seminar, Final Defense, Conference]
+- Content Status (Content taiyar hai?): [e.g., Yes, I have the full content; No, I need help with content]
+- Deadline (Kab tak chahiye?): [Date]
+
+Please provide a quote. (Kripya quote dein.)
 
 Thank you!`
   }
