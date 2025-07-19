@@ -1,15 +1,27 @@
 
 'use client';
 
-import { useState } from 'react';
-import { notesData, type Note } from '@/lib/notes-data';
+import { useState, useEffect } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileText, Gem, AlertTriangle, ShoppingCart, ArrowRight, Check, Lock } from 'lucide-react';
+import { ArrowLeft, FileText, Gem, AlertTriangle, ShoppingCart, ArrowRight, Check, Lock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PaymentDialog } from '@/components/payment-dialog';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
+export type Note = {
+  id: string;
+  title: string;
+  course: string;
+  year: string;
+  subject: string;
+  isPremium: boolean;
+  preview: string;
+  createdAt: any;
+};
 
 
 const premiumFeatures = [
@@ -21,13 +33,40 @@ const premiumFeatures = [
 
 export default function NoteDetailPage() {
   const params = useParams();
-  const id = typeof params.id === 'string' ? parseInt(params.id, 10) : NaN;
-  const note = notesData.find(n => n.id === id);
-
+  const id = typeof params.id === 'string' ? params.id : '';
+  
+  const [note, setNote] = useState<Note | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showUnlockDialog, setShowUnlockDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
-  if (isNaN(id) || !note) {
+  useEffect(() => {
+    if (!id) return;
+    const fetchNote = async () => {
+        setIsLoading(true);
+        const docRef = doc(db, "notes", id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            setNote({ ...docSnap.data(), id: docSnap.id } as Note);
+        } else {
+            setNote(null); // Will trigger notFound()
+        }
+        setIsLoading(false);
+    }
+    fetchNote();
+  }, [id]);
+
+
+  if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-[60vh]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      )
+  }
+
+  if (!note) {
     notFound();
   }
 
@@ -42,13 +81,13 @@ export default function NoteDetailPage() {
         <>
         <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-[60vh] text-center">
             <div className="p-4 rounded-full bg-destructive/10 mb-4">
-                <AlertTriangle className="h-10 w-10 text-destructive" />
+                <Lock className="h-10 w-10 text-destructive" />
             </div>
             <h1 className="text-3xl font-headline font-bold">Access Denied</h1>
             <p className="text-muted-foreground mt-2">This is a premium note. Please upgrade your plan or purchase it individually to view this content.</p>
             <div className="flex flex-col sm:flex-row gap-2 mt-6">
                 <Button onClick={() => setShowUnlockDialog(true)} size="lg">
-                    <Lock className="mr-2 h-4 w-4"/>
+                    <Gem className="mr-2 h-4 w-4"/>
                     Unlock This Note
                 </Button>
                 <Button asChild variant="ghost" size="lg">
@@ -99,6 +138,9 @@ export default function NoteDetailPage() {
             setIsOpen={setShowPaymentDialog}
             title={`Buy "${note?.title}"`}
             price="₹19"
+             onPaymentSuccess={() => {
+                setShowPaymentDialog(false);
+            }}
         />
         </>
     );
@@ -128,11 +170,14 @@ export default function NoteDetailPage() {
           {/* 
             This is where your actual note content would go. 
             In a real app, you would fetch this from a database (like Firestore) 
-            or a markdown file.
+            or a markdown file. For this prototype, we're using placeholder text.
           */}
           <h2>Introduction to {note.title}</h2>
           <p>
             This section provides a detailed overview of the fundamental concepts related to {note.title}. We will explore the core principles, historical context, and its significance in modern pharmacy practice. For students in the {note.course} program, understanding these basics is crucial for building a strong foundation in {note.subject}.
+          </p>
+          <p>
+            {note.preview} This is where more detailed content about the note would be displayed. In a real application, this would be a long-form text field fetched from your database.
           </p>
 
           <h3>Key Concepts</h3>

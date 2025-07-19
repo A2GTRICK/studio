@@ -1,5 +1,8 @@
 
-// --- ACCURATE PLACEHOLDER DATA based on Pharmacy Curriculum ---
+// --- THIS FILE IS NOW DEPRECATED ---
+// The application now fetches notes directly from the Firestore database.
+// This file is kept for reference but is no longer used by the application.
+
 export type Note = {
   id: number;
   title: string;

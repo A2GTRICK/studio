@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, PlusCircle, FileUp, Edit, Trash2 } from "lucide-react";
-import { notesData, type Note } from '@/lib/notes-data';
+import { MoreHorizontal, PlusCircle, FileUp, Edit, Trash2, Loader2 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,39 +30,101 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { db } from '@/lib/firebase';
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+
+export type Note = {
+    id: string;
+    title: string;
+    course: string;
+    year: string;
+    subject: string;
+    preview: string;
+    isPremium: boolean;
+    createdAt: any;
+};
 
 export default function AdminNotesPage() {
-    const [notes, setNotes] = useState<Note[]>(notesData);
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
+    
+    const fetchNotes = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const notesCollection = collection(db, 'notes');
+            const q = query(notesCollection, orderBy('createdAt', 'desc'));
+            const notesSnapshot = await getDocs(q);
+            const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
+            setNotes(notesList);
+        } catch (error) {
+            console.error("Error fetching notes:", error);
+            toast({
+                title: "Error fetching notes",
+                description: "Could not retrieve notes from the database.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
 
-    const handleAddNote = (e: React.FormEvent<HTMLFormElement>) => {
+    useEffect(() => {
+        fetchNotes();
+    }, [fetchNotes]);
+
+    const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setIsSubmitting(true);
         const formData = new FormData(e.currentTarget);
         const newNote = {
-            id: Math.max(...notes.map(n => n.id), 0) + 1,
             title: formData.get('title') as string,
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
             preview: formData.get('preview') as string,
             isPremium: formData.get('isPremium') === 'on',
+            createdAt: serverTimestamp(),
         };
-        // In a real app, you'd upload the file and then save the metadata
-        setNotes(prev => [newNote, ...prev]);
-        toast({
-            title: "Note Added Successfully!",
-            description: `"${newNote.title}" has been added to the library.`
-        });
-        e.currentTarget.reset();
+
+        try {
+            const docRef = await addDoc(collection(db, 'notes'), newNote);
+            setNotes(prev => [{...newNote, id: docRef.id, createdAt: new Date() }, ...prev]);
+            toast({
+                title: "Note Added Successfully!",
+                description: `"${newNote.title}" has been added to the library.`
+            });
+            (e.target as HTMLFormElement).reset();
+        } catch (error) {
+            console.error("Error adding note:", error);
+            toast({
+                title: "Error adding note",
+                description: "There was a problem saving the note.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
     
-    const handleDeleteNote = (noteId: number) => {
-        setNotes(prev => prev.filter(note => note.id !== noteId));
-        toast({
-            title: "Note Deleted",
-            description: "The note has been removed from the library.",
-            variant: "destructive"
-        });
+    const handleDeleteNote = async (noteId: string) => {
+        try {
+            await deleteDoc(doc(db, 'notes', noteId));
+            setNotes(prev => prev.filter(note => note.id !== noteId));
+            toast({
+                title: "Note Deleted",
+                description: "The note has been removed from the library.",
+                variant: "destructive"
+            });
+        } catch (error) {
+            console.error("Error deleting note:", error);
+            toast({
+                title: "Error deleting note",
+                description: "There was a problem deleting the note.",
+                variant: "destructive"
+            });
+        }
     }
 
     return (
@@ -72,18 +133,18 @@ export default function AdminNotesPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="font-headline flex items-center gap-2"><FileUp /> Add New Note</CardTitle>
-                        <CardDescription>Upload a new PDF and add its details to the library.</CardDescription>
+                        <CardDescription>Add a new note's details to the library. The note will be live immediately.</CardDescription>
                     </CardHeader>
                     <form onSubmit={handleAddNote}>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="title">Note Title</Label>
-                                <Input id="title" name="title" placeholder="e.g., Human Anatomy..." required />
+                                <Input id="title" name="title" placeholder="e.g., Human Anatomy..." required disabled={isSubmitting} />
                             </div>
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="course">Course</Label>
-                                    <Select name="course" required>
+                                    <Select name="course" required disabled={isSubmitting}>
                                         <SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="B.Pharm">B.Pharm</SelectItem>
@@ -93,7 +154,7 @@ export default function AdminNotesPage() {
                                 </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="year">Year</Label>
-                                    <Select name="year" required>
+                                    <Select name="year" required disabled={isSubmitting}>
                                         <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="1st Year">1st Year</SelectItem>
@@ -106,25 +167,21 @@ export default function AdminNotesPage() {
                              </div>
                             <div className="space-y-2">
                                 <Label htmlFor="subject">Subject</Label>
-                                <Input id="subject" name="subject" placeholder="e.g., HAP I" required/>
+                                <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="preview">Short Preview Text</Label>
-                                <Textarea id="preview" name="preview" placeholder="A brief description of the note's content." required/>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="file">PDF File</Label>
-                                <Input id="file" name="file" type="file" accept=".pdf" required/>
+                                <Textarea id="preview" name="preview" placeholder="A brief description of the note's content." required disabled={isSubmitting}/>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <Checkbox id="isPremium" name="isPremium" />
+                                <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>
                                 <Label htmlFor="isPremium">Mark as Premium</Label>
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button type="submit" className="w-full">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add Note to Library
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                {isSubmitting ? 'Adding...' : 'Add Note to Library'}
                             </Button>
                         </CardFooter>
                     </form>
@@ -137,6 +194,11 @@ export default function AdminNotesPage() {
                         <CardDescription>View, edit, or delete notes currently in the library.</CardDescription>
                     </CardHeader>
                     <CardContent>
+                        {isLoading ? (
+                            <div className="flex justify-center items-center h-48">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                        ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -197,10 +259,10 @@ export default function AdminNotesPage() {
                                 ))}
                             </TableBody>
                         </Table>
+                        )}
                     </CardContent>
                 </Card>
             </div>
         </div>
     );
 }
-

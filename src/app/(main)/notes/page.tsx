@@ -1,18 +1,29 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, Gem, Lock, ArrowRight, Check, ShoppingCart } from "lucide-react";
+import { Search, BookOpen, Gem, Lock, ArrowRight, Check, ShoppingCart, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { notesData, type Note } from '@/lib/notes-data';
 import { PaymentDialog } from '@/components/payment-dialog';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 
+export type Note = {
+  id: string;
+  title: string;
+  course: string;
+  year: string;
+  subject: string;
+  isPremium: boolean;
+  preview: string;
+  createdAt: any;
+};
 
 const premiumFeatures = [
     "Access to ALL detailed library notes",
@@ -61,12 +72,29 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
 
 
 export default function NotesPage() {
+    const [allNotes, setAllNotes] = useState<Note[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [courseFilter, setCourseFilter] = useState('All');
     const [yearFilter, setYearFilter] = useState('All');
     const [subjectFilter, setSubjectFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    
+    const fetchNotes = useCallback(async () => {
+        setIsLoading(true);
+        const notesCollection = collection(db, 'notes');
+        const q = query(notesCollection, orderBy('createdAt', 'desc'));
+        const notesSnapshot = await getDocs(q);
+        const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
+        setAllNotes(notesList);
+        setIsLoading(false);
+    }, []);
+
+    useEffect(() => {
+        fetchNotes();
+    }, [fetchNotes]);
+
 
     const handleUnlockClick = (note: Note) => {
         setSelectedNote(note);
@@ -78,30 +106,32 @@ export default function NotesPage() {
         }
     };
     
-    const getUniqueValues = (key: 'course' | 'year' | 'subject') => {
-        const values = new Set(notesData.map(note => note[key]));
+    const getUniqueValues = useCallback((key: 'course' | 'year' | 'subject') => {
+        const values = new Set(allNotes.map(note => note[key]));
         return ['All', ...Array.from(values).sort()];
-    };
+    }, [allNotes]);
 
-    const courses = useMemo(() => getUniqueValues('course'), []);
+    const courses = useMemo(() => getUniqueValues('course'), [getUniqueValues]);
+    
     const years = useMemo(() => {
         if (courseFilter === 'All') return getUniqueValues('year');
-        const relevantYears = new Set(notesData.filter(note => note.course === courseFilter).map(note => note.year));
+        const relevantYears = new Set(allNotes.filter(note => note.course === courseFilter).map(note => note.year));
         return ['All', ...Array.from(relevantYears).sort()];
-    }, [courseFilter]);
+    }, [courseFilter, getUniqueValues, allNotes]);
 
     const subjects = useMemo(() => {
         if (courseFilter === 'All' && yearFilter === 'All') return getUniqueValues('subject');
         
-        const filteredByCourse = courseFilter === 'All' ? notesData : notesData.filter(note => note.course === courseFilter);
+        const filteredByCourse = courseFilter === 'All' ? allNotes : allNotes.filter(note => note.course === courseFilter);
         const filteredByYear = yearFilter === 'All' ? filteredByCourse : filteredByCourse.filter(note => note.year === yearFilter);
 
         const relevantSubjects = new Set(filteredByYear.map(note => note.subject));
         return ['All', ...Array.from(relevantSubjects).sort()];
-    }, [courseFilter, yearFilter]);
+    }, [courseFilter, yearFilter, getUniqueValues, allNotes]);
+
 
     const filteredNotes = useMemo(() => {
-        let notes = notesData;
+        let notes = allNotes;
 
         if (courseFilter !== 'All') {
             notes = notes.filter(note => note.course === courseFilter);
@@ -120,9 +150,8 @@ export default function NotesPage() {
         }
         
         return notes;
-    }, [courseFilter, yearFilter, subjectFilter, searchQuery]);
+    }, [courseFilter, yearFilter, subjectFilter, searchQuery, allNotes]);
 
-    // Reset dependent filters when a primary filter changes
     const handleCourseChange = (value: string) => {
         setCourseFilter(value);
         setYearFilter('All');
@@ -178,7 +207,11 @@ export default function NotesPage() {
       </Card>
 
       <div>
-        {filteredNotes.length > 0 ? (
+        {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        ) : filteredNotes.length > 0 ? (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredNotes.map(note => <NoteCard key={note.id} note={note} onUnlockClick={() => handleUnlockClick(note)} />)}
              </div>
@@ -187,7 +220,7 @@ export default function NotesPage() {
                 <CardContent className="p-10 flex flex-col items-center justify-center text-center">
                     <BookOpen className="h-20 w-20 text-muted-foreground/30 mb-4" />
                     <h3 className="text-xl font-semibold">No Notes Found</h3>
-                    <p className="text-muted-foreground mt-2">Try adjusting your filters to find what you're looking for.</p>
+                    <p className="text-muted-foreground mt-2">Try adjusting your filters to find what you're looking for, or check back later!</p>
                 </CardContent>
             </Card>
         )}
