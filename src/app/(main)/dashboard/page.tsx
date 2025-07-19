@@ -12,15 +12,11 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { generateDashboardInsights, type GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// --- FAKE DATA ---
-const summaryData = {
-  totalProgress: 68,
-  subjectsCompleted: 2,
-  pendingTopics: 12,
-  aiSuggestion: "Biopharmaceutics and Pharmacokinetics",
-};
-
+// --- FAKE DATA (used as input for the AI) ---
 const subjectsProgress = [
     { 
         subject: "Pharmaceutics", 
@@ -34,22 +30,17 @@ const subjectsProgress = [
         topics: [
             { title: "General Pharmacology", status: "completed", lastAccessed: "3 days ago", estTime: "N/A" },
             { title: "Drugs Acting on ANS", status: "pending", lastAccessed: "Never", estTime: "1.5 hours" },
+            { title: "Drug Distribution", status: "pending", lastAccessed: "Never", estTime: "1 hour" },
+        ] 
+    },
+     { 
+        subject: "Biochemistry",
+        topics: [
+            { title: "Biomolecules", status: "pending", lastAccessed: "Never", estTime: "2 hours" },
+            { title: "Enzymes", status: "pending", lastAccessed: "Never", estTime: "1.5 hours" },
         ] 
     },
 ];
-
-const weeklyPerformanceData = [
-  { week: "Week 1", yourScore: 65, classAverage: 70 },
-  { week: "Week 2", yourScore: 78, classAverage: 72 },
-  { week: "Week 3", yourScore: 72, classAverage: 75 },
-  { week: "Week 4", yourScore: 85, classAverage: 78 },
-];
-
-const aiSuggestions = [
-    "Focus on 'Drug Distribution' in Pharmacology. Your recent quiz scores indicate a slight weakness here.",
-    "You study best in the mornings. Try scheduling your 'Properties of Powders' review session for tomorrow at 8 AM.",
-    "Allocate an extra 30 minutes to practice questions for Biopharmaceutics to solidify your understanding."
-]
 
 const chartConfig = {
   yourScore: {
@@ -64,26 +55,106 @@ const chartConfig = {
 
 // --- COMPONENT ---
 
+function DashboardSkeleton() {
+    return (
+        <div className="space-y-6">
+            {/* Summary Cards Skeleton */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <Skeleton className="h-4 w-2/4" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-7 w-1/4 mb-2" />
+                            <Skeleton className="h-4 w-3/4" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </section>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Charts and Suggestions Skeleton */}
+                <div className="lg:col-span-2 space-y-6">
+                    <Card>
+                        <CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader>
+                        <CardContent><Skeleton className="h-[250px] w-full" /></CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </CardContent>
+                    </Card>
+                </div>
+                {/* Admin Panel Skeleton (can remain static as it's not data-driven) */}
+                <div className="lg:col-span-1">
+                    <Card className="bg-card lg:sticky top-20">
+                        <CardHeader>
+                            <CardTitle className="font-headline flex items-center gap-2"><Users /> Admin Dashboard</CardTitle>
+                            <CardDescription>View and manage student progress.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </CardContent>
+                        <CardContent className="border-t pt-4">
+                           <Skeleton className="h-5 w-1/2 mb-2" />
+                           <Skeleton className="h-4 w-3/4" />
+                        </CardContent>
+                        <CardContent className="flex flex-col sm:flex-row gap-2 pt-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+
+            {/* Subject Progress Table Skeleton */}
+            <section className="space-y-4">
+                <Skeleton className="h-8 w-1/3" />
+                {[...Array(2)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader><Skeleton className="h-6 w-1/4" /></CardHeader>
+                        <CardContent><Skeleton className="h-24 w-full" /></CardContent>
+                    </Card>
+                ))}
+            </section>
+        </div>
+    );
+}
+
+
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [insights, setInsights] = useState<GenerateDashboardInsightsOutput | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // Simulate data fetching
-      const success = Math.random() > 0.2; // 80% chance of success
-      if (success) {
-        setIsLoading(false);
-        setIsError(false);
+    async function fetchInsights() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await generateDashboardInsights({
+            studentName: "Arvind", // This would be dynamic in a real app
+            course: "B.Pharm",
+            year: "2nd Year",
+            subjectsProgress: subjectsProgress,
+        });
+        setInsights(result);
         setLastSynced(new Date());
-      } else {
+      } catch (e: any) {
+        console.error("Failed to fetch dashboard insights:", e);
+        setError("Failed to generate smart insights. The AI model might be overloaded. Please try again in a moment.");
+      } finally {
         setIsLoading(false);
-        setIsError(true);
-        setLastSynced(new Date(Date.now() - 3 * 60 * 60 * 1000)); // 3 hours ago
       }
-    }, 1500);
-    return () => clearTimeout(timer);
+    }
+    fetchInsights();
   }, []);
 
   const getProgressColorClass = (progress: number) => {
@@ -98,6 +169,30 @@ export default function DashboardPage() {
     }
     return <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-300">❌ Pending</Badge>
   }
+  
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+  
+  if (error) {
+     return (
+        <Alert variant="destructive" className="max-w-xl mx-auto">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error Loading Dashboard</AlertTitle>
+            <AlertDescription>
+                {error}
+                <Button variant="secondary" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Retry
+                </Button>
+            </AlertDescription>
+        </Alert>
+     );
+  }
+
+  if (!insights) {
+    return <DashboardSkeleton />;
+  }
 
 
   return (
@@ -108,9 +203,7 @@ export default function DashboardPage() {
             <p className="mt-1 text-muted-foreground">Your smart progress report at a glance.</p>
         </div>
         <div className="flex items-center gap-2">
-            {isLoading && <Badge variant="outline" className="text-muted-foreground animate-pulse"><RefreshCw className="mr-2 h-3 w-3 animate-spin" /> Syncing...</Badge>}
-            {isError && <Badge variant="destructive"><AlertTriangle className="mr-2 h-3 w-3" /> Live data syncing failed.</Badge>}
-            {!isLoading && !isError && lastSynced && <Badge variant="secondary">Last synced: {lastSynced.toLocaleTimeString()}</Badge>}
+            {lastSynced && <Badge variant="secondary">Last synced: {lastSynced.toLocaleTimeString()}</Badge>}
         </div>
       </div>
       
@@ -122,8 +215,8 @@ export default function DashboardPage() {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">{summaryData.totalProgress}%</div>
-                  <Progress value={summaryData.totalProgress} indicatorClassName={getProgressColorClass(summaryData.totalProgress)} className="h-2 mt-2" />
+                  <div className="text-2xl font-bold">{insights.totalProgress}%</div>
+                  <Progress value={insights.totalProgress} indicatorClassName={getProgressColorClass(insights.totalProgress)} className="h-2 mt-2" />
               </CardContent>
           </Card>
           <Card>
@@ -132,7 +225,7 @@ export default function DashboardPage() {
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">{summaryData.subjectsCompleted}</div>
+                  <div className="text-2xl font-bold">{insights.subjectsCompleted}</div>
                   <p className="text-xs text-muted-foreground">out of {subjectsProgress.length} subjects</p>
               </CardContent>
           </Card>
@@ -142,7 +235,7 @@ export default function DashboardPage() {
                   <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">{summaryData.pendingTopics}</div>
+                  <div className="text-2xl font-bold">{insights.pendingTopics}</div>
                   <p className="text-xs text-muted-foreground">Across all subjects</p>
               </CardContent>
           </Card>
@@ -152,7 +245,7 @@ export default function DashboardPage() {
                   <BrainCircuit className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                  <div className="text-lg font-bold text-primary">{summaryData.aiSuggestion}</div>
+                  <div className="text-lg font-bold text-primary">{insights.aiNextTopicSuggestion}</div>
                   <p className="text-xs text-muted-foreground">Based on your progress</p>
               </CardContent>
           </Card>
@@ -164,13 +257,11 @@ export default function DashboardPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Smart Weekly Performance</CardTitle>
-                    <CardDescription>
-                        {isError ? `Showing last synced data from ${lastSynced?.toLocaleString()}` : 'Your weekly performance vs. class average.'}
-                    </CardDescription>
+                    <CardDescription>Your weekly performance vs. class average, powered by AI.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                        <BarChart accessibilityLayer data={weeklyPerformanceData}>
+                        <BarChart accessibilityLayer data={insights.weeklyPerformance}>
                             <CartesianGrid vertical={false} />
                             <XAxis dataKey="week" tickLine={false} tickMargin={10} axisLine={false} />
                             <ChartTooltip content={<ChartTooltipContent />} />
@@ -188,7 +279,7 @@ export default function DashboardPage() {
                     <CardDescription>Personalized tips from your AI mentor to improve your learning.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    {aiSuggestions.map((tip, index) => (
+                    {insights.aiSuggestions.map((tip, index) => (
                         <div key={index} className="flex items-start gap-3 bg-secondary/50 p-3 rounded-lg">
                             <BrainCircuit className="h-5 w-5 mt-0.5 text-primary shrink-0" />
                             <p className="text-sm text-secondary-foreground">{tip}</p>
@@ -200,7 +291,7 @@ export default function DashboardPage() {
 
         {/* Admin Panel */}
         <div className="lg:col-span-1">
-             <Card className="bg-card lg:sticky top-20">
+             <Card className="bg-card lg:sticky lg:top-20">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><Users /> Admin Dashboard</CardTitle>
                     <CardDescription>View and manage student progress.</CardDescription>
