@@ -307,15 +307,26 @@ export default function McqPracticePage() {
 
   const scoreFeedback = useMemo(() => {
     if (!isSubmitted) return null;
+    let category;
     if (scorePercentage > 70) {
-      return { ...getRandomFeedback(scoreFeedbacks.good), cardClass: "bg-green-500/10 border-green-500" };
+      category = scoreFeedbacks.good;
+    } else if (scorePercentage >= 40) {
+      category = scoreFeedbacks.medium;
+    } else {
+      category = scoreFeedbacks.bad;
+    }
+  
+    const feedback = getRandomFeedback(category);
+  
+    if (scorePercentage > 70) {
+      return { ...feedback, cardClass: "bg-green-500/10 border-green-500" };
     }
     if (scorePercentage >= 40) {
-      return { ...getRandomFeedback(scoreFeedbacks.medium), cardClass: "bg-yellow-500/10 border-yellow-500" };
+      return { ...feedback, cardClass: "bg-yellow-500/10 border-yellow-500" };
     }
-    return { ...getRandomFeedback(scoreFeedbacks.bad), cardClass: "bg-destructive/10 border-destructive" };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scorePercentage, isSubmitted, submissionCount]);
+    return { ...feedback, cardClass: "bg-destructive/10 border-destructive" };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submissionCount]);
 
 
   const handleShare = () => {
