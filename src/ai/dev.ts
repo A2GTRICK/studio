@@ -11,3 +11,4 @@ import '@/ai/flows/generate-service-outline.ts';
 import '@/ai/flows/generate-mcq-practice.ts';
 import '@/ai/flows/generate-mcq-feedback.ts';
 import '@/ai/flows/generate-dashboard-insights.ts';
+import '@/ai/flows/generate-image-from-hint.ts';

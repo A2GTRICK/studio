@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User as FirebaseUser } from 'firebase/auth';
-import Image from 'next/image';
+import { AiImage } from '@/components/ai-image';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -177,7 +177,13 @@ export default function MainLayout({
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <div className="p-2 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Image src="/assets/a2g-logo.png" alt="A2G Smart Notes Logo" width={28} height={28} />
+              <AiImage
+                data-ai-hint="modern logo pharmacy"
+                alt="A2G Smart Notes Logo"
+                width={28}
+                height={28}
+                className="rounded-md"
+              />
             </div>
             <h1 className="text-xl font-headline font-bold text-primary">A2G Smart Notes</h1>
           </div>

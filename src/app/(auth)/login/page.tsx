@@ -15,7 +15,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswor
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import Image from 'next/image';
+import { AiImage } from '@/components/ai-image';
 
 const signUpSchema = z.object({
   name: z.string().min(1, { message: 'Name is required.' }),
@@ -161,7 +161,13 @@ export default function LoginPage() {
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                        <Image src="/assets/a2g-logo.png" alt="A2G Smart Notes Logo" width={40} height={40} />
+                        <AiImage
+                            data-ai-hint="modern logo pharmacy"
+                            alt="A2G Smart Notes Logo"
+                            width={40}
+                            height={40}
+                            className="rounded-md"
+                        />
                     </div>
                     <CardTitle className="font-headline text-3xl">
                         {view === 'signup' ? 'Create an Account' : 'Welcome Back'}

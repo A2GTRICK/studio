@@ -5,12 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { QrCode, Copy } from "lucide-react";
-import Image from "next/image";
+import { AiImage } from '@/components/ai-image';
 import { useToast } from "@/hooks/use-toast";
 
 // --- PAYMENT DETAILS: EDIT HERE ---
 const UPI_ID = "a2gtrickacademy@upi";
-const QR_CODE_IMAGE_PATH = "/assets/a2g-qr-code.png";
 // ------------------------------------
 
 interface PaymentDialogProps {
@@ -58,7 +57,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
                 <div className="py-4 space-y-4">
                     <p className="text-center text-muted-foreground text-sm">Scan the QR code below with any UPI app or copy the UPI ID.</p>
                     <div className="flex justify-center">
-                        <Image src={QR_CODE_IMAGE_PATH} alt="UPI QR Code" width={250} height={250} data-ai-hint="qr code"/>
+                        <AiImage data-ai-hint="upi qr code" alt="UPI QR Code" width={250} height={250} />
                     </div>
                     <Card>
                         <CardContent className="p-3 flex items-center justify-between">

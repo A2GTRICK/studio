@@ -2,23 +2,23 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import Image from 'next/image';
+import { AiImage } from '@/components/ai-image';
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
 const products = [
-    { id: 1, name: "Comprehensive GPAT Guide", category: "Books", price: "₹1,299", imageUrl: "/assets/product-book-gpat.png", dataAiHint: "book cover", affiliate: true, link: "#" },
-    { id: 2, name: "Pharmaceutics PDF Bundle", category: "Bundles", price: "₹499", imageUrl: "/assets/product-bundle-pharma.png", dataAiHint: "documents pile", affiliate: false, link: "#" },
-    { id: 3, name: "Pharmacology Masterclass", category: "Courses", price: "₹2,499", imageUrl: "/assets/product-course-pharma.png", dataAiHint: "online course", affiliate: true, link: "#" },
-    { id: 4, name: "Medicinal Chemistry Notes", category: "Bundles", price: "₹399", imageUrl: "/assets/product-bundle-chem.png", dataAiHint: "chemistry notes", affiliate: false, link: "#" },
-    { id: 5, name: "Wilson and Gisvold's Textbook", category: "Books", price: "₹1,850", imageUrl: "/assets/product-book-wilson.png", dataAiHint: "textbook", affiliate: true, link: "#" },
+    { id: 1, name: "Comprehensive GPAT Guide", category: "Books", price: "₹1,299", dataAiHint: "book cover gpat", affiliate: true, link: "#" },
+    { id: 2, name: "Pharmaceutics PDF Bundle", category: "Bundles", price: "₹499", dataAiHint: "documents pile", affiliate: false, link: "#" },
+    { id: 3, name: "Pharmacology Masterclass", category: "Courses", price: "₹2,499", dataAiHint: "online course pharmacology", affiliate: true, link: "#" },
+    { id: 4, name: "Medicinal Chemistry Notes", category: "Bundles", price: "₹399", dataAiHint: "chemistry textbook", affiliate: false, link: "#" },
+    { id: 5, name: "Wilson and Gisvold's Textbook", category: "Books", price: "₹1,850", dataAiHint: "textbook wilson gisvold", affiliate: true, link: "#" },
 ];
 
 const ProductCard = ({ product }: { product: typeof products[0] }) => (
     <Card className="overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300">
         <CardHeader className="p-0">
             <div className="relative h-48 w-full">
-                <Image src={product.imageUrl} alt={product.name} fill className="object-cover" data-ai-hint={product.dataAiHint} />
+                <AiImage data-ai-hint={product.dataAiHint} alt={product.name} fill className="object-cover" />
             </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow">
