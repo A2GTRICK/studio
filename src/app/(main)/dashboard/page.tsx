@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, BrainCircuit, CheckCircle2, Target, NotebookPen, Gem, TrendingUp, Clock, Lightbulb, Users, Download, Share2, AlertTriangle, RefreshCw, ChevronDown } from "lucide-react";
+import { ArrowRight, BookOpen, BrainCircuit, CheckCircle2, Target, NotebookPen, Gem, TrendingUp, Clock, Lightbulb, Users, Download, Share2, AlertTriangle, RefreshCw, ChevronDown, BarChart3 } from "lucide-react";
 import Link from 'next/link';
 import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { generateDashboardInsights, type GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -190,6 +189,62 @@ const QuickActionsPanel = () => (
     </Card>
 );
 
+const NextStepsPanel = () => (
+    <section className="space-y-4">
+        <h2 className="text-2xl font-headline font-semibold">Ready for your next step?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="bg-card hover:shadow-lg transition-shadow">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-primary/10 rounded-full"><BrainCircuit className="h-6 w-6 text-primary"/></div>
+                        <CardTitle className="font-headline text-xl">Generate AI Notes</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Stuck on a tough topic? Let our AI generate detailed, easy-to-understand notes for you in seconds.</p>
+                </CardContent>
+                <CardContent>
+                    <Button asChild className="w-full">
+                        <Link href="/ai-notes">Start Generating <ArrowRight /></Link>
+                    </Button>
+                </CardContent>
+            </Card>
+            <Card className="bg-card hover:shadow-lg transition-shadow">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-primary/10 rounded-full"><NotebookPen className="h-6 w-6 text-primary"/></div>
+                        <CardTitle className="font-headline text-xl">Predict Exam Questions</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Get ahead of the curve. Our AI analyzes past papers to predict high-probability questions for your exams.</p>
+                </CardContent>
+                <CardContent>
+                    <Button asChild className="w-full">
+                        <Link href="/exam-questions">Get Predictions <ArrowRight /></Link>
+                    </Button>
+                </CardContent>
+            </Card>
+            <Card className="bg-card hover:shadow-lg transition-shadow">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-primary/10 rounded-full"><BarChart3 className="h-6 w-6 text-primary"/></div>
+                        <CardTitle className="font-headline text-xl">View Full Progress</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Take a deep dive into your study habits. See your detailed subject-wise progress and topic completion.</p>
+                </CardContent>
+                <CardContent>
+                    <Button asChild className="w-full">
+                        <Link href="/my-progress">See My Progress <ArrowRight /></Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    </section>
+);
+
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
@@ -197,7 +252,6 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [insights, setInsights] = useState<GenerateDashboardInsightsOutput | null>(null);
-  const [showFullReport, setShowFullReport] = useState(false);
 
   const fetchInsights = async () => {
     setIsLoading(true);
@@ -231,13 +285,6 @@ export default function DashboardPage() {
     return 'bg-red-500';
   };
   
-  const getStatusBadge = (status: 'completed' | 'pending') => {
-    if (status === 'completed') {
-        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">✔️ Completed</Badge>
-    }
-    return <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-300">❌ Pending</Badge>
-  }
-  
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -262,7 +309,6 @@ export default function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
-  const visibleSubjects = showFullReport ? subjectsProgress : subjectsProgress.slice(0, 2);
 
   return (
     <div className="space-y-6">
@@ -366,52 +412,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Subject-wise Progress */}
-      <section className="space-y-4">
-          <h2 className="text-2xl font-headline font-semibold">Subject-Wise Progress</h2>
-          {visibleSubjects.map(subject => (
-            <Card key={subject.subject}>
-                <CardHeader>
-                    <CardTitle>{subject.subject}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Topic</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Last Accessed</TableHead>
-                                <TableHead>Est. Completion</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {subject.topics.map(topic => (
-                                <TableRow key={topic.title}>
-                                    <TableCell className="font-medium">{topic.title}</TableCell>
-                                    <TableCell>
-                                        {getStatusBadge(topic.status as 'completed' | 'pending')}
-                                    </TableCell>
-                                    <TableCell>{topic.lastAccessed}</TableCell>
-                                    <TableCell className="text-muted-foreground">{topic.estTime}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-          ))}
-          {!showFullReport && subjectsProgress.length > 2 && (
-              <div className="text-center mt-6">
-                  <Button variant="outline" onClick={() => setShowFullReport(true)}>
-                      <ChevronDown className="mr-2 h-4 w-4" />
-                      View Full Report
-                  </Button>
-              </div>
-          )}
-      </section>
-
+      <NextStepsPanel />
     </div>
   );
 }
+
+    
 
     

@@ -2,7 +2,7 @@
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarMenuBadge } from "@/components/ui/sidebar";
-import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, Shield, LogOut } from "lucide-react";
+import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, Shield, LogOut, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -165,6 +165,15 @@ export default function MainLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="My Progress">
+                <Link href="/my-progress">
+                  <BarChart3 />
+                  <span>My Progress</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Notes Library">
                 <Link href="/notes">
@@ -282,5 +291,7 @@ export default function MainLayout({
     </SidebarProvider>
   );
 }
+
+    
 
     
