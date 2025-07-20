@@ -40,6 +40,8 @@ const loadingMessages = [
     "Consulting with digital textbooks...",
     "Synthesizing knowledge into clear points...",
     "Cross-referencing with the syllabus...",
+    "Unlocking the secrets of pharmacology...",
+    "Just a moment, formulating the perfect explanation...",
 ];
 
 
