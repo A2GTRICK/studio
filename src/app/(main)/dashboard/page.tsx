@@ -160,22 +160,22 @@ const AdminPanel = () => (
 );
 
 const QuickActionsPanel = () => (
-    <Card className="bg-card lg:sticky lg:top-20">
+    <Card className="bg-card">
         <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">🚀 Quick Actions</CardTitle>
             <CardDescription>Jump right into your learning journey.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-3">
-            <Button asChild variant="outline">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Button asChild variant="outline" size="lg">
                 <Link href="/notes"><BookOpen className="mr-2 h-4 w-4" /> Browse Notes Library</Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" size="lg">
                 <Link href="/ai-notes"><BrainCircuit className="mr-2 h-4 w-4" /> Generate AI Notes</Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" size="lg">
                 <Link href="/exam-questions"><NotebookPen className="mr-2 h-4 w-4" /> Predict Exam Questions</Link>
             </Button>
-            <Button asChild className="bg-primary/10 text-primary hover:bg-primary/20">
+            <Button asChild className="bg-primary/10 text-primary hover:bg-primary/20" size="lg">
                 <Link href="/premium"><Gem className="mr-2 h-4 w-4" /> Upgrade to Premium</Link>
             </Button>
         </CardContent>
@@ -263,6 +263,8 @@ export default function DashboardPage() {
         </div>
       </div>
       
+      {!isAdmin && <QuickActionsPanel />}
+
       {/* Live Summary Cards */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
@@ -345,9 +347,9 @@ export default function DashboardPage() {
             </Card>
         </div>
 
-        {/* Side Panel: Admin or Quick Actions */}
+        {/* Side Panel: Admin */}
         <div className="lg:col-span-1">
-             {isAdmin ? <AdminPanel /> : <QuickActionsPanel />}
+             {isAdmin && <AdminPanel />}
         </div>
       </div>
 
