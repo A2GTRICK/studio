@@ -14,7 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { notesData } from '@/lib/notes-data';
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import type { Note } from '@/app/(main)/notes/page';
 import { marked } from 'marked';
 
 const notesFormSchema = z.object({
@@ -38,6 +40,17 @@ export default function AiNotesPage() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [followUp, setFollowUp] = useState('');
   const [lastTopic, setLastTopic] = useState<NotesFormValues | null>(null);
+  const [allNotes, setAllNotes] = useState<Note[]>([]);
+
+  useState(() => {
+    const fetchAllNotes = async () => {
+        const notesCollection = collection(db, 'notes');
+        const notesSnapshot = await getDocs(notesCollection);
+        const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
+        setAllNotes(notesList);
+    };
+    fetchAllNotes();
+  });
 
   const form = useForm<NotesFormValues>({
     resolver: zodResolver(notesFormSchema),
@@ -50,14 +63,14 @@ export default function AiNotesPage() {
   });
 
   const relatedNotes = useMemo(() => {
-    if (!lastTopic || !lastTopic.subject) return [];
-    return notesData
+    if (!lastTopic || !lastTopic.subject || allNotes.length === 0) return [];
+    return allNotes
       .filter(note => 
           note.isPremium &&
           note.subject.toLowerCase().includes(lastTopic.subject.toLowerCase())
       )
       .slice(0, 2);
-  }, [lastTopic]);
+  }, [lastTopic, allNotes]);
   
 
   async function onSubmit(data: NotesFormValues) {
@@ -193,11 +206,11 @@ export default function AiNotesPage() {
                                 <CardDescription>{note.subject}</CardDescription>
                             </CardHeader>
                             <CardFooter>
-                                <Button asChild className="w-full">
-                                  <a href={`/notes`}>
+                                <Button asChild className="w-full" variant="outline">
+                                  <Link href={`/notes/${note.id}`}>
                                       <Lock className="mr-2 h-4 w-4"/>
                                       Unlock in Library
-                                  </a>
+                                  </Link>
                                 </Button>
                             </CardFooter>
                         </Card>

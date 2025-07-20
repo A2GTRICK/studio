@@ -641,7 +641,7 @@ export default function McqPracticePage() {
                 </div>
                 <DialogTitle className="text-center font-headline text-2xl">Get More Questions</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                   You've used all your {dailyLimit} free practice questions for today. Upgrade for more.
+                   You've used your {dailyLimit} free practice questions for today. Upgrade for more.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
@@ -689,5 +689,3 @@ export default function McqPracticePage() {
     </>
   );
 }
-
-    

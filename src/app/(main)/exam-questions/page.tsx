@@ -256,6 +256,9 @@ export default function ExamQuestionsPage() {
         setIsOpen={setShowPaymentDialog}
         title={`Buy ${dialogTitle}`}
         price={dialogPrice}
+        onPaymentSuccess={() => {
+            // Placeholder for what happens after successful payment confirmation
+        }}
     />
     </>
   );
