@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn } from 'lucide-react';
+import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +16,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
-  const [downloadLink, setDownloadLink] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, loading } = useAuth();
   
@@ -33,11 +32,20 @@ export default function LandingPage() {
     setIsSubscribing(true);
     try {
       const result = await subscribeToNewsletter({ email });
-      setDownloadLink(result.downloadLink);
       toast({
         title: "Success!",
-        description: "You're subscribed. Your download will begin shortly.",
+        description: result.message,
       });
+
+      // Trigger download
+      const link = document.createElement('a');
+      link.href = result.downloadLink;
+      link.setAttribute('download', 'Top-20-Pharmacology-Questions.pdf');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setEmail('');
+
     } catch (error) {
       console.error("Subscription error:", error);
       toast({
@@ -85,7 +93,7 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-grow">
-        <section className="text-center py-20 lg:py-32">
+        <section className="text-center pt-20 pb-16 lg:pt-32 lg:pb-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-4xl lg:text-6xl font-headline font-extrabold tracking-tight">
               Your Digital Partner for Pharmacy Success
@@ -101,6 +109,39 @@ export default function LandingPage() {
               </Button>
             </div>
           </div>
+        </section>
+
+        <section className="pb-20 lg:pb-32">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="relative mx-auto max-w-5xl">
+                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-background/10 rounded-3xl -z-10 -rotate-2"></div>
+                    <div className="bg-card border shadow-lg rounded-2xl p-2 sm:p-4">
+                       <Image src="https://placehold.co/1200x800.png" alt="A2G Smart Notes Dashboard Preview" width={1200} height={800} className="rounded-lg" data-ai-hint="dashboard analytics" />
+                    </div>
+                </div>
+                 <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center max-w-4xl mx-auto">
+                    <div className="flex flex-col items-center">
+                        <BrainCircuit className="h-8 w-8 text-primary mb-2" />
+                        <h4 className="font-semibold">AI-Powered Insights</h4>
+                        <p className="text-sm text-muted-foreground">Personalized study suggestions.</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <BookOpen className="h-8 w-8 text-primary mb-2" />
+                        <h4 className="font-semibold">Structured Notes</h4>
+                        <p className="text-sm text-muted-foreground">Covering the entire syllabus.</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <NotebookPen className="h-8 w-8 text-primary mb-2" />
+                        <h4 className="font-semibold">Exam Prep Tools</h4>
+                        <p className="text-sm text-muted-foreground">Generate high-yield questions.</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <LineChart className="h-8 w-8 text-primary mb-2" />
+                        <h4 className="font-semibold">Progress Tracking</h4>
+                        <p className="text-sm text-muted-foreground">Visualize your learning journey.</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section className="bg-card py-20">
@@ -188,19 +229,6 @@ export default function LandingPage() {
               <p className="mt-2 text-muted-foreground text-lg">Download our free "Top 20 Most Asked Pharmacology Questions" PDF and see the quality for yourself.</p>
             </div>
             <div className="flex-1 w-full">
-               {downloadLink ? (
-                 <div className="flex flex-col items-center justify-center text-center bg-background p-6 rounded-lg shadow-md max-w-md mx-auto md:mx-0">
-                    <CheckCircle2 className="h-12 w-12 text-green-500 mb-4" />
-                    <h4 className="text-xl font-headline font-bold">Thank you for subscribing!</h4>
-                    <p className="text-muted-foreground mb-4">Your download is ready.</p>
-                    <Button size="lg" asChild>
-                      <a href={downloadLink} download="Top-20-Pharmacology-Questions.pdf">
-                        <Download className="mr-2 h-5 w-5"/>
-                        Download PDF
-                      </a>
-                    </Button>
-                 </div>
-               ) : (
                 <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto md:mx-0">
                     <Input 
                       type="email"
@@ -215,7 +243,6 @@ export default function LandingPage() {
                       {isSubscribing ? 'Subscribing...' : 'Download Now'}
                     </Button>
                 </form>
-               )}
                <p className="text-sm text-muted-foreground mt-2 text-center md:text-left">We respect your privacy. No spam.</p>
             </div>
           </div>
@@ -231,5 +258,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
