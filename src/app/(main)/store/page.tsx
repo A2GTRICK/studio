@@ -17,7 +17,9 @@ const products = [
 const ProductCard = ({ product }: { product: typeof products[0] }) => (
     <Card className="overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300">
         <CardHeader className="p-0">
-            <Image src={product.imageUrl} alt={product.name} width={600} height={400} className="object-cover h-48 w-full" data-ai-hint={product.dataAiHint} />
+            <div className="relative h-48 w-full">
+                <Image src={product.imageUrl} alt={product.name} fill className="object-cover" data-ai-hint={product.dataAiHint} />
+            </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow">
             <Badge variant="secondary" className="mb-2">{product.category}</Badge>
