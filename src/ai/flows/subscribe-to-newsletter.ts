@@ -10,6 +10,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const SubscribeToNewsletterInputSchema = z.object({
   email: z.string().email().describe('The email address of the user subscribing.'),
@@ -35,11 +37,19 @@ const subscribeToNewsletterFlow = ai.defineFlow(
     outputSchema: SubscribeToNewsletterOutputSchema,
   },
   async (input) => {
-    // In a real application, you would add the user's email to a mailing list
-    // using a service like Mailchimp, SendGrid, etc.
-    console.log(`Subscribing ${input.email} to the newsletter.`);
+    // Save the user's email to the 'newsletter_subscriptions' collection in Firestore.
+    try {
+      await addDoc(collection(db, 'newsletter_subscriptions'), {
+        email: input.email,
+        subscribedAt: serverTimestamp(),
+      });
+    } catch (error) {
+        console.error("Error saving email to Firestore:", error);
+        // We can still proceed even if saving fails, so the user gets their PDF.
+        // In a production app, you might want more robust error handling/logging here.
+    }
 
-    // For this example, we'll just return a confirmation and a dummy link.
+
     // The link now points to a real file in the `public` directory.
     return {
       message: `Thanks for subscribing! While your PDF downloads, feel free to explore our app's features.`,
