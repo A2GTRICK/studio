@@ -30,7 +30,6 @@ const GenerateDashboardInsightsInputSchema = z.object({
   studentName: z.string().describe("The name of the student."),
   course: z.string().describe("The student's course (e.g., B.Pharm)."),
   year: z.string().describe("The student's year of study (e.g., 2nd Year)."),
-  // In a real app, this would come from a database. For this simulation, we'll generate it.
   subjectsProgress: z.array(SubjectProgressSchema).describe("The student's current progress across different subjects."),
 });
 export type GenerateDashboardInsightsInput = z.infer<typeof GenerateDashboardInsightsInputSchema>;
@@ -42,6 +41,7 @@ const GenerateDashboardInsightsOutputSchema = z.object({
   aiNextTopicSuggestion: z.string().describe('A specific, actionable suggestion for the very next topic the student should study, based on their pending topics and potential weaknesses.'),
   weeklyPerformance: z.array(WeeklyPerformanceSchema).length(4).describe('A list of the last 4 weeks of performance data, comparing the student to the class average.'),
   aiSuggestions: z.array(z.string()).length(3).describe('A list of 3 unique, personalized, and actionable tips for the student based on their progress and performance data. These should be insightful and encouraging.'),
+  subjectsProgress: z.array(SubjectProgressSchema).describe("The student's current progress across different subjects. This should be returned verbatim from the input."),
 });
 export type GenerateDashboardInsightsOutput = z.infer<typeof GenerateDashboardInsightsOutputSchema>;
 
@@ -88,6 +88,8 @@ const prompt = ai.definePrompt({
       - Another good suggestion: "I noticed you haven't started 'Biochemistry' yet. It pairs well with 'Pathophysiology'. Starting it this week could help you connect concepts across subjects."
       - Make them sound like they're from a helpful mentor.
 
+  5. **Return Subject Progress**: Return the 'subjectsProgress' array from the input directly in the output. This is essential for the UI to display the detailed progress.
+
   Your entire output must be in the specified structured format.
   `,
 });
@@ -100,8 +102,13 @@ const generateDashboardInsightsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error("AI failed to generate dashboard insights.");
+    }
+    // Ensure the subjectsProgress is passed through if the model forgets
+    if (!output.subjectsProgress) {
+        output.subjectsProgress = input.subjectsProgress;
+    }
+    return output;
   }
 );
-
-    
