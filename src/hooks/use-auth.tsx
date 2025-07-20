@@ -2,11 +2,10 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { auth, firebaseConfig } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { Loader2, ServerCrash } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 
 // --- IMPORTANT: Define the admin user's email address here ---
 const ADMIN_EMAIL = 'admin@example.com';
@@ -26,48 +25,12 @@ const FullPageSpinner = () => (
     </div>
 );
 
-const FirebaseConfigError = () => (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
-        <Alert variant="destructive" className="max-w-2xl">
-            <ServerCrash className="h-4 w-4" />
-            <AlertTitle className="text-xl font-bold">Firebase Configuration Error</AlertTitle>
-            <AlertDescription className="mt-2">
-                The application cannot connect to Firebase.
-                <ol className="mt-4 list-decimal list-inside space-y-2">
-                    <li>
-                        Ensure you have copied your Firebase project credentials into the <strong>.env</strong> file.
-                    </li>
-                    <li>
-                        After adding the keys, you must <strong>restart the development server</strong> for the changes to take effect.
-                    </li>
-                     <li>
-                        Go to your Firebase Console -> Authentication -> Settings -> Authorized domains and ensure your deployment domain (and 'localhost') is added.
-                    </li>
-                </ol>
-            </AlertDescription>
-        </Alert>
-    </div>
-);
-
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-
-  // Check for valid Firebase configuration from .env file
-  const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY_HERE';
-  if (!isFirebaseConfigured && pathname !== '/login') {
-     // Don't render error on login page itself, it has its own
-     if(pathname === '/login') {
-        // Render children so login page can show its specific error
-     } else {
-        return <FirebaseConfigError />;
-     }
-  }
-
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -137,5 +100,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

@@ -10,11 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { auth, firebaseConfig } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile } from 'firebase/auth';
 import { fetchSignInMethodsForEmail } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, GraduationCap, AlertCircle, Eye, EyeOff, ServerCrash } from 'lucide-react';
+import { Loader2, GraduationCap, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const authSchema = z.object({
@@ -39,8 +39,6 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
-    
-    const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY_HERE";
 
     const form = useForm<AuthFormValues>({
         resolver: zodResolver(authSchema),
@@ -57,7 +55,7 @@ export default function LoginPage() {
             case 'auth/weak-password': return 'The password is too weak. It must be at least 6 characters long.';
             case 'auth/popup-closed-by-user': return 'The sign-in window was closed. Please try again.';
             case 'auth/account-exists-with-different-credential': return 'An account already exists with this email. Please sign in using the original method (e.g., Google).';
-            case 'auth/unauthorized-domain': return 'This domain is not authorized for authentication. Please go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add your domain.';
+            case 'auth/unauthorized-domain': return "This domain is not authorized for authentication. Please go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add your domain (e.g., 'localhost').";
             case 'auth/invalid-api-key':
             case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
                 return 'Configuration error: The Firebase API key is invalid. Please check your setup.';
@@ -184,80 +182,66 @@ export default function LoginPage() {
                     <CardDescription>Sign in or create an account to continue.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     {!isFirebaseConfigured ? (
-                        <Alert variant="destructive">
-                            <ServerCrash className="h-4 w-4" />
-                            <AlertTitle>Firebase Not Configured</AlertTitle>
-                            <AlertDescription>
-                                The Firebase API keys are missing from your <strong>.env</strong> file. Please add them and restart the server to enable authentication.
-                            </AlertDescription>
-                        </Alert>
-                     ) : (
-                        <>
-                        <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
-                            Continue with Google
-                        </Button>
-                        <p className="mt-2 text-center text-xs text-muted-foreground">
-                            Sign in with Google requires pop-ups.
-                        </p>
+                    <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting}>
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                        Continue with Google
+                    </Button>
+                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                        Sign in with Google requires pop-ups.
+                    </p>
 
-                        <div className="relative my-4">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-card px-2 text-muted-foreground">Or with email</span>
-                            </div>
+                    <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
                         </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-card px-2 text-muted-foreground">Or with email</span>
+                        </div>
+                    </div>
 
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(handleAuth)} className="space-y-4">
-                                {error && (
-                                    <Alert variant="destructive">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertTitle>Authentication Failed</AlertTitle>
-                                        <AlertDescription>{error}</AlertDescription>
-                                    </Alert>
-                                )}
-                                {isSignUp && (
-                                    <FormField control={form.control} name="name" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Full Name</FormLabel>
-                                            <FormControl><Input placeholder="Arvind Kumar" {...field} disabled={isSubmitting} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}/>
-                                )}
-                                <FormField control={form.control} name="email" render={({ field }) => (
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(handleAuth)} className="space-y-4">
+                            {error && (
+                                <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertTitle>Authentication Failed</AlertTitle>
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
+                            )}
+                            {isSignUp && (
+                                <FormField control={form.control} name="name" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl><Input placeholder="you@example.com" {...field} onBlur={(e) => {field.onBlur(); checkEmailExists(e.target.value);}} disabled={isSubmitting} /></FormControl>
+                                        <FormLabel>Full Name</FormLabel>
+                                        <FormControl><Input placeholder="Arvind Kumar" {...field} disabled={isSubmitting} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}/>
-                                <FormField control={form.control} name="password" render={({ field }) => (
-                                    <FormItem>
-                                        <div className="flex justify-between items-center">
-                                            <FormLabel>Password</FormLabel>
-                                            <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset} disabled={isSubmitting}>Forgot Password?</Button>
-                                        </div>
-                                        <FormControl>{renderPasswordInput(field)}</FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
-                                <Button type="submit" disabled={isSubmitting} className="w-full">
-                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {isSignUp ? 'Create Account' : 'Continue with Email'}
-                                </Button>
-                            </form>
-                        </Form>
-                        </>
-                     )}
+                            )}
+                            <FormField control={form.control} name="email" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl><Input placeholder="you@example.com" {...field} onBlur={(e) => {field.onBlur(); checkEmailExists(e.target.value);}} disabled={isSubmitting} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                            <FormField control={form.control} name="password" render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex justify-between items-center">
+                                        <FormLabel>Password</FormLabel>
+                                        <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset} disabled={isSubmitting}>Forgot Password?</Button>
+                                    </div>
+                                    <FormControl>{renderPasswordInput(field)}</FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                            <Button type="submit" disabled={isSubmitting} className="w-full">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isSignUp ? 'Create Account' : 'Continue with Email'}
+                            </Button>
+                        </form>
+                    </Form>
                 </CardContent>
             </Card>
         </div>
     );
 }
-
-    
