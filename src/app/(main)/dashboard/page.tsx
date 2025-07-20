@@ -8,8 +8,8 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import type { GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
 import { generateDashboardInsights } from '@/ai/flows/generate-dashboard-insights';
-import { Line, LineChart, CartesianGrid, XAxis, ResponsiveContainer, YAxis, Tooltip } from 'recharts';
-import { ChartContainer, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { Line, LineChart, CartesianGrid, XAxis, ResponsiveContainer, YAxis } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 
@@ -252,15 +252,17 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="h-64 w-full">
-                            <LineChart accessibilityLayer data={insights.weeklyPerformance}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="week" tickLine={false} tickMargin={10} axisLine={false} />
-                                <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />
-                                <ChartTooltip cursor={true} content={<ChartTooltipContent indicator="dot" />} />
-                                <ChartLegend content={<ChartLegendContent />} />
-                                <Line dataKey="yourScore" type="monotone" stroke="var(--color-yourScore)" strokeWidth={2} dot={{r: 4, fill: "var(--color-yourScore)"}} activeDot={{r: 6}} />
-                                <Line dataKey="classAverage" type="monotone" stroke="var(--color-classAverage)" strokeWidth={2} strokeDasharray="3 3" dot={false} />
-                            </LineChart>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart accessibilityLayer data={insights.weeklyPerformance}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="week" tickLine={false} tickMargin={10} axisLine={false} />
+                                    <YAxis tickLine={false} axisLine={false} domain={[0, 100]} />
+                                    <ChartTooltip cursor={true} content={<ChartTooltipContent indicator="dot" />} />
+                                    <ChartLegend content={<ChartLegendContent />} />
+                                    <Line dataKey="yourScore" type="monotone" stroke="var(--color-yourScore)" strokeWidth={2} dot={{r: 4, fill: "var(--color-yourScore)"}} activeDot={{r: 6}} />
+                                    <Line dataKey="classAverage" type="monotone" stroke="var(--color-classAverage)" strokeWidth={2} strokeDasharray="3 3" dot={false} />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </ChartContainer>
                     </CardContent>
                 </Card>
