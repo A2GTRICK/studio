@@ -1,12 +1,13 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, ChevronDown, ChevronUp, CheckSquare, Target, BookCheck } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import type { GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
 import { generateDashboardInsights } from '@/ai/flows/generate-dashboard-insights';
+import { getSubjectsProgress } from '@/services/user-progress-service';
 import { Line, LineChart, CartesianGrid, XAxis, ResponsiveContainer, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -68,7 +69,16 @@ const SubjectProgress = ({ subjects }: { subjects: NonNullable<GenerateDashboard
     const [isExpanded, setIsExpanded] = useState(false);
 
     if (!subjects || subjects.length === 0) {
-        return null;
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Subject-wise Progress</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">No notes found in the library. Add some notes in the admin panel to see progress.</p>
+                </CardContent>
+            </Card>
+        );
     }
 
     const displayedSubjects = isExpanded ? subjects : subjects.slice(0, 2);
@@ -98,12 +108,12 @@ const SubjectProgress = ({ subjects }: { subjects: NonNullable<GenerateDashboard
                 })}
             </CardContent>
             {subjects.length > 2 && (
-                 <CardContent>
+                 <CardFooter>
                     <Button variant="outline" className="w-full" onClick={() => setIsExpanded(!isExpanded)}>
                         {isExpanded ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
                         {isExpanded ? 'Show Less' : 'View Full Report'}
                     </Button>
-                </CardContent>
+                </CardFooter>
             )}
         </Card>
     );
@@ -143,19 +153,18 @@ export default function DashboardPage() {
     setIsLoading(true);
     setError(null);
     try {
-        // This is simulated data. In a real app, you'd fetch this from your database.
-        const simulatedProgress = [
-            { subject: "Pharmacology", topics: [{ title: "General Pharmacology", status: "completed", lastAccessed: "2 days ago", estTime: "N/A"}, { title: "Drugs Acting on ANS", status: "pending", lastAccessed: "2 days ago", estTime: "1.5 hours" }, { title: "Autacoids", status: "pending", lastAccessed: "Never", estTime: "1 hour" }] },
-            { subject: "Pharmaceutics", topics: [{ title: "Dosage Forms", status: "completed", lastAccessed: "5 days ago", estTime: "N/A" }, { title: "Introduction to NDDS", status: "completed", lastAccessed: "1 day ago", estTime: "N/A" }] },
-            { subject: "Biochemistry", topics: [{ title: "Carbohydrates & Lipids", status: "pending", lastAccessed: "Never", estTime: "2 hours" }, { title: "Proteins & Amino Acids", status: "pending", lastAccessed: "Never", estTime: "1.5 hours" }] },
-            { subject: "Pathophysiology", topics: [{ title: "Basic Principles", status: "completed", lastAccessed: "1 week ago", estTime: "N/A" }, { title: "Infectious Diseases", status: "pending", lastAccessed: "Never", estTime: "2 hours" }] }
-        ];
+        const userProgress = await getSubjectsProgress();
+        
+        if (userProgress.length === 0) {
+             setInsights(null); // No data to process
+             return;
+        }
 
         const result = await generateDashboardInsights({
             studentName: user.displayName?.split(' ')[0] || 'Student',
-            course: 'B.Pharm',
-            year: '2nd Year',
-            subjectsProgress: simulatedProgress,
+            course: 'B.Pharm', // This can be dynamic in the future
+            year: '2nd Year', // This can be dynamic in the future
+            subjectsProgress: userProgress,
         });
         setInsights(result);
     } catch (e: any) {
@@ -201,7 +210,7 @@ export default function DashboardPage() {
         </div>
         <div>
           <Button onClick={fetchInsights} variant="outline" size="sm" disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            <RefreshCw className="mr-2 h-4 w-4" />
              Refresh Insights
           </Button>
         </div>
