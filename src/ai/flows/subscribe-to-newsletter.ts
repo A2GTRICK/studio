@@ -40,10 +40,10 @@ const subscribeToNewsletterFlow = ai.defineFlow(
     console.log(`Subscribing ${input.email} to the newsletter.`);
 
     // For this example, we'll just return a confirmation and a dummy link.
-    // The link is a placeholder and doesn't point to a real file.
+    // The link now points to a real file in the `public` directory.
     return {
       message: `Successfully subscribed ${input.email}!`,
-      downloadLink: '/assets/Top-20-Pharmacology-Questions.pdf' // This is a dummy link
+      downloadLink: '/assets/Top-20-Pharmacology-Questions.pdf'
     };
   }
 );
