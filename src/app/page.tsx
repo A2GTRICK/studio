@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen } from 'lucide-react';
+import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen, Youtube, Send, Globe, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,13 @@ import { subscribeToNewsletter } from '@/ai/flows/subscribe-to-newsletter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const socialLinks = [
+    { name: 'Website', href: 'https://a2gtricks.wordpress.com', icon: Globe },
+    { name: 'YouTube', href: 'https://youtube.com/@a2g_tricks?si=_Ocd7GZHI39TUhof', icon: Youtube },
+    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029VafwdunEKyZOy2acO41A', icon: MessageSquare },
+    { name: 'Telegram', href: 'https://t.me/a2gtrickacademy', icon: Send },
+];
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -250,8 +257,20 @@ export default function LandingPage() {
 
       </main>
 
-      <footer className="bg-card py-6">
+      <footer className="bg-card py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-muted-foreground">
+           <div className="mb-4">
+                <h3 className="text-lg font-headline font-semibold text-foreground">Join Our Community</h3>
+                <div className="flex justify-center gap-4 mt-2">
+                    {socialLinks.map((link) => (
+                        <Button key={link.name} variant="ghost" size="icon" asChild>
+                            <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.name}>
+                                <link.icon className="h-5 w-5" />
+                            </a>
+                        </Button>
+                    ))}
+                </div>
+           </div>
           <p>&copy; {new Date().getFullYear()} A2G Smart Notes. All rights reserved.</p>
         </div>
       </footer>
