@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { generateDashboardInsights, type GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '@/hooks/use-auth';
 
 // --- FAKE DATA (used as input for the AI) ---
 const subjectsProgress = [
@@ -127,8 +128,63 @@ function DashboardSkeleton() {
     );
 }
 
+const AdminPanel = () => (
+  <Card className="bg-card lg:sticky lg:top-20">
+    <CardHeader>
+      <CardTitle className="font-headline flex items-center gap-2"><Users /> Admin Dashboard</CardTitle>
+      <CardDescription>View and manage student progress.</CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <Select>
+        <SelectTrigger><SelectValue placeholder="Filter by Student" /></SelectTrigger>
+        <SelectContent><SelectItem value="student1">Student 1</SelectItem></SelectContent>
+      </Select>
+      <Select>
+        <SelectTrigger><SelectValue placeholder="Filter by Batch" /></SelectTrigger>
+        <SelectContent><SelectItem value="batch1">Batch 2024</SelectItem></SelectContent>
+      </Select>
+      <Select>
+        <SelectTrigger><SelectValue placeholder="Filter by Subject" /></SelectTrigger>
+        <SelectContent><SelectItem value="pharma">Pharmacology</SelectItem></SelectContent>
+      </Select>
+    </CardContent>
+    <CardContent className="border-t pt-4">
+      <CardTitle className="text-lg font-semibold">Class Performance</CardTitle>
+      <p className="text-sm text-muted-foreground mt-2">Overall class progress: <span className="font-bold text-primary">76%</span></p>
+    </CardContent>
+    <CardContent className="flex flex-col sm:flex-row gap-2 pt-4">
+      <Button className="w-full"><Download className="mr-2 h-4 w-4"/> Export PDF</Button>
+      <Button variant="outline" className="w-full"><Share2 className="mr-2 h-4 w-4"/> Share</Button>
+    </CardContent>
+  </Card>
+);
+
+const QuickActionsPanel = () => (
+    <Card className="bg-card lg:sticky lg:top-20">
+        <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">🚀 Quick Actions</CardTitle>
+            <CardDescription>Jump right into your learning journey.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3">
+            <Button asChild variant="outline">
+                <Link href="/notes"><BookOpen className="mr-2 h-4 w-4" /> Browse Notes Library</Link>
+            </Button>
+            <Button asChild variant="outline">
+                <Link href="/ai-notes"><BrainCircuit className="mr-2 h-4 w-4" /> Generate AI Notes</Link>
+            </Button>
+            <Button asChild variant="outline">
+                <Link href="/exam-questions"><NotebookPen className="mr-2 h-4 w-4" /> Predict Exam Questions</Link>
+            </Button>
+            <Button asChild className="bg-primary/10 text-primary hover:bg-primary/20">
+                <Link href="/premium"><Gem className="mr-2 h-4 w-4" /> Upgrade to Premium</Link>
+            </Button>
+        </CardContent>
+    </Card>
+);
+
 
 export default function DashboardPage() {
+  const { isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
@@ -289,36 +345,9 @@ export default function DashboardPage() {
             </Card>
         </div>
 
-        {/* Admin Panel */}
+        {/* Side Panel: Admin or Quick Actions */}
         <div className="lg:col-span-1">
-             <Card className="bg-card lg:sticky lg:top-20">
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2"><Users /> Admin Dashboard</CardTitle>
-                    <CardDescription>View and manage student progress.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Select>
-                        <SelectTrigger><SelectValue placeholder="Filter by Student" /></SelectTrigger>
-                        <SelectContent><SelectItem value="student1">Student 1</SelectItem></SelectContent>
-                    </Select>
-                     <Select>
-                        <SelectTrigger><SelectValue placeholder="Filter by Batch" /></SelectTrigger>
-                        <SelectContent><SelectItem value="batch1">Batch 2024</SelectItem></SelectContent>
-                    </Select>
-                     <Select>
-                        <SelectTrigger><SelectValue placeholder="Filter by Subject" /></SelectTrigger>
-                        <SelectContent><SelectItem value="pharma">Pharmacology</SelectItem></SelectContent>
-                    </Select>
-                </CardContent>
-                <CardContent className="border-t pt-4">
-                    <CardTitle className="text-lg font-semibold">Class Performance</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-2">Overall class progress: <span className="font-bold text-primary">76%</span></p>
-                </CardContent>
-                <CardContent className="flex flex-col sm:flex-row gap-2 pt-4">
-                    <Button className="w-full"><Download className="mr-2 h-4 w-4"/> Export PDF</Button>
-                    <Button variant="outline" className="w-full"><Share2 className="mr-2 h-4 w-4"/> Share</Button>
-                </CardContent>
-            </Card>
+             {isAdmin ? <AdminPanel /> : <QuickActionsPanel />}
         </div>
       </div>
 
