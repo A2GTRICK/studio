@@ -6,24 +6,29 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile } from 'firebase/auth';
-import { fetchSignInMethodsForEmail } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, GraduationCap, AlertCircle, Eye, EyeOff, LogIn } from 'lucide-react';
+import { Loader2, GraduationCap, AlertCircle, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const authSchema = z.object({
-  name: z.string().optional(),
+const signUpSchema = z.object({
+  name: z.string().min(1, { message: 'Name is required.' }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
-type AuthFormValues = z.infer<typeof authSchema>;
+const loginSchema = z.object({
+  email: z.string().email({ message: "Invalid email address." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
+
+type SignUpFormValues = z.infer<typeof signUpSchema>;
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const GoogleIcon = () => (
     <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="currentColor">
@@ -33,18 +38,24 @@ const GoogleIcon = () => (
 
 
 export default function LoginPage() {
+    const [view, setView] = useState<'signup' | 'login'>('signup');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [showForgotPassword, setShowForgotPassword] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
 
-    const form = useForm<AuthFormValues>({
-        resolver: zodResolver(authSchema),
+    const form = useForm({
+        resolver: zodResolver(view === 'signup' ? signUpSchema : loginSchema),
         defaultValues: { name: "", email: "", password: "" },
     });
     
+    // Reset form validation when view changes
+    React.useEffect(() => {
+        form.reset();
+        setError(null);
+    }, [view, form]);
+
     const getFriendlyAuthError = (err: AuthError) => {
         switch (err.code) {
             case 'auth/invalid-email': return 'Please enter a valid email address.';
@@ -65,42 +76,27 @@ export default function LoginPage() {
         }
     }
 
-    const handleAuth = async (data: AuthFormValues) => {
+    const handleAuth = async (data: any) => {
         setIsSubmitting(true);
         setError(null);
 
-        try {
-            const methods = await fetchSignInMethodsForEmail(auth, data.email);
-            
-            if (methods.length > 0) {
-                // Email exists, so we log in
-                setShowForgotPassword(true);
-                try {
-                    await signInWithEmailAndPassword(auth, data.email, data.password);
-                    toast({ title: "Logged In Successfully!", description: "Welcome back." });
-                    router.push('/dashboard');
-                } catch (signInError: any) {
-                    setError(getFriendlyAuthError(signInError));
-                }
-            } else {
-                // Email does not exist, so we sign up
-                setShowForgotPassword(false);
-                if (!data.name || data.name.trim() === '') {
-                    form.setError('name', { type: 'manual', message: 'Name is required to create a new account.' });
-                    setIsSubmitting(false);
-                    return;
-                }
-                try {
-                    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-                    await updateProfile(userCredential.user, { displayName: data.name });
-                    toast({ title: "Account Created!", description: `Welcome, ${data.name}!` });
-                    router.push('/dashboard');
-                } catch (signUpError: any) {
-                    setError(getFriendlyAuthError(signUpError));
-                }
+        if (view === 'signup') {
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+                await updateProfile(userCredential.user, { displayName: data.name });
+                toast({ title: "Account Created!", description: `Welcome, ${data.name}!` });
+                router.push('/dashboard');
+            } catch (signUpError: any) {
+                setError(getFriendlyAuthError(signUpError));
             }
-        } catch (err: any) {
-            setError(getFriendlyAuthError(err));
+        } else { // 'login' view
+            try {
+                await signInWithEmailAndPassword(auth, data.email, data.password);
+                toast({ title: "Logged In Successfully!", description: "Welcome back." });
+                router.push('/dashboard');
+            } catch (signInError: any) {
+                setError(getFriendlyAuthError(signInError));
+            }
         }
 
         setIsSubmitting(false);
@@ -168,8 +164,15 @@ export default function LoginPage() {
                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                         <GraduationCap className="h-8 w-8 text-primary" />
                     </div>
-                    <CardTitle className="font-headline text-3xl">Welcome to A2G Smart Notes</CardTitle>
-                    <CardDescription>The most trusted platform for pharmacy students.</CardDescription>
+                    <CardTitle className="font-headline text-3xl">
+                        {view === 'signup' ? 'Create an Account' : 'Welcome Back'}
+                    </CardTitle>
+                    <CardDescription>
+                        {view === 'signup' 
+                            ? 'The most trusted platform for pharmacy students.' 
+                            : 'Sign in to access your dashboard.'
+                        }
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting}>
@@ -196,13 +199,16 @@ export default function LoginPage() {
                                 </Alert>
                             )}
 
-                            <FormField control={form.control} name="name" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Full Name</FormLabel>
-                                    <FormControl><Input placeholder="Arvind Kumar (required for new accounts)" {...field} disabled={isSubmitting} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}/>
+                            {view === 'signup' && (
+                                <FormField control={form.control} name="name" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Full Name</FormLabel>
+                                        <FormControl><Input placeholder="Arvind Kumar" {...field} disabled={isSubmitting} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                            )}
+                            
                             <FormField control={form.control} name="email" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
@@ -214,7 +220,7 @@ export default function LoginPage() {
                                 <FormItem>
                                     <div className="flex justify-between items-center">
                                         <FormLabel>Password</FormLabel>
-                                        {showForgotPassword && (
+                                        {view === 'login' && (
                                           <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset} disabled={isSubmitting}>Forgot Password?</Button>
                                         )}
                                     </div>
@@ -224,13 +230,22 @@ export default function LoginPage() {
                             )}/>
                             <Button type="submit" disabled={isSubmitting} className="w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <LogIn/>
-                                <span>Continue</span>
+                                {view === 'signup' ? <UserPlus/> : <LogIn/>}
+                                <span>{view === 'signup' ? 'Create Account' : 'Sign In'}</span>
                             </Button>
                         </form>
                     </Form>
                 </CardContent>
+                <CardFooter className="justify-center">
+                    <Button variant="link" onClick={() => setView(view === 'signup' ? 'login' : 'signup')}>
+                        {view === 'signup'
+                            ? "Already have an account? Sign In"
+                            : "Don't have an account? Sign Up"
+                        }
+                    </Button>
+                </CardFooter>
             </Card>
         </div>
     );
 }
+
