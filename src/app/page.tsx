@@ -123,7 +123,7 @@ export default function LandingPage() {
                 <div className="relative mx-auto max-w-5xl">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-background/10 rounded-3xl -z-10 -rotate-2"></div>
                     <div className="bg-card border shadow-lg rounded-2xl p-2 sm:p-4">
-                       <Image src="/assets/dashboard-preview.png" alt="A2G Smart Notes Dashboard Preview" width={1200} height={675} className="rounded-lg" data-ai-hint="app dashboard professional" />
+                       <Image src="/assets/hero-image.png" alt="A2G Smart Notes App in action" width={1200} height={675} className="rounded-lg" data-ai-hint="app user interface" />
                     </div>
                 </div>
                  <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center max-w-4xl mx-auto">
@@ -146,6 +146,50 @@ export default function LandingPage() {
                         <LineChart className="h-8 w-8 text-primary mb-2" />
                         <h4 className="font-semibold">Progress Tracking</h4>
                         <p className="text-sm text-muted-foreground">Visualize your learning journey.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section className="bg-card py-20 lg:py-24">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    <div className="text-center lg:text-left">
+                        <h2 className="text-3xl font-headline font-bold">About Us</h2>
+                        <h3 className="text-xl font-semibold text-primary mt-2">Empowering Pharmacy Students Through Smart Learning</h3>
+                        <p className="mt-4 text-muted-foreground">
+                          A2G Smart Notes is a digital learning initiative by Arvind Sharma, founder of A2GTRICK Academy, built with a clear mission — to make pharmacy education more accessible, smarter, and future-ready.
+                        </p>
+                        <p className="mt-4 text-muted-foreground">
+                          We believe that every pharmacy student, regardless of location or background, deserves access to high-quality, affordable, and easy-to-understand learning resources. Our goal is to eliminate the barriers of traditional learning by combining technology, expert knowledge, and student-centric content.
+                        </p>
+                         <blockquote className="mt-6 border-l-4 border-primary pl-4 italic text-muted-foreground">
+                          “We’re not just a notes provider – we’re your academic partner, helping you grow smarter, every day.”
+                        </blockquote>
+                    </div>
+                    <div className="flex justify-center">
+                        <Image src="/assets/arvind-sharma-profile.png" alt="Arvind Sharma, Founder of A2G Smart Notes" width={400} height={400} className="rounded-full shadow-lg" data-ai-hint="professional indian man" />
+                    </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-12 mt-16">
+                    <div>
+                        <h3 className="text-2xl font-headline font-bold mb-4">🚀 What We Do</h3>
+                        <ul className="space-y-3">
+                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Provide professionally curated notes for D.Pharm, B.Pharm, and exam-based learning</span></li>
+                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Offer AI-powered tools to simplify complex pharmaceutical concepts</span></li>
+                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Deliver exam-focused MCQs, tricks, and quick revision series</span></li>
+                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Support students with project help, law & ethics notes, podcasts, and more</span></li>
+                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Keep students updated with pharma jobs, government vacancies, and walk-in alerts</span></li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h3 className="text-2xl font-headline font-bold mb-4">🌟 Why Choose A2G Smart Notes?</h3>
+                        <ul className="space-y-3">
+                           <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Built for pharmacy students, by a pharmacy educator</span></li>
+                           <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Content aligned with BTEUP, PCI, and competitive exam standards</span></li>
+                           <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Trusted by thousands of learners on YouTube, Telegram, and WhatsApp</span></li>
+                           <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>A blend of technology + education to help you succeed in both academics and career</span></li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -181,50 +225,6 @@ export default function LandingPage() {
         </section>
         
         <section className="py-20 lg:py-24">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid lg:grid-cols-2 gap-12 items-center">
-                    <div className="text-center lg:text-left">
-                        <h2 className="text-3xl font-headline font-bold">About Us</h2>
-                        <h3 className="text-xl font-semibold text-primary mt-2">Empowering Pharmacy Students Through Smart Learning</h3>
-                        <p className="mt-4 text-muted-foreground">
-                          A2G Smart Notes is a digital learning initiative by <span className="font-semibold text-foreground">Arvind Sharma</span>, founder of A2GTRICK Academy, built with a clear mission — to make pharmacy education more accessible, smarter, and future-ready.
-                        </p>
-                        <p className="mt-4 text-muted-foreground">
-                          We believe that every pharmacy student, regardless of location or background, deserves access to high-quality, affordable, and easy-to-understand learning resources. Our goal is to eliminate the barriers of traditional learning by combining technology, expert knowledge, and student-centric content.
-                        </p>
-                        <blockquote className="mt-6 border-l-4 border-primary pl-4 italic text-muted-foreground">
-                          “We’re not just a notes provider – we’re your academic partner, helping you grow smarter, every day.”
-                        </blockquote>
-                    </div>
-                    <div className="flex justify-center">
-                        <Image src="/assets/arvind-sharma-profile.png" alt="Arvind Sharma, Founder of A2G Smart Notes" width={400} height={400} className="rounded-full shadow-lg" data-ai-hint="professional indian man" />
-                    </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-12 mt-16">
-                    <div>
-                        <h3 className="text-2xl font-headline font-bold mb-4">🚀 What We Do</h3>
-                        <ul className="space-y-3">
-                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Provide professionally curated notes for D.Pharm, B.Pharm, and exam-based learning</span></li>
-                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Offer AI-powered tools to simplify complex pharmaceutical concepts</span></li>
-                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Deliver exam-focused MCQs, tricks, and quick revision series</span></li>
-                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Support students with project help, law & ethics notes, podcasts, and more</span></li>
-                            <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Keep students updated with pharma jobs, government vacancies, and walk-in alerts</span></li>
-                        </ul>
-                    </div>
-                     <div>
-                        <h3 className="text-2xl font-headline font-bold mb-4">🌟 Why Choose A2G Smart Notes?</h3>
-                        <ul className="space-y-3">
-                           <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Built for pharmacy students, by a pharmacy educator</span></li>
-                           <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Content aligned with BTEUP, PCI, and competitive exam standards</span></li>
-                           <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>Trusted by thousands of learners on YouTube, Telegram, and WhatsApp</span></li>
-                           <li className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-1 shrink-0" /><span>A blend of technology + education to help you succeed in both academics and career</span></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section className="bg-card py-20 lg:py-24">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center">
                     <h2 className="text-3xl font-headline font-bold">Don't Just Study, Study Smarter</h2>
