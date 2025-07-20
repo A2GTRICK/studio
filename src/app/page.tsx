@@ -116,7 +116,7 @@ export default function LandingPage() {
                 <div className="relative mx-auto max-w-5xl">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-background/10 rounded-3xl -z-10 -rotate-2"></div>
                     <div className="bg-card border shadow-lg rounded-2xl p-2 sm:p-4">
-                       <Image src="https://placehold.co/1200x800.png" alt="A2G Smart Notes Dashboard Preview" width={1200} height={800} className="rounded-lg" data-ai-hint="dashboard analytics" />
+                       <Image src="https://placehold.co/1200x800.png" alt="A2G Smart Notes Dashboard Preview" width={1200} height={800} className="rounded-lg" data-ai-hint="app dashboard" />
                     </div>
                 </div>
                  <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center max-w-4xl mx-auto">

@@ -11,7 +11,7 @@ export const services = [
     target: "B.Pharm & D.Pharm Students",
     link: "/services/internship-reports",
     price: "₹1,499",
-    imageUrl: "/assets/internship-report-image.jpg",
+    imageUrl: "/assets/internship-report-image.png",
     dataAiHint: "student report",
     features: [
         "Structured according to university guidelines",
