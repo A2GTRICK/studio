@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, ChevronDown, ChevronUp, CheckSquare, Target, BookCheck } from "lucide-react";
+import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, ChevronDown, ChevronUp, CheckSquare, Target, BookCheck, BarChart3 } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import type { GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
@@ -36,14 +36,14 @@ const QuickActionsPanel = () => (
             <CardDescription>Jump right into your learning journey.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3">
+             <Button asChild variant="outline" size="lg" className="h-20 flex-col items-start p-4 gap-2">
+                <Link href="/my-progress"><div className="flex items-center gap-2"><BarChart3 /> <span className="font-bold">My Progress</span></div><span className="text-xs font-normal text-muted-foreground">View your detailed report</span></Link>
+            </Button>
             <Button asChild variant="outline" size="lg" className="h-20 flex-col items-start p-4 gap-2">
                 <Link href="/notes"><div className="flex items-center gap-2"><BookOpen /> <span className="font-bold">Notes Library</span></div><span className="text-xs font-normal text-muted-foreground">Browse all expert-written notes</span></Link>
             </Button>
              <Button asChild variant="outline" size="lg" className="h-20 flex-col items-start p-4 gap-2">
                 <Link href="/ai-notes"><div className="flex items-center gap-2"><BrainCircuit /> <span className="font-bold">AI Notes</span></div><span className="text-xs font-normal text-muted-foreground">Generate notes on any topic</span></Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="h-20 flex-col items-start p-4 gap-2">
-                <Link href="/mcq-practice"><div className="flex items-center gap-2"><CheckSquare /> <span className="font-bold">MCQ Practice</span></div><span className="text-xs font-normal text-muted-foreground">Test your knowledge for exams</span></Link>
             </Button>
             <Button asChild className="bg-primary/10 text-primary hover:bg-primary/20 h-20 flex-col items-start p-4 gap-2" size="lg">
                 <Link href="/premium"><div className="flex items-center gap-2"><Gem /> <span className="font-bold">Go Premium</span></div><span className="text-xs font-normal text-primary/80">Unlock all features</span></Link>
@@ -290,5 +290,7 @@ export default function DashboardPage() {
       )}
     </div>
   );
+
+    
 
     
