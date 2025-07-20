@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, GraduationCap, AlertCircle, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { Loader2, AlertCircle, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 
@@ -88,6 +88,7 @@ export default function LoginPage() {
                 router.push('/dashboard');
             } catch (signUpError: any) {
                 setError(getFriendlyAuthError(signUpError));
+                setIsSubmitting(false);
             }
         } else { // 'login' view
             try {
@@ -96,10 +97,9 @@ export default function LoginPage() {
                 router.push('/dashboard');
             } catch (signInError: any) {
                 setError(getFriendlyAuthError(signInError));
+                setIsSubmitting(false);
             }
         }
-
-        setIsSubmitting(false);
     };
 
     const handleGoogleSignIn = async () => {
@@ -112,7 +112,6 @@ export default function LoginPage() {
             router.push('/dashboard');
         } catch(err: any) {
             setError(getFriendlyAuthError(err));
-        } finally {
             setIsSubmitting(false);
         }
     }
@@ -229,15 +228,20 @@ export default function LoginPage() {
                                 </FormItem>
                             )}/>
                             <Button type="submit" disabled={isSubmitting} className="w-full">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {view === 'signup' ? <UserPlus/> : <LogIn/>}
-                                <span>{view === 'signup' ? 'Create Account' : 'Sign In'}</span>
+                                {isSubmitting ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : view === 'signup' ? (
+                                    <UserPlus/>
+                                ) : (
+                                    <LogIn/>
+                                )}
+                                <span>{isSubmitting ? 'Processing...' : view === 'signup' ? 'Create Account' : 'Sign In'}</span>
                             </Button>
                         </form>
                     </Form>
                 </CardContent>
                 <CardFooter className="justify-center">
-                    <Button variant="link" onClick={() => setView(view === 'signup' ? 'login' : 'signup')}>
+                    <Button variant="link" onClick={() => setView(view === 'signup' ? 'login' : 'signup')} disabled={isSubmitting}>
                         {view === 'signup'
                             ? "Already have an account? Sign In"
                             : "Don't have an account? Sign Up"

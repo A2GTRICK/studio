@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen, Youtube, Send, Globe, MessageSquare } from 'lucide-react';
+import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen, Youtube, Send, Globe, MessageSquare, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -266,7 +266,11 @@ export default function LandingPage() {
                       disabled={isSubscribing}
                     />
                     <Button size="lg" type="submit" disabled={isSubscribing}>
-                      <Download className="mr-2 h-5 w-5"/>
+                      {isSubscribing ? (
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin"/>
+                      ) : (
+                          <Download className="mr-2 h-5 w-5"/>
+                      )}
                       {isSubscribing ? 'Subscribing...' : 'Download Now'}
                     </Button>
                 </form>

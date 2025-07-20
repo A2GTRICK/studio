@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, ChevronDown, ChevronUp, Target, BarChart3 } from "lucide-react";
+import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, Target, BarChart3 } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import type { GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
@@ -152,25 +152,32 @@ export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
   const [insights, setInsights] = useState<GenerateDashboardInsightsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchInsights = useCallback(async () => {
+  const fetchInsights = useCallback(async (isRefresh = false) => {
     if (!user) return;
-    setIsLoading(true);
+    if (isRefresh) {
+        setIsRefreshing(true);
+    } else {
+        setIsLoading(true);
+    }
     setError(null);
+
     try {
         const userProgress = await getSubjectsProgress();
         
         if (userProgress.length === 0) {
-             setInsights(null); // No data to process
+             setInsights(null);
              setIsLoading(false);
+             setIsRefreshing(false);
              return;
         }
 
         const result = await generateDashboardInsights({
             studentName: user.displayName?.split(' ')[0] || 'Student',
-            course: 'B.Pharm', // This can be dynamic in the future
-            year: '2nd Year', // This can be dynamic in the future
+            course: 'B.Pharm', 
+            year: '2nd Year', 
             subjectsProgress: userProgress,
         });
         setInsights(result);
@@ -179,6 +186,7 @@ export default function DashboardPage() {
         setError("Failed to load smart insights. The AI model might be temporarily unavailable.");
     } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
     }
   }, [user]);
 
@@ -218,9 +226,13 @@ export default function DashboardPage() {
             <p className="mt-1 text-muted-foreground">Here is your smart dashboard for today.</p>
         </div>
         <div>
-          <Button onClick={fetchInsights} variant="outline" size="sm" disabled={isLoading}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-             Refresh Insights
+          <Button onClick={() => fetchInsights(true)} variant="outline" size="sm" disabled={isRefreshing}>
+            {isRefreshing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+             {isRefreshing ? 'Refreshing...' : 'Refresh Insights'}
           </Button>
         </div>
       </div>
@@ -234,8 +246,8 @@ export default function DashboardPage() {
                 <CardDescription className="text-destructive/80">{error}</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button variant="destructive" onClick={fetchInsights} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                <Button variant="destructive" onClick={() => fetchInsights(true)} disabled={isRefreshing}>
+                    {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                     Try Again
                 </Button>
             </CardContent>

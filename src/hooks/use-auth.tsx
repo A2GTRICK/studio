@@ -1,14 +1,12 @@
 
 'use client';
 
-import React from 'react';
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-// The admin email is now sourced from an environment variable for security and flexibility.
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 interface AuthContextType {
@@ -39,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(currentUser?.email === ADMIN_EMAIL);
       setLoading(false);
     }, (error) => {
-      // Catch potential auth errors (like config issues) during initialization
       console.error("Firebase Auth Error:", error);
       setLoading(false);
     });
@@ -51,38 +48,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (loading) return;
 
     const isAuthPage = pathname === '/login';
-    const isLandingPage = pathname === '/';
+    const isPublicPage = isAuthPage || pathname === '/';
     const isAdminPage = pathname.startsWith('/admin');
 
-    // If user is logged in, redirect from login page to dashboard
-    if (user && isAuthPage) {
-      router.push('/dashboard');
-      return;
-    }
-
-    // If user is NOT logged in, redirect any protected page to login
-    if (!user && !isAuthPage && !isLandingPage) {
-      router.push('/login');
-      return;
-    }
-      
-    // If a non-admin tries to access an admin page, redirect them
-    if (user && !isAdmin && isAdminPage) {
+    if (user) {
+      // User is logged in
+      if (isAuthPage) {
+        // Redirect from login page to dashboard if logged in
         router.push('/dashboard');
-        return;
+      } else if (isAdminPage && !isAdmin) {
+        // If a non-admin tries to access an admin page, redirect
+        router.push('/dashboard');
+      }
+    } else {
+      // User is not logged in
+      if (!isPublicPage) {
+        // Redirect any protected page to the login page
+        router.push('/login');
+      }
     }
 
   }, [user, loading, pathname, router, isAdmin]);
   
   const logout = async () => {
       await signOut(auth);
-      // Let the onAuthStateChanged listener handle state updates
   }
 
   const value = { user, loading, isAdmin, logout };
 
   const isPublicPage = pathname === '/' || pathname === '/login';
-
+  
+  // Show a full-page spinner only for protected routes during the initial auth check.
+  // This prevents the login page from flashing on first load for an unauthenticated user.
   if (loading && !isPublicPage) {
     return <FullPageSpinner />;
   }

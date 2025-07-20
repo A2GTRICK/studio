@@ -109,7 +109,7 @@ export default function ServicesPage() {
                                     <FormField control={form.control} name="academicLevel" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Academic Level</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                                                 <FormControl>
                                                     <SelectTrigger><SelectValue placeholder="Select your academic level" /></SelectTrigger>
                                                 </FormControl>
@@ -128,20 +128,24 @@ export default function ServicesPage() {
                                     <FormField control={form.control} name="serviceType" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Service Type</FormLabel>
-                                            <FormControl><Input placeholder="e.g., Internship Report, Dissertation" {...field} /></FormControl>
+                                            <FormControl><Input placeholder="e.g., Internship Report, Dissertation" {...field} disabled={isLoading}/></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}/>
                                     <FormField control={form.control} name="topic" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Your Topic</FormLabel>
-                                            <FormControl><Input placeholder="e.g., Analysis of Paracetamol Tablets" {...field} /></FormControl>
+                                            <FormControl><Input placeholder="e.g., Analysis of Paracetamol Tablets" {...field} disabled={isLoading}/></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}/>
                                     <Button type="submit" disabled={isLoading} className="w-full">
-                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Generate Outline
+                                        {isLoading ? (
+                                           <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Generating...
+                                           </>
+                                        ) : 'Generate Outline'}
                                     </Button>
                                 </form>
                             </Form>
