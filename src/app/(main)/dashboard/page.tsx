@@ -52,18 +52,18 @@ const QuickActionsPanel = () => (
 const DashboardSkeleton = () => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
-            <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
-            <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></CardContent></Card>
+            <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
+            <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent className="space-y-3"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></CardContent></Card>
         </div>
         <div className="lg:col-span-2 space-y-6">
-            <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
+            <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
             <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></CardContent></Card>
         </div>
     </div>
 );
 
 
-const SubjectProgress = ({ subjects }: { subjects: GenerateDashboardInsightsOutput['aiSuggestions'] }) => {
+const SubjectProgress = ({ subjects }: { subjects: GenerateDashboardInsightsOutput['subjectsProgress'] }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const displayedSubjects = isExpanded ? subjects : subjects.slice(0, 2);
 
@@ -77,10 +77,10 @@ const SubjectProgress = ({ subjects }: { subjects: GenerateDashboardInsightsOutp
                 {displayedSubjects.map((subject, index) => (
                     <Card key={index} className="bg-background/50">
                         <CardHeader className="p-4">
-                            <CardTitle className="text-base flex items-center gap-2">
-                                <BrainCircuit className="h-5 w-5 text-primary" />
-                                {subject}
-                            </CardTitle>
+                             <CardTitle className="text-base font-semibold">{subject.subject}</CardTitle>
+                             <CardDescription>
+                                {subject.topics.filter(t => t.status === 'completed').length} / {subject.topics.length} topics completed
+                             </CardDescription>
                         </CardHeader>
                     </Card>
                 ))}
@@ -132,8 +132,10 @@ export default function DashboardPage() {
   }, [user]);
 
   useEffect(() => {
-    fetchInsights();
-  }, [fetchInsights]);
+    if (user) {
+      fetchInsights();
+    }
+  }, [user, fetchInsights]);
   
   const chartConfig = {
       yourScore: { label: 'Your Score', color: 'hsl(var(--primary))' },
@@ -162,11 +164,14 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-headline font-bold text-foreground">Welcome back, {user?.displayName?.split(' ')[0] || 'Student'}!</h1>
             <p className="mt-1 text-muted-foreground">Ready to start learning?</p>
         </div>
+        <div>
+          {isAdmin && <Button onClick={fetchInsights} variant="outline" size="sm"><RefreshCw className="mr-2 h-4 w-4" /> Refresh Insights</Button>}
+        </div>
       </div>
       
       {!isAdmin && <QuickActionsPanel />}
 
-      {error && (
+      {error && !insights && (
          <Card className="border-destructive bg-destructive/10">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle /> Error Loading Dashboard</CardTitle>
@@ -204,9 +209,9 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {insights.aiSuggestions.map((tip, index) => (
-                           <div key={index} className="flex items-start gap-3 text-sm p-2 bg-secondary/30 rounded-md">
-                               <Gem className="h-4 w-4 text-secondary-foreground mt-0.5 shrink-0" />
-                               <p className="text-secondary-foreground">{tip}</p>
+                           <div key={index} className="flex items-start gap-3 text-sm p-3 bg-card-foreground/5 rounded-md">
+                               <Gem className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                               <p className="text-foreground/80">{tip}</p>
                            </div>
                         ))}
                     </CardContent>
@@ -223,8 +228,8 @@ export default function DashboardPage() {
                             <BarChart accessibilityLayer data={insights.weeklyPerformance}>
                                 <CartesianGrid vertical={false} />
                                 <XAxis dataKey="week" tickLine={false} tickMargin={10} axisLine={false} />
-                                <YAxis />
-                                <Tooltip content={<ChartTooltipContent />} />
+                                <YAxis tickLine={false} axisLine={false} />
+                                <Tooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
                                 <Legend content={<ChartLegendContent />} />
                                 <Bar dataKey="yourScore" fill="var(--color-yourScore)" radius={4} />
                                 <Bar dataKey="classAverage" fill="var(--color-classAverage)" radius={4} />
@@ -232,16 +237,18 @@ export default function DashboardPage() {
                         </ChartContainer>
                     </CardContent>
                 </Card>
-                <SubjectProgress subjects={insights.aiSuggestions} />
+                <SubjectProgress subjects={insights.subjectsProgress} />
             </div>
         </div>
       )}
       
       {isAdmin && (
-          <div className="lg:col-span-3">
+          <div className="mt-6">
               <AdminPanel />
           </div>
       )}
     </div>
   );
 }
+
+    
