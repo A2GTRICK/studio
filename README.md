@@ -59,3 +59,4 @@ This is a Next.js application built with Firebase, ShadCN UI, Tailwind CSS, and 
 ## Deployment
 
 This application is configured for deployment on Firebase App Hosting. Simply connect your repository in the Firebase console and configure the build settings.
+![alt text](image.png)
