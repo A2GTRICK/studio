@@ -102,6 +102,7 @@ export default function NotesPage() {
 
     const handleBuyNow = () => {
         if (selectedNote) {
+            setSelectedNote(null);
             setShowPaymentDialog(true);
         }
     };
@@ -227,7 +228,7 @@ export default function NotesPage() {
       </div>
     </div>
     
-    <Dialog open={!!selectedNote && !showPaymentDialog} onOpenChange={(isOpen) => !isOpen && setSelectedNote(null)}>
+    <Dialog open={!!selectedNote} onOpenChange={(isOpen) => !isOpen && setSelectedNote(null)}>
         <DialogContent className="max-w-md">
             <DialogHeader>
                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
@@ -267,9 +268,12 @@ export default function NotesPage() {
         title={`Buy "${selectedNote?.title}"`}
         price="₹19"
         onPaymentSuccess={() => {
+            setShowPaymentDialog(false);
             setSelectedNote(null);
         }}
     />
     </>
   )
 }
+
+    

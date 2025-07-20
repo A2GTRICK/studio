@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 // --- PAYMENT DETAILS: EDIT HERE ---
 const UPI_ID = "a2gtrickacademy@upi";
-const QR_CODE_IMAGE_PATH = "https://placehold.co/250x250.png";
+const QR_CODE_IMAGE_PATH = "/assets/a2g-qr-code.png";
 // ------------------------------------
 
 interface PaymentDialogProps {
@@ -79,3 +79,5 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
         </Dialog>
     );
 }
+
+    

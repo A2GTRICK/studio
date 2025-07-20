@@ -258,8 +258,11 @@ export default function ExamQuestionsPage() {
         price={dialogPrice}
         onPaymentSuccess={() => {
             // Placeholder for what happens after successful payment confirmation
+            setShowPremiumDialog(null);
         }}
     />
     </>
   );
 }
+
+    

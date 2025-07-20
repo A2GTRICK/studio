@@ -140,6 +140,7 @@ export default function NoteDetailPage() {
             price="₹19"
              onPaymentSuccess={() => {
                 setShowPaymentDialog(false);
+                setShowUnlockDialog(false);
             }}
         />
         </>
@@ -208,3 +209,5 @@ export default function NoteDetailPage() {
     </div>
   );
 }
+
+    
