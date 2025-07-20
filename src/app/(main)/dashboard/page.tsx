@@ -189,62 +189,6 @@ const QuickActionsPanel = () => (
     </Card>
 );
 
-const NextStepsPanel = () => (
-    <section className="space-y-4">
-        <h2 className="text-2xl font-headline font-semibold">Ready for your next step?</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="bg-card hover:shadow-lg transition-shadow">
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-primary/10 rounded-full"><BrainCircuit className="h-6 w-6 text-primary"/></div>
-                        <CardTitle className="font-headline text-xl">Generate AI Notes</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Stuck on a tough topic? Let our AI generate detailed, easy-to-understand notes for you in seconds.</p>
-                </CardContent>
-                <CardContent>
-                    <Button asChild className="w-full">
-                        <Link href="/ai-notes">Start Generating <ArrowRight /></Link>
-                    </Button>
-                </CardContent>
-            </Card>
-            <Card className="bg-card hover:shadow-lg transition-shadow">
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-primary/10 rounded-full"><NotebookPen className="h-6 w-6 text-primary"/></div>
-                        <CardTitle className="font-headline text-xl">Predict Exam Questions</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Get ahead of the curve. Our AI analyzes past papers to predict high-probability questions for your exams.</p>
-                </CardContent>
-                <CardContent>
-                    <Button asChild className="w-full">
-                        <Link href="/exam-questions">Get Predictions <ArrowRight /></Link>
-                    </Button>
-                </CardContent>
-            </Card>
-            <Card className="bg-card hover:shadow-lg transition-shadow">
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-primary/10 rounded-full"><BarChart3 className="h-6 w-6 text-primary"/></div>
-                        <CardTitle className="font-headline text-xl">View Full Progress</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">Take a deep dive into your study habits. See your detailed subject-wise progress and topic completion.</p>
-                </CardContent>
-                <CardContent>
-                    <Button asChild className="w-full">
-                        <Link href="/my-progress">See My Progress <ArrowRight /></Link>
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
-    </section>
-);
-
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
@@ -411,12 +355,6 @@ export default function DashboardPage() {
              {isAdmin && <AdminPanel />}
         </div>
       </div>
-
-      <NextStepsPanel />
     </div>
   );
 }
-
-    
-
-    
