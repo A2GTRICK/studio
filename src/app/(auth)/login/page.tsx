@@ -180,7 +180,8 @@ export default function LoginPage() {
     );
     
     const emailActionTitle = authAction === 'login' ? 'Sign In to Your Account' : authAction === 'signup' ? 'Create a New Account' : 'Sign In or Create Account';
-    const buttonText = authAction === 'login' ? 'Sign In' : 'Create Account';
+    const buttonText = authAction === 'login' ? 'Sign In' : authAction === 'unknown' ? 'Continue' : 'Create Account';
+    const ButtonIcon = authAction === 'login' ? LogIn : UserPlus;
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -197,10 +198,7 @@ export default function LoginPage() {
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                         Continue with Google
                     </Button>
-                    <p className="mt-2 text-center text-xs text-muted-foreground">
-                        Sign in with Google requires pop-ups.
-                    </p>
-
+                    
                     <div className="relative my-4">
                         <div className="absolute inset-0 flex items-center">
                             <span className="w-full border-t" />
@@ -246,7 +244,7 @@ export default function LoginPage() {
                                 <FormItem>
                                     <div className="flex justify-between items-center">
                                         <FormLabel>Password</FormLabel>
-                                        {authAction !== 'signup' && (
+                                        {authAction === 'login' && (
                                           <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset} disabled={isSubmitting}>Forgot Password?</Button>
                                         )}
                                     </div>
@@ -256,7 +254,7 @@ export default function LoginPage() {
                             )}/>
                             <Button type="submit" disabled={isSubmitting} className="w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {authAction === 'login' ? <LogIn/> : <UserPlus />}
+                                <ButtonIcon/>
                                 <span>{buttonText}</span>
                             </Button>
                         </form>
