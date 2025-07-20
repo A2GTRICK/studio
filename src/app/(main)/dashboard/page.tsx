@@ -65,6 +65,12 @@ const DashboardSkeleton = () => (
 
 const SubjectProgress = ({ subjects }: { subjects: GenerateDashboardInsightsOutput['subjectsProgress'] }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+
+    // Defensive check to prevent crash if subjects is undefined
+    if (!subjects || subjects.length === 0) {
+        return null;
+    }
+
     const displayedSubjects = isExpanded ? subjects : subjects.slice(0, 2);
 
     return (
@@ -250,5 +256,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
