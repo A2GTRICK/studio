@@ -72,11 +72,15 @@ export default function LoginPage() {
         return;
       }
       setIsCheckingEmail(true);
+      setError(null);
       try {
         const methods = await fetchSignInMethodsForEmail(auth, email);
+        // If methods array is empty, it's a new user (sign up). Otherwise, it's an existing user (log in).
         setIsSignUp(methods.length === 0);
-      } catch (error) {
+      } catch (error: any) {
+        // If there's an error (e.g., network), default to login mode
         setIsSignUp(false);
+        setError(getFriendlyAuthError(error));
       } finally {
         setIsCheckingEmail(false);
       }
@@ -247,5 +251,3 @@ export default function LoginPage() {
         </div>
     );
 }
-
-    
