@@ -42,7 +42,7 @@ const subscribeToNewsletterFlow = ai.defineFlow(
     // For this example, we'll just return a confirmation and a dummy link.
     // The link now points to a real file in the `public` directory.
     return {
-      message: `Successfully subscribed ${input.email}!`,
+      message: `Thanks for subscribing! While your PDF downloads, feel free to explore our app's features.`,
       downloadLink: '/assets/Top-20-Pharmacology-Questions.pdf'
     };
   }
