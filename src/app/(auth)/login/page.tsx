@@ -14,7 +14,7 @@ import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile } from 'firebase/auth';
 import { fetchSignInMethodsForEmail } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, GraduationCap, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, GraduationCap, AlertCircle, Eye, EyeOff, UserPlus, LogIn } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const authSchema = z.object({
@@ -34,8 +34,7 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-    const [isSignUp, setIsSignUp] = useState(false);
+    const [authAction, setAuthAction] = useState<'login' | 'signup' | 'unknown'>('unknown');
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
@@ -66,23 +65,16 @@ export default function LoginPage() {
         }
     }
 
-    const checkEmailExists = async (email: string) => {
+    const checkEmail = async (email: string) => {
       if (!email || !z.string().email().safeParse(email).success) {
-        setIsSignUp(false);
+        setAuthAction('unknown');
         return;
       }
-      setIsCheckingEmail(true);
-      setError(null);
       try {
         const methods = await fetchSignInMethodsForEmail(auth, email);
-        // If methods array is empty, it's a new user (sign up). Otherwise, it's an existing user (log in).
-        setIsSignUp(methods.length === 0);
-      } catch (error: any) {
-        // If there's an error (e.g., network), default to login mode
-        setIsSignUp(false);
-        setError(getFriendlyAuthError(error));
-      } finally {
-        setIsCheckingEmail(false);
+        setAuthAction(methods.length > 0 ? 'login' : 'signup');
+      } catch (error) {
+        setAuthAction('login'); // Default to login on error
       }
     };
 
@@ -90,9 +82,22 @@ export default function LoginPage() {
     const handleAuth = async (data: AuthFormValues) => {
         setIsSubmitting(true);
         setError(null);
+        let currentAuthAction = authAction;
+
+        // If status is unknown, re-check now
+        if (currentAuthAction === 'unknown') {
+            try {
+                const methods = await fetchSignInMethodsForEmail(auth, data.email);
+                currentAuthAction = methods.length > 0 ? 'login' : 'signup';
+                setAuthAction(currentAuthAction);
+            } catch (err: any) {
+                setError(getFriendlyAuthError(err));
+                setIsSubmitting(false);
+                return;
+            }
+        }
         
-        if (isSignUp) {
-            // Sign up a new user
+        if (currentAuthAction === 'signup') {
             if (!data.name || data.name.trim() === '') {
                 form.setError('name', { type: 'manual', message: 'Name is required for new accounts.' });
                 setIsSubmitting(false);
@@ -107,8 +112,7 @@ export default function LoginPage() {
                 setError(getFriendlyAuthError(signUpError));
             }
 
-        } else {
-            // Sign in an existing user
+        } else { // 'login'
             try {
                 await signInWithEmailAndPassword(auth, data.email, data.password);
                 toast({ title: "Logged In Successfully!", description: "Welcome back." });
@@ -160,7 +164,7 @@ export default function LoginPage() {
                 type={showPassword ? "text" : "password"} 
                 placeholder="••••••••"
                 {...field}
-                disabled={isSubmitting || isCheckingEmail}
+                disabled={isSubmitting}
             />
             <Button
                 type="button"
@@ -168,12 +172,15 @@ export default function LoginPage() {
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={isSubmitting || isCheckingEmail}
+                disabled={isSubmitting}
             >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
         </div>
     );
+    
+    const emailActionTitle = authAction === 'login' ? 'Sign In to Your Account' : authAction === 'signup' ? 'Create a New Account' : 'Sign In or Create Account';
+    const buttonText = authAction === 'login' ? 'Sign In' : 'Create Account';
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -183,11 +190,11 @@ export default function LoginPage() {
                         <GraduationCap className="h-8 w-8 text-primary" />
                     </div>
                     <CardTitle className="font-headline text-3xl">Welcome to A2G Smart Notes</CardTitle>
-                    <CardDescription>Sign in or create an account to continue.</CardDescription>
+                    <CardDescription>The most trusted platform for pharmacy students.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting || isCheckingEmail}>
-                        {isSubmitting && !isCheckingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                    <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting}>
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                         Continue with Google
                     </Button>
                     <p className="mt-2 text-center text-xs text-muted-foreground">
@@ -212,11 +219,18 @@ export default function LoginPage() {
                                     <AlertDescription>{error}</AlertDescription>
                                 </Alert>
                             )}
-                            {isSignUp && (
+
+                             {authAction !== 'unknown' && (
+                                <div className="text-center p-2 bg-secondary rounded-md">
+                                    <p className="text-sm font-semibold text-secondary-foreground">{emailActionTitle}</p>
+                                </div>
+                            )}
+
+                            {authAction === 'signup' && (
                                 <FormField control={form.control} name="name" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Full Name</FormLabel>
-                                        <FormControl><Input placeholder="Arvind Kumar" {...field} disabled={isSubmitting || isCheckingEmail} /></FormControl>
+                                        <FormControl><Input placeholder="Arvind Kumar" {...field} disabled={isSubmitting} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}/>
@@ -224,7 +238,7 @@ export default function LoginPage() {
                             <FormField control={form.control} name="email" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
-                                    <FormControl><Input placeholder="you@example.com" {...field} onBlur={(e) => {field.onBlur(); checkEmailExists(e.target.value);}} disabled={isSubmitting || isCheckingEmail} /></FormControl>
+                                    <FormControl><Input placeholder="you@example.com" {...field} onBlur={(e) => {field.onBlur(); checkEmail(e.target.value);}} disabled={isSubmitting} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}/>
@@ -232,17 +246,18 @@ export default function LoginPage() {
                                 <FormItem>
                                     <div className="flex justify-between items-center">
                                         <FormLabel>Password</FormLabel>
-                                        {!isSignUp && (
-                                          <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset} disabled={isSubmitting || isCheckingEmail}>Forgot Password?</Button>
+                                        {authAction !== 'signup' && (
+                                          <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset} disabled={isSubmitting}>Forgot Password?</Button>
                                         )}
                                     </div>
                                     <FormControl>{renderPasswordInput(field)}</FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}/>
-                            <Button type="submit" disabled={isSubmitting || isCheckingEmail} className="w-full">
-                                {(isSubmitting || isCheckingEmail) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isCheckingEmail ? 'Checking...' : (isSignUp ? 'Create Account' : 'Continue with Email')}
+                            <Button type="submit" disabled={isSubmitting} className="w-full">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {authAction === 'login' ? <LogIn/> : <UserPlus />}
+                                <span>{buttonText}</span>
                             </Button>
                         </form>
                     </Form>
