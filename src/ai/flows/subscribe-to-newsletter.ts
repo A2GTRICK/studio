@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to handle newsletter subscriptions and provide a lead magnet download.
@@ -17,7 +18,7 @@ export type SubscribeToNewsletterInput = z.infer<typeof SubscribeToNewsletterInp
 
 const SubscribeToNewsletterOutputSchema = z.object({
   message: z.string().describe('A confirmation message for the subscription.'),
-  downloadLink: z.string().url().describe('A link to download the free PDF.'),
+  downloadLink: z.string().describe('A link to download the free PDF.'),
 });
 export type SubscribeToNewsletterOutput = z.infer<typeof SubscribeToNewsletterOutputSchema>;
 
