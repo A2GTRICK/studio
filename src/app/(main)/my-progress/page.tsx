@@ -152,6 +152,14 @@ export default function MyProgressPage() {
         </Card>
       )}
 
+      {!isLoading && !error && !insights && (
+          <Card>
+              <CardContent className="p-10 text-center">
+                  <p className="text-muted-foreground">No subjects or topics found. Your progress report will appear here once notes are added to the library.</p>
+              </CardContent>
+          </Card>
+      )}
+
       {!isLoading && !error && insights && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -214,3 +222,5 @@ export default function MyProgressPage() {
     </div>
   );
 }
+
+    

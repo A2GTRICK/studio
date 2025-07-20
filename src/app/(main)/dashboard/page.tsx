@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -69,16 +70,7 @@ const SubjectProgress = ({ subjects }: { subjects: NonNullable<GenerateDashboard
     const [isExpanded, setIsExpanded] = useState(false);
 
     if (!subjects || subjects.length === 0) {
-        return (
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Subject-wise Progress</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">No notes found in the library. Add some notes in the admin panel to see progress.</p>
-                </CardContent>
-            </Card>
-        );
+        return null;
     }
 
     const displayedSubjects = isExpanded ? subjects : subjects.slice(0, 2);
@@ -157,6 +149,7 @@ export default function DashboardPage() {
         
         if (userProgress.length === 0) {
              setInsights(null); // No data to process
+             setIsLoading(false);
              return;
         }
 
@@ -233,6 +226,15 @@ export default function DashboardPage() {
         </Card>
       )}
 
+      {!insights && !error && !isLoading && (
+        <Card>
+            <CardContent className="p-10 text-center">
+                <p className="text-muted-foreground">Your smart dashboard will appear here once notes are added to the library.</p>
+                {isAdmin && <Button asChild className="mt-4"><Link href="/admin/notes">Add Notes Now</Link></Button>}
+            </CardContent>
+        </Card>
+      )}
+
       {insights && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
@@ -288,3 +290,5 @@ export default function DashboardPage() {
       )}
     </div>
   );
+
+    
