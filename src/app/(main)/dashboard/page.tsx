@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, BrainCircuit, CheckCircle2, Target, NotebookPen, Gem, TrendingUp, Clock, Lightbulb, Users, Download, Share2, AlertTriangle, RefreshCw } from "lucide-react";
+import { ArrowRight, BookOpen, BrainCircuit, CheckCircle2, Target, NotebookPen, Gem, TrendingUp, Clock, Lightbulb, Users, Download, Share2, AlertTriangle, RefreshCw, ChevronDown } from "lucide-react";
 import Link from 'next/link';
 import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
@@ -39,6 +39,14 @@ const subjectsProgress = [
         topics: [
             { title: "Biomolecules", status: "pending", lastAccessed: "Never", estTime: "2 hours" },
             { title: "Enzymes", status: "pending", lastAccessed: "Never", estTime: "1.5 hours" },
+        ] 
+    },
+    { 
+        subject: "Human Anatomy and Physiology",
+        topics: [
+            { title: "The Integumentary System", status: "completed", lastAccessed: "1 month ago", estTime: "N/A" },
+            { title: "The Skeletal System", status: "pending", lastAccessed: "Never", estTime: "2 hours" },
+             { title: "The Muscular System", status: "pending", lastAccessed: "Never", estTime: "2.5 hours" },
         ] 
     },
 ];
@@ -189,6 +197,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [insights, setInsights] = useState<GenerateDashboardInsightsOutput | null>(null);
+  const [showFullReport, setShowFullReport] = useState(false);
 
   const fetchInsights = async () => {
     setIsLoading(true);
@@ -253,6 +262,7 @@ export default function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
+  const visibleSubjects = showFullReport ? subjectsProgress : subjectsProgress.slice(0, 2);
 
   return (
     <div className="space-y-6">
@@ -359,7 +369,7 @@ export default function DashboardPage() {
       {/* Subject-wise Progress */}
       <section className="space-y-4">
           <h2 className="text-2xl font-headline font-semibold">Subject-Wise Progress</h2>
-          {subjectsProgress.map(subject => (
+          {visibleSubjects.map(subject => (
             <Card key={subject.subject}>
                 <CardHeader>
                     <CardTitle>{subject.subject}</CardTitle>
@@ -390,6 +400,14 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
           ))}
+          {!showFullReport && subjectsProgress.length > 2 && (
+              <div className="text-center">
+                  <Button variant="outline" onClick={() => setShowFullReport(true)}>
+                      <ChevronDown className="mr-2 h-4 w-4" />
+                      View Full Report
+                  </Button>
+              </div>
+          )}
       </section>
 
     </div>
