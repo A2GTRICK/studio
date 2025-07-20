@@ -13,6 +13,17 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User as FirebaseUser } from 'firebase/auth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 function NotificationPopover() {
     const recentNotifications = notifications.slice(0, 4);
@@ -104,21 +115,37 @@ function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promi
     }
     
     return (
-        <div className="flex items-center justify-between gap-3 p-3 border-t">
-            <div className="flex items-center gap-3 overflow-hidden">
-                <Avatar>
-                    <AvatarImage src={user.photoURL || undefined} alt="User avatar" />
-                    <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
-                </Avatar>
-                <div className="overflow-hidden">
-                    <p className="font-semibold truncate text-sm">{user.displayName || 'User'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+        <AlertDialog>
+            <div className="flex items-center justify-between gap-3 p-3 border-t">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <Avatar>
+                        <AvatarImage src={user.photoURL || undefined} alt="User avatar" />
+                        <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
+                    </Avatar>
+                    <div className="overflow-hidden">
+                        <p className="font-semibold truncate text-sm">{user.displayName || 'User'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
                 </div>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" title="Logout">
+                        <LogOut className="h-4 w-4" />
+                    </Button>
+                </AlertDialogTrigger>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
-                <LogOut className="h-4 w-4" />
-            </Button>
-        </div>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        You will be returned to the login page. Any unsaved progress may be lost.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     )
 }
 
