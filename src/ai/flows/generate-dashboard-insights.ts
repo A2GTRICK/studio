@@ -71,7 +71,7 @@ const prompt = ai.definePrompt({
   CRITICAL INSTRUCTIONS:
 
   1.  **Calculate Summary Metrics:**
-      - Calculate 'totalProgress' as the percentage of completed topics out of all topics.
+      - Calculate 'totalProgress' as the percentage of completed topics out of all topics. Round to the nearest whole number.
       - Calculate 'subjectsCompleted' by counting how many subjects have all their topics marked as 'completed'.
       - Calculate 'pendingTopics' by counting the total number of topics with a 'pending' status.
 
@@ -103,3 +103,5 @@ const generateDashboardInsightsFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

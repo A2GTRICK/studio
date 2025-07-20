@@ -184,34 +184,37 @@ const QuickActionsPanel = () => (
 
 
 export default function DashboardPage() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [insights, setInsights] = useState<GenerateDashboardInsightsOutput | null>(null);
 
-  useEffect(() => {
-    async function fetchInsights() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const result = await generateDashboardInsights({
-            studentName: "Arvind", // This would be dynamic in a real app
-            course: "B.Pharm",
-            year: "2nd Year",
-            subjectsProgress: subjectsProgress,
-        });
-        setInsights(result);
-        setLastSynced(new Date());
-      } catch (e: any) {
-        console.error("Failed to fetch dashboard insights:", e);
-        setError("Failed to generate smart insights. The AI model might be overloaded. Please try again in a moment.");
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchInsights = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await generateDashboardInsights({
+          studentName: user?.displayName || "Student",
+          course: "B.Pharm",
+          year: "2nd Year",
+          subjectsProgress: subjectsProgress,
+      });
+      setInsights(result);
+      setLastSynced(new Date());
+    } catch (e: any) {
+      console.error("Failed to fetch dashboard insights:", e);
+      setError("Failed to generate smart insights. The AI model might be overloaded. Please try again in a moment.");
+    } finally {
+      setIsLoading(false);
     }
-    fetchInsights();
-  }, []);
+  }
+
+  useEffect(() => {
+    if(user){
+        fetchInsights();
+    }
+  }, [user]);
 
   const getProgressColorClass = (progress: number) => {
     if (progress > 75) return 'bg-green-500';
@@ -237,7 +240,7 @@ export default function DashboardPage() {
             <AlertTitle>Error Loading Dashboard</AlertTitle>
             <AlertDescription>
                 {error}
-                <Button variant="secondary" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+                <Button variant="secondary" size="sm" className="mt-4" onClick={fetchInsights}>
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Retry
                 </Button>
@@ -255,11 +258,11 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h1 className="text-3xl font-headline font-bold text-foreground">A2GTRICKS Academy Dashboard</h1>
-            <p className="mt-1 text-muted-foreground">Your smart progress report at a glance.</p>
+            <h1 className="text-3xl font-headline font-bold text-foreground">Welcome back, {user?.displayName?.split(' ')[0] || 'Student'}!</h1>
+            <p className="mt-1 text-muted-foreground">Here's your smart progress report at a glance.</p>
         </div>
         <div className="flex items-center gap-2">
-            {lastSynced && <Badge variant="secondary">Last synced: {lastSynced.toLocaleTimeString()}</Badge>}
+            {lastSynced && <Badge variant="secondary" className="cursor-pointer" onClick={fetchInsights} title="Click to refresh insights"><RefreshCw className="mr-2 h-3 w-3 animate-spin" /> Last synced: {lastSynced.toLocaleTimeString()}</Badge>}
         </div>
       </div>
       
@@ -392,3 +395,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
