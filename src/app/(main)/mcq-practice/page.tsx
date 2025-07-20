@@ -484,7 +484,7 @@ export default function McqPracticePage() {
           {isLoading && (
               <div className="flex flex-col items-center justify-center h-96 text-center">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-4 text-muted-foreground h-6">{currentLoadingMessage}</p>
+                  <p className="mt-4 text-muted-foreground animate-pulse h-6">{currentLoadingMessage}</p>
               </div>
           )}
           {error && !isLoading && (
@@ -497,7 +497,7 @@ export default function McqPracticePage() {
             </Alert>
           )}
           {!questions && !isLoading && !error && (
-              <div className="flex flex-col items-center justify-center h-96 text-center text-muted-foreground/50 border-2 border-dashed rounded-lg">
+              <div className="flex flex-col items-center justify-center h-96 text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
                   <BrainCircuit className="h-16 w-16 mb-4" />
                   <h3 className="text-xl font-semibold">Your Smart Quiz Awaits</h3>
                   <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs. You get {dailyLimit} free questions per day.</p>
@@ -519,7 +519,7 @@ export default function McqPracticePage() {
                         <Progress value={scorePercentage} className="h-3 my-4 bg-background/50" />
                         <p className="font-semibold">{scorePercentage.toFixed(0)}% Correct</p>
                     </CardContent>
-                    <CardFooter className="grid grid-cols-2 gap-2">
+                    <CardFooter className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Button onClick={() => resetQuiz(true)} variant="outline" className="w-full">
                             <RefreshCcw className="mr-2 h-4 w-4"/>
                             Retry Quiz
@@ -650,8 +650,12 @@ export default function McqPracticePage() {
                 </Button>
 
                 <div className="relative">
-                    <Separator />
-                    <span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-background px-2 text-sm text-muted-foreground">OR</span>
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">OR</span>
+                    </div>
                 </div>
 
                 <p className="font-semibold text-center">Buy a Question Pack</p>

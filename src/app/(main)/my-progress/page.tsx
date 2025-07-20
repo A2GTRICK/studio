@@ -44,7 +44,7 @@ const SubjectProgressCard = ({ subjectProgress }: { subjectProgress: SubjectProg
                                     <li key={index} className="flex justify-between items-center text-sm p-2 rounded-md bg-background">
                                         <span className="flex-1 pr-4">{topic.title}</span>
                                         {topic.status === 'completed' ? (
-                                            <Badge variant="default" className="bg-green-600/80">
+                                            <Badge variant="default" className="bg-green-600/80 hover:bg-green-600/90">
                                                 <CheckSquare className="mr-2 h-3 w-3" />
                                                 Completed
                                             </Badge>
@@ -73,8 +73,8 @@ const ReportSkeleton = () => (
             <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent className="space-y-3"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></CardContent></Card>
         </div>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
-            <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
+            <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+            <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
          </div>
     </div>
 );
@@ -94,6 +94,7 @@ export default function MyProgressPage() {
         const userProgress = await getSubjectsProgress();
         if (userProgress.length === 0) {
              setInsights(null);
+             setIsLoading(false);
              return;
         }
 
@@ -115,6 +116,8 @@ export default function MyProgressPage() {
   useEffect(() => {
     if (user) {
       fetchInsights();
+    } else {
+        setIsLoading(false);
     }
   }, [user, fetchInsights]);
   
@@ -155,7 +158,9 @@ export default function MyProgressPage() {
       {!isLoading && !error && !insights && (
           <Card>
               <CardContent className="p-10 text-center">
-                  <p className="text-muted-foreground">No subjects or topics found. Your progress report will appear here once notes are added to the library.</p>
+                  <h3 className="text-xl font-semibold">No Progress Data Found</h3>
+                  <p className="text-muted-foreground mt-2">Your progress report will appear here once notes are added to the library and you begin studying.</p>
+                  <Button asChild className="mt-4"><Link href="/notes">Start Learning</Link></Button>
               </CardContent>
           </Card>
       )}
@@ -222,5 +227,3 @@ export default function MyProgressPage() {
     </div>
   );
 }
-
-    

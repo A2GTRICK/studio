@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,12 +12,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
-import type { Note } from '@/app/(main)/notes/page';
+import { collection, getDocs, query } from 'firebase/firestore';
+import type { Note } from '@/app/(main)/admin/notes/page';
 import { marked } from 'marked';
+import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -33,6 +35,14 @@ interface ChatMessage {
   content: string;
 }
 
+const loadingMessages = [
+    "AI is brewing your notes... ☕",
+    "Consulting with digital textbooks...",
+    "Synthesizing knowledge into clear points...",
+    "Cross-referencing with the syllabus...",
+];
+
+
 export default function AiNotesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFollowupLoading, setIsFollowupLoading] = useState(false);
@@ -41,11 +51,27 @@ export default function AiNotesPage() {
   const [followUp, setFollowUp] = useState('');
   const [lastTopic, setLastTopic] = useState<NotesFormValues | null>(null);
   const [allNotes, setAllNotes] = useState<Note[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setCurrentLoadingMessage(prev => {
+            const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
+            return loadingMessages[nextIndex];
+        });
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
 
   useState(() => {
     const fetchAllNotes = async () => {
         const notesCollection = collection(db, 'notes');
-        const notesSnapshot = await getDocs(notesCollection);
+        const notesSnapshot = await getDocs(query(notesCollection));
         const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
         setAllNotes(notesList);
     };
@@ -77,18 +103,19 @@ export default function AiNotesPage() {
     setIsLoading(true);
     setGeneratedNotes(null);
     setChatHistory([]);
+    setError(null);
     setLastTopic(data);
     try {
       const result = await generateNotesFromTopic(data);
       const assistantMessage = { role: 'assistant', content: result.notes };
       setGeneratedNotes(result.notes);
       setChatHistory([assistantMessage]);
-    } catch (error: any) {
-      console.error('Error generating notes:', error);
-       const errorMessage = error.message.includes('503') 
+    } catch (e: any) {
+      console.error('Error generating notes:', e);
+       const errorMessage = e.message.includes('503') 
         ? 'The AI model is currently overloaded. Please try again in a few moments.'
         : 'Sorry, an error occurred while generating notes. Please try again.';
-      setChatHistory([{ role: 'assistant', content: errorMessage }]);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -129,8 +156,8 @@ export default function AiNotesPage() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-1">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="lg:col-span-1 lg:sticky top-20">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> AI Notes Generator</CardTitle>
@@ -195,7 +222,7 @@ export default function AiNotesPage() {
                         Continue Your Learning
                     </CardTitle>
                     <CardDescription>
-                        Found these notes helpful? Unlock our detailed, expert-written premium notes on related topics to boost your study.
+                        Unlock our expert-written premium notes on related topics.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-4">
@@ -230,13 +257,21 @@ export default function AiNotesPage() {
               {isLoading && (
                   <div className="flex flex-col items-center justify-center h-full">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <p className="mt-4 text-muted-foreground">Generating your notes...</p>
+                      <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
                   </div>
               )}
-              {chatHistory.length === 0 && !isLoading && (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                      <BrainCircuit className="h-16 w-16 text-muted-foreground/30" />
-                      <p className="mt-4 text-muted-foreground">Fill out the form to generate your first set of notes.</p>
+              {!isLoading && error && (
+                 <Alert variant="destructive" className="my-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Generation Failed</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                 </Alert>
+              )}
+              {chatHistory.length === 0 && !isLoading && !error &&(
+                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
+                      <BrainCircuit className="h-16 w-16 mb-4" />
+                      <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
+                      <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes on any topic from your syllabus.</p>
                   </div>
               )}
               <div className="space-y-4">

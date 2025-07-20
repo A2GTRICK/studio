@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, ChevronDown, ChevronUp, CheckSquare, Target, BookCheck, BarChart3 } from "lucide-react";
+import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, ChevronDown, ChevronUp, Target, BarChart3 } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import type { GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
@@ -13,7 +13,8 @@ import { Line, LineChart, CartesianGrid, XAxis, ResponsiveContainer, YAxis } fro
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-
+import { Loader2 } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const AdminPanel = () => (
   <Card className="bg-card">
@@ -60,20 +61,17 @@ const DashboardSkeleton = () => (
         </div>
         <div className="lg:col-span-2 space-y-6">
              <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
-             <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></CardContent></Card>
+             <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" /></CardContent></Card>
         </div>
     </div>
 );
 
 
 const SubjectProgress = ({ subjects }: { subjects: NonNullable<GenerateDashboardInsightsOutput['subjectsProgress']> }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
 
     if (!subjects || subjects.length === 0) {
         return null;
     }
-
-    const displayedSubjects = isExpanded ? subjects : subjects.slice(0, 2);
 
     return (
         <Card>
@@ -81,32 +79,48 @@ const SubjectProgress = ({ subjects }: { subjects: NonNullable<GenerateDashboard
                 <CardTitle className="font-headline">Subject-wise Progress</CardTitle>
                 <CardDescription>High-level overview of your study status.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                {displayedSubjects.map((subject, index) => {
-                    const completed = subject.topics.filter(t => t.status === 'completed').length;
-                    const total = subject.topics.length;
-                    const progress = total > 0 ? (completed / total) * 100 : 0;
-                    return (
-                        <Card key={index} className="bg-background/50">
-                            <CardContent className="p-4">
-                                <div className="flex justify-between items-center mb-2">
-                                     <p className="font-semibold">{subject.subject}</p>
-                                     <p className="text-sm text-muted-foreground">{completed} / {total} topics</p>
-                                </div>
-                               <Progress value={progress} />
-                            </CardContent>
-                        </Card>
-                    )
-                })}
+            <CardContent>
+                <Accordion type="multiple" className="w-full space-y-4">
+                    {subjects.slice(0, 3).map((subject, index) => {
+                        const completed = subject.topics.filter(t => t.status === 'completed').length;
+                        const total = subject.topics.length;
+                        const progress = total > 0 ? (completed / total) * 100 : 0;
+                        return (
+                            <AccordionItem value={`item-${index}`} key={index} className="bg-background/50 border rounded-lg px-4">
+                                <AccordionTrigger className="py-4 text-left hover:no-underline">
+                                    <div className="w-full">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <p className="font-semibold">{subject.subject}</p>
+                                            <p className="text-sm text-muted-foreground">{completed} / {total} topics</p>
+                                        </div>
+                                        <Progress value={progress} />
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-2 pb-4">
+                                     <ul className="space-y-2 mt-2">
+                                        {subject.topics.map((topic, topicIdx) => (
+                                            <li key={topicIdx} className="flex justify-between items-center text-sm p-2 rounded-md bg-background">
+                                                <span className="flex-1 pr-4">{topic.title}</span>
+                                                <Badge variant={topic.status === 'completed' ? 'default' : 'secondary'} className={topic.status === 'completed' ? 'bg-green-600/80' : ''}>
+                                                    {topic.status === 'completed' ? 'Completed' : 'Pending'}
+                                                </Badge>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </AccordionContent>
+                            </AccordionItem>
+                        )
+                    })}
+                </Accordion>
             </CardContent>
-            {subjects.length > 2 && (
-                 <CardFooter>
-                    <Button variant="outline" className="w-full" onClick={() => setIsExpanded(!isExpanded)}>
-                        {isExpanded ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
-                        {isExpanded ? 'Show Less' : 'View Full Report'}
-                    </Button>
-                </CardFooter>
-            )}
+             <CardFooter>
+                <Button variant="outline" className="w-full" asChild>
+                    <Link href="/my-progress">
+                        View Full Report
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+            </CardFooter>
         </Card>
     );
 };
@@ -171,6 +185,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       fetchInsights();
+    } else {
+      setIsLoading(false);
     }
   }, [user, fetchInsights]);
   
@@ -185,7 +201,7 @@ export default function DashboardPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                   <h1 className="text-3xl font-headline font-bold text-foreground">Welcome back, {user?.displayName?.split(' ')[0] || 'Student'}!</h1>
-                  <p className="mt-1 text-muted-foreground">Analyzing your progress...</p>
+                  <p className="mt-1 text-muted-foreground animate-pulse">Analyzing your progress...</p>
               </div>
             </div>
             {!isAdmin && <QuickActionsPanel />}
@@ -229,8 +245,10 @@ export default function DashboardPage() {
       {!insights && !error && !isLoading && (
         <Card>
             <CardContent className="p-10 text-center">
-                <p className="text-muted-foreground">Your smart dashboard will appear here once notes are added to the library.</p>
+                <h3 className="text-xl font-semibold">Your Smart Dashboard is Getting Ready!</h3>
+                <p className="text-muted-foreground mt-2">Your personalized insights will appear here once we have some notes and progress data to analyze.</p>
                 {isAdmin && <Button asChild className="mt-4"><Link href="/admin/notes">Add Notes Now</Link></Button>}
+                 {!isAdmin && <Button asChild className="mt-4"><Link href="/notes">Browse Notes Library</Link></Button>}
             </CardContent>
         </Card>
       )}
@@ -290,9 +308,3 @@ export default function DashboardPage() {
       )}
     </div>
   );
-
-    
-
-    
-
-    
