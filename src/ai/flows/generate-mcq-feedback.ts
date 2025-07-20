@@ -55,7 +55,7 @@ const prompt = ai.definePrompt({
   {{/each}}
 
   CRITICAL INSTRUCTIONS:
-  1.  **Engaging Opener:** Start with a fun, motivational, or witty line. Use emojis and maybe even a famous movie dialogue (e.g., "Mogambo khush hua!" for a good score, or "Don't worry, 'abhi hum zinda hai!'" for a low score). Be creative and vary this every time!
+  1.  **Engaging Opener:** Start with a fun, motivational, or witty line. **Be creative and vary this every time!** Use emojis and maybe even a famous movie dialogue (e.g., "Mogambo khush hua!" for a good score, or "Don't worry, 'abhi hum zinda hai!'" for a low score). Do not repeat the same opener.
   2.  **Analyze Performance:** After the opener, calculate the user's score and identify any patterns in their incorrect answers. Are they struggling with a specific concept within the topic?
   3.  **Provide Actionable Tips:** Based on your analysis, provide 2-3 specific, actionable tips. For example, instead of saying "study more," say "It seems you're confusing A and B. Review the chapter on X, focusing on the differences in their mechanisms."
   4.  **Suggest Focus Areas:** Recommend specific sub-topics or concepts the student should revisit.

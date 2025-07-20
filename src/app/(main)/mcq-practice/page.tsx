@@ -66,16 +66,22 @@ const scoreFeedbacks = {
         { emoji: '😒', message: "Tera toh kuch nahi ho sakta, beta.", taunt: "Padhai se zyada toh tu reels scroll karta hai!" },
         { emoji: '🤦‍♂️', message: "Ye performance dekh ke... ", taunt: "Mera sir dukhne laga hai. Jaake thoda padh le!" },
         { emoji: '🥺', message: "Itna galat kaise ho sakta hai?", taunt: "Lagta hai 'options' aur 'sapne' dono galat choose kar rahe ho." },
+        { emoji: '🤯', message: "Result is out of syllabus!", taunt: "Don't worry, even Einstein had bad days." },
+        { emoji: '😭', message: "Aap purush hi nahi, mahapurush hain!", taunt: "Itna talent! Itne galat jawab!" },
     ],
     medium: [
         { emoji: '🤔', message: "Pushpa... I hate tears 😭", taunt: "Bas thoda aur practice... warna mains mein 'bye' ho jayega!" },
         { emoji: '😅', message: "Thoda aur zor lagao!", taunt: "Abhi 'borderline' pe ho, 'topper' banne ke liye thoda aur grind karna padega." },
         { emoji: '😬', message: "Not bad, but not great either.", taunt: "Currently in the 'Sharmaji ka beta can still beat you' zone." },
+        { emoji: '🧐', message: "Ekdam '3 Idiots' wala haal hai.", taunt: "'Aal Izz Well' bolne se kaam nahi chalega, padhna bhi padega." },
+        { emoji: '😐', message: "You're like a reversible reaction.", taunt: "Can go either way. Need a catalyst called 'revision'." },
     ],
     good: [
         { emoji: '🎉', message: "Mogambo khush hua!", taunt: "Mummy: Aaj kuch zyada hi intelligent lag raha hai tu!" },
         { emoji: '😎', message: "Kya baat hai! Cha gaye guru!", taunt: "Keep it up! The only thing you're testing positive for is success." },
         { emoji: '🥳', message: "Excellent! You nailed it!", taunt: "Your brain cells are clearly working overtime. Nice!" },
+        { emoji: '💯', message: "How's the josh? High Sir!", taunt: "Aise hi phodte raho exam mein!" },
+        { emoji: '🔥', message: "You're on fire!", taunt: "Seems like you and the correct answers have a strong bond." },
     ]
 };
 
