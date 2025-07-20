@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -51,7 +51,7 @@ export default function LoginPage() {
     });
     
     // Reset form validation when view changes
-    React.useEffect(() => {
+    useEffect(() => {
         form.reset();
         setError(null);
     }, [view, form]);
@@ -248,4 +248,3 @@ export default function LoginPage() {
         </div>
     );
 }
-
