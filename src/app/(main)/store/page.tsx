@@ -7,11 +7,11 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
 const products = [
-    { id: 1, name: "Comprehensive GPAT Guide", category: "Books", price: "₹1,299", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "book cover", affiliate: true, link: "#" },
-    { id: 2, name: "Pharmaceutics PDF Bundle", category: "Bundles", price: "₹499", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "documents pile", affiliate: false, link: "#" },
-    { id: 3, name: "Pharmacology Masterclass", category: "Courses", price: "₹2,499", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "online course", affiliate: true, link: "#" },
-    { id: 4, name: "Medicinal Chemistry Notes", category: "Bundles", price: "₹399", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "chemistry notes", affiliate: false, link: "#" },
-    { id: 5, name: "Wilson and Gisvold's Textbook", category: "Books", price: "₹1,850", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "textbook", affiliate: true, link: "#" },
+    { id: 1, name: "Comprehensive GPAT Guide", category: "Books", price: "₹1,299", imageUrl: "/assets/product-book-gpat.png", dataAiHint: "book cover", affiliate: true, link: "#" },
+    { id: 2, name: "Pharmaceutics PDF Bundle", category: "Bundles", price: "₹499", imageUrl: "/assets/product-bundle-pharma.png", dataAiHint: "documents pile", affiliate: false, link: "#" },
+    { id: 3, name: "Pharmacology Masterclass", category: "Courses", price: "₹2,499", imageUrl: "/assets/product-course-pharma.png", dataAiHint: "online course", affiliate: true, link: "#" },
+    { id: 4, name: "Medicinal Chemistry Notes", category: "Bundles", price: "₹399", imageUrl: "/assets/product-bundle-chem.png", dataAiHint: "chemistry notes", affiliate: false, link: "#" },
+    { id: 5, name: "Wilson and Gisvold's Textbook", category: "Books", price: "₹1,850", imageUrl: "/assets/product-book-wilson.png", dataAiHint: "textbook", affiliate: true, link: "#" },
 ];
 
 const ProductCard = ({ product }: { product: typeof products[0] }) => (
