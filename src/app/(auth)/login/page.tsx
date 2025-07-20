@@ -34,6 +34,7 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCheckingEmail, setIsCheckingEmail] = useState(false);
     const [isSignUp, setIsSignUp] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
@@ -70,15 +71,14 @@ export default function LoginPage() {
         setIsSignUp(false);
         return;
       }
-      setIsSubmitting(true);
+      setIsCheckingEmail(true);
       try {
         const methods = await fetchSignInMethodsForEmail(auth, email);
         setIsSignUp(methods.length === 0);
       } catch (error) {
-        // This error can happen for invalid emails, etc. Default to not showing the name field.
         setIsSignUp(false);
       } finally {
-        setIsSubmitting(false);
+        setIsCheckingEmail(false);
       }
     };
 
@@ -156,7 +156,7 @@ export default function LoginPage() {
                 type={showPassword ? "text" : "password"} 
                 placeholder="••••••••"
                 {...field}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCheckingEmail}
             />
             <Button
                 type="button"
@@ -164,7 +164,7 @@ export default function LoginPage() {
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCheckingEmail}
             >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
@@ -182,8 +182,8 @@ export default function LoginPage() {
                     <CardDescription>Sign in or create an account to continue.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                    <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isSubmitting || isCheckingEmail}>
+                        {isSubmitting && !isCheckingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
                         Continue with Google
                     </Button>
                     <p className="mt-2 text-center text-xs text-muted-foreground">
@@ -212,7 +212,7 @@ export default function LoginPage() {
                                 <FormField control={form.control} name="name" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Full Name</FormLabel>
-                                        <FormControl><Input placeholder="Arvind Kumar" {...field} disabled={isSubmitting} /></FormControl>
+                                        <FormControl><Input placeholder="Arvind Kumar" {...field} disabled={isSubmitting || isCheckingEmail} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}/>
@@ -220,7 +220,7 @@ export default function LoginPage() {
                             <FormField control={form.control} name="email" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
-                                    <FormControl><Input placeholder="you@example.com" {...field} onBlur={(e) => {field.onBlur(); checkEmailExists(e.target.value);}} disabled={isSubmitting} /></FormControl>
+                                    <FormControl><Input placeholder="you@example.com" {...field} onBlur={(e) => {field.onBlur(); checkEmailExists(e.target.value);}} disabled={isSubmitting || isCheckingEmail} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}/>
@@ -228,15 +228,17 @@ export default function LoginPage() {
                                 <FormItem>
                                     <div className="flex justify-between items-center">
                                         <FormLabel>Password</FormLabel>
-                                        <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset} disabled={isSubmitting}>Forgot Password?</Button>
+                                        {!isSignUp && (
+                                          <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset} disabled={isSubmitting || isCheckingEmail}>Forgot Password?</Button>
+                                        )}
                                     </div>
                                     <FormControl>{renderPasswordInput(field)}</FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}/>
-                            <Button type="submit" disabled={isSubmitting} className="w-full">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isSignUp ? 'Create Account' : 'Continue with Email'}
+                            <Button type="submit" disabled={isSubmitting || isCheckingEmail} className="w-full">
+                                {(isSubmitting || isCheckingEmail) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isCheckingEmail ? 'Checking...' : (isSignUp ? 'Create Account' : 'Continue with Email')}
                             </Button>
                         </form>
                     </Form>
@@ -245,3 +247,5 @@ export default function LoginPage() {
         </div>
     );
 }
+
+    
