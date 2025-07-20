@@ -401,7 +401,7 @@ export default function DashboardPage() {
             </Card>
           ))}
           {!showFullReport && subjectsProgress.length > 2 && (
-              <div className="text-center">
+              <div className="text-center mt-6">
                   <Button variant="outline" onClick={() => setShowFullReport(true)}>
                       <ChevronDown className="mr-2 h-4 w-4" />
                       View Full Report
