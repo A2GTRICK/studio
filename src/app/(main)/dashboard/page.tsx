@@ -227,6 +227,7 @@ export default function DashboardPage() {
 
       {insights && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
             <div className="lg:col-span-1 flex flex-col gap-6">
                 <SummaryStats insights={insights} />
                  <Card>
@@ -244,6 +245,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+            {/* Right Column */}
             <div className="lg:col-span-2 flex flex-col gap-6">
                  <Card>
                     <CardHeader>
@@ -279,3 +281,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
