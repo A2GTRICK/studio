@@ -8,8 +8,8 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-// --- IMPORTANT: Define the admin user's email address here ---
-const ADMIN_EMAIL = 'admin@example.com';
+// The admin email is now sourced from an environment variable for security and flexibility.
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 interface AuthContextType {
   user: User | null;

@@ -4,14 +4,14 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
-// This configuration is now hardcoded with the keys you provided.
+// This configuration is now sourced from environment variables for security.
 export const firebaseConfig: FirebaseOptions = {
-  apiKey: "AIzaSyCjxpXINGBgKj1nJj84hEAeLdQc4kIH6YE",
-  authDomain: "a2g-smart-notes-fnz4e.firebaseapp.com",
-  projectId: "a2g-smart-notes-fnz4e",
-  storageBucket: "a2g-smart-notes-fnz4e.appspot.com",
-  messagingSenderId: "287880847881",
-  appId: "1:287880847881:web:f178409a464922c309ced8"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID
 };
 
 // Initialize Firebase for SSR
