@@ -160,12 +160,12 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 p-2">
                         <Image
                             src="/assets/a2g-logo.png"
                             alt="A2G Smart Notes Logo"
-                            width={40}
-                            height={40}
+                            width={56}
+                            height={56}
                             className="rounded-md"
                         />
                     </div>
