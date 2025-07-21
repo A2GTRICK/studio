@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import Image from 'next/image';
 
 export type Note = {
   id: string;
@@ -36,37 +37,48 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
     const { id, title, subject, isPremium, preview } = note;
     
     return (
-    <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group">
-        <CardHeader>
-            <div className="flex justify-between items-start">
+    <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
+        <CardHeader className="p-0">
+             <div className="relative h-40 w-full">
+                <Image 
+                    src={`https://placehold.co/400x200.png`}
+                    data-ai-hint="pharmacy textbook"
+                    alt={title}
+                    fill
+                    className="object-cover"
+                />
+            </div>
+        </CardHeader>
+        <div className="p-4 flex flex-col flex-grow">
+            <div className="flex justify-between items-start mb-2">
                 <div>
-                    <CardTitle className="font-headline text-lg">{title}</CardTitle>
+                    <CardTitle className="font-headline text-lg leading-tight">{title}</CardTitle>
                     <CardDescription>{subject}</CardDescription>
                 </div>
                 {isPremium ? 
-                    <Badge variant="default" className="bg-accent text-accent-foreground flex items-center gap-1">
+                    <Badge variant="default" className="bg-accent text-accent-foreground flex items-center gap-1 shrink-0">
                         <Gem className="h-3 w-3" />
                         Premium
-                    </Badge> : <Badge variant="secondary">Free</Badge>}
+                    </Badge> : <Badge variant="secondary" className="shrink-0">Free</Badge>}
             </div>
-        </CardHeader>
-        <CardContent className="flex-grow">
-            <p className="text-sm text-muted-foreground">{preview}</p>
-        </CardContent>
-        <CardFooter>
-            {isPremium ? (
-                 <Button onClick={onUnlockClick} className="w-full" variant="outline">
-                    <Lock className="mr-2 h-4 w-4" />
-                    Unlock Note
-                 </Button>
-            ) : (
-                <Button asChild className="w-full">
-                    <Link href={`/notes/${id}`}>
-                        View Note
-                    </Link>
-                </Button>
-            )}
-        </CardFooter>
+            <CardContent className="p-0 flex-grow">
+                <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>
+            </CardContent>
+            <CardFooter className="p-0 pt-4">
+                {isPremium ? (
+                    <Button onClick={onUnlockClick} className="w-full" variant="outline">
+                        <Lock className="mr-2 h-4 w-4" />
+                        Unlock Note
+                    </Button>
+                ) : (
+                    <Button asChild className="w-full">
+                        <Link href={`/notes/${id}`}>
+                            View Note
+                        </Link>
+                    </Button>
+                )}
+            </CardFooter>
+        </div>
     </Card>
 )};
 
@@ -275,5 +287,3 @@ export default function NotesPage() {
     </>
   )
 }
-
-    

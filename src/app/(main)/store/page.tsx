@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { AiImage } from '@/components/ai-image';
+import Image from 'next/image';
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
@@ -18,7 +18,13 @@ const ProductCard = ({ product }: { product: typeof products[0] }) => (
     <Card className="overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300">
         <CardHeader className="p-0">
             <div className="relative h-48 w-full">
-                <AiImage data-ai-hint={product.dataAiHint} alt={product.name} fill className="object-cover" />
+                <Image 
+                    src={`https://placehold.co/400x400.png`} 
+                    data-ai-hint={product.dataAiHint} 
+                    alt={product.name} 
+                    fill 
+                    className="object-cover" 
+                />
             </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow">
