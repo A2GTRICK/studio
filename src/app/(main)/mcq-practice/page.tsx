@@ -515,7 +515,7 @@ export default function McqPracticePage() {
             {isSubmitted && displayedFeedback && (
                 <Card className={displayedFeedback.cardClass}>
                     <CardHeader className="text-center">
-                        <div className="text-6xl mb-4">{displayedFeedback.emoji}</div>
+                        <div className="text-6xl mb-4 animate-wobble">{displayedFeedback.emoji}</div>
                         <CardTitle className="font-headline text-3xl">{displayedFeedback.message}</CardTitle>
                         <CardDescription className="text-base">{displayedFeedback.taunt}</CardDescription>
                     </CardHeader>
@@ -699,5 +699,3 @@ export default function McqPracticePage() {
     </>
   );
 }
-
-    
