@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User as FirebaseUser } from 'firebase/auth';
 import { AiImage } from '@/components/ai-image';
+import Image from "next/image";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,22 +107,15 @@ function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promi
         router.push('/login');
     };
     
-    const getInitials = (email: string | null) => {
-        if (!email) return 'U';
-        const name = user.displayName;
-        if (name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase();
-        }
-        return email.charAt(0).toUpperCase();
-    }
-    
     return (
         <AlertDialog>
             <div className="flex items-center justify-between gap-3 p-3 border-t">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <Avatar>
-                        <AvatarImage src={user.photoURL || undefined} alt="User avatar" />
-                        <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} />
+                        <AvatarFallback>
+                           <Image src="/assets/user-icon.png" alt="User Icon" width={40} height={40} />
+                        </AvatarFallback>
                     </Avatar>
                     <div className="overflow-hidden">
                         <p className="font-semibold truncate text-sm">{user.displayName || 'User'}</p>
