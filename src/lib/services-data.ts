@@ -11,7 +11,7 @@ export const services = [
     target: "B.Pharm & D.Pharm Students",
     link: "/services/internship-reports",
     price: "₹1,499",
-    dataAiHint: "student report",
+    dataAiHint: "pharmacy student writing report",
     features: [
         "Structured according to university guidelines",
         "Plagiarism-free content",
@@ -56,7 +56,7 @@ Thank you!`
     target: "M.Pharm Students",
     link: "/services/dissertation-support",
     price: "₹9,999",
-    dataAiHint: "research science",
+    dataAiHint: "pharmaceutical lab research",
     features: [
         "Research topic assistance",
         "Methodology design",
@@ -95,7 +95,7 @@ Thank you.`
     target: "PG & PhD Aspirants",
     link: "/services/synopsis-writing",
     price: "₹2,499",
-    dataAiHint: "document writing",
+    dataAiHint: "academic document writing",
     features: [
         "Clear problem statement",
         "Well-defined objectives",
@@ -132,7 +132,7 @@ Thank you.`
     target: "Graduates & Job Seekers",
     link: "/services/resume-sop",
     price: "₹999",
-    dataAiHint: "professional resume",
+    dataAiHint: "professional resume document",
     features: [
         "ATS-friendly resume design",
         "Highlighting key skills and achievements",
@@ -165,7 +165,7 @@ Thank you.`
     target: "All Health Science Students",
     link: "/services/content-writing",
     price: "Contact Us",
-    dataAiHint: "typing keyboard",
+    dataAiHint: "person typing on laptop",
     features: [
         "Well-researched articles",
         "SEO-optimized content for blogs",
@@ -202,7 +202,7 @@ Thank you.`
     target: "All Students",
     link: "/services/presentation-design",
     price: "₹1,999",
-    dataAiHint: "business presentation",
+    dataAiHint: "professional slide presentation",
     features: [
         "Professional slide design",
         "Clear data visualization (charts, graphs)",
