@@ -12,6 +12,7 @@ import { subscribeToNewsletter } from '@/ai/flows/subscribe-to-newsletter';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AiImage } from '@/components/ai-image';
 
 const socialLinks = [
     { name: 'Website', href: 'https://a2gtricks.wordpress.com', icon: Globe },
@@ -123,7 +124,7 @@ export default function LandingPage() {
                 <div className="relative mx-auto max-w-5xl">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-background/10 rounded-3xl -z-10 -rotate-2"></div>
                     <div className="bg-card border shadow-lg rounded-2xl p-2 sm:p-4">
-                       <Image data-ai-hint="app user interface" alt="A2G Smart Notes App in action" width={1200} height={675} className="rounded-lg" src="https://placehold.co/1200x675.png" />
+                       <AiImage data-ai-hint="app user interface" alt="A2G Smart Notes App in action" width={1200} height={675} className="rounded-lg" />
                     </div>
                 </div>
                  <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center max-w-4xl mx-auto">
@@ -168,7 +169,7 @@ export default function LandingPage() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center">
-                        <Image data-ai-hint="professional indian man" alt="Arvind Sharma, Founder of A2G Smart Notes" width={400} height={400} className="rounded-full shadow-lg" src="https://placehold.co/400x400.png" />
+                        <AiImage data-ai-hint="professional indian man" alt="Arvind Sharma, Founder of A2G Smart Notes" width={400} height={400} className="rounded-full shadow-lg" />
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-12 mt-16">
@@ -237,7 +238,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"The AI question generator is a lifesaver! It helped me focus on the most important topics for my exams."</p>
                             <div className="flex items-center gap-4 mt-4">
-                                <Image data-ai-hint="person smiling" alt="User avatar" width={40} height={40} className="rounded-full" src="https://placehold.co/40x40.png" />
+                                <AiImage data-ai-hint="person smiling" alt="User avatar" width={40} height={40} className="rounded-full" />
                                 <div>
                                     <p className="font-semibold">Priya S.</p>
                                     <p className="text-sm text-muted-foreground">B.Pharm, 2nd Year</p>
@@ -249,7 +250,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"Finally, all my notes in one place. The library is incredibly well-organized. A must-have for any pharmacy student."</p>
                             <div className="flex items-center gap-4 mt-4">
-                                <Image data-ai-hint="student portrait" alt="User avatar" width={40} height={40} className="rounded-full" src="https://placehold.co/40x40.png" />
+                                <AiImage data-ai-hint="student portrait" alt="User avatar" width={40} height={40} className="rounded-full" />
                                 <div>
                                     <p className="font-semibold">Rahul K.</p>
                                     <p className="text-sm text-muted-foreground">D.Pharm, 1st Year</p>
@@ -261,7 +262,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"The premium subscription is worth every rupee. The detailed notes and follow-up question feature gave me the confidence I needed."</p>
                              <div className="flex items-center gap-4 mt-4">
-                                <Image data-ai-hint="person thinking" alt="User avatar" width={40} height={40} className="rounded-full" src="https://placehold.co/40x40.png" />
+                                <AiImage data-ai-hint="person thinking" alt="User avatar" width={40} height={40} className="rounded-full" />
                                 <div>
                                     <p className="font-semibold">Anjali M.</p>
                                     <p className="text-sm text-muted-foreground">B.Pharm, 3rd Year</p>
