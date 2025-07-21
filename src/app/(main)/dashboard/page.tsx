@@ -203,27 +203,12 @@ export default function DashboardPage() {
       classAverage: { label: 'Class Average', color: 'hsl(var(--muted-foreground))' },
   };
 
-  if (isLoading) {
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                  <h1 className="text-3xl font-headline font-bold text-foreground">Welcome back, {user?.displayName?.split(' ')[0] || 'Student'}!</h1>
-                  <p className="mt-1 text-muted-foreground animate-pulse">Analyzing your progress...</p>
-              </div>
-            </div>
-            {!isAdmin && <QuickActionsPanel />}
-            <DashboardSkeleton />
-        </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 className="text-3xl font-headline font-bold text-foreground">Welcome back, {user?.displayName?.split(' ')[0] || 'Student'}!</h1>
-            <p className="mt-1 text-muted-foreground">Here is your smart dashboard for today.</p>
+            <p className="mt-1 text-muted-foreground">{isLoading ? 'Analyzing your progress...' : 'Here is your smart dashboard for today.'}</p>
         </div>
         <div>
           <Button onClick={() => fetchInsights(true)} variant="outline" size="sm" disabled={isRefreshing}>
@@ -239,7 +224,9 @@ export default function DashboardPage() {
       
       {!isAdmin && <QuickActionsPanel />}
 
-      {error && !insights && (
+      {isLoading && <DashboardSkeleton />}
+      
+      {!isLoading && error && !insights && (
          <Card className="border-destructive bg-destructive/10">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle /> Error Loading Dashboard</CardTitle>
@@ -254,7 +241,7 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {!insights && !error && !isLoading && (
+      {!isLoading && !insights && !error && (
         <Card>
             <CardContent className="p-10 text-center">
                 <h3 className="text-xl font-semibold">Your Smart Dashboard is Getting Ready!</h3>
@@ -265,7 +252,7 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {insights && (
+      {!isLoading && insights && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
             <div className="lg:col-span-1 flex flex-col gap-6">
@@ -320,3 +307,4 @@ export default function DashboardPage() {
       )}
     </div>
   );
+}

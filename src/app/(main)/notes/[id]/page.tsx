@@ -175,12 +175,12 @@ export default function NoteDetailPage() {
           */}
           <h2>Introduction to {note.title}</h2>
           <p>
-            This section provides a detailed overview of the fundamental concepts related to {note.title}. We will explore the core principles, historical context, and its significance in modern pharmacy practice. For students in the {note.course} program, understanding these basics is crucial for building a strong foundation in {note.subject}.
+            {note.preview}
           </p>
           <p>
-            {note.preview} This is where more detailed content about the note would be displayed. In a real application, this would be a long-form text field fetched from your database.
+            This section provides a detailed overview of the fundamental concepts related to {note.title}. We will explore the core principles, historical context, and its significance in modern pharmacy practice. For students in the {note.course} program, understanding these basics is crucial for building a strong foundation in {note.subject}.
           </p>
-
+         
           <h3>Key Concepts</h3>
           <ul>
             <li><strong>Concept A:</strong> Placeholder text explaining the first key concept. This would be replaced with actual content from your notes.</li>
@@ -209,5 +209,3 @@ export default function NoteDetailPage() {
     </div>
   );
 }
-
-    
