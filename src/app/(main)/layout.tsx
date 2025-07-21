@@ -178,6 +178,7 @@ export default function MainLayout({
           <div className="flex items-center gap-2 p-2">
             <div className="p-2 rounded-lg bg-primary/10 flex items-center justify-center">
               <AiImage
+                data-ai-id="sidebar-logo"
                 data-ai-hint="modern logo pharmacy"
                 alt="A2G Smart Notes Logo"
                 width={28}

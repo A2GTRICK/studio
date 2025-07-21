@@ -41,6 +41,7 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
         <CardHeader className="p-0">
              <div className="relative h-40 w-full">
                 <AiImage 
+                    data-ai-id={`note-thumbnail-${id}`}
                     data-ai-hint="pharmacy textbook"
                     alt={title}
                     fill
@@ -113,7 +114,6 @@ export default function NotesPage() {
 
     const handleBuyNow = () => {
         if (selectedNote) {
-            setSelectedNote(null);
             setShowPaymentDialog(true);
         }
     };

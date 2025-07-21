@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,13 +9,14 @@ import { cn } from '@/lib/utils';
 
 type AiImageProps = Omit<ImageProps, 'src' | 'data-ai-hint'> & {
   'data-ai-hint': string;
+  'data-ai-id'?: string;
 };
 
 // A tiny, transparent 1x1 pixel GIF.
 const BLANK_IMAGE_DATA_URI =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
-export function AiImage({ 'data-ai-hint': hint, alt, className, ...props }: AiImageProps) {
+export function AiImage({ 'data-ai-hint': hint, 'data-ai-id': id, alt, className, ...props }: AiImageProps) {
   const [src, setSrc] = useState<string>(BLANK_IMAGE_DATA_URI);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,5 +56,5 @@ export function AiImage({ 'data-ai-hint': hint, alt, className, ...props }: AiIm
     return <Skeleton className={cn('h-full w-full', className)} />;
   }
 
-  return <Image src={src} alt={alt} className={className} {...props} />;
+  return <Image src={src} alt={alt} className={className} data-ai-id={id} {...props} />;
 }

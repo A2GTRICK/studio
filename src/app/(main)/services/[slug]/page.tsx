@@ -78,6 +78,7 @@ export default function ServiceDetailPage() {
           
           <div className="relative h-80 md:h-auto min-h-[450px]">
              <AiImage 
+                data-ai-id={`service-image-${service.slug}`}
                 data-ai-hint={service.dataAiHint}
                 alt={service.title}
                 fill

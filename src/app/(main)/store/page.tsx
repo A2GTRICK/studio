@@ -19,6 +19,7 @@ const ProductCard = ({ product }: { product: typeof products[0] }) => (
         <CardHeader className="p-0">
             <div className="relative h-48 w-full">
                 <AiImage 
+                    data-ai-id={`product-image-${product.id}`}
                     data-ai-hint={product.dataAiHint} 
                     alt={product.name} 
                     fill 
