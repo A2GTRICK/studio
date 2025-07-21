@@ -1,6 +1,7 @@
+
 'use server';
 /**
- * @fileOverview A flow to generate an image based on a text hint.
+ * @fileOverview A flow to generate an image based on a text hint, with Firestore caching.
  *
  * - generateImageFromHint - A function that handles the image generation process.
  * - GenerateImageFromHintInput - The input type for the function.
@@ -9,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { getCachedImage, setCachedImage } from '@/services/image-cache-service';
 
 const GenerateImageFromHintInputSchema = z.object({
   hint: z.string().describe('A one or two-word hint for the image to be generated.'),
@@ -31,6 +33,13 @@ const generateImageFromHintFlow = ai.defineFlow(
     outputSchema: GenerateImageFromHintOutputSchema,
   },
   async ({ hint }) => {
+    // 1. Check for a cached image first.
+    const cachedImage = await getCachedImage(hint);
+    if (cachedImage) {
+      return { imageDataUri: cachedImage };
+    }
+
+    // 2. If not in cache, generate a new image.
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: `Generate a high-quality, professional, photorealistic image suitable for a website for pharmacy students in India. The image subject is: ${hint}. The image should be clean, well-lit, and visually appealing.`,
@@ -42,7 +51,12 @@ const generateImageFromHintFlow = ai.defineFlow(
     if (!media?.url) {
       throw new Error('Image generation failed to produce an output.');
     }
+    
+    const imageDataUri = media.url;
 
-    return { imageDataUri: media.url };
+    // 3. Save the newly generated image to the cache for future requests.
+    await setCachedImage(hint, imageDataUri);
+
+    return { imageDataUri };
   }
 );
