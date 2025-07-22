@@ -31,8 +31,12 @@ export function AiImage({ 'data-ai-hint': hint, alt, className, fill, ...props }
       setError(false);
       try {
         const result = await generateImageFromHint({ hint });
-        if (isMounted) {
+        // **FIX:** Validate the response from the AI flow.
+        if (isMounted && result?.imageDataUri) {
           setImageUrl(result.imageDataUri);
+        } else {
+          // If the response is invalid, trigger the error state.
+          throw new Error('AI returned an empty or invalid image data URI.');
         }
       } catch (e) {
         console.error(`Failed to generate image for hint: "${hint}"`, e);
