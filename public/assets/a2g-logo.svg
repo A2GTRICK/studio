@@ -1,13 +1,24 @@
-<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#9400D3">
-    <defs>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap');
-        </style>
-    </defs>
-    <rect width="100" height="100" rx="20" fill="#E6E6FA"/>
-    <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="70" font-weight="900">
-        A
-        <tspan dy="-0.2em" dx="-0.05em" font-size="0.6em">2</tspan>
-        G
-    </text>
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="100" height="100" rx="24" fill="url(#paint0_linear_1_2)"/>
+<path d="M34.82 70L25 43.835H32.06L38.24 60.155L44.44 43.835H51.5L41.66 70H34.82Z" fill="white"/>
+<path d="M72.5 43.5C69.375 43.5 66.8125 44.2188 64.8125 45.6562C62.8125 47.0938 61.375 49 60.5 51.375H60.25C60.9375 49.125 61.2812 47.1875 61.2812 45.5625V43.875H55V70H61V58.75C61 56.5 61.5312 54.8125 62.5938 53.6875C63.6562 52.5625 65.0312 52 66.7188 52C68.9688 52 70.375 52.8438 70.9375 54.5312C71.5 56.2188 71.7812 58.5312 71.7812 61.4688V70H78V57.625C78 52.875 76.5 48.8125 73.5 45.4375C75.0625 44.1875 76.8125 43.5 78.75 43.5H81V38H72.5V43.5Z" fill="white"/>
+<g filter="url(#filter0_d_1_2)">
+<path d="M60.375 38.0001L81 38L81 21.5L60.375 38.0001Z" fill="#B983FF" fill-opacity="0.7"/>
+</g>
+<defs>
+<filter id="filter0_d_1_2" x="56.375" y="21.5" width="28.625" height="24.5001" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_2"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_2" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_1_2" x1="50" y1="0" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+<stop stop-color="#7F00FF"/>
+<stop offset="1" stop-color="#E100FF"/>
+</linearGradient>
+</defs>
 </svg>
