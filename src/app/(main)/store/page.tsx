@@ -49,9 +49,11 @@ export default function StorePage() {
                 <p className="text-muted-foreground">Curated study materials to accelerate your learning.</p>
             </div>
             <Tabs defaultValue="All" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-                    {categories.map(category => <TabsTrigger key={category} value={category}>{category}</TabsTrigger>)}
-                </TabsList>
+                <div className="flex justify-center">
+                    <TabsList className="h-auto flex-wrap">
+                        {categories.map(category => <TabsTrigger key={category} value={category}>{category}</TabsTrigger>)}
+                    </TabsList>
+                </div>
                 
                 {categories.map(category => (
                     <TabsContent key={category} value={category}>

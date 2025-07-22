@@ -228,7 +228,7 @@ export default function ServicesPage() {
 
             <Tabs defaultValue="All" className="w-full">
                 <div className="flex justify-center">
-                    <TabsList>
+                    <TabsList className="h-auto flex-wrap">
                         {categories.map(category => (
                             <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
                         ))}
