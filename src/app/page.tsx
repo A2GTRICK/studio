@@ -163,7 +163,7 @@ export default function LandingPage() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center items-center">
-                        <AiImage data-ai-hint="draw this person in a friendly, ghibli-style cartoon, keeping the glasses and lab background;;https://firebasestorage.googleapis.com/v0/b/a2g-app.appspot.com/o/founder.jpg?alt=media&token=e93e5e4e-8d8a-4c2c-8b8a-3f4f6e1b7a2d" alt="A friendly pharmacist professor mascot" width={300} height={300} className="rounded-full shadow-lg object-cover" />
+                        <AiImage data-ai-hint="friendly pharmacist professor mascot ghibli style" alt="A friendly pharmacist professor mascot" width={300} height={300} className="rounded-full shadow-lg object-cover" />
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-12 mt-16">
