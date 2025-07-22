@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to generate smart dashboard insights for a student.
@@ -131,7 +132,7 @@ const generateDashboardInsightsFlow = ai.defineFlow(
     
     // Ensure the subjectsProgress is passed through if the model forgets
     if (!output.subjectsProgress) {
-        output.subjects_progress = input.subjectsProgress;
+        output.subjectsProgress = input.subjectsProgress;
     }
     return output;
   }
