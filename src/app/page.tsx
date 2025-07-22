@@ -124,7 +124,7 @@ export default function LandingPage() {
                 <div className="relative mx-auto max-w-5xl">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-background/10 rounded-3xl -z-10 -rotate-2"></div>
                     <div className="bg-card border shadow-lg rounded-2xl p-2 sm:p-4">
-                       <AiImage data-ai-hint="pharmacy education app interface" alt="A2G Smart Notes App in action" width={1200} height={675} className="rounded-lg object-cover" />
+                       <Image src="/assets/a2g-mascot.png" alt="A2G Smart Notes App in action" width={1200} height={675} className="rounded-lg object-cover" />
                     </div>
                 </div>
                  <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center max-w-4xl mx-auto">
@@ -169,7 +169,7 @@ export default function LandingPage() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center items-center gap-8">
-                         <AiImage data-ai-hint="smart mascot character" alt="A2G Smart Notes Mascot" width={250} height={250} className="hidden md:block" />
+                         <Image src="/assets/a2g-mascot.png" alt="A2G Smart Notes Mascot" width={250} height={250} className="hidden md:block" />
                         <AiImage data-ai-hint="professional indian man portrait" alt="Arvind Sharma, Founder of A2G Smart Notes" width={300} height={300} className="rounded-full shadow-lg object-cover" />
                     </div>
                 </div>
