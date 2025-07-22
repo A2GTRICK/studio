@@ -2,7 +2,7 @@
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarMenuBadge } from "@/components/ui/sidebar";
-import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, User, CheckSquare, Shield, LogOut, BarChart3 } from "lucide-react";
+import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, CheckSquare, Shield, LogOut, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,6 +25,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+
+const A2GLogoIcon = () => (
+    <svg viewBox="0 0 100 100" className="h-6 w-6 text-primary">
+        <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize="90" fontWeight="bold" fill="currentColor">
+            A<tspan dy="-0.1em" fontSize="0.7em">2</tspan>
+        </text>
+    </svg>
+);
+
 
 function NotificationPopover() {
     const recentNotifications = notifications.slice(0, 4);
@@ -113,7 +122,7 @@ function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promi
                     <Avatar>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} className="object-cover" />
                         <AvatarFallback>
-                           <User className="h-5 w-5" />
+                           <A2GLogoIcon />
                         </AvatarFallback>
                     </Avatar>
                     <div className="overflow-hidden">
@@ -311,7 +320,7 @@ export default function MainLayout({
                     <Avatar>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} className="object-cover" />
                         <AvatarFallback>
-                           <User className="h-5 w-5" />
+                           <A2GLogoIcon />
                         </AvatarFallback>
                     </Avatar>
                 ) : null}
