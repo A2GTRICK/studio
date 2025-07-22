@@ -162,9 +162,8 @@ export default function LandingPage() {
                           “We’re not just a notes provider – we’re your academic partner, helping you grow smarter, every day.”
                         </blockquote>
                     </div>
-                    <div className="flex justify-center items-center gap-8">
-                         <Image src="/assets/a2g-mascot.png" alt="A2G Smart Notes Mascot" width={250} height={250} className="hidden md:block" />
-                        <AiImage data-ai-hint="professional indian man portrait" alt="Arvind Sharma, Founder of A2G Smart Notes" width={300} height={300} className="rounded-full shadow-lg object-cover" />
+                    <div className="flex justify-center items-center">
+                        <AiImage data-ai-hint="ghibli style cartoon pharmacist professor" alt="A friendly pharmacist professor mascot" width={300} height={300} className="rounded-full shadow-lg object-cover" />
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-12 mt-16">
