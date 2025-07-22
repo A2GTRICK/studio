@@ -310,12 +310,13 @@ export default function McqPracticePage() {
     setDisplayedFeedback({ ...feedback, cardClass });
 
     const currentFormValues = form.getValues();
+    const topicToSave = currentFormValues.topic || "General";
 
     // Save the result to Firestore
     try {
         await saveMcqResult({
             subject: currentFormValues.subject,
-            topic: currentFormValues.topic || "General",
+            topic: topicToSave,
             score: newScore,
             totalQuestions: questions.length
         });
@@ -342,7 +343,7 @@ export default function McqPracticePage() {
         const feedbackResult = await generateMcqFeedback({
             examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
             subject: currentFormValues.subject,
-            topic: currentFormValues.topic ?? '',
+            topic: topicToSave,
             performance: quizPerformance,
         });
 

@@ -40,7 +40,10 @@ export async function saveMcqResult(result: SaveMcqResultInput): Promise<void> {
     }
 
     try {
-        const progressRef = doc(db, 'user_progress', user.uid, 'mcqs', result.topic);
+        // Create a safe document ID by replacing invalid characters (like '/') with an underscore.
+        const safeTopicId = result.topic.replace(/[/]/g, '_');
+        const progressRef = doc(db, 'user_progress', user.uid, 'mcqs', safeTopicId);
+        
         await setDoc(progressRef, {
             ...parsedResult.data,
             lastAttempted: serverTimestamp(),
@@ -78,7 +81,11 @@ export async function getSubjectsProgress(): Promise<SubjectProgress[]> {
       const userProgressCollection = collection(db, 'user_progress', user.uid, 'mcqs');
       const progressSnapshot = await getDocs(userProgressCollection);
       progressSnapshot.forEach(doc => {
-          userMcqProgress[doc.id] = doc.data();
+          // Use the original topic name (doc.data().topic) for matching
+          const originalTopic = doc.data().topic;
+          if (originalTopic) {
+            userMcqProgress[originalTopic] = doc.data();
+          }
       });
   }
 
@@ -91,13 +98,16 @@ export async function getSubjectsProgress(): Promise<SubjectProgress[]> {
         topics: [],
       };
     }
-
-    progressBySubject[subjectName].topics.push({
-      title: note.title,
-      status: 'pending',
-      lastAccessed: 'Never',
-      estTime: `${Math.floor(Math.random() * 60) + 30} mins`,
-    });
+    
+    // Ensure we don't add duplicate topics if titles are the same
+    if (!progressBySubject[subjectName].topics.some(t => t.title === note.title)) {
+        progressBySubject[subjectName].topics.push({
+          title: note.title,
+          status: 'pending',
+          lastAccessed: 'Never',
+          estTime: `${Math.floor(Math.random() * 30) + 15} mins`,
+        });
+    }
   });
 
   // Update status based on actual user progress
