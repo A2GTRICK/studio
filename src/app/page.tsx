@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen, Youtube, Send, Globe, MessageSquare, Loader2 } from 'lucide-react';
+import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen, Youtube, Send, Globe, MessageSquare, Loader2, FileText, BookCopy, User } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -220,6 +220,47 @@ export default function LandingPage() {
         </section>
         
         <section className="py-20 lg:py-24">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center">
+                    <h2 className="text-3xl font-headline font-bold">Expert Academic Support When You Need It Most</h2>
+                    <p className="mt-4 max-w-3xl mx-auto text-muted-foreground">
+                        From complex dissertations to professional resumes, our academic services are designed to help you overcome hurdles and achieve your goals. Let our experts guide you.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 max-w-5xl mx-auto">
+                    <Card className="bg-card text-center">
+                        <CardContent className="p-8">
+                            <FileText className="h-10 w-10 text-primary mx-auto mb-4" />
+                            <h3 className="text-xl font-headline font-semibold">Internship Reports</h3>
+                            <p className="text-muted-foreground mt-2">Professionally crafted reports that meet academic standards.</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-card text-center">
+                        <CardContent className="p-8">
+                            <BookCopy className="h-10 w-10 text-primary mx-auto mb-4" />
+                            <h3 className="text-xl font-headline font-semibold">Dissertation Support</h3>
+                            <p className="text-muted-foreground mt-2">End-to-end guidance for your M.Pharm research projects.</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-card text-center">
+                        <CardContent className="p-8">
+                            <User className="h-10 w-10 text-primary mx-auto mb-4" />
+                            <h3 className="text-xl font-headline font-semibold">Resume/SOP Crafting</h3>
+                            <p className="text-muted-foreground mt-2">Stand out to recruiters and universities with a powerful profile.</p>
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="text-center mt-12">
+                    <Button size="lg" asChild>
+                        <Link href="/services">
+                            Explore All Services <ArrowRight className="ml-2 h-4 w-4"/>
+                        </Link>
+                    </Button>
+                </div>
+            </div>
+        </section>
+
+        <section className="bg-card py-20 lg:py-24">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center">
                     <h2 className="text-3xl font-headline font-bold">Don't Just Study, Study Smarter</h2>
