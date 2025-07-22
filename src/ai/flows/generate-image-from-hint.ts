@@ -13,7 +13,7 @@ import { z } from 'genkit';
 import { getCachedImage, setCachedImage } from '@/services/image-cache-service';
 
 const GenerateImageFromHintInputSchema = z.object({
-  hint: z.string().describe('A one or two-word hint for the image to be generated.'),
+  hint: z.string().describe('A one or two-word hint for the image to be generated, or a complex prompt for image-to-image tasks.'),
 });
 export type GenerateImageFromHintInput = z.infer<typeof GenerateImageFromHintInputSchema>;
 
@@ -38,11 +38,23 @@ const generateImageFromHintFlow = ai.defineFlow(
     if (cachedImage) {
       return { imageDataUri: cachedImage };
     }
+    
+    let prompt: any;
+    // Check if hint is a complex prompt for image-to-image
+    if (hint.includes(';;')) {
+      const [text, url] = hint.split(';;');
+      prompt = [
+        {text: text},
+        {media: {url: url}}
+      ];
+    } else {
+      prompt = `Generate a high-quality, professional, photorealistic image suitable for a website for pharmacy students in India. The image subject is: ${hint}. The image should be clean, well-lit, and visually appealing.`;
+    }
 
     // 2. If not in cache, generate a new image.
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: `Generate a high-quality, professional, photorealistic image suitable for a website for pharmacy students in India. The image subject is: ${hint}. The image should be clean, well-lit, and visually appealing.`,
+      prompt: prompt,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },
