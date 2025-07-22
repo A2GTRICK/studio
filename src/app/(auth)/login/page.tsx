@@ -11,9 +11,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Loader2, AlertCircle, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { Loader2, AlertCircle, Eye, EyeOff, LogIn, UserPlus, MailCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 
@@ -42,6 +42,7 @@ export default function LoginPage() {
     const [view, setView] = useState<'signup' | 'login'>('signup');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
@@ -54,6 +55,7 @@ export default function LoginPage() {
     useEffect(() => {
         form.reset();
         setError(null);
+        setSuccessMessage(null);
     }, [view, form]);
 
     const getFriendlyAuthError = (err: AuthError) => {
@@ -79,20 +81,38 @@ export default function LoginPage() {
     const handleAuth = async (data: any) => {
         setIsSubmitting(true);
         setError(null);
+        setSuccessMessage(null);
 
         if (view === 'signup') {
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                 await updateProfile(userCredential.user, { displayName: data.name });
-                toast({ title: "Account Created!", description: `Welcome, ${data.name}!` });
-                router.push('/dashboard');
+                await sendEmailVerification(userCredential.user);
+                
+                setSuccessMessage("Account created! Please check your email inbox (and spam folder) for a verification link to activate your account before logging in.");
+                setView('login'); // Switch to login view
             } catch (signUpError: any) {
                 setError(getFriendlyAuthError(signUpError));
+            } finally {
                 setIsSubmitting(false);
             }
         } else { // 'login' view
             try {
-                await signInWithEmailAndPassword(auth, data.email, data.password);
+                const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+                
+                if (!userCredential.user.emailVerified) {
+                    setError("Your email address is not verified. Please check your inbox for a verification link.");
+                    // Provide a way to resend verification
+                    // This is a simplified approach. A dedicated button would be better.
+                    setTimeout(() => {
+                        sendEmailVerification(userCredential.user).then(() => {
+                            toast({ title: "Verification Email Sent Again!", description: "A new verification link has been sent to your email." });
+                        });
+                    }, 5000); // Resend after 5 seconds to avoid spamming
+                    setIsSubmitting(false);
+                    return;
+                }
+
                 toast({ title: "Logged In Successfully!", description: "Welcome back." });
                 router.push('/dashboard');
             } catch (signInError: any) {
@@ -118,6 +138,7 @@ export default function LoginPage() {
     
     const handlePasswordReset = async () => {
         setError(null);
+        setSuccessMessage(null);
         const email = form.getValues("email");
         if (!email) {
             form.setError("email", { type: "manual", message: "Please enter your email to reset the password." });
@@ -201,6 +222,14 @@ export default function LoginPage() {
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Authentication Failed</AlertTitle>
                                     <AlertDescription>{error}</AlertDescription>
+                                </Alert>
+                            )}
+                            
+                            {successMessage && (
+                                <Alert variant="default" className="border-green-500 bg-green-50 text-green-800 [&>svg]:text-green-500">
+                                    <MailCheck className="h-4 w-4" />
+                                    <AlertTitle>Success!</AlertTitle>
+                                    <AlertDescription>{successMessage}</AlertDescription>
                                 </Alert>
                             )}
 
