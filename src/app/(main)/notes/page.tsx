@@ -53,6 +53,7 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
                     alt={title}
                     fill
                     className="object-cover"
+                    height={160}
                 />
             </div>
         </CardHeader>

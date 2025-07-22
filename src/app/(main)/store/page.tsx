@@ -22,7 +22,8 @@ const ProductCard = ({ product }: { product: typeof products[0] }) => (
                     data-ai-hint={product.dataAiHint} 
                     alt={product.name} 
                     fill 
-                    className="object-cover" 
+                    className="object-cover"
+                    height={192} 
                 />
             </div>
         </CardHeader>

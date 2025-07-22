@@ -1,12 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { generateImageFromHint } from '@/ai/flows/generate-image-from-hint';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
 
 interface AiImageProps {
   alt: string;
@@ -18,69 +14,19 @@ interface AiImageProps {
 }
 
 export function AiImage({ 'data-ai-hint': hint, alt, className, fill, ...props }: AiImageProps) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const width = props.width || (fill ? undefined : 600);
+  const height = props.height || (fill ? undefined : 400);
 
-  useEffect(() => {
-    let isMounted = true;
-    const placeholderUrl = `https://placehold.co/${props.width || 600}x${props.height || 400}.png`;
-    
-    async function fetchImage() {
-      setIsLoading(true);
-      setError(false);
-      try {
-        const result = await generateImageFromHint({ hint });
-        if (isMounted && result?.imageDataUri) {
-          setImageUrl(result.imageDataUri);
-        } else {
-          // If the response is invalid, trigger the error state and use a placeholder.
-          if (isMounted) {
-            console.error(`AI returned an empty or invalid image data URI for hint: "${hint}"`);
-            setError(true);
-            setImageUrl(placeholderUrl);
-          }
-        }
-      } catch (e) {
-        console.error(`Failed to generate image for hint: "${hint}"`, e);
-        if (isMounted) {
-          setError(true);
-          setImageUrl(placeholderUrl);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    if (hint) {
-      fetchImage();
-    } else {
-        setImageUrl(placeholderUrl);
-        setIsLoading(false);
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [hint, props.width, props.height]);
+  // Directly use the placeholder URL. The data-ai-hint is kept for potential future backend processing.
+  const placeholderUrl = `https://placehold.co/${width || 600}x${height || 400}.png`;
 
   const imageProps = {
     alt,
     className,
-    ...(fill ? { fill: true, style: { objectFit: 'cover' } } : { width: props.width, height: props.height }),
+    ...(fill
+      ? { fill: true, style: { objectFit: 'cover' } }
+      : { width: width, height: height }),
   };
-  
-  const finalSrc = imageUrl || `https://placehold.co/${props.width || 600}x${props.height || 400}.png`;
 
-  if (isLoading) {
-    if (fill) {
-        return <Skeleton className={cn('absolute inset-0', className)} />;
-    }
-    return <Skeleton style={{width: props.width, height: props.height}} className={className} />;
-  }
-  
-
-  return <Image src={finalSrc} {...imageProps} />;
+  return <Image src={placeholderUrl} {...imageProps} data-ai-hint={hint} />;
 }

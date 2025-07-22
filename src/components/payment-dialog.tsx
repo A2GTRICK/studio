@@ -79,5 +79,3 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
         </Dialog>
     );
 }
-
-    
