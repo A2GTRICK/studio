@@ -57,13 +57,13 @@ export default function ServiceDetailPage() {
               </div>
 
               <div className="mt-8 pt-6 border-t">
-                  <Card className="bg-secondary/50">
+                  <Card className="bg-primary/5 border-primary/20 shadow-lg hover:shadow-xl transition-shadow duration-300">
                       <CardHeader>
-                          <p className="font-bold text-lg">Starting from {service.price}</p>
-                          <p className="text-sm text-muted-foreground">Final price depends on project complexity.</p>
+                          <p className="font-bold text-lg text-primary">Starting from {service.price}</p>
+                          <p className="text-sm text-muted-foreground">Final price depends on project complexity and deadline.</p>
                       </CardHeader>
-                      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                         <Button asChild size="lg" variant="outline">
+                      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                         <Button asChild size="lg" variant="secondary">
                             <Link href={service.sampleUrl} target="_blank" rel="noopener noreferrer">
                               <Eye className="mr-2 h-4 w-4" /> View Sample
                             </Link>

@@ -1,6 +1,9 @@
 
 import { FileText, BookCopy, ScrollText, User, PenTool, Presentation } from 'lucide-react';
 
+const professionalEmailHeader = "Hello A2G Smart Notes Team,%0D%0A%0D%0AI am interested in your professional academic service and would like to request a quote.%0D%0A%0D%0APlease find my project details below:%0D%0A%0D%0A";
+const professionalEmailFooter = "%0D%0AThank you for your time. I look forward to your response.%0D%0A%0D%0ABest Regards,";
+
 export const services = [
   {
     icon: FileText,
@@ -19,19 +22,14 @@ export const services = [
         "Includes all necessary sections"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello A2G Smart Notes Team,
-
-I'm interested in your Internship Report service. Please provide a quote.
-
-To help you with the quote, here are my details:
-- Course: [e.g., B.Pharm, D.Pharm]
-- Year/Semester: [e.g., 4th Year, 1st Year]
-- University/College: [Your University Name]
-- Internship Field: [e.g., Hospital, Industry, Community]
-- Report Deadline: [Date]
-- Specific Requirements: [Please describe any specific guidelines or requirements here]
-
-Thank you!`
+    emailBody: `${professionalEmailHeader}` +
+               `Service Required: Internship Report%0D%0A` +
+               `Course: [e.g., B.Pharm, D.Pharm]%0D%0A` +
+               `University/College: [Your University Name]%0D%0A` +
+               `Internship Field: [e.g., Hospital, Industry, Community]%0D%0A` +
+               `Report Deadline: [Date]%0D%0A` +
+               `Specific Requirements: [Please describe any specific guidelines or requirements here]%0D%0A` +
+               `${professionalEmailFooter}`
   },
   {
     icon: BookCopy,
@@ -50,21 +48,14 @@ Thank you!`
         "Full report writing and proofreading"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello A2G Smart Notes Team,
-
-I am writing to request a quote for your Dissertation Support service for my M.Pharm program.
-
-Please find my details below for an accurate estimate:
-- Specialization: [e.g., Pharmaceutics, Pharmacology, Medicinal Chemistry]
-- Research Area/Topic (if decided): [Your Topic or Area of Interest]
-- Current Stage: [e.g., Topic Selection, Methodology, Data Collection, Writing]
-- University: [Your University Name]
-- Specific Support Needed: [e.g., Full End-to-End Support, Data Analysis Only, Writing & Formatting]
-- Project Deadline: [Date]
-
-I look forward to hearing from you.
-
-Thank you.`
+    emailBody: `${professionalEmailHeader}` +
+               `Service Required: Dissertation Support%0D%0A` +
+               `Specialization: [e.g., Pharmaceutics, Pharmacology]%0D%0A` +
+               `Research Topic/Area: [Your Topic or Area of Interest]%0D%0A` +
+               `Current Stage: [e.g., Topic Selection, Methodology, Writing]%0D%0A` +
+               `University: [Your University Name]%0D%0A` +
+               `Project Deadline: [Date]%0D%0A` +
+               `${professionalEmailFooter}`
   },
   {
     icon: ScrollText,
@@ -83,20 +74,13 @@ Thank you.`
         "Adherence to format"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello A2G Smart Notes Team,
-
-I would like to inquire about your Synopsis Writing service.
-
-Here are the project details:
-- Course: [e.g., M.Pharm, PhD]
-- Field of Research: [e.g., Medicinal Chemistry, Pharmaceutics]
-- Proposed Research Title/Area: [Your Research Idea]
-- University/Funding Body: [Name of Institution]
-- Formatting Guidelines (if any): [Please specify or attach]
-
-Could you please provide a quote and an estimated timeline for completion?
-
-Thank you.`
+    emailBody: `${professionalEmailHeader}` +
+               `Service Required: Synopsis Writing%0D%0A` +
+               `Course: [e.g., M.Pharm, PhD]%0D%0A` +
+               `Field of Research: [Your Field]%0D%0A` +
+               `Proposed Research Title: [Your Research Idea]%0D%0A` +
+               `Formatting Guidelines (if any): [Please specify]%0D%0A` +
+               `${professionalEmailFooter}`
   },
   {
     icon: User,
@@ -115,18 +99,12 @@ Thank you.`
         "Cover letter writing"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello A2G Smart Notes Team,
-
-I'm interested in your Resume/SOP Crafting service.
-
-- Service Needed: [Resume, SOP, Cover Letter, or a package]
-- My Goal: [e.g., Job application for 'Role' at 'Company', Master's application at 'University']
-- My Field/Specialization: [e.g., Quality Assurance, Clinical Research, Industrial Pharmacy]
-- Additional Info: [Please attach your current resume if you have one, or mention any other relevant details.]
-
-Could you please confirm the next steps and provide a quote?
-
-Thank you.`
+    emailBody: `${professionalEmailHeader}` +
+               `Service Required: [Resume, SOP, or Both]%0D%0A` +
+               `My Goal: [e.g., Job application for 'Role', Master's application at 'University']%0D%0A` +
+               `My Field/Specialization: [e.g., Quality Assurance, Clinical Research]%0D%0A` +
+               `Note: [Please attach your current resume if you have one.]%0D%0A` +
+               `${professionalEmailFooter}`
   },
   {
     icon: PenTool,
@@ -145,19 +123,14 @@ Thank you.`
         "Proofreading and editing services"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello A2G Smart Notes Team,
-
-I would like a quote for your professional Content Writing service.
-
-Here are the details of my request:
-- Type of Content: [e.g., Blog Post, Research Article, Review Article, Website Content]
-- Topic: [Your Topic]
-- Approximate Word Count: [Number of words]
-- Target Audience: [e.g., General public, Healthcare professionals, Students]
-- Deadline: [Date]
-- Keywords or Specific Instructions: [Please provide any relevant details]
-
-Thank you.`
+    emailBody: `${professionalEmailHeader}` +
+               `Service Required: Content Writing%0D%0A` +
+               `Type of Content: [e.g., Blog Post, Research Article, Website Content]%0D%0A` +
+               `Topic: [Your Topic]%0D%0A` +
+               `Approximate Word Count: [Number of words]%0D%0A` +
+               `Target Audience: [e.g., General public, Healthcare professionals]%0D%0A` +
+               `Deadline: [Date]%0D%0A` +
+               `${professionalEmailFooter}`
   },
   {
     icon: Presentation,
@@ -176,17 +149,13 @@ Thank you.`
         "Speaker notes preparation"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `Hello A2G Smart Notes Team,
-
-I am interested in your Presentation Design service.
-
-Please provide a quote based on my project details below:
-- Presentation Topic: [Your Topic]
-- Number of Slides: [Approximate number, e.g., 15-20]
-- Event/Purpose: [e.g., Class Seminar, Final Defense, Conference]
-- Content Status: [e.g., Yes, I have the full content; No, I need help with content]
-- Deadline: [Date]
-
-Thank you!`
+    emailBody: `${professionalEmailHeader}` +
+               `Service Required: Presentation Design%0D%0A` +
+               `Presentation Topic: [Your Topic]%0D%0A` +
+               `Number of Slides: [Approximate number, e.g., 15-20]%0D%0A` +
+               `Event/Purpose: [e.g., Class Seminar, Final Defense, Conference]%0D%0A` +
+               `Content: [Please specify if you will provide the content or need help writing it.]%0D%0A` +
+               `Deadline: [Date]%0D%0A` +
+               `${professionalEmailFooter}`
   }
 ];

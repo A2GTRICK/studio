@@ -110,6 +110,16 @@ export default function AdminNotesPage() {
             createdAt: serverTimestamp(),
         };
 
+        if (!newNote.course || !newNote.year) {
+            toast({
+                title: "Missing Information",
+                description: "Please select a course and year for the note.",
+                variant: "destructive"
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
         try {
             const docRef = await addDoc(collection(db, 'notes'), newNote);
             setNotes(prev => [{...newNote, id: docRef.id, createdAt: new Date() }, ...prev]);
@@ -289,5 +299,3 @@ export default function AdminNotesPage() {
         </div>
     );
 }
-
-    
