@@ -21,29 +21,15 @@ export const services = [
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `Hello A2G Smart Notes Team,
 
-I'm interested in your Internship Report service and would like to request a quote.
-(Mujhe aapki Internship Report service mein interest hai. Kripya quote dein.)
+I'm interested in your Internship Report service. Please provide a quote.
 
-Please find my project details below:
-(Mere project ki jaankari nimnlikhit hai):
-
+To help you with the quote, here are my details:
 - Course: [e.g., B.Pharm, D.Pharm]
-  (Kaunsa course?)
-
 - Year/Semester: [e.g., 4th Year, 1st Year]
-  (Kaunsa saal/semester?)
-
 - University/College: [Your University Name]
-  (University/College ka naam?)
-
 - Internship Field: [e.g., Hospital, Industry, Community]
-  (Internship kahan ki?)
-
 - Report Deadline: [Date]
-  (Deadline kab hai?)
-
 - Specific Requirements: [Please describe any specific guidelines or requirements here]
-  (Koi khaas zaroorat?)
 
 Thank you!`
   },
@@ -69,17 +55,11 @@ Thank you!`
 I am writing to request a quote for your Dissertation Support service for my M.Pharm program.
 
 Please find my details below for an accurate estimate:
-
 - Specialization: [e.g., Pharmaceutics, Pharmacology, Medicinal Chemistry]
-
 - Research Area/Topic (if decided): [Your Topic or Area of Interest]
-
 - Current Stage: [e.g., Topic Selection, Methodology, Data Collection, Writing]
-
 - University: [Your University Name]
-
 - Specific Support Needed: [e.g., Full End-to-End Support, Data Analysis Only, Writing & Formatting]
-
 - Project Deadline: [Date]
 
 I look forward to hearing from you.
@@ -108,15 +88,10 @@ Thank you.`
 I would like to inquire about your Synopsis Writing service.
 
 Here are the project details:
-
 - Course: [e.g., M.Pharm, PhD]
-
 - Field of Research: [e.g., Medicinal Chemistry, Pharmaceutics]
-
 - Proposed Research Title/Area: [Your Research Idea]
-
 - University/Funding Body: [Name of Institution]
-
 - Formatting Guidelines (if any): [Please specify or attach]
 
 Could you please provide a quote and an estimated timeline for completion?
@@ -145,11 +120,8 @@ Thank you.`
 I'm interested in your Resume/SOP Crafting service.
 
 - Service Needed: [Resume, SOP, Cover Letter, or a package]
-
 - My Goal: [e.g., Job application for 'Role' at 'Company', Master's application at 'University']
-
 - My Field/Specialization: [e.g., Quality Assurance, Clinical Research, Industrial Pharmacy]
-
 - Additional Info: [Please attach your current resume if you have one, or mention any other relevant details.]
 
 Could you please confirm the next steps and provide a quote?
@@ -178,17 +150,11 @@ Thank you.`
 I would like a quote for your professional Content Writing service.
 
 Here are the details of my request:
-
 - Type of Content: [e.g., Blog Post, Research Article, Review Article, Website Content]
-
 - Topic: [Your Topic]
-
 - Approximate Word Count: [Number of words]
-
 - Target Audience: [e.g., General public, Healthcare professionals, Students]
-
 - Deadline: [Date]
-
 - Keywords or Specific Instructions: [Please provide any relevant details]
 
 Thank you.`
@@ -213,25 +179,13 @@ Thank you.`
     emailBody: `Hello A2G Smart Notes Team,
 
 I am interested in your Presentation Design service.
-(Mujhe aapki Presentation Design service mein interest hai.)
 
 Please provide a quote based on my project details below:
-(Mere project ki jaankari nimnlikhit hai, kripya iske aadhar par quote dein):
-
 - Presentation Topic: [Your Topic]
-  (Topic kya hai?)
-
 - Number of Slides: [Approximate number, e.g., 15-20]
-  (Kitni slides?)
-
 - Event/Purpose: [e.g., Class Seminar, Final Defense, Conference]
-  (Kiske liye hai?)
-
 - Content Status: [e.g., Yes, I have the full content; No, I need help with content]
-  (Content taiyar hai?)
-
 - Deadline: [Date]
-  (Kab tak chahiye?)
 
 Thank you!`
   }
