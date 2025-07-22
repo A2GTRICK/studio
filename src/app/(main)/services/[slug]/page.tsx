@@ -4,12 +4,11 @@
 import { services } from '@/lib/services-data';
 import { notFound, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, Mail, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { AiImage } from '@/components/ai-image';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 export default function ServiceDetailPage() {
   const params = useParams();
@@ -67,9 +66,11 @@ export default function ServiceDetailPage() {
                             <Eye className="mr-2 h-4 w-4" /> View Sample
                           </Link>
                         </Button>
-                        <a href={mailtoLink} className={cn(buttonVariants({ size: "lg" }))}>
-                           <Mail className="mr-2 h-4 w-4" /> Get a Quote
-                        </a>
+                        <Button asChild size="lg">
+                           <Link href={mailtoLink}>
+                            <Mail className="mr-2 h-4 w-4" /> Get a Quote
+                           </Link>
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
