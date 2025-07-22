@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { PaymentDialog } from '@/components/payment-dialog';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { publicAssets } from '@/lib/public-assets';
 
 export type Note = {
   id: string;
