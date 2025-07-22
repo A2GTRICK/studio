@@ -1,8 +1,8 @@
 
 import { FileText, BookCopy, ScrollText, User, PenTool, Presentation } from 'lucide-react';
 
-const professionalEmailHeader = "Hello A2G Smart Notes Team,%0D%0A%0D%0AI am interested in your professional academic service and would like to request a quote.%0D%0A%0D%0APlease find my project details below:%0D%0A%0D%0A";
-const professionalEmailFooter = "%0D%0AThank you for your time. I look forward to your response.%0D%0A%0D%0ABest Regards,";
+const professionalEmailHeader = "Hello A2G Smart Notes Team,%0D%0A%0D%0AI would like to inquire about your professional academic service.%0D%0A%0D%0A--- My Project Details ---%0D%0A";
+const professionalEmailFooter = "%0D%0A------------------------%0D%0A%0D%0AThank you,%0D%0A[Your Name]";
 
 export const services = [
   {
@@ -23,12 +23,12 @@ export const services = [
     ],
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `${professionalEmailHeader}` +
-               `Service Required: Internship Report%0D%0A` +
+               `Service: Internship Report%0D%0A` +
                `Course: [e.g., B.Pharm, D.Pharm]%0D%0A` +
                `University/College: [Your University Name]%0D%0A` +
-               `Internship Field: [e.g., Hospital, Industry, Community]%0D%0A` +
-               `Report Deadline: [Date]%0D%0A` +
-               `Specific Requirements: [Please describe any specific guidelines or requirements here]%0D%0A` +
+               `Internship Field: [e.g., Hospital, Industry]%0D%0A` +
+               `Deadline: [Date]%0D%0A` +
+               `Specific Requirements: [Any specific guidelines? Please describe here.]%0D%0A` +
                `${professionalEmailFooter}`
   },
   {
@@ -49,12 +49,11 @@ export const services = [
     ],
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `${professionalEmailHeader}` +
-               `Service Required: Dissertation Support%0D%0A` +
+               `Service: Dissertation Support%0D%0A` +
                `Specialization: [e.g., Pharmaceutics, Pharmacology]%0D%0A` +
                `Research Topic/Area: [Your Topic or Area of Interest]%0D%0A` +
-               `Current Stage: [e.g., Topic Selection, Methodology, Writing]%0D%0A` +
                `University: [Your University Name]%0D%0A` +
-               `Project Deadline: [Date]%0D%0A` +
+               `Deadline: [Date]%0D%0A` +
                `${professionalEmailFooter}`
   },
   {
@@ -75,11 +74,11 @@ export const services = [
     ],
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `${professionalEmailHeader}` +
-               `Service Required: Synopsis Writing%0D%0A` +
+               `Service: Synopsis Writing%0D%0A` +
                `Course: [e.g., M.Pharm, PhD]%0D%0A` +
                `Field of Research: [Your Field]%0D%0A` +
                `Proposed Research Title: [Your Research Idea]%0D%0A` +
-               `Formatting Guidelines (if any): [Please specify]%0D%0A` +
+               `Formatting Guidelines: [Any specific guidelines? Please specify]%0D%0A` +
                `${professionalEmailFooter}`
   },
   {
@@ -100,9 +99,9 @@ export const services = [
     ],
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `${professionalEmailHeader}` +
-               `Service Required: [Resume, SOP, or Both]%0D%0A` +
-               `My Goal: [e.g., Job application for 'Role', Master's application at 'University']%0D%0A` +
-               `My Field/Specialization: [e.g., Quality Assurance, Clinical Research]%0D%0A` +
+               `Service: [Resume, SOP, or Both]%0D%0A` +
+               `My Goal: [e.g., Job application for 'Role' at 'Company']%0D%0A` +
+               `Field/Specialization: [e.g., Quality Assurance, Clinical Research]%0D%0A` +
                `Note: [Please attach your current resume if you have one.]%0D%0A` +
                `${professionalEmailFooter}`
   },
@@ -124,12 +123,11 @@ export const services = [
     ],
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `${professionalEmailHeader}` +
-               `Service Required: Content Writing%0D%0A` +
-               `Type of Content: [e.g., Blog Post, Research Article, Website Content]%0D%0A` +
+               `Service: Content Writing%0D%0A` +
+               `Type of Content: [e.g., Blog Post, Research Article]%0D%0A` +
                `Topic: [Your Topic]%0D%0A` +
-               `Approximate Word Count: [Number of words]%0D%0A` +
+               `Word Count: [Approximate number]%0D%0A` +
                `Target Audience: [e.g., General public, Healthcare professionals]%0D%0A` +
-               `Deadline: [Date]%0D%0A` +
                `${professionalEmailFooter}`
   },
   {
@@ -150,12 +148,11 @@ export const services = [
     ],
     sampleUrl: "/assets/sample-report.pdf",
     emailBody: `${professionalEmailHeader}` +
-               `Service Required: Presentation Design%0D%0A` +
-               `Presentation Topic: [Your Topic]%0D%0A` +
-               `Number of Slides: [Approximate number, e.g., 15-20]%0D%0A` +
-               `Event/Purpose: [e.g., Class Seminar, Final Defense, Conference]%0D%0A` +
-               `Content: [Please specify if you will provide the content or need help writing it.]%0D%0A` +
-               `Deadline: [Date]%0D%0A` +
+               `Service: Presentation Design%0D%0A` +
+               `Topic: [Your Topic]%0D%0A` +
+               `Number of Slides: [e.g., 15-20]%0D%0A` +
+               `Event/Purpose: [e.g., Class Seminar, Final Defense]%0D%0A` +
+               `Content: [Will you provide the content, or do you need help writing it?]%0D%0A` +
                `${professionalEmailFooter}`
   }
 ];
