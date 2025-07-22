@@ -25,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { saveMcqResult } from '@/services/user-progress-service';
+import { useAuth } from '@/hooks/use-auth';
 
 
 const mcqFormSchema = z.object({
@@ -136,6 +137,9 @@ export default function McqPracticePage() {
   const [displayedFeedback, setDisplayedFeedback] = useState<DisplayedFeedback>(null);
 
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+  
+  const { user } = useAuth();
+
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -312,21 +316,31 @@ export default function McqPracticePage() {
     const currentFormValues = form.getValues();
     const topicToSave = currentFormValues.topic || "General";
 
-    // Save the result to Firestore
-    try {
-        await saveMcqResult({
-            subject: currentFormValues.subject,
-            topic: topicToSave,
-            score: newScore,
-            totalQuestions: questions.length
-        });
-    } catch (error) {
-        console.error("Failed to save quiz result:", error);
-        toast({
-            title: "Could not save progress",
-            description: "Your quiz score could not be saved to your progress report.",
-            variant: "destructive",
-        });
+    // Save the result to Firestore if the user is logged in
+    if (user) {
+        try {
+            const idToken = await user.getIdToken();
+            await saveMcqResult({
+                idToken,
+                result: {
+                    subject: currentFormValues.subject,
+                    topic: topicToSave,
+                    score: newScore,
+                    totalQuestions: questions.length
+                }
+            });
+            toast({
+                title: "Progress Saved!",
+                description: "Your quiz score has been saved to your progress report.",
+            });
+        } catch (error) {
+            console.error("Failed to save quiz result:", error);
+            toast({
+                title: "Could not save progress",
+                description: "Your quiz score could not be saved automatically.",
+                variant: "destructive",
+            });
+        }
     }
 
 
@@ -607,7 +621,7 @@ export default function McqPracticePage() {
             ))}
 
             {!isSubmitted && (
-                <Button onClick={handleSubmitQuiz} className="w-full" size="lg">
+                <Button onClick={handleSubmitQuiz} className="w-full" size="lg" disabled={answers.some(a => a === null)}>
                    {answers.some(a => a === null) && !answers.every(a => a === null) && <AlertCircle className="mr-2 h-4 w-4"/>}
                    Submit Quiz & View Results
                 </Button>
