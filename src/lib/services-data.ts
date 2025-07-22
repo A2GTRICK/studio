@@ -10,7 +10,7 @@ export const services = [
     description: "Professionally crafted internship reports that meet academic standards and impress your evaluators.",
     target: "B.Pharm & D.Pharm Students",
     link: "/services/internship-reports",
-    price: "&#8377;1,499",
+    price: "₹1,499",
     dataAiHint: "pharmacy student writing report",
     features: [
         "Structured according to university guidelines",
@@ -55,7 +55,7 @@ Thank you!`
     description: "End-to-end support for your M.Pharm dissertation, from topic selection to final submission.",
     target: "M.Pharm Students",
     link: "/services/dissertation-support",
-    price: "&#8377;9,999",
+    price: "₹9,999",
     dataAiHint: "pharmaceutical lab research",
     features: [
         "Research topic assistance",
@@ -94,7 +94,7 @@ Thank you.`
     description: "Concise and compelling synopsis writing for your research proposals that gets approved.",
     target: "PG & PhD Aspirants",
     link: "/services/synopsis-writing",
-    price: "&#8377;2,499",
+    price: "₹2,499",
     dataAiHint: "academic document writing",
     features: [
         "Clear problem statement",
@@ -131,7 +131,7 @@ Thank you.`
     description: "Build a powerful resume and statement of purpose that helps you stand out to recruiters and universities.",
     target: "Graduates & Job Seekers",
     link: "/services/resume-sop",
-    price: "&#8377;999",
+    price: "₹999",
     dataAiHint: "professional resume document",
     features: [
         "ATS-friendly resume design",
@@ -201,7 +201,7 @@ Thank you.`
     description: "Visually stunning and informative presentations for your seminars, projects, and defenses.",
     target: "All Students",
     link: "/services/presentation-design",
-    price: "&#8377;1,999",
+    price: "₹1,999",
     dataAiHint: "professional slide presentation",
     features: [
         "Professional slide design",
