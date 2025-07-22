@@ -172,7 +172,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isLoading) {
+    if (isLoading || isRefreshing) {
       interval = setInterval(() => {
         setCurrentLoadingMessage(prev => {
             const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
@@ -181,7 +181,7 @@ export default function DashboardPage() {
       }, 2500);
     }
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [isLoading, isRefreshing]);
 
   const fetchInsights = useCallback(async (isRefresh = false) => {
     if (!user) return;
@@ -239,13 +239,13 @@ export default function DashboardPage() {
             <p className="mt-1 text-muted-foreground">{isLoading ? 'AI is analyzing your progress... 🧠' : 'Here is your smart dashboard for today.'}</p>
         </div>
         <div>
-          <Button onClick={() => fetchInsights(true)} variant="outline" size="sm" disabled={isRefreshing}>
-            {isRefreshing ? (
+          <Button onClick={() => fetchInsights(true)} variant="outline" size="sm" disabled={isRefreshing || isLoading}>
+            {isRefreshing || isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="mr-2 h-4 w-4" />
             )}
-             {isRefreshing ? 'Refreshing...' : 'Refresh Insights'}
+             {isRefreshing || isLoading ? 'Refreshing...' : 'Refresh Insights'}
           </Button>
         </div>
       </div>
@@ -336,5 +336,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

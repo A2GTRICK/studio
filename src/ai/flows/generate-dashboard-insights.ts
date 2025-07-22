@@ -102,33 +102,11 @@ const generateDashboardInsightsFlow = ai.defineFlow(
     outputSchema: GenerateDashboardInsightsOutputSchema,
   },
   async input => {
-    // Pre-calculate summary metrics to ensure accuracy, as the LLM can sometimes make mistakes.
-    let totalTopics = 0;
-    let completedTopics = 0;
-    let subjectsCompleted = 0;
-    
-    input.subjectsProgress.forEach(subject => {
-        totalTopics += subject.topics.length;
-        const completedInSubject = subject.topics.filter(t => t.status === 'completed').length;
-        completedTopics += completedInSubject;
-        if (completedInSubject === subject.topics.length && subject.topics.length > 0) {
-            subjectsCompleted++;
-        }
-    });
-
-    const totalProgress = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
-    const pendingTopics = totalTopics - completedTopics;
-
     const {output} = await prompt(input);
     
     if (!output) {
       throw new Error("AI failed to generate dashboard insights.");
     }
-    
-    // Override LLM calculations with our pre-calculated values to ensure they are always correct.
-    output.totalProgress = totalProgress;
-    output.subjectsCompleted = subjectsCompleted;
-    output.pendingTopics = pendingTopics;
     
     // Ensure the subjectsProgress is passed through if the model forgets
     if (!output.subjectsProgress) {
