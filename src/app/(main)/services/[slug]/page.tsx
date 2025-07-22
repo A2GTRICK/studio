@@ -9,6 +9,8 @@ import { ArrowLeft, CheckCircle, Mail, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { AiImage } from '@/components/ai-image';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ContactForm } from '@/components/contact-form';
 
 export default function ServiceDetailPage() {
   const params = useParams();
@@ -19,9 +21,6 @@ export default function ServiceDetailPage() {
     notFound();
   }
   
-  const email = "a2gtrickacademy@gmail.com";
-  const mailToLink = `mailto:${email}?subject=${encodeURIComponent(`Quote Request for ${service.title}`)}&body=${encodeURIComponent(service.emailBody)}`;
-
   return (
     <div className="max-w-5xl mx-auto">
       <Button asChild variant="ghost" className="mb-4">
@@ -62,14 +61,28 @@ export default function ServiceDetailPage() {
                         <p className="text-sm text-muted-foreground">Final price depends on project complexity.</p>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                       <Button asChild size="lg">
+                       <Button asChild size="lg" variant="outline">
                           <Link href={service.sampleUrl} target="_blank" rel="noopener noreferrer">
                             <Eye className="mr-2 h-4 w-4" /> View Sample
                           </Link>
                         </Button>
-                        <Button asChild size="lg">
-                          <a href={mailToLink}><Mail className="mr-2 h-4 w-4" /> Get a Quote</a>
-                        </Button>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                               <Button size="lg"><Mail className="mr-2 h-4 w-4" /> Get a Quote</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Request a Quote for {service.title}</DialogTitle>
+                                    <DialogDescription>
+                                        Fill out the form below and our team will get back to you shortly.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <ContactForm 
+                                    serviceTitle={service.title} 
+                                    defaultMessage={service.emailBody}
+                                />
+                            </DialogContent>
+                        </Dialog>
                     </CardContent>
                 </Card>
             </div>
