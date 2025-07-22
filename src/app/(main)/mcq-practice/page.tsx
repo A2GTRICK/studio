@@ -309,12 +309,10 @@ export default function McqPracticePage() {
         try {
             await saveMcqResult({
                 uid: user.uid,
-                result: {
-                    subject: currentFormValues.subject,
-                    topic: topicToSave,
-                    score: newScore,
-                    totalQuestions: questions.length
-                }
+                subject: currentFormValues.subject,
+                topic: topicToSave,
+                score: newScore,
+                totalQuestions: questions.length
             });
             toast({
                 title: "Progress Saved!",

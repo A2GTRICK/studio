@@ -8,45 +8,38 @@
  */
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Note } from '@/app/(main)/admin/notes/page';
 import type { GenerateDashboardInsightsInput } from '@/ai/flows/generate-dashboard-insights';
 import { z } from 'zod';
 
 type SubjectProgress = GenerateDashboardInsightsInput['subjectsProgress'][0];
 
-const McqResultSchema = z.object({
+const SaveMcqResultInputSchema = z.object({
+  uid: z.string().min(1, 'User ID is required.'),
   subject: z.string(),
   topic: z.string(),
   score: z.number(),
   totalQuestions: z.number(),
 });
 
-const SaveMcqResultInputSchema = z.object({
-    uid: z.string(),
-    result: McqResultSchema,
-});
-
-export type SaveMcqResultInput = z.infer<typeof McqResultSchema>;
+export type SaveMcqResultInput = z.infer<typeof SaveMcqResultInputSchema>;
 
 /**
  * Saves the result of an MCQ quiz to the user's progress record in Firestore.
  * Requires the user's UID.
  * @param data The user's UID and the quiz result.
  */
-export async function saveMcqResult(data: { uid: string, result: SaveMcqResultInput }): Promise<void> {
+export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
     const parsedData = SaveMcqResultInputSchema.safeParse(data);
     if (!parsedData.success) {
+        console.error("Invalid input for saveMcqResult:", parsedData.error.errors);
         throw new Error(`Invalid input data: ${parsedData.error.message}`);
     }
 
-    const { uid, result } = parsedData.data;
+    const { uid, ...result } = parsedData.data;
 
     try {
-        if (!uid) {
-            throw new Error("Authentication failed: User ID is missing.");
-        }
-
         const safeTopicId = result.topic.replace(/[.\\#$[\]/]/g, '_');
         const progressRef = doc(db, 'user_progress', uid, 'mcqs', safeTopicId);
         
