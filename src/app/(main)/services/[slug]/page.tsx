@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, Mail, Eye } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { AiImage } from '@/components/ai-image';
 import { Badge } from '@/components/ui/badge';
 
 export default function ServiceDetailPage() {
@@ -77,10 +77,9 @@ export default function ServiceDetailPage() {
           </div>
           
           <div className="relative h-80 md:h-auto min-h-[450px]">
-             <Image 
+             <AiImage 
                 data-ai-hint={service.dataAiHint}
                 alt={service.title}
-                src={`https://placehold.co/800x1000.png`}
                 fill
                 className="object-cover"
               />
