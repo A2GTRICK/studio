@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { AiImage } from '@/components/ai-image';
+import Image from 'next/image';
 
 export type Note = {
   id: string;
@@ -48,10 +48,10 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
         <CardHeader className="p-0">
              <div className="relative h-40 w-full">
-                <AiImage 
-                    data-ai-id={`note-thumbnail-${id}`}
+                <Image 
                     data-ai-hint="pharmacy textbook"
                     alt={title}
+                    src="https://placehold.co/600x400.png"
                     fill
                     className="object-cover"
                 />
