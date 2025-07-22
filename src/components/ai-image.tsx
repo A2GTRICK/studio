@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { generateImageFromHint } from '@/ai/flows/generate-image-from-hint';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+
 
 interface AiImageProps {
   alt: string;
