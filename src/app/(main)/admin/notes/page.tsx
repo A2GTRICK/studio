@@ -45,11 +45,32 @@ export type Note = {
     createdAt: any;
 };
 
+const loadingMessages = [
+    "Admin powers activating...",
+    "Database se saare notes laa rahe hain...",
+    "Sorting notes by 'most recently added'...",
+    "Almost there, boss!"
+];
+
 export default function AdminNotesPage() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
+    const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+
+     useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isLoading) {
+          interval = setInterval(() => {
+            setCurrentLoadingMessage(prev => {
+                const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
+                return loadingMessages[nextIndex];
+            });
+          }, 2500);
+        }
+        return () => clearInterval(interval);
+    }, [isLoading]);
     
     const fetchNotes = useCallback(async () => {
         setIsLoading(true);
@@ -196,8 +217,9 @@ export default function AdminNotesPage() {
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
-                            <div className="flex justify-center items-center h-48">
+                            <div className="flex flex-col items-center justify-center h-48">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
                             </div>
                         ) : (
                         <Table>
@@ -267,3 +289,5 @@ export default function AdminNotesPage() {
         </div>
     );
 }
+
+    

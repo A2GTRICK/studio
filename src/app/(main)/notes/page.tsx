@@ -33,6 +33,14 @@ const premiumFeatures = [
     "In-depth competitive exam preparation",
 ];
 
+const loadingMessages = [
+    "Poori library scan kar rahe hain, aapke liye...",
+    "Notes ke pannon ko palat rahe hain...",
+    "Finding the shiniest notes for you... ✨",
+    "Hold on, dusting off the shelves!",
+];
+
+
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
     const { id, title, subject, isPremium, preview } = note;
     
@@ -93,6 +101,20 @@ export default function NotesPage() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isLoading) {
+          interval = setInterval(() => {
+            setCurrentLoadingMessage(prev => {
+                const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
+                return loadingMessages[nextIndex];
+            });
+          }, 2500);
+        }
+        return () => clearInterval(interval);
+    }, [isLoading]);
     
     const fetchNotes = useCallback(async () => {
         setIsLoading(true);
@@ -231,8 +253,9 @@ export default function NotesPage() {
 
       <div>
         {isLoading ? (
-            <div className="flex justify-center items-center h-64">
+            <div className="flex flex-col items-center justify-center h-64">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
             </div>
         ) : filteredNotes.length > 0 ? (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -297,3 +320,5 @@ export default function NotesPage() {
     </>
   )
 }
+
+    

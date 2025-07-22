@@ -53,14 +53,28 @@ const QuickActionsPanel = () => (
     </Card>
 );
 
-const DashboardSkeleton = () => (
+const loadingMessages = [
+    "Aapke academic record ka post-mortem kar rahe hain... 🧐",
+    "AI se aapke liye study tips pooch rahe hain... 🤖",
+    "Let's see... kitni padhai hui hai... 👀",
+    "Generating insights faster than you can say 'pharmacology'!",
+    "Analyzing your progress... this is the real exam! 😜"
+];
+
+const DashboardSkeleton = ({ message }: { message: string }) => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
             <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><div className="grid grid-cols-3 gap-4"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div></CardContent></Card>
             <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent className="space-y-3"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></CardContent></Card>
         </div>
         <div className="lg:col-span-2 space-y-6">
-             <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
+             <Card>
+                <CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader>
+                <CardContent className="flex flex-col items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="mt-4 text-muted-foreground animate-pulse">{message}</p>
+                </CardContent>
+             </Card>
              <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" /></CardContent></Card>
         </div>
     </div>
@@ -154,6 +168,20 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setCurrentLoadingMessage(prev => {
+            const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
+            return loadingMessages[nextIndex];
+        });
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const fetchInsights = useCallback(async (isRefresh = false) => {
     if (!user) return;
@@ -224,7 +252,7 @@ export default function DashboardPage() {
       
       {!isAdmin && <QuickActionsPanel />}
 
-      {isLoading && <DashboardSkeleton />}
+      {isLoading && <DashboardSkeleton message={currentLoadingMessage} />}
       
       {!isLoading && error && !insights && (
          <Card className="border-destructive bg-destructive/10">
@@ -308,3 +336,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
