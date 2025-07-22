@@ -1,8 +1,8 @@
 
 import { FileText, BookCopy, ScrollText, User, PenTool, Presentation } from 'lucide-react';
 
-const professionalEmailHeader = "Hello A2G Smart Notes Team,%0D%0A%0D%0AI would like to inquire about your academic services. Please see my project details below for a quote.%0D%0A%0D%0A---%0D%0A";
-const professionalEmailFooter = "%0D%0A---%0D%0A%0D%0APlease let me know the estimated cost and turnaround time for this service.%0D%0A%0D%0AThank you,%0D%0A[Your Name]%0D%0A[Your Contact Number - Optional]";
+const professionalEmailGreeting = "Hello A2G Smart Notes Team,%0D%0A%0D%0AI hope you are doing well.%0D%0A%0D%0AI am interested in availing your academic writing services. Please find my project details below:%0D%0A%0D%0A";
+const professionalEmailClosing = "%0D%0A%0D%0AKindly let me know the estimated cost and turnaround time for this project.%0D%0A%0D%0AThank you very much.%0D%0A%0D%0ABest regards,%0D%0A[Your Full Name]%0D%0A[Your Contact Number - Optional]";
 
 export const services = [
   {
@@ -22,13 +22,13 @@ export const services = [
         "Includes all necessary sections"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `${professionalEmailHeader}` +
-               `Service: Internship Report%0D%0A` +
-               `Course: [Your Course, e.g., B.Pharm]%0D%0A` +
-               `University: [Your University Name]%0D%0A` +
-               `Deadline: [DD-MM-YYYY]%0D%0A` +
-               `Specific Requirements: [Any specific guidelines?]` +
-               `${professionalEmailFooter}`
+    emailBody: `${professionalEmailGreeting}` +
+               `%E2%80%A2%20Service%20Required:%20Internship%20Report%0D%0A` +
+               `%E2%80%A2%20Course:%20[Your%20Course,%20e.g.,%20B.Pharm]%0D%0A` +
+               `%E2%80%A2%20University:%20[Your%20University%20Name]%0D%0A` +
+               `%E2%80%A2%20Deadline:%20[DD-MM-YYYY]%0D%0A` +
+               `%E2%80%A2%20Specific%20Requirements:%20[Format,%20Word%20Count,%20Any%20Guidelines]` +
+               `${professionalEmailClosing}`
   },
   {
     icon: BookCopy,
@@ -47,13 +47,13 @@ export const services = [
         "Full report writing and proofreading"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `${professionalEmailHeader}` +
-               `Service: Dissertation Support%0D%0A` +
-               `Specialization: [e.g., Pharmaceutics, Pharmacology]%0D%0A` +
-               `Research Topic: [Your Topic or Area of Interest]%0D%0A` +
-               `University: [Your University Name]%0D%0A` +
-               `Deadline: [DD-MM-YYYY]` +
-               `${professionalEmailFooter}`
+    emailBody: `${professionalEmailGreeting}` +
+               `%E2%80%A2%20Service%20Required:%20Dissertation%20Support%0D%0A` +
+               `%E2%80%A2%20Specialization:%20[e.g.,%20Pharmaceutics,%20Pharmacology]%0D%0A` +
+               `%E2%80%A2%20Research%20Topic:%20[Your%20Topic%20or%20Area%20of%20Interest]%0D%0A` +
+               `%E2%80%A2%20University:%20[Your%20University%20Name]%0D%0A` +
+               `%E2%80%A2%20Deadline:%20[DD-MM-YYYY]` +
+               `${professionalEmailClosing}`
   },
   {
     icon: ScrollText,
@@ -72,12 +72,12 @@ export const services = [
         "Adherence to format"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `${professionalEmailHeader}` +
-               `Service: Synopsis Writing%0D%0A` +
-               `Course: [e.g., M.Pharm, PhD]%0D%0A` +
-               `Field of Research: [Your Field]%0D%0A` +
-               `Proposed Title: [Your Proposed Research Title]` +
-               `${professionalEmailFooter}`
+    emailBody: `${professionalEmailGreeting}` +
+               `%E2%80%A2%20Service%20Required:%20Synopsis%20Writing%0D%0A` +
+               `%E2%80%A2%20Course:%20[e.g.,%20M.Pharm,%20PhD]%0D%0A` +
+               `%E2%80%A2%20Field%20of%20Research:%20[Your%20Field]%0D%0A` +
+               `%E2%80%A2%20Proposed%20Title:%20[Your%20Proposed%20Research%20Title]` +
+               `${professionalEmailClosing}`
   },
   {
     icon: User,
@@ -96,12 +96,12 @@ export const services = [
         "Cover letter writing"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `${professionalEmailHeader}` +
-               `Service: [Resume, SOP, or Both]%0D%0A` +
-               `My Goal: [e.g., Job application for 'Pharmacist' at 'Apollo']%0D%0A` +
-               `Field/Specialization: [e.g., Quality Assurance, Clinical Research]%0D%0A` +
-               `Note: [Please attach your current resume if you have one.]` +
-               `${professionalEmailFooter}`
+    emailBody: `${professionalEmailGreeting}` +
+               `%E2%80%A2%20Service%20Required:%20[Resume,%20SOP,%20or%20Both]%0D%0A` +
+               `%E2%80%A2%20My%20Goal:%20[e.g.,%20Job%20application%20for%20'Pharmacist']%0D%0A` +
+               `%E2%80%A2%20Field/Specialization:%20[e.g.,%20Quality%20Assurance,%20Clinical%20Research]%0D%0A` +
+               `%E2%80%A2%20Note:%20[Please%20attach%20your%20current%20resume%20if%20you%20have%20one.]` +
+               `${professionalEmailClosing}`
   },
   {
     icon: PenTool,
@@ -120,13 +120,12 @@ export const services = [
         "Proofreading and editing services"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `${professionalEmailHeader}` +
-               `Service: Content Writing%0D%0A` +
-               `Type of Content: [e.g., Blog Post, Research Article]%0D%0A` +
-               `Topic: [Your Topic]%0D%0A` +
-               `Word Count: [Approximate number]%0D%0A` +
-               `Audience: [e.g., General public, Healthcare professionals]` +
-               `${professionalEmailFooter}`
+    emailBody: `${professionalEmailGreeting}` +
+               `%E2%80%A2%20Service%20Required:%20Content%20Writing%0D%0A` +
+               `%E2%80%A2%20Type%20of%20Content:%20[e.g.,%20Blog%20Post,%20Research%20Article]%0D%0A` +
+               `%E2%80%A2%20Topic:%20[Your%20Topic]%0D%0A` +
+               `%E2%80%A2%20Word%20Count:%20[Approximate%20number]` +
+               `${professionalEmailClosing}`
   },
   {
     icon: Presentation,
@@ -145,12 +144,11 @@ export const services = [
         "Speaker notes preparation"
     ],
     sampleUrl: "/assets/sample-report.pdf",
-    emailBody: `${professionalEmailHeader}` +
-               `Service: Presentation Design%0D%0A` +
-               `Topic: [Your Presentation Topic]%0D%0A` +
-               `Number of Slides: [e.g., 15-20]%0D%0A` +
-               `Event/Purpose: [e.g., Class Seminar, Final Defense]%0D%0A` +
-               `Content: [Please specify if you will provide the content]` +
-               `${professionalEmailFooter}`
+    emailBody: `${professionalEmailGreeting}` +
+               `%E2%80%A2%20Service%20Required:%20Presentation%20Design%0D%0A` +
+               `%E2%80%A2%20Topic:%20[Your%20Presentation%20Topic]%0D%0A` +
+               `%E2%80%A2%20Number%20of%20Slides:%20[e.g.,%2015-20]%0D%0A` +
+               `%E2%80%A2%20Event/Purpose:%20[e.g.,%20Class%20Seminar,%20Final%20Defense]` +
+               `${professionalEmailClosing}`
   }
 ];
