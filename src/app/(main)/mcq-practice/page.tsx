@@ -24,6 +24,7 @@ import { PaymentDialog } from '@/components/payment-dialog';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { saveMcqResult } from '@/services/user-progress-service';
 
 
 const mcqFormSchema = z.object({
@@ -308,6 +309,26 @@ export default function McqPracticePage() {
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
 
+    const currentFormValues = form.getValues();
+
+    // Save the result to Firestore
+    try {
+        await saveMcqResult({
+            subject: currentFormValues.subject,
+            topic: currentFormValues.topic || "General",
+            score: newScore,
+            totalQuestions: questions.length
+        });
+    } catch (error) {
+        console.error("Failed to save quiz result:", error);
+        toast({
+            title: "Could not save progress",
+            description: "Your quiz score could not be saved to your progress report.",
+            variant: "destructive",
+        });
+    }
+
+
     // Generate detailed AI feedback
     try {
         const quizPerformance = questions.map((q, index) => ({
@@ -317,7 +338,6 @@ export default function McqPracticePage() {
             isCorrect: answers[index] === q.correctAnswer,
         }));
         
-        const currentFormValues = form.getValues();
 
         const feedbackResult = await generateMcqFeedback({
             examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
