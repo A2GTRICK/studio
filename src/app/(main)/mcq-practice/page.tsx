@@ -667,17 +667,17 @@ export default function McqPracticePage() {
                 <p className="font-semibold text-center">Buy a Question Pack</p>
                 
                 <div className="grid grid-cols-1 gap-2">
-                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: '₹5', questions: 100})}>
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: '&#8377;5', questions: 100})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Buy 100 MCQs for ₹5
+                        Buy 100 MCQs for &#8377;5
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: '₹10', questions: 200})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: '&#8377;10', questions: 200})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Buy 200 MCQs for ₹10
+                        Buy 200 MCQs for &#8377;10
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '400 MCQs', price: '₹15', questions: 400})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '400 MCQs', price: '&#8377;15', questions: 400})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Buy 400 MCQs for ₹15
+                        Buy 400 MCQs for &#8377;15
                     </Button>
                 </div>
 
