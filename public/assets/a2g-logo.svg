@@ -1,0 +1,13 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#9400D3">
+    <defs>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap');
+        </style>
+    </defs>
+    <rect width="100" height="100" rx="20" fill="#E6E6FA"/>
+    <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="70" font-weight="900">
+        A
+        <tspan dy="-0.2em" dx="-0.05em" font-size="0.6em">2</tspan>
+        G
+    </text>
+</svg>

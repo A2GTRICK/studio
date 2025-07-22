@@ -27,11 +27,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const A2GLogoIcon = () => (
-    <svg viewBox="0 0 100 100" className="h-6 w-6 text-primary">
-        <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize="90" fontWeight="bold" fill="currentColor">
-            A<tspan dy="-0.1em" fontSize="0.7em">2</tspan>
-        </text>
-    </svg>
+    <Image src="/assets/a2g-logo.svg" alt="A2G Logo" width={24} height={24} />
 );
 
 
@@ -178,15 +174,13 @@ export default function MainLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <div className="p-2 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Image
-                src="/assets/a2g-logo.png"
-                alt="A2G Smart Notes Logo"
-                width={28}
-                height={28}
-                className="rounded-md"
-              />
-            </div>
+            <Image
+              src="/assets/a2g-logo.svg"
+              alt="A2G Smart Notes Logo"
+              width={36}
+              height={36}
+              className="rounded-md"
+            />
             <h1 className="text-xl font-headline font-bold text-primary">A2G Smart Notes</h1>
           </div>
         </SidebarHeader>

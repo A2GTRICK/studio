@@ -162,11 +162,11 @@ export default function LoginPage() {
                 <CardHeader className="text-center">
                     <div className="mx-auto mb-4">
                         <Image
-                            src="/assets/a2g-logo.png"
+                            src="/assets/a2g-logo.svg"
                             alt="A2G Smart Notes Logo"
                             width={64}
                             height={64}
-                            className="h-16 w-16 border-2 border-primary shadow-lg rounded-xl transition-transform hover:scale-105"
+                            className="h-16 w-16 transition-transform hover:scale-105"
                         />
                     </div>
                     <CardTitle className="font-headline text-3xl">

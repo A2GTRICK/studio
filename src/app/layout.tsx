@@ -7,6 +7,9 @@ import { AuthProvider } from '@/hooks/use-auth';
 export const metadata: Metadata = {
   title: 'A2G Smart Notes | Your Pharmacy Learning Partner',
   description: 'The most trusted digital platform for pharmacy students. Access high-quality notes, AI-powered study tools, exam predictors, and expert academic services.',
+  icons: {
+    icon: '/assets/a2g-logo.svg',
+  }
 };
 
 export default function RootLayout({
