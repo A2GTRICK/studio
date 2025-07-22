@@ -88,7 +88,7 @@ export default function ExamQuestionsPage() {
   const dialogTitle = showPremiumDialog === 'download' 
     ? "Download Questions PDF" 
     : "Generate AI Mock Test";
-  const dialogPrice = showPremiumDialog === 'download' ? '&#8377;29' : '&#8377;49';
+  const dialogPrice = showPremiumDialog === 'download' ? '₹29' : '₹49';
 
   return (
     <>
@@ -245,7 +245,7 @@ export default function ExamQuestionsPage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={handleBuyNow}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    <span dangerouslySetInnerHTML={{ __html: `Buy Just This for ${dialogPrice}` }}></span>
+                    Buy Just This for {dialogPrice}
                 </Button>
             </div>
         </DialogContent>

@@ -52,7 +52,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
                     </div>
                     <DialogTitle className="text-center font-headline text-2xl">Complete Your Payment</DialogTitle>
                     <DialogDescription className="text-center text-base">
-                        You are purchasing <strong>{title}</strong> for <strong dangerouslySetInnerHTML={{ __html: price }}></strong>.
+                        You are purchasing <strong>{title}</strong> for <strong>{price}</strong>.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
