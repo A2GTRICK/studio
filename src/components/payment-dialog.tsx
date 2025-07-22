@@ -48,7 +48,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2">
-                        <Image src="/assets/a2g-logo-red-black.svg" alt="A2G Smart Notes Logo" width={32} height={32} />
+                        <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Logo" width={32} height={32} />
                     </div>
                     <DialogTitle className="text-center font-headline text-2xl">Complete Your Payment</DialogTitle>
                     <DialogDescription className="text-center text-base">
@@ -79,3 +79,5 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
         </Dialog>
     );
 }
+
+    

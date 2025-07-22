@@ -92,7 +92,7 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2" aria-label="A2G Smart Notes Home">
-          <Image src="/assets/a2g-logo-red-black.svg" alt="A2G Smart Notes Logo" width={40} height={40} className="h-8 w-8 sm:h-10 sm:w-10" />
+          <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Logo" width={40} height={40} className="h-8 w-8 sm:h-10 sm:w-10" />
           <span className="text-xl sm:text-2xl font-headline font-bold text-primary">A2G Smart Notes</span>
         </Link>
          <div className="flex items-center gap-4">
@@ -326,3 +326,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
