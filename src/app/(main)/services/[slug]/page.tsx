@@ -9,8 +9,6 @@ import { ArrowLeft, CheckCircle, Mail, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { AiImage } from '@/components/ai-image';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ContactForm } from '@/components/contact-form';
 
 export default function ServiceDetailPage() {
   const params = useParams();
@@ -20,6 +18,8 @@ export default function ServiceDetailPage() {
   if (!service) {
     notFound();
   }
+
+  const mailtoLink = `mailto:a2gtrickacademy@gmail.com?subject=${encodeURIComponent(`Quote Request for: ${service.title}`)}&body=${encodeURIComponent(service.emailBody)}`;
   
   return (
     <div className="max-w-5xl mx-auto">
@@ -66,23 +66,11 @@ export default function ServiceDetailPage() {
                             <Eye className="mr-2 h-4 w-4" /> View Sample
                           </Link>
                         </Button>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                               <Button size="lg"><Mail className="mr-2 h-4 w-4" /> Get a Quote</Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Request a Quote for {service.title}</DialogTitle>
-                                    <DialogDescription>
-                                        Fill out the form below and our team will get back to you shortly.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <ContactForm 
-                                    serviceTitle={service.title} 
-                                    defaultMessage={service.emailBody}
-                                />
-                            </DialogContent>
-                        </Dialog>
+                        <Button asChild size="lg">
+                            <a href={mailtoLink}>
+                               <Mail className="mr-2 h-4 w-4" /> Get a Quote
+                            </a>
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
