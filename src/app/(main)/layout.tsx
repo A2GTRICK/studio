@@ -111,9 +111,9 @@ function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promi
             <div className="flex items-center justify-between gap-3 p-3 border-t">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <Avatar>
-                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} />
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} className="object-cover" />
                         <AvatarFallback>
-                           <Image src="/assets/user-icon.png" alt="User Icon" width={40} height={40} />
+                           <User className="h-5 w-5" />
                         </AvatarFallback>
                     </Avatar>
                     <div className="overflow-hidden">
@@ -307,7 +307,14 @@ export default function MainLayout({
             </Button>
             <NotificationPopover />
              <div className="md:hidden">
-                {loading ? <Skeleton className="h-8 w-8 rounded-full" /> : user ? <UserProfile user={user} logout={logout} /> : null}
+                {loading ? <Skeleton className="h-8 w-8 rounded-full" /> : user ? (
+                    <Avatar>
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} className="object-cover" />
+                        <AvatarFallback>
+                           <User className="h-5 w-5" />
+                        </AvatarFallback>
+                    </Avatar>
+                ) : null}
             </div>
           </div>
         </header>
