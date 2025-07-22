@@ -278,7 +278,7 @@ export default function NotesPage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={handleBuyNow}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    Buy Just This Note for ₹19
+                    Buy Just This Note for INR 19
                 </Button>
             </div>
         </DialogContent>
@@ -288,7 +288,7 @@ export default function NotesPage() {
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
         title={`Buy "${selectedNote?.title}"`}
-        price="₹19"
+        price="INR 19"
         onPaymentSuccess={() => {
             setShowPaymentDialog(false);
             setSelectedNote(null);

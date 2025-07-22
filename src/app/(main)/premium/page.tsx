@@ -22,7 +22,7 @@ const freePlanFeatures = [
 const plans = [
   {
     name: "Weekly",
-    price: "₹99",
+    price: "INR 99",
     period: "/ week",
     description: "Perfect for a quick boost for your upcoming exams.",
     features: ["Unlock All Premium Notes", "AI Note Generation", "AI Exam Questions", "Email Support"],
@@ -30,7 +30,7 @@ const plans = [
   },
   {
     name: "Monthly",
-    price: "₹299",
+    price: "INR 299",
     period: "/ month",
     description: "Our most popular plan for semester-long learning.",
     features: ["Unlock All Premium Notes", "AI Note Generation", "AI Exam Questions", "Priority Email Support", "Ask Follow-up Questions to AI"],
@@ -38,7 +38,7 @@ const plans = [
   },
   {
     name: "Yearly",
-    price: "₹1,499",
+    price: "INR 1,499",
     period: "/ year",
     description: "Best value for dedicated, year-round study.",
     features: ["Unlock All Premium Notes", "AI Note Generation", "AI Exam Questions", "Priority Email Support", "Ask Follow-up Questions to AI", "Early Access to New Notes"],
@@ -72,7 +72,7 @@ export default function PremiumPage() {
            <CardHeader className="text-center">
               <CardTitle className="font-headline text-2xl">Free Plan</CardTitle>
               <div>
-                <span className="text-4xl font-bold">₹0</span>
+                <span className="text-4xl font-bold">INR 0</span>
                 <span className="text-muted-foreground">/ forever</span>
               </div>
               <CardDescription>Get a taste of our platform with basic features.</CardDescription>

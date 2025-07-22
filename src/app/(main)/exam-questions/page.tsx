@@ -88,7 +88,7 @@ export default function ExamQuestionsPage() {
   const dialogTitle = showPremiumDialog === 'download' 
     ? "Download Questions PDF" 
     : "Generate AI Mock Test";
-  const dialogPrice = showPremiumDialog === 'download' ? '₹29' : '₹49';
+  const dialogPrice = showPremiumDialog === 'download' ? 'INR 29' : 'INR 49';
 
   return (
     <>
