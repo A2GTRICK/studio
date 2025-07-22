@@ -134,7 +134,7 @@ export default function McqPracticePage() {
   const [dailyQuestionCount, setDailyQuestionCount] = useState(0);
   const [dailyLimit, setDailyLimit] = useState(30);
   
-  const [displayedFeedback, setDisplayedFeedback] = useState<DisplayedFeedback>(null);
+  const [displayedFeedback, setDisplayedFeedback] = useState<DisplayedFeedback | null>(null);
 
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   
@@ -319,9 +319,8 @@ export default function McqPracticePage() {
     // Save the result to Firestore if the user is logged in
     if (user) {
         try {
-            const idToken = await user.getIdToken();
             await saveMcqResult({
-                idToken,
+                uid: user.uid,
                 result: {
                     subject: currentFormValues.subject,
                     topic: topicToSave,
