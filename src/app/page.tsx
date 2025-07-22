@@ -163,7 +163,7 @@ export default function LandingPage() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center items-center">
-                        <AiImage data-ai-hint="ghibli style cartoon of a young indian man with glasses and a beard in a science lab" alt="A friendly pharmacist professor mascot" width={300} height={300} className="rounded-full shadow-lg object-cover" />
+                        <AiImage data-ai-hint="ghibli style cartoon of a friendly pharmacist professor" alt="A friendly pharmacist professor mascot" width={300} height={300} className="rounded-full shadow-lg object-cover" />
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-12 mt-16">
@@ -319,5 +319,4 @@ export default function LandingPage() {
       </footer>
     </div>
   );
-
-    
+}
