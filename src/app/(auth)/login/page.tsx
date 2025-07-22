@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, Eye, EyeOff, LogIn, UserPlus, MailCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -39,7 +39,7 @@ const GoogleIcon = () => (
 
 
 export default function LoginPage() {
-    const [view, setView] = useState<'signup' | 'login'>('signup');
+    const [view, setView] = useState<'signup' | 'login'>('login');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -88,9 +88,10 @@ export default function LoginPage() {
                 const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                 await updateProfile(userCredential.user, { displayName: data.name });
                 await sendEmailVerification(userCredential.user);
+                await signOut(auth); // IMPORTANT: Sign out the user immediately after creation.
                 
-                setSuccessMessage("Account created! Please check your email inbox (and spam folder) for a verification link to activate your account before logging in.");
-                setView('login'); // Switch to login view
+                setSuccessMessage("Account created! Please check your email inbox (and spam folder) for a verification link to activate your account. You can close this tab after verifying.");
+                setView('login');
             } catch (signUpError: any) {
                 setError(getFriendlyAuthError(signUpError));
             } finally {
@@ -101,14 +102,22 @@ export default function LoginPage() {
                 const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
                 
                 if (!userCredential.user.emailVerified) {
-                    setError("Your email address is not verified. Please check your inbox for a verification link.");
+                    setError("Your email address is not verified. Please check your inbox for the verification link.");
                     // Provide a way to resend verification
-                    // This is a simplified approach. A dedicated button would be better.
-                    setTimeout(() => {
-                        sendEmailVerification(userCredential.user).then(() => {
-                            toast({ title: "Verification Email Sent Again!", description: "A new verification link has been sent to your email." });
-                        });
-                    }, 5000); // Resend after 5 seconds to avoid spamming
+                    const resendEmail = async () => {
+                       try {
+                           await sendEmailVerification(userCredential.user);
+                           toast({ title: "Verification Email Sent Again!", description: "A new verification link has been sent to your email." });
+                       } catch (e: any) {
+                           setError(getFriendlyAuthError(e));
+                       }
+                    }
+                    setError(
+                        <>
+                         Your email is not verified. Please check your inbox. <Button variant="link" className="p-0 h-auto" onClick={resendEmail}>Resend link</Button>
+                        </> as any
+                    );
+                    await signOut(auth); // Sign out the unverified user.
                     setIsSubmitting(false);
                     return;
                 }

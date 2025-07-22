@@ -57,11 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsAdmin(currentUser?.email === ADMIN_EMAIL);
+      // Only set the user if their email is verified, or if they are a new user who hasn't had a chance to verify yet.
+      // This hook will re-run, and on subsequent runs, unverified users will be treated as null.
+      if (currentUser && currentUser.emailVerified) {
+          setUser(currentUser);
+          setIsAdmin(currentUser.email === ADMIN_EMAIL);
+      } else {
+          setUser(null);
+          setIsAdmin(false);
+      }
       setLoading(false);
     }, (error) => {
       console.error("Firebase Auth Error:", error);
+      setUser(null);
       setLoading(false);
     });
 
@@ -75,35 +83,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isPublicPage = isAuthPage || pathname === '/';
     const isAdminPage = pathname.startsWith('/admin');
 
-    if (user) {
-      // User is logged in
+    const effectiveUser = auth.currentUser;
+
+    if (effectiveUser && effectiveUser.emailVerified) {
+      // User is logged in and verified
       if (isAuthPage) {
-        // Redirect from login page to dashboard if logged in
+        // Redirect from login page to dashboard
         router.push('/dashboard');
-      } else if (isAdminPage && !isAdmin) {
+      } else if (isAdminPage && effectiveUser.email !== ADMIN_EMAIL) {
         // If a non-admin tries to access an admin page, redirect
         router.push('/dashboard');
       }
     } else {
-      // User is not logged in
+      // User is not logged in or not verified
       if (!isPublicPage) {
         // Redirect any protected page to the login page
         router.push('/login');
       }
     }
 
-  }, [user, loading, pathname, router, isAdmin]);
+  }, [loading, pathname, router]);
   
   const logout = async () => {
       await signOut(auth);
+      router.push('/login');
   }
 
   const value = { user, loading, isAdmin, logout };
 
   const isPublicPage = pathname === '/' || pathname === '/login';
   
-  // Show a full-page spinner only for protected routes during the initial auth check.
-  // This prevents the login page from flashing on first load for an unauthenticated user.
   if (loading && !isPublicPage) {
     return <FullPageSpinner />;
   }
@@ -122,5 +131,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    
