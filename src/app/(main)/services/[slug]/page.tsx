@@ -10,19 +10,18 @@ import { ArrowLeft, CheckCircle, Mail, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { AiImage } from '@/components/ai-image';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { ContactForm } from '@/components/contact-form';
 
 export default function ServiceDetailPage() {
   const params = useParams();
   const slug = typeof params.slug === 'string' ? params.slug : '';
   const service = services.find(s => s.slug === slug);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!service) {
     notFound();
   }
   
+  const mailtoLink = `mailto:a2gtrickacademy@gmail.com?subject=${encodeURIComponent(`Service Inquiry: ${service.title}`)}&body=${encodeURIComponent(service.emailBody)}`;
+
   return (
     <div className="max-w-5xl mx-auto">
       <Button asChild variant="ghost" className="mb-4">
@@ -68,26 +67,11 @@ export default function ServiceDetailPage() {
                             <Eye className="mr-2 h-4 w-4" /> View Sample
                           </Link>
                         </Button>
-                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button size="lg">
-                              <Mail className="mr-2 h-4 w-4" /> Get a Quote
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Request a Quote for: {service.title}</DialogTitle>
-                              <DialogDescription>
-                                Please fill out the form below. We'll get back to you as soon as possible.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <ContactForm
-                              serviceTitle={service.title}
-                              emailBody={service.emailBody}
-                              onSuccess={() => setDialogOpen(false)}
-                            />
-                          </DialogContent>
-                        </Dialog>
+                        <Button asChild size="lg">
+                          <a href={mailtoLink}>
+                            <Mail className="mr-2 h-4 w-4" /> Get a Quote
+                          </a>
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
