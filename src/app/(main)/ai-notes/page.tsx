@@ -36,12 +36,11 @@ interface ChatMessage {
 }
 
 const loadingMessages = [
-    "AI is brewing your notes... ☕",
-    "Consulting with digital textbooks...",
-    "Synthesizing knowledge into clear points...",
-    "Cross-referencing with the syllabus...",
-    "Unlocking the secrets of pharmacology...",
-    "Just a moment, formulating the perfect explanation...",
+    "AI aapke notes bana raha hai... ☕",
+    "Digital textbooks se gyan le rahe hain...",
+    "Secrets of pharmacology ko unlock kar rahe hain...",
+    "Bas ek second, perfect explanation taiyar hai...",
+    "Syllabus se cross-check kar rahe hain... ✅",
 ];
 
 

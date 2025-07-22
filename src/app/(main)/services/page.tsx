@@ -52,10 +52,10 @@ const outlineFormSchema = z.object({
 type OutlineFormValues = z.infer<typeof outlineFormSchema>;
 
 const loadingMessages = [
-    "AI is drafting your academic blueprint... 📝",
-    "Structuring chapters and sections... 📂",
-    "Hang tight, building a solid foundation for your project...",
-    "Reviewing academic standards for your outline... 🧐"
+    "AI aapka academic blueprint bana raha hai... 📝",
+    "Chapters aur sections taiyar kar rahe hain... 📂",
+    "Ruk jao, project ke liye solid foundation bana rahe hain...",
+    "Outline ke liye academic standards check kar rahe hain... 🧐"
 ];
 
 

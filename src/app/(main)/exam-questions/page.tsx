@@ -37,12 +37,12 @@ const premiumFeatures = [
 ];
 
 const loadingMessages = [
-    "Analyzing past exam papers... 📜",
-    "Consulting with the AI examiner... 🤔",
-    "Identifying high-probability questions... 🎯",
-    "Filtering out the easy stuff... 😉",
-    "This is tougher than a viva exam! Just kidding... or are we?",
-    "Getting your questions ready... good luck! 🤞"
+    "Pichle saal ke papers check kar rahe hain... 📜",
+    "AI examiner se salah le rahe hain... 🤔",
+    "High-probability questions dhoond rahe hain... 🎯",
+    "Asaan questions ko hata rahe hain... 😉",
+    "Viva se zyada mushkil hai! Mazak kar rahe hain... ya nahi?",
+    "Questions taiyar hain... good luck! 🤞"
 ];
 
 

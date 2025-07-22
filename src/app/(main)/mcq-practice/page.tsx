@@ -63,25 +63,19 @@ const shuffleArray = (array: any[]) => {
 
 const scoreFeedbacks = {
     bad: [
-        { emoji: '😒', message: "Tera toh kuch nahi ho sakta, beta.", taunt: "Padhai se zyada toh tu reels scroll karta hai!" },
+        { emoji: '😒', message: "Itna galat kaise ho sakta hai?", taunt: "Padhai se zyada toh tu reels scroll karta hai!" },
         { emoji: '🤦‍♂️', message: "Ye performance dekh ke... ", taunt: "Mera sir dukhne laga hai. Jaake thoda padh le!" },
-        { emoji: '🥺', message: "Itna galat kaise ho sakta hai?", taunt: "Lagta hai 'options' aur 'sapne' dono galat choose kar rahe ho." },
-        { emoji: '🤯', message: "Result is out of syllabus!", taunt: "Don't worry, even Einstein had bad days." },
-        { emoji: '😭', message: "Aap purush hi nahi, mahapurush hain!", taunt: "Itna talent! Itne galat jawab!" },
+        { emoji: '🥺', message: "Aap purush hi nahi, mahapurush hain!", taunt: "Itna talent! Itne galat jawab!" },
     ],
     medium: [
         { emoji: '🤔', message: "Pushpa... I hate tears 😭", taunt: "Bas thoda aur practice... warna mains mein 'bye' ho jayega!" },
         { emoji: '😅', message: "Thoda aur zor lagao!", taunt: "Abhi 'borderline' pe ho, 'topper' banne ke liye thoda aur grind karna padega." },
-        { emoji: '😬', message: "Not bad, but not great either.", taunt: "Currently in the 'Sharmaji ka beta can still beat you' zone." },
-        { emoji: '🧐', message: "Ekdam '3 Idiots' wala haal hai.", taunt: "'Aal Izz Well' bolne se kaam nahi chalega, padhna bhi padega." },
-        { emoji: '😐', message: "You're like a reversible reaction.", taunt: "Can go either way. Need a catalyst called 'revision'." },
+        { emoji: '🧐', message: "'Aal Izz Well' bolne se kaam nahi chalega!", taunt: "Thoda revision kar lo, sab theek ho jayega." },
     ],
     good: [
         { emoji: '🎉', message: "Mogambo khush hua!", taunt: "Mummy: Aaj kuch zyada hi intelligent lag raha hai tu!" },
-        { emoji: '😎', message: "Kya baat hai! Cha gaye guru!", taunt: "Keep it up! The only thing you're testing positive for is success." },
-        { emoji: '🥳', message: "Excellent! You nailed it!", taunt: "Your brain cells are clearly working overtime. Nice!" },
+        { emoji: '😎', message: "Kya baat hai! Chha gaye guru!", taunt: "Keep it up! The only thing you're testing positive for is success." },
         { emoji: '💯', message: "How's the josh? High Sir!", taunt: "Aise hi phodte raho exam mein!" },
-        { emoji: '🔥', message: "You're on fire!", taunt: "Seems like you and the correct answers have a strong bond." },
     ]
 };
 
@@ -103,14 +97,14 @@ const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
 };
 
 const loadingMessages = [
-    "Brewing up some tricky questions... ☕",
-    "Consulting with the pharma gods for the perfect questions... ✨",
-    "Did you know? The word 'drug' comes from the Dutch word 'droog', meaning 'dry'.",
-    "Shaking the pill bottle of knowledge... please wait.",
-    "AI is studying past papers harder than you are right now... 😉",
-    "Compiling questions... This is more complex than organic chemistry!",
-    "Get ready! These questions are freshly synthesized.",
-    "Fun Fact: Aspirin, one of the first drugs to be synthesized, originates from willow tree bark."
+    "Thode tricky questions bana rahe hain... ☕",
+    "Pharma gods se perfect questions maang rahe hain... ✨",
+    "Pata hai? 'Drug' word Dutch 'droog' se aaya hai, jiska matlab 'dry' hai.",
+    "Gyan ki goli hila rahe hain... please wait.",
+    "AI aapse zyada padh raha hai abhi... 😉",
+    "Questions compile ho rahe hain... Organic Chemistry se bhi zyada complex hai!",
+    "Taiyar ho jao! Freshly synthesized questions aa rahe hain.",
+    "Fun Fact: Aspirin, pehli synthesized drugs mein se ek, willow tree ki chhaal se banti hai."
 ];
 
 type DisplayedFeedback = {
