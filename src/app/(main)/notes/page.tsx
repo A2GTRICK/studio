@@ -90,6 +90,7 @@ export default function NotesPage() {
     const [yearFilter, setYearFilter] = useState('All');
     const [subjectFilter, setSubjectFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
     
@@ -106,6 +107,16 @@ export default function NotesPage() {
     useEffect(() => {
         fetchNotes();
     }, [fetchNotes]);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 300); // 300ms debounce delay
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchQuery]);
 
 
     const handleUnlockClick = (note: Note) => {
@@ -154,15 +165,15 @@ export default function NotesPage() {
         if (subjectFilter !== 'All') {
             notes = notes.filter(note => note.subject === subjectFilter);
         }
-        if (searchQuery) {
+        if (debouncedSearchQuery) {
             notes = notes.filter(note => 
-                note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                note.subject.toLowerCase().includes(searchQuery.toLowerCase())
+                note.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+                note.subject.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
             );
         }
         
         return notes;
-    }, [courseFilter, yearFilter, subjectFilter, searchQuery, allNotes]);
+    }, [courseFilter, yearFilter, subjectFilter, debouncedSearchQuery, allNotes]);
 
     const handleCourseChange = (value: string) => {
         setCourseFilter(value);
