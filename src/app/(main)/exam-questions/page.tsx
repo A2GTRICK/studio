@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -36,12 +36,36 @@ const premiumFeatures = [
     "Access to ALL premium library notes",
 ];
 
+const loadingMessages = [
+    "Analyzing past exam papers... 📜",
+    "Consulting with the AI examiner... 🤔",
+    "Identifying high-probability questions... 🎯",
+    "Filtering out the easy stuff... 😉",
+    "This is tougher than a viva exam! Just kidding... or are we?",
+    "Getting your questions ready... good luck! 🤞"
+];
+
+
 export default function ExamQuestionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [questions, setQuestions] = useState<GenerateExamQuestionsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState<PremiumAction>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setCurrentLoadingMessage(prev => {
+            const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
+            return loadingMessages[nextIndex];
+        });
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const form = useForm<ExamQuestionsFormValues>({
     resolver: zodResolver(examQuestionsFormSchema),
@@ -150,7 +174,7 @@ export default function ExamQuestionsPage() {
                {isLoading && (
                   <div className="flex flex-col items-center justify-center h-full">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <p className="mt-4 text-muted-foreground">Analyzing patterns and generating questions...</p>
+                      <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
                   </div>
               )}
               {error && (
@@ -245,7 +269,7 @@ export default function ExamQuestionsPage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={handleBuyNow}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    Buy Just This for {dialogPrice}
+                    Buy Just This for INR 29
                 </Button>
             </div>
         </DialogContent>
@@ -255,7 +279,7 @@ export default function ExamQuestionsPage() {
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
         title={`Buy ${dialogTitle}`}
-        price={dialogPrice}
+        price="INR 29"
         onPaymentSuccess={() => {
             // Placeholder for what happens after successful payment confirmation
             setShowPremiumDialog(null);

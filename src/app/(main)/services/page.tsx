@@ -6,7 +6,7 @@ import { ArrowRight, BrainCircuit, Loader2, Expand } from 'lucide-react';
 import Link from 'next/link';
 import { services } from "@/lib/services-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,10 +51,31 @@ const outlineFormSchema = z.object({
 
 type OutlineFormValues = z.infer<typeof outlineFormSchema>;
 
+const loadingMessages = [
+    "AI is drafting your academic blueprint... 📝",
+    "Structuring chapters and sections... 📂",
+    "Hang tight, building a solid foundation for your project...",
+    "Reviewing academic standards for your outline... 🧐"
+];
+
 
 export default function ServicesPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [aiResult, setAiResult] = useState<string | null>(null);
+    const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isLoading) {
+          interval = setInterval(() => {
+            setCurrentLoadingMessage(prev => {
+                const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
+                return loadingMessages[nextIndex];
+            });
+          }, 2500);
+        }
+        return () => clearInterval(interval);
+    }, [isLoading]);
 
     const categories = useMemo(() => {
         const cats = new Set(services.map(s => s.category));
@@ -155,7 +176,7 @@ export default function ServicesPage() {
                              {isLoading && (
                                 <div className="flex flex-col items-center justify-center h-full">
                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    <p className="mt-4 text-muted-foreground">AI is drafting your outline...</p>
+                                    <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
                                 </div>
                              )}
                              {!isLoading && !aiResult && (

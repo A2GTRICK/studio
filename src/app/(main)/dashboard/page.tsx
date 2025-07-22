@@ -208,7 +208,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 className="text-3xl font-headline font-bold text-foreground">Welcome back, {user?.displayName?.split(' ')[0] || 'Student'}!</h1>
-            <p className="mt-1 text-muted-foreground">{isLoading ? 'Analyzing your progress...' : 'Here is your smart dashboard for today.'}</p>
+            <p className="mt-1 text-muted-foreground">{isLoading ? 'AI is analyzing your progress... 🧠' : 'Here is your smart dashboard for today.'}</p>
         </div>
         <div>
           <Button onClick={() => fetchInsights(true)} variant="outline" size="sm" disabled={isRefreshing}>
