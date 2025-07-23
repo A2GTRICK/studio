@@ -129,14 +129,6 @@ function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: b
                             Edit Profile
                         </Link>
                     </Button>
-                    {isAdmin && (
-                        <Button asChild variant="ghost" className="w-full justify-start">
-                            <Link href="/admin/notes">
-                                <Shield className="mr-2 h-4 w-4" />
-                                Admin Panel
-                            </Link>
-                        </Button>
-                    )}
                     <Button onClick={handleLogout} variant="ghost" className="w-full justify-start text-destructive hover:text-destructive">
                         <LogOut className="mr-2 h-4 w-4" />
                         Logout

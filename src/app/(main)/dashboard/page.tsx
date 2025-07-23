@@ -18,13 +18,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 
 const AdminPanel = () => (
-  <Card className="bg-card border-primary border-2 shadow-lg">
+  <Card className="bg-primary/10 border-primary border-2 shadow-lg">
     <CardHeader>
-      <CardTitle className="font-headline flex items-center gap-2"><Users /> Admin Dashboard</CardTitle>
-      <CardDescription>This panel is only visible to administrators. Manage your application's content and settings here.</CardDescription>
+      <CardTitle className="font-headline flex items-center gap-2 text-primary"><Users /> Admin Dashboard</CardTitle>
+      <CardDescription className="text-primary/80">This panel is only visible to you. Manage your application's content and settings here.</CardDescription>
     </CardHeader>
     <CardContent>
-        <Button asChild className="w-full" size="lg">
+        <Button asChild className="w-full" size="lg" variant="secondary">
             <Link href="/admin/notes">Manage Notes Library</Link>
         </Button>
     </CardContent>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
           </div>
       )}
 
-      {!isAdmin && <QuickActionsPanel />}
+      <QuickActionsPanel />
 
       {isLoading && <DashboardSkeleton message={currentLoadingMessage} />}
       
@@ -284,12 +284,12 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {!isLoading && !insights && !error && !isAdmin && (
+      {!isLoading && !insights && !error && (
         <Card>
             <CardContent className="p-10 text-center">
                 <h3 className="text-xl font-semibold">Your Smart Dashboard is Getting Ready!</h3>
                 <p className="text-muted-foreground mt-2">Your personalized insights will appear here once we have some notes and progress data to analyze.</p>
-                {!isAdmin && <Button asChild className="mt-4"><Link href="/notes">Browse Notes Library</Link></Button>}
+                <Button asChild className="mt-4"><Link href="/notes">Start Learning</Link></Button>
             </CardContent>
         </Card>
       )}
