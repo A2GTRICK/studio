@@ -14,6 +14,7 @@ import { PaymentDialog } from '@/components/payment-dialog';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { AiImage } from '@/components/ai-image';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export type Note = {
   id: string;
@@ -41,8 +42,22 @@ const loadingMessages = [
     "Hold on, dusting off the shelves!",
 ];
 
+const NoteCardSkeleton = () => (
+    <Card className="flex flex-col overflow-hidden">
+        <Skeleton className="h-40 w-full" />
+        <div className="p-4 flex flex-col flex-grow">
+            <Skeleton className="h-5 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/2 mb-4" />
+            <Skeleton className="h-8 w-full" />
+            <div className="flex-grow" />
+            <Skeleton className="h-10 w-full mt-4" />
+        </div>
+    </Card>
+);
+
+
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { id, title, subject, isPremium, content } = note;
+    const { id, title, subject, isPremium, content, price } = note;
     
     const isExternalLink = content.startsWith('http');
     let actionButton;
@@ -268,9 +283,14 @@ export default function NotesPage() {
 
       <div>
         {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-64">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                 <div className="lg:col-span-full text-center py-10">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+                    <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
+                 </div>
+                 {Array.from({ length: 8 }).map((_, i) => (
+                    <NoteCardSkeleton key={i} />
+                ))}
             </div>
         ) : filteredNotes.length > 0 ? (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -337,8 +357,3 @@ export default function NotesPage() {
     </>
   )
 }
-    
-
-    
-
-    
