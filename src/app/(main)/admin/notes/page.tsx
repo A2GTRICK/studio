@@ -205,13 +205,11 @@ export default function AdminNotesPage() {
                                     <Select name="year" required disabled={isSubmitting || !selectedCourse}>
                                         <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
                                         <SelectContent>
-                                            {selectedCourse && yearOptions[selectedCourse] ? (
+                                            {selectedCourse && yearOptions[selectedCourse] &&
                                                 yearOptions[selectedCourse].map(year => (
                                                     <SelectItem key={year} value={year}>{year}</SelectItem>
                                                 ))
-                                            ) : (
-                                                <SelectItem value="" disabled>First select a course</SelectItem>
-                                            )}
+                                            }
                                         </SelectContent>
                                     </Select>
                                 </div>
