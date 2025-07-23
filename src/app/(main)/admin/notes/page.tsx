@@ -51,7 +51,7 @@ const loadingMessages = [
     "Almost there, boss!"
 ];
 
-const yearOptions = {
+const yearOptions: { [key: string]: string[] } = {
     "B.Pharm": ["1st Year", "2nd Year", "3rd Year", "4th Year"],
     "D.Pharm": ["1st Year", "2nd Year"],
 };
@@ -105,20 +105,19 @@ export default function AdminNotesPage() {
         e.preventDefault();
         setIsSubmitting(true);
         const formData = new FormData(e.currentTarget);
-        const newNote = {
+        const newNoteData = {
             title: formData.get('title') as string,
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
             content: formData.get('content') as string,
             isPremium: formData.get('isPremium') === 'on',
-            createdAt: serverTimestamp(),
         };
 
-        if (!newNote.course || !newNote.year) {
+        if (!newNoteData.course || !newNoteData.year || !newNoteData.title || !newNoteData.subject || !newNoteData.content) {
             toast({
-                title: "Missing Information",
-                description: "Please select a course and year for the note.",
+                title: "All Fields Required",
+                description: "Please fill out all the fields to add a new note.",
                 variant: "destructive"
             });
             setIsSubmitting(false);
@@ -126,11 +125,22 @@ export default function AdminNotesPage() {
         }
 
         try {
-            const docRef = await addDoc(collection(db, 'notes'), newNote);
-            setNotes(prev => [{...newNote, id: docRef.id, createdAt: new Date() }, ...prev]);
+            const docRef = await addDoc(collection(db, 'notes'), {
+                ...newNoteData,
+                createdAt: serverTimestamp(),
+            });
+            
+            const newNoteForState: Note = {
+                ...newNoteData,
+                id: docRef.id,
+                createdAt: new Date(),
+            };
+
+            setNotes(prev => [newNoteForState, ...prev]);
+
             toast({
                 title: "Note Added Successfully!",
-                description: `"${newNote.title}" has been added to the library.`
+                description: `"${newNoteData.title}" has been added to the library.`
             });
             (e.target as HTMLFormElement).reset();
             setSelectedCourse("");
@@ -212,7 +222,7 @@ export default function AdminNotesPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="content">Note Content (Supports Markdown & Links)</Label>
-                                <Textarea id="content" name="content" placeholder="A brief description of the note's content." required disabled={isSubmitting} rows={6}/>
+                                <Textarea id="content" name="content" placeholder="Enter the full note content here. You can use Markdown for formatting, like **bold** text or [links](https://example.com)." required disabled={isSubmitting} rows={6}/>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>

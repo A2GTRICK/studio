@@ -57,8 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      // Only set the user if their email is verified, or if they are a new user who hasn't had a chance to verify yet.
-      // This hook will re-run, and on subsequent runs, unverified users will be treated as null.
       if (currentUser && currentUser.emailVerified) {
           setUser(currentUser);
           setIsAdmin(currentUser.email === ADMIN_EMAIL);
@@ -70,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, (error) => {
       console.error("Firebase Auth Error:", error);
       setUser(null);
+      setIsAdmin(false);
       setLoading(false);
     });
 
@@ -83,15 +82,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isPublicPage = isAuthPage || pathname === '/';
     const isAdminPage = pathname.startsWith('/admin');
 
-    const effectiveUser = auth.currentUser;
-
-    if (effectiveUser && effectiveUser.emailVerified) {
+    if (user) {
       // User is logged in and verified
       if (isAuthPage) {
         // Redirect from login page to dashboard
         router.push('/dashboard');
-      } else if (isAdminPage && effectiveUser.email !== ADMIN_EMAIL) {
+      } else if (isAdminPage && !isAdmin) {
         // If a non-admin tries to access an admin page, redirect
+        console.warn("Non-admin user attempted to access admin page. Redirecting.");
         router.push('/dashboard');
       }
     } else {
@@ -102,10 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-  }, [user, loading, pathname, router]);
+  }, [user, isAdmin, loading, pathname, router]);
   
   const logout = async () => {
       await signOut(auth);
+      // setUser(null) and setIsAdmin(false) will be handled by onAuthStateChanged
       router.push('/login');
   }
 
