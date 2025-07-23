@@ -8,10 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Upload, Link2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, BrainCircuit } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +31,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
+
 
 export type Note = {
     id: string;
@@ -51,6 +52,13 @@ const loadingMessages = [
     "Almost there, boss!"
 ];
 
+const submissionMessages = [
+    "AI ko topic samjha rahe hain...",
+    "AI aapke liye notes likh raha hai...",
+    "Gyan ko structure kar rahe hain...",
+    "Note ko library mein save kar rahe hain...",
+];
+
 const yearOptions: { [key: string]: string[] } = {
     "B.Pharm": ["1st Year", "2nd Year", "3rd Year", "4th Year"],
     "D.Pharm": ["1st Year", "2nd Year"],
@@ -62,8 +70,8 @@ export default function AdminNotesPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
     const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+    const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
-    const [activeTab, setActiveTab] = useState("pdf");
     
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -77,6 +85,19 @@ export default function AdminNotesPage() {
         }
         return () => clearInterval(interval);
     }, [isLoading]);
+
+     useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isSubmitting) {
+          interval = setInterval(() => {
+            setCurrentSubmissionMessage(prev => {
+                const nextIndex = (submissionMessages.indexOf(prev) + 1) % submissionMessages.length;
+                return submissionMessages[nextIndex];
+            });
+          }, 2500);
+        }
+        return () => clearInterval(interval);
+    }, [isSubmitting]);
     
     const fetchNotes = useCallback(async () => {
         setIsLoading(true);
@@ -108,39 +129,44 @@ export default function AdminNotesPage() {
         const form = e.currentTarget;
         const formData = new FormData(form);
         
-        let content = '';
-        if (activeTab === 'pdf') {
-            const noteFile = formData.get('noteFile') as File;
-            const fileType = noteFile.name.split('.').pop()?.toUpperCase();
-            content = noteFile ? `[${fileType}] ${noteFile.name}` : '';
-        } else {
-            content = formData.get('driveLink') as string;
-        }
-
-        const newNoteData = {
+        const noteDetails = {
             title: formData.get('title') as string,
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
-            content: content,
             isPremium: formData.get('isPremium') === 'on',
         };
 
-        if (!newNoteData.course || !newNoteData.year || !newNoteData.title || !newNoteData.subject || !newNoteData.content) {
-            toast({ title: "All Fields Required", description: "Please fill out all the fields and provide content to add a new note.", variant: "destructive" });
+        if (!noteDetails.course || !noteDetails.year || !noteDetails.title || !noteDetails.subject) {
+            toast({ title: "All Fields Required", description: "Please fill out all the fields to add a new note.", variant: "destructive" });
             setIsSubmitting(false);
             return;
         }
 
         try {
+            // Step 1: Generate notes using AI
+            const aiResult = await generateNotesFromTopic({
+                course: noteDetails.course,
+                year: noteDetails.year,
+                subject: noteDetails.subject,
+                topic: noteDetails.title,
+            });
+
+            if (!aiResult.notes) {
+                throw new Error("AI failed to generate notes.");
+            }
+
+            // Step 2: Add the new note with AI content to Firestore
             const docRef = await addDoc(collection(db, 'notes'), {
-                ...newNoteData,
+                ...noteDetails,
+                content: aiResult.notes,
                 createdAt: serverTimestamp(),
             });
             
             const newNoteForState: Note = {
-                ...newNoteData,
+                ...noteDetails,
                 id: docRef.id,
+                content: aiResult.notes,
                 createdAt: new Date(),
             };
 
@@ -148,15 +174,19 @@ export default function AdminNotesPage() {
 
             toast({
                 title: "Note Added Successfully!",
-                description: `"${newNoteData.title}" has been added to the library.`
+                description: `"${noteDetails.title}" has been generated and added to the library.`
             });
             form.reset();
             setSelectedCourse("");
-        } catch (error) {
+
+        } catch (error: any) {
             console.error("Error adding note:", error);
+            const errorMessage = error.message.includes('503') 
+                ? 'The AI model is currently overloaded. Please try again in a few moments.'
+                : 'There was a problem generating or saving the note.';
             toast({
                 title: "Error adding note",
-                description: "There was a problem saving the note.",
+                description: errorMessage,
                 variant: "destructive"
             });
         } finally {
@@ -188,13 +218,13 @@ export default function AdminNotesPage() {
             <div className="lg:col-span-1">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="font-headline flex items-center gap-2"><PlusCircle /> Add New Note</CardTitle>
-                        <CardDescription>Add a new note's details to the library. The note will be live immediately.</CardDescription>
+                        <CardTitle className="font-headline flex items-center gap-2"><BrainCircuit /> Add with AI</CardTitle>
+                        <CardDescription>Enter note details. The AI will write the content and add it to the library.</CardDescription>
                     </CardHeader>
                     <form onSubmit={handleAddNote}>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="title">Note Title</Label>
+                                <Label htmlFor="title">Note Topic/Title</Label>
                                 <Input id="title" name="title" placeholder="e.g., Human Anatomy..." required disabled={isSubmitting} />
                             </div>
                              <div className="grid grid-cols-2 gap-4">
@@ -225,26 +255,6 @@ export default function AdminNotesPage() {
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
                             
-                            <div className="space-y-2">
-                                <Label>Note Content</Label>
-                                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2">
-                                        <TabsTrigger value="pdf"><Upload className="mr-2 h-4 w-4"/>Upload File</TabsTrigger>
-                                        <TabsTrigger value="link"><Link2 className="mr-2 h-4 w-4"/>Drive Link</TabsTrigger>
-                                    </TabsList>
-                                    <TabsContent value="pdf" className="pt-4">
-                                        <Label htmlFor="noteFile">Note File</Label>
-                                        <Input id="noteFile" name="noteFile" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" disabled={isSubmitting} />
-                                        <p className="text-xs text-muted-foreground mt-2">Upload a PDF, Word, or PowerPoint file. The file content will not be displayed directly.</p>
-                                    </TabsContent>
-                                    <TabsContent value="link" className="pt-4">
-                                        <Label htmlFor="driveLink">Google Drive Link</Label>
-                                        <Input id="driveLink" name="driveLink" placeholder="Paste public Google Drive link here" disabled={isSubmitting} />
-                                        <p className="text-xs text-muted-foreground mt-2">The app cannot extract text. This will only store the link.</p>
-                                    </TabsContent>
-                                </Tabs>
-                            </div>
-
                             <div className="flex items-center space-x-2 pt-2">
                                 <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>
                                 <Label htmlFor="isPremium">Mark as Premium</Label>
@@ -253,7 +263,7 @@ export default function AdminNotesPage() {
                         <CardFooter>
                             <Button type="submit" className="w-full" disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                {isSubmitting ? 'Adding...' : 'Add Note to Library'}
+                                {isSubmitting ? currentSubmissionMessage : 'Generate & Add Note'}
                             </Button>
                         </CardFooter>
                     </form>
@@ -339,3 +349,5 @@ export default function AdminNotesPage() {
         </div>
     );
 }
+
+    
