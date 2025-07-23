@@ -215,7 +215,10 @@ export default function DashboardPage() {
         setInsights(result);
     } catch (e: any) {
         console.error("Error generating dashboard insights:", e);
-        setError("Failed to load smart insights. The AI model might be temporarily unavailable.");
+        const errorMessage = e.message.includes('503') 
+            ? 'The AI model is currently overloaded. Please try again in a few moments.'
+            : 'Failed to load smart insights. Please try refreshing.';
+        setError(errorMessage);
     } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -341,3 +344,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

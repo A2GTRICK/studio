@@ -157,10 +157,17 @@ export default function McqPracticePage() {
   useEffect(() => {
     try {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        // For testing, we'll reset the counter.
-        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0, limit: 30 }));
-        setDailyQuestionCount(0);
-        setDailyLimit(30);
+        const usageData = JSON.parse(localStorage.getItem('mcqUsage') || '{}');
+        
+        if (usageData.date === today) {
+            setDailyQuestionCount(usageData.count || 0);
+            setDailyLimit(usageData.limit || 30);
+        } else {
+            // Reset for a new day
+            localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0, limit: 30 }));
+            setDailyQuestionCount(0);
+            setDailyLimit(30);
+        }
     } catch (e) {
         console.warn("Could not access localStorage for daily quiz limit. Usage tracking will be session-based.");
     }
