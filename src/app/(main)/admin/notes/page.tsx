@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, PlusCircle, FileUp, Edit, Trash2, Loader2, FileCheck, Link as LinkIcon } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from '@/components/ui/textarea';
 
 export type Note = {
     id: string;
@@ -39,7 +39,7 @@ export type Note = {
     course: string;
     year: string;
     subject: string;
-    content: string; // This will hold the URL to the PDF or a Google Drive link
+    content: string; 
     isPremium: boolean;
     createdAt: any;
 };
@@ -63,11 +63,7 @@ export default function AdminNotesPage() {
     const { toast } = useToast();
     const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [driveLink, setDriveLink] = useState('');
-    const [activeTab, setActiveTab] = useState('pdf');
-
-
+    
      useEffect(() => {
         let interval: NodeJS.Timeout;
         if (isLoading) {
@@ -111,44 +107,20 @@ export default function AdminNotesPage() {
         const form = e.currentTarget;
         const formData = new FormData(form);
         
-        let content = '';
-        if (activeTab === 'pdf') {
-            if (!selectedFile) {
-                toast({ title: "PDF File Required", description: "Please select a PDF file to upload.", variant: "destructive" });
-                setIsSubmitting(false);
-                return;
-            }
-            content = `Placeholder for ${selectedFile.name}`; // In a real scenario, this would be a URL from Firebase Storage
-        } else { // activeTab === 'drive'
-             if (!driveLink || !driveLink.startsWith('https://drive.google.com')) {
-                toast({ title: "Invalid Link", description: "Please provide a valid Google Drive link.", variant: "destructive" });
-                setIsSubmitting(false);
-                return;
-            }
-            content = driveLink;
-        }
-
-
         const newNoteData = {
             title: formData.get('title') as string,
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
-            content: content,
+            content: formData.get('content') as string,
             isPremium: formData.get('isPremium') === 'on',
         };
 
-        if (!newNoteData.course || !newNoteData.year || !newNoteData.title || !newNoteData.subject) {
+        if (!newNoteData.course || !newNoteData.year || !newNoteData.title || !newNoteData.subject || !newNoteData.content) {
             toast({ title: "All Fields Required", description: "Please fill out all the fields to add a new note.", variant: "destructive" });
             setIsSubmitting(false);
             return;
         }
-        
-        // --- Placeholder for actual file upload logic ---
-        // In a real app, you would upload `selectedFile` to Firebase Storage here
-        // and get a download URL to save in the `content` field.
-        if (activeTab === 'pdf') console.log("Simulating upload for:", selectedFile?.name);
-        // ------------------------------------------------
 
         try {
             const docRef = await addDoc(collection(db, 'notes'), {
@@ -170,9 +142,6 @@ export default function AdminNotesPage() {
             });
             form.reset();
             setSelectedCourse("");
-            setSelectedFile(null);
-            setDriveLink('');
-            setActiveTab('pdf');
         } catch (error) {
             console.error("Error adding note:", error);
             toast({
@@ -246,47 +215,17 @@ export default function AdminNotesPage() {
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
                             
-                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="pdf"><FileUp className="mr-2 h-4 w-4"/>Upload PDF</TabsTrigger>
-                                    <TabsTrigger value="drive"><LinkIcon className="mr-2 h-4 w-4"/>Drive Link</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="pdf">
-                                    <div className="space-y-2 pt-2">
-                                        <Label htmlFor="content-file">Note PDF File</Label>
-                                        <Input 
-                                            id="content-file" 
-                                            name="content-file" 
-                                            type="file" 
-                                            accept=".pdf" 
-                                            onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                                            disabled={isSubmitting || activeTab !== 'pdf'}
-                                            className="file:text-primary file:font-semibold"
-                                        />
-                                        {selectedFile && (
-                                            <div className="flex items-center gap-2 text-sm text-green-600 font-medium pt-2">
-                                                <FileCheck className="h-4 w-4" />
-                                                <span>{selectedFile.name}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </TabsContent>
-                                <TabsContent value="drive">
-                                    <div className="space-y-2 pt-2">
-                                        <Label htmlFor="drive-link">Google Drive Link</Label>
-                                        <Input 
-                                            id="drive-link" 
-                                            name="drive-link" 
-                                            type="url"
-                                            placeholder="https://drive.google.com/..."
-                                            value={driveLink}
-                                            onChange={(e) => setDriveLink(e.target.value)}
-                                            disabled={isSubmitting || activeTab !== 'drive'}
-                                        />
-                                         <p className="text-xs text-muted-foreground pt-1">Note: The app cannot automatically extract content. This will save the link itself.</p>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
+                            <div className="space-y-2">
+                                <Label htmlFor="content">Paste Note Content Here</Label>
+                                <Textarea
+                                    id="content"
+                                    name="content"
+                                    placeholder="Copy the text from your document and paste it here."
+                                    required
+                                    disabled={isSubmitting}
+                                    rows={10}
+                                />
+                            </div>
 
                             <div className="flex items-center space-x-2 pt-2">
                                 <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>
