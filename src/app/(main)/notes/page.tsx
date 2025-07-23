@@ -62,19 +62,20 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
     const isExternalLink = content.startsWith('http');
     let actionButton;
 
-    if (isExternalLink) {
+    // The logic is now corrected: Premium check comes first.
+    if (isPremium) {
+         actionButton = (
+            <Button onClick={onUnlockClick} className="w-full" variant="outline">
+                <Lock className="mr-2 h-4 w-4" />
+                Unlock Note
+            </Button>
+        );
+    } else if (isExternalLink) {
         actionButton = (
             <Button asChild className="w-full">
                 <a href={content} target="_blank" rel="noopener noreferrer">
                     Open Note <ExternalLink className="ml-2 h-4 w-4"/>
                 </a>
-            </Button>
-        );
-    } else if (isPremium) {
-         actionButton = (
-            <Button onClick={onUnlockClick} className="w-full" variant="outline">
-                <Lock className="mr-2 h-4 w-4" />
-                Unlock Note
             </Button>
         );
     } else {
@@ -115,7 +116,7 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
             </div>
             <CardContent className="p-0 flex-grow">
                  {isExternalLink ? 
-                    <p className="text-sm text-muted-foreground line-clamp-2">This is a direct link to a Google Drive document. Click below to open.</p> :
+                    <p className="text-sm text-muted-foreground line-clamp-2">This is a direct link to an external document. Click below to open.</p> :
                     <p className="text-sm text-muted-foreground line-clamp-2">Detailed notes on this topic. Click to view inside the app.</p>
                  }
             </CardContent>
@@ -153,19 +154,26 @@ export default function NotesPage() {
         return () => clearInterval(interval);
     }, [isLoading]);
     
-    const fetchNotes = useCallback(async () => {
-        setIsLoading(true);
-        const notesCollection = collection(db, 'notes');
-        const q = query(notesCollection, orderBy('createdAt', 'desc'));
-        const notesSnapshot = await getDocs(q);
-        const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
-        setAllNotes(notesList);
-        setIsLoading(false);
-    }, []);
-
+    // This now runs every time the component mounts, ensuring data persistence.
     useEffect(() => {
+        const fetchNotes = async () => {
+            setIsLoading(true);
+            try {
+                const notesCollection = collection(db, 'notes');
+                const q = query(notesCollection, orderBy('createdAt', 'desc'));
+                const notesSnapshot = await getDocs(q);
+                const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
+                setAllNotes(notesList);
+            } catch (error) {
+                console.error("Error fetching notes:", error);
+                // In a real app, you might want to show a toast here.
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         fetchNotes();
-    }, [fetchNotes]);
+    }, []);
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -357,3 +365,5 @@ export default function NotesPage() {
     </>
   )
 }
+
+    

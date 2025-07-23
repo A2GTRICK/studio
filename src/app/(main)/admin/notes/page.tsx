@@ -106,7 +106,7 @@ export default function AdminNotesPage() {
           }, 2500);
         }
         return () => clearInterval(interval);
-    }, [isSubmitting]);
+    }, [isSubmitting, activeTab]);
     
     const fetchNotes = useCallback(async () => {
         setIsLoading(true);
@@ -135,6 +135,7 @@ export default function AdminNotesPage() {
     const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setCurrentSubmissionMessage(submissionMessages[0]); // Reset message
         const form = e.currentTarget;
         const formData = new FormData(form);
         const isPremiumChecked = formData.get('isPremium') === 'on';
@@ -181,7 +182,6 @@ export default function AdminNotesPage() {
                     setIsSubmitting(false);
                     return;
                 }
-                // This is a placeholder as actual file upload is not implemented
                 noteDetails.content = `File Uploaded: ${file.name}`;
             } else { // g-drive-link
                 const driveLink = formData.get('driveLink') as string;
@@ -432,7 +432,5 @@ export default function AdminNotesPage() {
         </div>
     );
 }
-    
-    
 
     
