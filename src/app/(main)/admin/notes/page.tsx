@@ -39,7 +39,7 @@ export type Note = {
     course: string;
     year: string;
     subject: string;
-    preview: string;
+    content: string;
     isPremium: boolean;
     createdAt: any;
 };
@@ -110,7 +110,7 @@ export default function AdminNotesPage() {
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
-            preview: formData.get('preview') as string,
+            content: formData.get('content') as string,
             isPremium: formData.get('isPremium') === 'on',
             createdAt: serverTimestamp(),
         };
@@ -211,8 +211,8 @@ export default function AdminNotesPage() {
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="preview">Short Preview Text</Label>
-                                <Textarea id="preview" name="preview" placeholder="A brief description of the note's content." required disabled={isSubmitting}/>
+                                <Label htmlFor="content">Note Content (Supports Markdown & Links)</Label>
+                                <Textarea id="content" name="content" placeholder="A brief description of the note's content." required disabled={isSubmitting} rows={6}/>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>

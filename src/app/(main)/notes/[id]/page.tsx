@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { PaymentDialog } from '@/components/payment-dialog';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { publicAssets } from '@/lib/public-assets';
+import { marked } from 'marked';
 
 export type Note = {
   id: string;
@@ -20,7 +20,7 @@ export type Note = {
   year: string;
   subject: string;
   isPremium: boolean;
-  preview: string;
+  content: string;
   createdAt: any;
 };
 
@@ -40,6 +40,7 @@ export default function NoteDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showUnlockDialog, setShowUnlockDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [htmlContent, setHtmlContent] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -49,7 +50,12 @@ export default function NoteDetailPage() {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-            setNote({ ...docSnap.data(), id: docSnap.id } as Note);
+            const noteData = { ...docSnap.data(), id: docSnap.id } as Note;
+            setNote(noteData);
+            if(noteData.content){
+                const content = await marked.parse(noteData.content);
+                setHtmlContent(content);
+            }
         } else {
             setNote(null); // Will trigger notFound()
         }
@@ -168,44 +174,7 @@ export default function NoteDetailPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="prose dark:prose-invert max-w-none">
-          {/* 
-            This is where your actual note content would go. 
-            In a real app, you would fetch this from a database (like Firestore) 
-            or a markdown file. For this prototype, we're using placeholder text.
-          */}
-          <h2>Introduction to {note.title}</h2>
-          <p>
-            {note.preview}
-          </p>
-          <p>
-            This section provides a detailed overview of the fundamental concepts related to {note.title}. We will explore the core principles, historical context, and its significance in modern pharmacy practice. For students in the {note.course} program, understanding these basics is crucial for building a strong foundation in {note.subject}.
-          </p>
-         
-          <h3>Key Concepts</h3>
-          <ul>
-            <li><strong>Concept A:</strong> Placeholder text explaining the first key concept. This would be replaced with actual content from your notes.</li>
-            <li><strong>Concept B:</strong> Placeholder text explaining the second key concept. This content needs to be detailed and accurate.</li>
-            <li><strong>Concept C:</strong> Placeholder text explaining the third key concept. This is where you would elaborate on important definitions and mechanisms.</li>
-          </ul>
-
-          <h3>Detailed Explanation (Placeholder)</h3>
-          <p>
-            Here, the note would dive deeper into the specifics. For example, in Pharmaceutical Analysis, this section might cover the principles of titration, the types of indicators used, and the mathematical formulas for calculation. Each point would be explained with clarity, supported by diagrams or examples where necessary. 
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sed ante et nisi maximus commodo. Curabitur vel sem vel velit auctor blandit. Vivamus nec quam nec libero consectetur commodo. Nullam ac urna eu felis dapibus condimentum.
-          </p>
-
-          <blockquote>
-            This is a blockquote for highlighting important information, definitions, or clinical pearls. It helps draw the student's attention to critical points.
-          </blockquote>
-
-          <h3>Conclusion</h3>
-          <p>
-            This placeholder concludes the note on {note.title}. A real note would summarize the key takeaways and might include review questions or a brief look at future trends in the field.
-          </p>
-        </CardContent>
+        <CardContent className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />
       </Card>
     </div>
   );

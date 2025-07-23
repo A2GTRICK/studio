@@ -22,7 +22,7 @@ export type Note = {
   year: string;
   subject: string;
   isPremium: boolean;
-  preview: string;
+  content: string;
   createdAt: any;
 };
 
@@ -42,7 +42,7 @@ const loadingMessages = [
 
 
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { id, title, subject, isPremium, preview } = note;
+    const { id, title, subject, isPremium, content } = note;
     
     return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
@@ -70,7 +70,7 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
                     </Badge> : <Badge variant="secondary" className="shrink-0">Free</Badge>}
             </div>
             <CardContent className="p-0 flex-grow">
-                <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>
+                <p className="text-sm text-muted-foreground line-clamp-2">{content}</p>
             </CardContent>
             <CardFooter className="p-0 pt-4">
                 {isPremium ? (
@@ -158,10 +158,6 @@ export default function NotesPage() {
             const newFilters = { ...prev, [filterName]: value };
             if (filterName === 'course') {
                 newFilters.year = 'All';
-                newFilters.subject = 'All';
-            }
-            if (filterName === 'year') {
-                newFilters.subject = 'All';
             }
             return newFilters;
         });
