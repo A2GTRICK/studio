@@ -309,7 +309,7 @@ export default function McqPracticePage() {
 
     const currentFormValues = form.getValues();
     const topicToSave = currentFormValues.topic || "General";
-
+    
     if (user) {
         try {
             await saveMcqResult({
@@ -333,19 +333,20 @@ export default function McqPracticePage() {
         }
     }
 
+
     try {
         const quizPerformance = questions.map((q, index) => ({
             question: q.question,
             userAnswer: answers[index] ?? "Not Answered",
             correctAnswer: q.correctAnswer,
             isCorrect: answers[index] === q.correctAnswer,
-        })).filter(p => p.userAnswer !== "Not Answered" && !p.isCorrect); // Only send incorrect answers
+        }));
         
         const feedbackResult = await generateMcqFeedback({
             examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
             subject: currentFormValues.subject,
             topic: topicToSave,
-            performance: quizPerformance,
+            performance: quizPerformance, // Send all performance data
             score: newScore,
             totalQuestions: questions.length,
         });
@@ -720,3 +721,4 @@ export default function McqPracticePage() {
   );
 
     
+

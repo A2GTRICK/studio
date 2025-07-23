@@ -22,7 +22,7 @@ const GenerateMcqFeedbackInputSchema = z.object({
   examType: z.string().describe('The target competitive exam.'),
   subject: z.string().describe('The subject of the quiz.'),
   topic: z.string().describe('The specific topic of the quiz.'),
-  performance: z.array(QuizPerformanceSchema).describe("The user's performance on each question they answered incorrectly."),
+  performance: z.array(QuizPerformanceSchema).describe("A sample of the user's performance on questions they answered incorrectly."),
   score: z.number().describe("The user's score (e.g. 7)."),
   totalQuestions: z.number().describe("The total number of questions in the quiz (e.g. 10)."),
 });
@@ -42,12 +42,12 @@ const prompt = ai.definePrompt({
   name: 'generateMcqFeedbackPrompt',
   input: {schema: GenerateMcqFeedbackInputSchema},
   output: {schema: GenerateMcqFeedbackOutputSchema},
-  prompt: `You are an expert pharmacy tutor AI. A student has just completed a practice quiz. Your task is to provide actionable, and personalized feedback based on their performance.
+  prompt: `You are an expert pharmacy tutor AI. A student has just completed a practice quiz. Your task is to provide concise, actionable, and personalized feedback based on their performance.
 
   The quiz was for the '{{examType}}' exam, covering the subject '{{subject}}' and the topic '{{topic}}'.
   The user scored {{score}} out of {{totalQuestions}}.
 
-  Here is the student's performance data on the questions they answered incorrectly:
+  Here is a sample of the questions the student answered incorrectly:
   {{#each performance}}
   ---
   Question: {{question}}
@@ -57,11 +57,10 @@ const prompt = ai.definePrompt({
   {{/each}}
 
   CRITICAL INSTRUCTIONS:
-  1.  **Analyze Performance:** Based on the user's score and the specific questions they got wrong, identify any patterns in their incorrect answers. Are they struggling with a specific concept within the topic?
-  2.  **Provide Actionable Tips:** Based on your analysis, provide 2-3 specific, actionable tips. For example, instead of saying "study more," say "It seems you're confusing A and B. Review the chapter on X, focusing on the differences in their mechanisms."
-  3.  **Suggest Focus Areas:** Recommend specific sub-topics or concepts the student should revisit.
-  4.  **Tone:** Be encouraging and supportive. Frame the feedback constructively.
-  5.  **Format:** Your entire response must be in Markdown format. Use headings, bullet points, emojis (like 💡, 🎯, 💪), and bold text to make it easy to read. Do not include any conversational pleasantries, just the feedback.
+  1.  **Analyze Patterns:** Based on the user's score and the sample of incorrect answers, identify patterns. Are they struggling with a specific concept?
+  2.  **Provide Actionable Tips:** Give 2-3 specific, actionable tips. For example, instead of "study more," say "It seems you're confusing A and B. Review the chapter on X, focusing on the differences in their mechanisms."
+  3.  **Suggest Focus Areas:** Recommend specific sub-topics the student should revisit.
+  4.  **Tone & Format:** Be encouraging. Use Markdown with headings, bullet points, and emojis (💡, 🎯, 💪) to make it readable. Do not include conversational pleasantries, just the feedback.
   `,
 });
 
@@ -72,17 +71,17 @@ const generateMcqFeedbackFlow = ai.defineFlow(
     outputSchema: GenerateMcqFeedbackOutputSchema,
   },
   async input => {
-    // Only include incorrect answers in the prompt to make it more focused and efficient
-    const incorrectPerformance = input.performance.filter(p => !p.isCorrect);
+    // To improve performance, only send a sample of incorrect answers (e.g., the first 5)
+    const incorrectPerformanceSample = input.performance
+      .filter(p => !p.isCorrect)
+      .slice(0, 5); 
     
     const focusedInput = {
         ...input,
-        performance: incorrectPerformance,
+        performance: incorrectPerformanceSample,
     };
 
     const {output} = await prompt(focusedInput);
     return output!;
   }
 );
-
-    
