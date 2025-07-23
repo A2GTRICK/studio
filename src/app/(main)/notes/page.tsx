@@ -22,7 +22,7 @@ export type Note = {
   year: string;
   subject: string;
   isPremium: boolean;
-  content: string;
+  content: string; // This will now hold the Google Drive URL
   createdAt: any;
 };
 
@@ -40,10 +40,23 @@ const loadingMessages = [
     "Hold on, dusting off the shelves!",
 ];
 
-
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { id, title, subject, isPremium, content } = note;
+    const { title, subject, isPremium, content } = note;
     
+    // The main button/link action
+    const actionButton = isPremium ? (
+        <Button onClick={onUnlockClick} className="w-full" variant="outline">
+            <Lock className="mr-2 h-4 w-4" />
+            Unlock Note
+        </Button>
+    ) : (
+        <Button asChild className="w-full">
+            <a href={content} target="_blank" rel="noopener noreferrer">
+                Open Note <ArrowRight className="ml-2 h-4 w-4"/>
+            </a>
+        </Button>
+    );
+
     return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
         <CardHeader className="p-0">
@@ -70,26 +83,14 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
                     </Badge> : <Badge variant="secondary" className="shrink-0">Free</Badge>}
             </div>
             <CardContent className="p-0 flex-grow">
-                <p className="text-sm text-muted-foreground line-clamp-2">{content}</p>
+                <p className="text-sm text-muted-foreground line-clamp-2">External link to Google Drive. Click below to open.</p>
             </CardContent>
             <CardFooter className="p-0 pt-4">
-                {isPremium ? (
-                    <Button onClick={onUnlockClick} className="w-full" variant="outline">
-                        <Lock className="mr-2 h-4 w-4" />
-                        Unlock Note
-                    </Button>
-                ) : (
-                    <Button asChild className="w-full">
-                        <Link href={`/notes/${id}`}>
-                            View Note
-                        </Link>
-                    </Button>
-                )}
+                {actionButton}
             </CardFooter>
         </div>
     </Card>
 )};
-
 
 export default function NotesPage() {
     const [allNotes, setAllNotes] = useState<Note[]>([]);
@@ -308,6 +309,11 @@ export default function NotesPage() {
         title={`Buy "${selectedNote?.title}"`}
         price="INR 19"
         onPaymentSuccess={() => {
+            // After user clicks "I have paid", we can optimistically open the link
+            // In a real app, you'd wait for webhook confirmation
+            if (selectedNote) {
+                window.open(selectedNote.content, '_blank');
+            }
             setShowPaymentDialog(false);
             setSelectedNote(null);
         }}
@@ -315,3 +321,5 @@ export default function NotesPage() {
     </>
   )
 }
+
+    

@@ -8,10 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, BrainCircuit, UploadCloud, Link as LinkIcon } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +31,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
-import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
 
 
 export type Note = {
@@ -57,7 +55,6 @@ const submissionMessages = [
     "Details ko verify kar rahe hain...",
     "Note ko library mein save kar rahe hain...",
     "Ek second, bas ho gaya...",
-    "AI se content generate kar rahe hain...",
 ];
 
 const yearOptions: { [key: string]: string[] } = {
@@ -73,7 +70,6 @@ export default function AdminNotesPage() {
     const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
     const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
-    const [activeTab, setActiveTab] = useState("ai");
     
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -130,7 +126,6 @@ export default function AdminNotesPage() {
         setIsSubmitting(true);
         const form = e.currentTarget;
         const formData = new FormData(form);
-        let content = '';
         
         const noteDetails = {
             title: formData.get('title') as string,
@@ -138,49 +133,23 @@ export default function AdminNotesPage() {
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
             isPremium: formData.get('isPremium') === 'on',
+            content: formData.get('driveLink') as string,
         };
 
-        if (!noteDetails.course || !noteDetails.year || !noteDetails.title || !noteDetails.subject) {
-            toast({ title: "All Fields Required", description: "Please fill out all the metadata fields.", variant: "destructive" });
+        if (!noteDetails.course || !noteDetails.year || !noteDetails.title || !noteDetails.subject || !noteDetails.content) {
+            toast({ title: "All Fields Required", description: "Please fill out all the fields, including the link.", variant: "destructive" });
             setIsSubmitting(false);
             return;
         }
 
         try {
-            if (activeTab === 'ai') {
-                 const result = await generateNotesFromTopic({
-                    course: noteDetails.course,
-                    year: noteDetails.year,
-                    subject: noteDetails.subject,
-                    topic: noteDetails.title,
-                });
-                content = result.notes;
-            } else if (activeTab === 'pdf') {
-                const file = formData.get('noteFile') as File;
-                if (file && file.size > 0) {
-                    content = `### Note Content from Uploaded File\n\nThis note's content originates from an uploaded file: **${file.name}**. \n\n*In a future update, this page will display the full content of the PDF, Word, or PowerPoint document directly. For now, this serves as a placeholder to confirm the note has been added to the library.*`;
-                } else {
-                     toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
-                     setIsSubmitting(false);
-                     return;
-                }
-            } else { // link
-                content = formData.get('driveLink') as string;
-                if (!content) {
-                    toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
-                    setIsSubmitting(false);
-                    return;
-                }
-            }
-            
-            const newNote = { ...noteDetails, content };
             const docRef = await addDoc(collection(db, 'notes'), {
-                ...newNote,
+                ...noteDetails,
                 createdAt: serverTimestamp(),
             });
             
             const newNoteForState: Note = {
-                ...newNote,
+                ...noteDetails,
                 id: docRef.id,
                 createdAt: new Date(),
             };
@@ -196,12 +165,9 @@ export default function AdminNotesPage() {
 
         } catch (error: any) {
             console.error("Error adding note:", error);
-            const errorMessage = error.message.includes('503') 
-                ? 'The AI model is currently overloaded. Please try again in a few moments.'
-                : 'There was a problem saving the note.';
             toast({
                 title: "Error adding note",
-                description: errorMessage,
+                description: "There was a problem saving the note.",
                 variant: "destructive"
             });
         } finally {
@@ -234,12 +200,12 @@ export default function AdminNotesPage() {
                 <form onSubmit={handleAddNote}>
                     <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline flex items-center gap-2"><PlusCircle /> Add New Note</CardTitle>
-                            <CardDescription>Add a new note's details to the library. The note will be live immediately.</CardDescription>
+                            <CardTitle className="font-headline flex items-center gap-2"><PlusCircle /> Add New Note Link</CardTitle>
+                            <CardDescription>Add a new note to the library by linking to a Google Drive document.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="title">Note Title / Topic</Label>
+                                <Label htmlFor="title">Note Title</Label>
                                 <Input id="title" name="title" placeholder="e.g., Human Anatomy..." required disabled={isSubmitting} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -270,44 +236,20 @@ export default function AdminNotesPage() {
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
                             
-                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                <TabsList className="grid w-full grid-cols-3">
-                                    <TabsTrigger value="ai"><BrainCircuit className="mr-2 h-4 w-4"/>AI Generate</TabsTrigger>
-                                    <TabsTrigger value="pdf"><UploadCloud className="mr-2 h-4 w-4"/> Upload File</TabsTrigger>
-                                    <TabsTrigger value="link"><LinkIcon className="mr-2 h-4 w-4"/> G-Drive Link</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="ai" className="pt-4 text-center">
-                                    <Card className="bg-primary/5 border-dashed">
-                                        <CardContent className="p-4">
-                                            <p className="text-sm text-muted-foreground">The AI will generate the note content based on the Title/Topic you entered above. No need to add anything here.</p>
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
-                                <TabsContent value="pdf" className="pt-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="noteFile">Note File</Label>
-                                        <Input 
-                                            id="noteFile" 
-                                            name="noteFile" 
-                                            type="file" 
-                                            accept=".pdf,.doc,.docx,.ppt,.pptx" 
-                                            disabled={isSubmitting} 
-                                        />
-                                        <p className="text-xs text-muted-foreground">Supports PDF, Word, and PowerPoint files.</p>
-                                    </div>
-                                </TabsContent>
-                                <TabsContent value="link" className="pt-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="driveLink">Note Google Drive Link</Label>
-                                        <Input 
-                                            id="driveLink" 
-                                            name="driveLink"
-                                            placeholder="https://docs.google.com/..." 
-                                            disabled={isSubmitting} 
-                                        />
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
+                            <div className="space-y-2">
+                                <Label htmlFor="driveLink">Note Google Drive Link</Label>
+                                <div className="relative">
+                                    <LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input 
+                                        id="driveLink" 
+                                        name="driveLink"
+                                        placeholder="https://docs.google.com/..." 
+                                        required
+                                        className="pl-10"
+                                        disabled={isSubmitting} 
+                                    />
+                                </div>
+                            </div>
 
                             <div className="flex items-center space-x-2 pt-2">
                                 <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>
