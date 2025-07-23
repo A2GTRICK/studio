@@ -8,7 +8,7 @@
  */
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import type { Note } from '@/app/(main)/admin/notes/page';
 import type { GenerateDashboardInsightsInput } from '@/ai/flows/generate-dashboard-insights';
 import { z } from 'zod';
@@ -40,7 +40,7 @@ export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
     const { uid, ...result } = parsedData.data;
 
     try {
-        const safeTopicId = result.topic.replace(/[.\\#$[\]/]/g, '_');
+        const safeTopicId = result.topic.replace(/[.\\#$[\]/]/g, '_') || 'general';
         const progressRef = doc(db, 'user_progress', uid, 'mcqs', safeTopicId);
         
         await setDoc(progressRef, {

@@ -287,7 +287,6 @@ export default function McqPracticePage() {
         return;
     }
     
-    // Calculate score and select feedback dialogue
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
     }, 0);
@@ -311,7 +310,6 @@ export default function McqPracticePage() {
     const currentFormValues = form.getValues();
     const topicToSave = currentFormValues.topic || "General";
 
-    // Save the result to Firestore if the user is logged in
     if (user) {
         try {
             await saveMcqResult({
@@ -335,22 +333,21 @@ export default function McqPracticePage() {
         }
     }
 
-
-    // Generate detailed AI feedback
     try {
         const quizPerformance = questions.map((q, index) => ({
             question: q.question,
             userAnswer: answers[index] ?? "Not Answered",
             correctAnswer: q.correctAnswer,
             isCorrect: answers[index] === q.correctAnswer,
-        }));
+        })).filter(p => p.userAnswer !== "Not Answered");
         
-
         const feedbackResult = await generateMcqFeedback({
             examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
             subject: currentFormValues.subject,
             topic: topicToSave,
             performance: quizPerformance,
+            score: newScore,
+            totalQuestions: questions.length,
         });
 
         setAiFeedback(feedbackResult.feedback);
@@ -410,6 +407,8 @@ export default function McqPracticePage() {
     const htmlContent = marked.parse(content);
     return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
+
+  const hasAnsweredAtLeastOne = answers.some(a => a !== null);
 
 
   return (
@@ -564,7 +563,7 @@ export default function McqPracticePage() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle>Question {index + 1}</CardTitle>
-                    {isSubmitted && getResultIcon(answers[index] === q.correctAnswer)}
+                    {isSubmitted && answers[index] !== null && getResultIcon(answers[index] === q.correctAnswer)}
                   </div>
                   <CardDescription className="pt-2 text-base text-foreground">{q.question}</CardDescription>
                    {q.previouslyAsked && (
@@ -613,8 +612,8 @@ export default function McqPracticePage() {
             ))}
 
             {!isSubmitted && (
-                <Button onClick={handleSubmitQuiz} className="w-full" size="lg" disabled={answers.some(a => a === null)}>
-                   {answers.some(a => a === null) && !answers.every(a => a === null) && <AlertCircle className="mr-2 h-4 w-4"/>}
+                <Button onClick={handleSubmitQuiz} className="w-full" size="lg" disabled={!hasAnsweredAtLeastOne}>
+                   {!hasAnsweredAtLeastOne && <AlertCircle className="mr-2 h-4 w-4"/>}
                    Submit Quiz & View Results
                 </Button>
             )}
