@@ -123,6 +123,14 @@ function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: b
                 </div>
                 <Separator />
                 <div className="p-1 space-y-1">
+                    {isAdmin && (
+                        <Button asChild variant="ghost" className="w-full justify-start text-primary hover:text-primary">
+                            <Link href="/admin/notes">
+                                <Shield className="mr-2 h-4 w-4" />
+                                Admin Panel
+                            </Link>
+                        </Button>
+                    )}
                     <Button asChild variant="ghost" className="w-full justify-start">
                         <Link href="/profile">
                             <Settings className="mr-2 h-4 w-4" />
@@ -271,18 +279,6 @@ export default function MainLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-
-            {isAdmin && (
-                <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Admin Panel">
-                        <Link href="/admin/notes">
-                            <Shield />
-                            <span>Admin Panel</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            )}
-            
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
