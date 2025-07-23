@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 
 const AdminPanel = () => (
   <Card className="bg-card">
@@ -197,7 +198,7 @@ export default function DashboardPage() {
 
 
     try {
-        const userProgress = await getSubjectsProgress();
+        const userProgress = await getSubjectsProgress(user.uid);
         
         if (userProgress.length === 0) {
              setInsights(null);

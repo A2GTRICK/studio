@@ -91,7 +91,7 @@ export default function MyProgressPage() {
     setIsLoading(true);
     setError(null);
     try {
-        const userProgress = await getSubjectsProgress();
+        const userProgress = await getSubjectsProgress(user.uid);
         if (userProgress.length === 0) {
              setInsights(null);
              setIsLoading(false);

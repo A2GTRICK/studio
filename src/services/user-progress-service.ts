@@ -8,7 +8,7 @@
  */
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, writeBatch, collectionGroup } from 'firebase/firestore';
 import type { Note } from '@/app/(main)/admin/notes/page';
 import type { GenerateDashboardInsightsInput } from '@/ai/flows/generate-dashboard-insights';
 import { z } from 'zod';
@@ -31,7 +31,11 @@ export type SaveMcqResultInput = z.infer<typeof SaveMcqResultInputSchema>;
  * @param data The user's UID and the quiz result.
  */
 export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
-    const { uid, subject, topic, score, totalQuestions } = data;
+    const parsedData = SaveMcqResultInputSchema.safeParse(data);
+    if (!parsedData.success) {
+        throw new Error(`Invalid data provided to saveMcqResult: ${parsedData.error.message}`);
+    }
+    const { uid, subject, topic, score, totalQuestions } = parsedData.data;
 
     if (!uid) {
         throw new Error("User is not authenticated. Cannot save progress.");
@@ -47,7 +51,7 @@ export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
             score,
             totalQuestions,
             lastAttempted: serverTimestamp(),
-            uid: uid, // Storing UID for potential cross-reference
+            uid: uid,
         }, { merge: true });
 
     } catch (error) {
@@ -62,14 +66,9 @@ export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
  * based on the user's saved MCQ attempts.
  * @returns A promise that resolves to an array of subject progress objects.
  */
-export async function getSubjectsProgress(): Promise<SubjectProgress[]> {
-  // Since this is a server action, we can't rely on client-side auth state.
-  // This function will now fetch progress for the *currently logged in user*
-  // by being called from a component that has access to the user's session.
-  // A complete implementation would require passing the user ID to this function.
-  // For now, it will fetch all notes and assume no progress if no user context is provided.
+export async function getSubjectsProgress(uid: string): Promise<SubjectProgress[]> {
   
-  // Fetch all notes to build the structure of subjects and topics
+  // 1. Fetch all notes to build the complete structure of subjects and topics
   const notesCollection = collection(db, 'notes');
   const notesQuery = query(notesCollection, orderBy('createdAt', 'desc'));
   const notesSnapshot = await getDocs(notesQuery);
@@ -79,11 +78,19 @@ export async function getSubjectsProgress(): Promise<SubjectProgress[]> {
     return [];
   }
 
-  const progressBySubject: { [key: string]: SubjectProgress } = {};
+  // 2. Fetch the user's MCQ progress
+  let userProgress: { [topic: string]: { score: number; totalQuestions: number } } = {};
+  if (uid) {
+      const userProgressCollection = collection(db, 'user_progress', uid, 'mcqs');
+      const progressSnapshot = await getDocs(userProgressCollection);
+      progressSnapshot.forEach(doc => {
+          const data = doc.data();
+          userProgress[data.topic] = { score: data.score, totalQuestions: data.totalQuestions };
+      });
+  }
 
-  // This function would ideally receive a user ID to fetch specific progress.
-  // For the demonstration, we'll build the topic list and assume a 'pending' state.
-  // The dashboard will fetch the user progress and then call the AI.
+  // 3. Construct the progress report by merging notes and user data
+  const progressBySubject: { [key: string]: SubjectProgress } = {};
 
   allNotes.forEach(note => {
     const subjectName = note.subject || 'Uncategorized';
@@ -94,19 +101,20 @@ export async function getSubjectsProgress(): Promise<SubjectProgress[]> {
       };
     }
     
+    // Check if topic already exists to avoid duplicates
     if (!progressBySubject[subjectName].topics.some(t => t.title === note.title)) {
+        const userTopicProgress = userProgress[note.title];
+        const isCompleted = userTopicProgress && userTopicProgress.score >= userTopicProgress.totalQuestions / 2;
+
         progressBySubject[subjectName].topics.push({
           title: note.title,
-          status: 'pending',
-          lastAccessed: 'Never',
+          // Mark as 'completed' if user has scored at least 50%
+          status: isCompleted ? 'completed' : 'pending',
+          lastAccessed: userTopicProgress ? 'Attempted' : 'Never',
           estTime: `${Math.floor(Math.random() * 30) + 15} mins`,
         });
     }
   });
-  
-  // The logic to update status based on user's actual progress will need the user ID.
-  // We will pass this structure to the dashboard, which will then overlay the user's real progress.
-  // For example, it would fetch from 'user_progress/{uid}/mcqs' and update the status.
   
   return Object.values(progressBySubject);
 }
