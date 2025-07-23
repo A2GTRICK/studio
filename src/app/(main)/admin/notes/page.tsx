@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Upload, BrainCircuit, IndianRupee } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Upload, BrainCircuit, IndianRupee, Image as ImageIcon } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -43,6 +43,7 @@ export type Note = {
     content: string; 
     isPremium: boolean;
     price?: string; // e.g., "19" or "29"
+    thumbnail?: string;
     createdAt: any;
 };
 
@@ -145,6 +146,7 @@ export default function AdminNotesPage() {
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
+            thumbnail: formData.get('thumbnail') as string,
             isPremium: isPremiumChecked,
             content: '', // This will be set based on the tab
         };
@@ -285,6 +287,13 @@ export default function AdminNotesPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="subject">Subject</Label>
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="thumbnail">Thumbnail Image URL (Optional)</Label>
+                                <div className="relative">
+                                    <ImageIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input id="thumbnail" name="thumbnail" placeholder="https://example.com/image.png" className="pl-10" disabled={isSubmitting} />
+                                </div>
                             </div>
                             <div className="space-y-2 pt-2">
                                 <div className="flex items-center space-x-2">
@@ -432,5 +441,3 @@ export default function AdminNotesPage() {
         </div>
     );
 }
-
-    

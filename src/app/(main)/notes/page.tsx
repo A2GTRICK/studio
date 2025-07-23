@@ -15,6 +15,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { AiImage } from '@/components/ai-image';
 import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
 
 export type Note = {
   id: string;
@@ -25,6 +26,7 @@ export type Note = {
   isPremium: boolean;
   content: string; 
   price?: string;
+  thumbnail?: string;
   createdAt: any;
 };
 
@@ -57,7 +59,7 @@ const NoteCardSkeleton = () => (
 
 
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { id, title, subject, isPremium, content, price } = note;
+    const { id, title, subject, isPremium, content, price, thumbnail } = note;
     
     const isExternalLink = content.startsWith('http');
     let actionButton;
@@ -93,13 +95,22 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
         <CardHeader className="p-0">
              <div className="relative h-40 w-full">
-                <AiImage 
-                    data-ai-hint="pharmacy textbook"
-                    alt={title}
-                    fill
-                    className="object-cover"
-                    height={160}
-                />
+                {thumbnail ? (
+                    <Image
+                        src={thumbnail}
+                        alt={title}
+                        fill
+                        className="object-cover"
+                    />
+                ) : (
+                    <AiImage 
+                        data-ai-hint="pharmacy textbook"
+                        alt={title}
+                        fill
+                        className="object-cover"
+                        height={160}
+                    />
+                )}
             </div>
         </CardHeader>
         <div className="p-4 flex flex-col flex-grow">
@@ -365,5 +376,3 @@ export default function NotesPage() {
     </>
   )
 }
-
-    
