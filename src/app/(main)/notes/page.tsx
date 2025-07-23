@@ -54,6 +54,13 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
                 </a>
             </Button>
         );
+    } else if (isPremium) {
+         actionButton = (
+            <Button onClick={onUnlockClick} className="w-full" variant="outline">
+                <Lock className="mr-2 h-4 w-4" />
+                Unlock Note
+            </Button>
+        );
     } else {
         actionButton = (
             <Button asChild className="w-full">
@@ -62,16 +69,6 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
                 </Link>
             </Button>
         );
-    }
-
-    // Premium notes that are NOT external links require unlocking
-    if (isPremium && !isExternalLink) {
-         actionButton = (
-            <Button onClick={onUnlockClick} className="w-full" variant="outline">
-                <Lock className="mr-2 h-4 w-4" />
-                Unlock Note
-            </Button>
-        )
     }
 
 
@@ -343,4 +340,6 @@ export default function NotesPage() {
     </>
   )
 }
+    
+
     
