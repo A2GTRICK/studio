@@ -14,17 +14,6 @@ import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User as FirebaseUser } from 'firebase/auth';
 import Image from "next/image";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 
 const A2GLogoIcon = () => (
     <Image src="/assets/a2g-logo.svg" alt="A2G Logo" width={24} height={24} />
@@ -103,7 +92,7 @@ function NotificationPopover() {
     )
 }
 
-function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promise<void> }) {
+function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: boolean, logout: () => Promise<void> }) {
     const router = useRouter();
 
     const handleLogout = async () => {
@@ -112,9 +101,9 @@ function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promi
     };
     
     return (
-        <AlertDialog>
-            <div className="flex items-center justify-between gap-3 p-3">
-                <div className="flex items-center gap-3 overflow-hidden">
+        <Popover>
+            <PopoverTrigger className="w-full p-3 hover:bg-muted/50 rounded-md transition-colors">
+                <div className="flex items-center gap-3 overflow-hidden text-left">
                     <Avatar>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} className="object-cover" />
                         <AvatarFallback>
@@ -126,25 +115,29 @@ function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promi
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                 </div>
-                <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" title="Logout">
-                        <LogOut className="h-4 w-4" />
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2">
+                <div className="p-2">
+                    <p className="font-bold text-sm">{user.displayName}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+                <Separator />
+                <div className="p-1 space-y-1">
+                    {isAdmin && (
+                        <Button asChild variant="ghost" className="w-full justify-start">
+                            <Link href="/admin/notes">
+                                <Shield className="mr-2 h-4 w-4" />
+                                Admin Panel
+                            </Link>
+                        </Button>
+                    )}
+                    <Button onClick={handleLogout} variant="ghost" className="w-full justify-start text-destructive hover:text-destructive">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
                     </Button>
-                </AlertDialogTrigger>
-            </div>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        You will be returned to the login page. Any unsaved progress may be lost.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+                </div>
+            </PopoverContent>
+        </Popover>
     )
 }
 
@@ -184,7 +177,7 @@ export default function MainLayout({
             <h1 className="text-xl font-headline font-bold text-primary">A2G Smart Notes</h1>
           </div>
           <Separator />
-           {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} logout={logout} /> : null}
+           {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} isAdmin={isAdmin} logout={logout} /> : null}
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -281,19 +274,6 @@ export default function MainLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            {isAdmin && (
-              <>
-                <Separator className="my-2" />
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Admin Panel">
-                    <Link href="/admin/notes">
-                      <Shield />
-                      <span>Admin Panel</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </>
-            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
