@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, Target, BarChart3 } from "lucide-react";
+import { ArrowRight, BookOpen, BrainCircuit, NotebookPen, Gem, Users, AlertTriangle, RefreshCw, Target, BarChart3, Shield } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import type { GenerateDashboardInsightsOutput } from '@/ai/flows/generate-dashboard-insights';
@@ -20,11 +20,11 @@ import { Badge } from '@/components/ui/badge';
 const AdminPanel = () => (
   <Card className="bg-primary/10 border-primary border-2 shadow-lg">
     <CardHeader>
-      <CardTitle className="font-headline flex items-center gap-2 text-primary"><Users /> Admin Dashboard</CardTitle>
+      <CardTitle className="font-headline flex items-center gap-2 text-primary"><Shield /> Admin Dashboard</CardTitle>
       <CardDescription className="text-primary/80">This panel is only visible to you. Manage your application's content and settings here.</CardDescription>
     </CardHeader>
     <CardContent>
-        <Button asChild className="w-full" size="lg" variant="secondary">
+        <Button asChild className="w-full" size="lg">
             <Link href="/admin/notes">Manage Notes Library</Link>
         </Button>
     </CardContent>

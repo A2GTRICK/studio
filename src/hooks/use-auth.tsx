@@ -7,9 +7,6 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-// Hardcode the admin email for a definitive check.
-const ADMIN_EMAIL = "Sharmaarvind28897@gmail.com";
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -57,11 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser && currentUser.emailVerified) {
           setUser(currentUser);
-          // Direct, robust check for the admin email
-          setIsAdmin(currentUser.email === ADMIN_EMAIL);
+          // Check for admin custom claim
+          const idTokenResult = await currentUser.getIdTokenResult();
+          setIsAdmin(!!idTokenResult.claims.admin);
       } else {
           setUser(null);
           setIsAdmin(false);
