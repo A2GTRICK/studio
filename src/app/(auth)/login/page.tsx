@@ -63,7 +63,7 @@ export default function LoginPage() {
             case 'auth/invalid-email': return 'Please enter a valid email address.';
             case 'auth/user-not-found': return 'No account found with this email. Please check your spelling or sign up.';
             case 'auth/wrong-password': return 'Invalid password. Please try again.';
-            case 'auth/invalid-credential': return 'Invalid credentials. Please double-check your email and password.';
+            case 'auth/invalid-credential': return 'The email or password you entered is incorrect. Please double-check and try again.';
             case 'auth/email-already-in-use': return 'An account with this email address already exists. Please log in.';
             case 'auth/weak-password': return 'The password is too weak. It must be at least 6 characters long.';
             case 'auth/popup-closed-by-user': return 'The sign-in window was closed. Please try again.';
