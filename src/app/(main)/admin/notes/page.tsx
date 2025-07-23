@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
 
 
 export type Note = {
@@ -55,6 +56,7 @@ const submissionMessages = [
     "Details ko verify kar rahe hain...",
     "Note ko library mein save kar rahe hain...",
     "Ek second, bas ho gaya...",
+    "AI se content generate kar rahe hain...",
 ];
 
 const yearOptions: { [key: string]: string[] } = {
@@ -70,6 +72,7 @@ export default function AdminNotesPage() {
     const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
     const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
+    const [activeTab, setActiveTab] = useState("ai");
     
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -126,26 +129,7 @@ export default function AdminNotesPage() {
         setIsSubmitting(true);
         const form = e.currentTarget;
         const formData = new FormData(form);
-        const activeTab = formData.get('activeTab') as string;
-
         let content = '';
-        if (activeTab === 'pdf') {
-            const file = formData.get('noteFile') as File;
-            if (file && file.size > 0) {
-                content = `File: ${file.name}`; // Placeholder for file upload logic
-            } else {
-                 toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
-                 setIsSubmitting(false);
-                 return;
-            }
-        } else { // link
-            content = formData.get('driveLink') as string;
-            if (!content) {
-                toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
-                setIsSubmitting(false);
-                return;
-            }
-        }
         
         const noteDetails = {
             title: formData.get('title') as string,
@@ -153,7 +137,6 @@ export default function AdminNotesPage() {
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
             isPremium: formData.get('isPremium') === 'on',
-            content: content
         };
 
         if (!noteDetails.course || !noteDetails.year || !noteDetails.title || !noteDetails.subject) {
@@ -163,13 +146,40 @@ export default function AdminNotesPage() {
         }
 
         try {
+            if (activeTab === 'ai') {
+                 const result = await generateNotesFromTopic({
+                    course: noteDetails.course,
+                    year: noteDetails.year,
+                    subject: noteDetails.subject,
+                    topic: noteDetails.title,
+                });
+                content = result.notes;
+            } else if (activeTab === 'pdf') {
+                const file = formData.get('noteFile') as File;
+                if (file && file.size > 0) {
+                    content = `File: ${file.name}`; // Placeholder for file upload logic
+                } else {
+                     toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
+                     setIsSubmitting(false);
+                     return;
+                }
+            } else { // link
+                content = formData.get('driveLink') as string;
+                if (!content) {
+                    toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+            
+            const newNote = { ...noteDetails, content };
             const docRef = await addDoc(collection(db, 'notes'), {
-                ...noteDetails,
+                ...newNote,
                 createdAt: serverTimestamp(),
             });
             
             const newNoteForState: Note = {
-                ...noteDetails,
+                ...newNote,
                 id: docRef.id,
                 createdAt: new Date(),
             };
@@ -185,9 +195,12 @@ export default function AdminNotesPage() {
 
         } catch (error: any) {
             console.error("Error adding note:", error);
+            const errorMessage = error.message.includes('503') 
+                ? 'The AI model is currently overloaded. Please try again in a few moments.'
+                : 'There was a problem saving the note.';
             toast({
                 title: "Error adding note",
-                description: "There was a problem saving the note.",
+                description: errorMessage,
                 variant: "destructive"
             });
         } finally {
@@ -225,7 +238,7 @@ export default function AdminNotesPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="title">Note Title</Label>
+                                <Label htmlFor="title">Note Title / Topic</Label>
                                 <Input id="title" name="title" placeholder="e.g., Human Anatomy..." required disabled={isSubmitting} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -256,12 +269,19 @@ export default function AdminNotesPage() {
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
                             
-                            <Tabs defaultValue="pdf" className="w-full">
-                                <input type="hidden" name="activeTab" value="pdf" />
-                                <TabsList className="grid w-full grid-cols-2">
+                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                                <TabsList className="grid w-full grid-cols-3">
+                                    <TabsTrigger value="ai"><BrainCircuit className="mr-2 h-4 w-4"/>AI Generate</TabsTrigger>
                                     <TabsTrigger value="pdf"><UploadCloud className="mr-2 h-4 w-4"/> Upload File</TabsTrigger>
-                                    <TabsTrigger value="link"><LinkIcon className="mr-2 h-4 w-4"/> Google Drive Link</TabsTrigger>
+                                    <TabsTrigger value="link"><LinkIcon className="mr-2 h-4 w-4"/> G-Drive Link</TabsTrigger>
                                 </TabsList>
+                                <TabsContent value="ai" className="pt-4 text-center">
+                                    <Card className="bg-primary/5 border-dashed">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-muted-foreground">The AI will generate the note content based on the Title/Topic you entered above. No need to add anything here.</p>
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
                                 <TabsContent value="pdf" className="pt-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="noteFile">Note File</Label>
