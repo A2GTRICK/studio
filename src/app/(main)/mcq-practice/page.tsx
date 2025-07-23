@@ -339,7 +339,7 @@ export default function McqPracticePage() {
             userAnswer: answers[index] ?? "Not Answered",
             correctAnswer: q.correctAnswer,
             isCorrect: answers[index] === q.correctAnswer,
-        })).filter(p => p.userAnswer !== "Not Answered");
+        })).filter(p => p.userAnswer !== "Not Answered" && !p.isCorrect); // Only send incorrect answers
         
         const feedbackResult = await generateMcqFeedback({
             examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,

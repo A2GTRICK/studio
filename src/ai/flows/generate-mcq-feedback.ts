@@ -22,9 +22,9 @@ const GenerateMcqFeedbackInputSchema = z.object({
   examType: z.string().describe('The target competitive exam.'),
   subject: z.string().describe('The subject of the quiz.'),
   topic: z.string().describe('The specific topic of the quiz.'),
-  performance: z.array(QuizPerformanceSchema).describe("The user's performance on each question."),
+  performance: z.array(QuizPerformanceSchema).describe("The user's performance on each question they answered incorrectly."),
   score: z.number().describe("The user's score (e.g. 7)."),
-    totalQuestions: z.number().describe("The total number of questions in the quiz (e.g. 10)."),
+  totalQuestions: z.number().describe("The total number of questions in the quiz (e.g. 10)."),
 });
 export type GenerateMcqFeedbackInput = z.infer<typeof GenerateMcqFeedbackInputSchema>;
 
@@ -84,3 +84,5 @@ const generateMcqFeedbackFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

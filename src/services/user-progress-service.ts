@@ -108,3 +108,5 @@ export async function getSubjectsProgress(): Promise<SubjectProgress[]> {
   
   return Object.values(progressBySubject);
 }
+
+    
