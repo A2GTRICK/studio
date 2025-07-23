@@ -113,7 +113,7 @@ function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promi
     
     return (
         <AlertDialog>
-            <div className="flex items-center justify-between gap-3 p-3 border-t">
+            <div className="flex items-center justify-between gap-3 p-3">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <Avatar>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} className="object-cover" />
@@ -150,7 +150,7 @@ function UserProfile({ user, logout }: { user: FirebaseUser, logout: () => Promi
 
 function UserProfileSkeleton() {
      return (
-        <div className="flex items-center gap-3 p-3 border-t">
+        <div className="flex items-center gap-3 p-3">
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className="space-y-2 w-full">
                 <Skeleton className="h-4 w-24" />
@@ -183,6 +183,8 @@ export default function MainLayout({
             />
             <h1 className="text-xl font-headline font-bold text-primary">A2G Smart Notes</h1>
           </div>
+          <Separator />
+           {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} logout={logout} /> : null}
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -295,7 +297,7 @@ export default function MainLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-            {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} logout={logout} /> : null}
+           {/* Footer is now empty as profile is moved to header */}
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
