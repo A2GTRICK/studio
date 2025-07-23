@@ -104,7 +104,8 @@ export default function AdminNotesPage() {
     const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
-        const formData = new FormData(e.currentTarget);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
         const newNoteData = {
             title: formData.get('title') as string,
             course: formData.get('course') as string,
@@ -142,7 +143,7 @@ export default function AdminNotesPage() {
                 title: "Note Added Successfully!",
                 description: `"${newNoteData.title}" has been added to the library.`
             });
-            (e.target as HTMLFormElement).reset();
+            form.reset();
             setSelectedCourse("");
         } catch (error) {
             console.error("Error adding note:", error);
@@ -219,8 +220,8 @@ export default function AdminNotesPage() {
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="content">Note Content (Supports Markdown & Links)</Label>
-                                <Textarea id="content" name="content" placeholder="Enter the full note content here. You can use Markdown for formatting, like **bold** text or [links](https://example.com)." required disabled={isSubmitting} rows={6}/>
+                                <Label htmlFor="content">Paste Note Content Here</Label>
+                                <Textarea id="content" name="content" placeholder="Paste the full note content here. You can use Markdown for formatting, like **bold** text or [links](https://example.com)." required disabled={isSubmitting} rows={6}/>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>
