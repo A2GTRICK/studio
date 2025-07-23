@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
+// Hardcode the admin email for a definitive check.
 const ADMIN_EMAIL = "Sharmaarvind28897@gmail.com";
 
 interface AuthContextType {
