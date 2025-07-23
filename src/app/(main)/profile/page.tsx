@@ -24,7 +24,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,7 +60,6 @@ export default function ProfilePage() {
         title: "Success!",
         description: "Your profile has been updated successfully.",
       });
-      // Force a re-render or state update if necessary, though onAuthStateChanged might handle it
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({
@@ -73,7 +72,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="flex justify-center items-center h-[60vh]">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />

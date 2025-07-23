@@ -83,19 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isAdminPage = pathname.startsWith('/admin');
 
     if (user) {
-      // User is logged in and verified
       if (isAuthPage) {
-        // Redirect from login page to dashboard
         router.push('/dashboard');
       } else if (isAdminPage && !isAdmin) {
-        // If a non-admin tries to access an admin page, redirect
         console.warn("Non-admin user attempted to access admin page. Redirecting.");
         router.push('/dashboard');
       }
     } else {
-      // User is not logged in or not verified
       if (!isPublicPage) {
-        // Redirect any protected page to the login page
         router.push('/login');
       }
     }
@@ -104,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const logout = async () => {
       await signOut(auth);
-      // setUser(null) and setIsAdmin(false) will be handled by onAuthStateChanged
       router.push('/login');
   }
 
