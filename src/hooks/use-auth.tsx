@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+const ADMIN_EMAIL = "Sharmaarvind28897@gmail.com";
 
 interface AuthContextType {
   user: User | null;
