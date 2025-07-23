@@ -169,6 +169,8 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+  const [canRefresh, setCanRefresh] = useState(false);
+
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -191,6 +193,8 @@ export default function DashboardPage() {
         setIsLoading(true);
     }
     setError(null);
+    setCanRefresh(false);
+
 
     try {
         const userProgress = await getSubjectsProgress();
@@ -215,6 +219,7 @@ export default function DashboardPage() {
     } finally {
         setIsLoading(false);
         setIsRefreshing(false);
+        setTimeout(() => setCanRefresh(true), 3000);
     }
   }, [user]);
 
@@ -239,7 +244,7 @@ export default function DashboardPage() {
             <p className="mt-1 text-muted-foreground">{isLoading ? 'AI is analyzing your progress... 🧠' : 'Here is your smart dashboard for today.'}</p>
         </div>
         <div>
-          <Button onClick={() => fetchInsights(true)} variant="outline" size="sm" disabled={isRefreshing || isLoading}>
+          <Button onClick={() => fetchInsights(true)} variant="outline" size="sm" disabled={isRefreshing || isLoading || !canRefresh}>
             {isRefreshing || isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -261,7 +266,7 @@ export default function DashboardPage() {
                 <CardDescription className="text-destructive/80">{error}</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button variant="destructive" onClick={() => fetchInsights(true)} disabled={isRefreshing}>
+                <Button variant="destructive" onClick={() => fetchInsights(true)} disabled={isRefreshing || !canRefresh}>
                     {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                     Try Again
                 </Button>

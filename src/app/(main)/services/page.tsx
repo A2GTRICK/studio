@@ -98,7 +98,7 @@ export default function ServicesPage() {
             const errorMessage = error.message.includes('503')
                 ? 'The AI model is currently overloaded. Please try again in a few moments.'
                 : 'Sorry, an error occurred while generating the outline. Please try again.';
-            setAiResult(errorMessage);
+            setAiResult(`<p class="text-destructive">${errorMessage}</p>`);
         } finally {
             setIsLoading(false);
         }
@@ -107,7 +107,7 @@ export default function ServicesPage() {
     const renderAiResult = (content: string | null) => {
         if (!content) return null;
         const htmlContent = marked.parse(content);
-        return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+        return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
     };
 
     return (

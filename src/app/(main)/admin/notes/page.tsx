@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, FieldPath } from 'firebase/firestore';
-import { getDocsFromCache } from 'firebase/firestore';
 
 export type Note = {
     id: string;
@@ -52,12 +51,18 @@ const loadingMessages = [
     "Almost there, boss!"
 ];
 
+const yearOptions = {
+    "B.Pharm": ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+    "D.Pharm": ["1st Year", "2nd Year"],
+};
+
 export default function AdminNotesPage() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
     const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+    const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
 
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -128,6 +133,7 @@ export default function AdminNotesPage() {
                 description: `"${newNote.title}" has been added to the library.`
             });
             (e.target as HTMLFormElement).reset();
+            setSelectedCourse("");
         } catch (error) {
             console.error("Error adding note:", error);
             toast({
@@ -176,7 +182,7 @@ export default function AdminNotesPage() {
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="course">Course</Label>
-                                    <Select name="course" required disabled={isSubmitting}>
+                                    <Select name="course" required disabled={isSubmitting} onValueChange={(value) => setSelectedCourse(value as any)}>
                                         <SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="B.Pharm">B.Pharm</SelectItem>
@@ -186,13 +192,16 @@ export default function AdminNotesPage() {
                                 </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="year">Year</Label>
-                                    <Select name="year" required disabled={isSubmitting}>
+                                    <Select name="year" required disabled={isSubmitting || !selectedCourse}>
                                         <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="1st Year">1st Year</SelectItem>
-                                            <SelectItem value="2nd Year">2nd Year</SelectItem>
-                                            <SelectItem value="3rd Year">3rd Year</SelectItem>
-                                            <SelectItem value="4th Year">4th Year</SelectItem>
+                                            {selectedCourse && yearOptions[selectedCourse] ? (
+                                                yearOptions[selectedCourse].map(year => (
+                                                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                                                ))
+                                            ) : (
+                                                <SelectItem value="" disabled>First select a course</SelectItem>
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>

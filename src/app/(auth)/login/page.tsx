@@ -68,7 +68,7 @@ export default function LoginPage() {
             case 'auth/weak-password': return 'The password is too weak. It must be at least 6 characters long.';
             case 'auth/popup-closed-by-user': return 'The sign-in window was closed. Please try again.';
             case 'auth/account-exists-with-different-credential': return 'An account already exists with this email. Please sign in using the original method (e.g., Google).';
-            case 'auth/too-many-requests': return 'Access to this account has been temporarily disabled due to many failed login attempts. Please try again later or reset your password.';
+            case 'auth/too-many-requests': return 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password.';
             case 'auth/unauthorized-domain': return "This domain is not authorized for authentication. Please go to your Firebase Console -> Authentication -> Settings -> Authorized domains and add your domain (e.g., 'localhost').";
             case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
             case 'auth/invalid-api-key':
@@ -276,9 +276,9 @@ export default function LoginPage() {
                                 {isSubmitting ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : view === 'signup' ? (
-                                    <UserPlus/>
+                                    <UserPlus className="mr-2 h-4 w-4" />
                                 ) : (
-                                    <LogIn/>
+                                    <LogIn className="mr-2 h-4 w-4" />
                                 )}
                                 <span>{isSubmitting ? 'Processing...' : view === 'signup' ? 'Create Account' : 'Sign In'}</span>
                             </Button>

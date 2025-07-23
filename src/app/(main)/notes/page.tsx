@@ -94,9 +94,11 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
 export default function NotesPage() {
     const [allNotes, setAllNotes] = useState<Note[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [courseFilter, setCourseFilter] = useState('All');
-    const [yearFilter, setYearFilter] = useState('All');
-    const [subjectFilter, setSubjectFilter] = useState('All');
+    const [filters, setFilters] = useState({
+        course: 'All',
+        year: 'All',
+        subject: 'All'
+    });
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -150,63 +152,60 @@ export default function NotesPage() {
             setShowPaymentDialog(true);
         }
     };
-    
-    const getUniqueValues = useCallback((key: 'course' | 'year' | 'subject') => {
-        const values = new Set(allNotes.map(note => note[key]));
-        return ['All', ...Array.from(values).sort()];
-    }, [allNotes]);
 
-    const courses = useMemo(() => getUniqueValues('course'), [getUniqueValues]);
+    const handleFilterChange = (filterName: keyof typeof filters, value: string) => {
+        setFilters(prev => {
+            const newFilters = { ...prev, [filterName]: value };
+            if (filterName === 'course') {
+                newFilters.year = 'All';
+                newFilters.subject = 'All';
+            }
+            if (filterName === 'year') {
+                newFilters.subject = 'All';
+            }
+            return newFilters;
+        });
+    };
+    
+    const getUniqueValues = useCallback((key: 'course' | 'year' | 'subject', notes: Note[]) => {
+        const values = new Set(notes.map(note => note[key]));
+        return ['All', ...Array.from(values).sort()];
+    }, []);
+
+    const courses = useMemo(() => getUniqueValues('course', allNotes), [allNotes, getUniqueValues]);
     
     const years = useMemo(() => {
-        if (courseFilter === 'All') return getUniqueValues('year');
-        const relevantYears = new Set(allNotes.filter(note => note.course === courseFilter).map(note => note.year));
-        return ['All', ...Array.from(relevantYears).sort()];
-    }, [courseFilter, getUniqueValues, allNotes]);
+        const notesForYearFilter = filters.course === 'All'
+            ? allNotes
+            : allNotes.filter(note => note.course === filters.course);
+        return getUniqueValues('year', notesForYearFilter);
+    }, [filters.course, allNotes, getUniqueValues]);
 
     const subjects = useMemo(() => {
-        if (courseFilter === 'All' && yearFilter === 'All') return getUniqueValues('subject');
-        
-        const filteredByCourse = courseFilter === 'All' ? allNotes : allNotes.filter(note => note.course === courseFilter);
-        const filteredByYear = yearFilter === 'All' ? filteredByCourse : filteredByCourse.filter(note => note.year === yearFilter);
-
-        const relevantSubjects = new Set(filteredByYear.map(note => note.subject));
-        return ['All', ...Array.from(relevantSubjects).sort()];
-    }, [courseFilter, yearFilter, getUniqueValues, allNotes]);
+        let notesForSubjectFilter = allNotes;
+        if (filters.course !== 'All') {
+            notesForSubjectFilter = notesForSubjectFilter.filter(note => note.course === filters.course);
+        }
+        if (filters.year !== 'All') {
+            notesForSubjectFilter = notesForSubjectFilter.filter(note => note.year === filters.year);
+        }
+        return getUniqueValues('subject', notesForSubjectFilter);
+    }, [filters.course, filters.year, allNotes, getUniqueValues]);
 
 
     const filteredNotes = useMemo(() => {
-        let notes = allNotes;
-
-        if (courseFilter !== 'All') {
-            notes = notes.filter(note => note.course === courseFilter);
-        }
-        if (yearFilter !== 'All') {
-            notes = notes.filter(note => note.year === yearFilter);
-        }
-        if (subjectFilter !== 'All') {
-            notes = notes.filter(note => note.subject === subjectFilter);
-        }
-        if (debouncedSearchQuery) {
-            notes = notes.filter(note => 
+        return allNotes.filter(note => {
+            const courseMatch = filters.course === 'All' || note.course === filters.course;
+            const yearMatch = filters.year === 'All' || note.year === filters.year;
+            const subjectMatch = filters.subject === 'All' || note.subject === filters.subject;
+            const searchMatch = !debouncedSearchQuery || 
                 note.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                note.subject.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-            );
-        }
-        
-        return notes;
-    }, [courseFilter, yearFilter, subjectFilter, debouncedSearchQuery, allNotes]);
+                note.subject.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+            
+            return courseMatch && yearMatch && subjectMatch && searchMatch;
+        });
+    }, [filters, debouncedSearchQuery, allNotes]);
 
-    const handleCourseChange = (value: string) => {
-        setCourseFilter(value);
-        setYearFilter('All');
-        setSubjectFilter('All');
-    };
-
-    const handleYearChange = (value: string) => {
-        setYearFilter(value);
-        setSubjectFilter('All');
-    };
 
   return (
     <>
@@ -219,19 +218,19 @@ export default function NotesPage() {
       <Card>
         <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Select value={courseFilter} onValueChange={handleCourseChange}>
+                <Select value={filters.course} onValueChange={(value) => handleFilterChange('course', value)}>
                     <SelectTrigger id="course-filter" aria-label="Filter by Course"><SelectValue placeholder="Filter by Course" /></SelectTrigger>
                     <SelectContent>
                         {courses.map(course => <SelectItem key={course} value={course}>{course}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <Select value={yearFilter} onValueChange={handleYearChange}>
+                <Select value={filters.year} onValueChange={(value) => handleFilterChange('year', value)}>
                     <SelectTrigger id="year-filter" aria-label="Filter by Year"><SelectValue placeholder="Filter by Year" /></SelectTrigger>
                     <SelectContent>
                         {years.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                <Select value={filters.subject} onValueChange={(value) => handleFilterChange('subject', value)}>
                     <SelectTrigger id="subject-filter" aria-label="Filter by Subject"><SelectValue placeholder="Filter by Subject" /></SelectTrigger>
                     <SelectContent>
                         {subjects.map(subject => <SelectItem key={subject} value={subject}>{subject}</SelectItem>)}
