@@ -110,8 +110,9 @@ export default function AdminNotesPage() {
         
         let content = '';
         if (activeTab === 'pdf') {
-            const pdfFile = formData.get('pdfFile') as File;
-            content = pdfFile ? `[PDF] ${pdfFile.name}` : '';
+            const noteFile = formData.get('noteFile') as File;
+            const fileType = noteFile.name.split('.').pop()?.toUpperCase();
+            content = noteFile ? `[${fileType}] ${noteFile.name}` : '';
         } else {
             content = formData.get('driveLink') as string;
         }
@@ -228,13 +229,13 @@ export default function AdminNotesPage() {
                                 <Label>Note Content</Label>
                                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                                     <TabsList className="grid w-full grid-cols-2">
-                                        <TabsTrigger value="pdf"><Upload className="mr-2 h-4 w-4"/>Upload PDF</TabsTrigger>
+                                        <TabsTrigger value="pdf"><Upload className="mr-2 h-4 w-4"/>Upload File</TabsTrigger>
                                         <TabsTrigger value="link"><Link2 className="mr-2 h-4 w-4"/>Drive Link</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="pdf" className="pt-4">
-                                        <Label htmlFor="pdfFile">Note PDF File</Label>
-                                        <Input id="pdfFile" name="pdfFile" type="file" accept=".pdf" disabled={isSubmitting} />
-                                        <p className="text-xs text-muted-foreground mt-2">Upload the note as a PDF file. The file content will not be displayed directly.</p>
+                                        <Label htmlFor="noteFile">Note File</Label>
+                                        <Input id="noteFile" name="noteFile" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" disabled={isSubmitting} />
+                                        <p className="text-xs text-muted-foreground mt-2">Upload a PDF, Word, or PowerPoint file. The file content will not be displayed directly.</p>
                                     </TabsContent>
                                     <TabsContent value="link" className="pt-4">
                                         <Label htmlFor="driveLink">Google Drive Link</Label>
