@@ -53,8 +53,22 @@ export default function NoteDetailPage() {
             const noteData = { ...docSnap.data(), id: docSnap.id } as Note;
             setNote(noteData);
             if(noteData.content){
-                const content = await marked.parse(noteData.content);
-                setHtmlContent(content);
+                // Handle regular content and G-Drive links
+                if (noteData.content.startsWith('https://docs.google.com')) {
+                    const gdriveContent = `
+### Note Content from Google Drive
+
+This note's content is stored in a Google Drive document.
+
+**[Click here to open the document in a new tab](${noteData.content})**
+
+*In a future update, this page may display the document content directly. For now, please use the link to access the material.*
+                    `;
+                    setHtmlContent(marked.parse(gdriveContent));
+                } else {
+                    const content = await marked.parse(noteData.content);
+                    setHtmlContent(content);
+                }
             }
         } else {
             setNote(null); // Will trigger notFound()

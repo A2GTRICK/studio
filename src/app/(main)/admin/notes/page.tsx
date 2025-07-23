@@ -157,7 +157,7 @@ export default function AdminNotesPage() {
             } else if (activeTab === 'pdf') {
                 const file = formData.get('noteFile') as File;
                 if (file && file.size > 0) {
-                    content = `File: ${file.name}`; // Placeholder for file upload logic
+                    content = `### Note Content from Uploaded File\n\nThis note's content originates from an uploaded file: **${file.name}**. \n\n*In a future update, this page will display the full content of the PDF, Word, or PowerPoint document directly. For now, this serves as a placeholder to confirm the note has been added to the library.*`;
                 } else {
                      toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
                      setIsSubmitting(false);
