@@ -31,22 +31,23 @@ export type SaveMcqResultInput = z.infer<typeof SaveMcqResultInputSchema>;
  * @param data The user's UID and the quiz result.
  */
 export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
-    const parsedData = SaveMcqResultInputSchema.safeParse(data);
-    if (!parsedData.success) {
-        console.error("Invalid input for saveMcqResult:", parsedData.error.errors);
-        throw new Error(`Invalid input data: ${parsedData.error.message}`);
+    const { uid, subject, topic, score, totalQuestions } = data;
+
+    if (!uid) {
+        throw new Error("User is not authenticated. Cannot save progress.");
     }
-
-    const { uid, ...result } = parsedData.data;
-
+    
     try {
-        const safeTopicId = result.topic.replace(/[.\\#$[\]/]/g, '_') || 'general';
+        const safeTopicId = topic.replace(/[.\\#$[\]/]/g, '_') || 'general';
         const progressRef = doc(db, 'user_progress', uid, 'mcqs', safeTopicId);
         
         await setDoc(progressRef, {
-            ...result,
+            subject,
+            topic,
+            score,
+            totalQuestions,
             lastAttempted: serverTimestamp(),
-            uid: uid,
+            uid: uid, // Storing UID for potential cross-reference
         }, { merge: true });
 
     } catch (error) {
@@ -54,6 +55,7 @@ export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
         throw new Error("Could not save your progress to the database.");
     }
 }
+
 
 /**
  * Fetches all notes from the database and constructs a subject progress report
