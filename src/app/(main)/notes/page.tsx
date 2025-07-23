@@ -165,26 +165,28 @@ export default function NotesPage() {
         return () => clearInterval(interval);
     }, [isLoading]);
     
-    // This now runs every time the component mounts, ensuring data persistence.
-    useEffect(() => {
-        const fetchNotes = async () => {
-            setIsLoading(true);
-            try {
-                const notesCollection = collection(db, 'notes');
-                const q = query(notesCollection, orderBy('createdAt', 'desc'));
-                const notesSnapshot = await getDocs(q);
-                const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
-                setAllNotes(notesList);
-            } catch (error) {
-                console.error("Error fetching notes:", error);
-                // In a real app, you might want to show a toast here.
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchNotes();
+    const fetchNotes = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const notesCollection = collection(db, 'notes');
+            const q = query(notesCollection, orderBy('createdAt', 'desc'));
+            const notesSnapshot = await getDocs(q);
+            const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
+            setAllNotes(notesList);
+        } catch (error) {
+            console.error("Error fetching notes:", error);
+            // In a real app, you might want to show a toast here.
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        // Fetch notes only if they haven't been loaded yet.
+        if (allNotes.length === 0) {
+            fetchNotes();
+        }
+    }, [allNotes.length, fetchNotes]);
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -376,3 +378,5 @@ export default function NotesPage() {
     </>
   )
 }
+
+    
