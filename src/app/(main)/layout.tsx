@@ -309,16 +309,6 @@ export default function MainLayout({
                 </Link>
             </Button>
             <NotificationPopover />
-             <div className="md:hidden">
-                {loading ? <Skeleton className="h-8 w-8 rounded-full" /> : user ? (
-                    <Avatar>
-                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} className="object-cover" />
-                        <AvatarFallback>
-                           <A2GLogoIcon />
-                        </AvatarFallback>
-                    </Avatar>
-                ) : null}
-            </div>
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6 overflow-auto">
