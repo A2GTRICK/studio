@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, PlusCircle, FileUp, Edit, Trash2, Loader2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, FileUp, Edit, Trash2, Loader2, FileCheck } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -39,7 +38,7 @@ export type Note = {
     course: string;
     year: string;
     subject: string;
-    content: string;
+    content: string; // This will eventually hold the URL to the PDF
     isPremium: boolean;
     createdAt: any;
 };
@@ -63,6 +62,7 @@ export default function AdminNotesPage() {
     const { toast } = useToast();
     const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -106,16 +106,27 @@ export default function AdminNotesPage() {
         setIsSubmitting(true);
         const form = e.currentTarget;
         const formData = new FormData(form);
+        
+        if (!selectedFile) {
+            toast({
+                title: "PDF File Required",
+                description: "Please select a PDF file to upload.",
+                variant: "destructive"
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
         const newNoteData = {
             title: formData.get('title') as string,
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
-            content: formData.get('content') as string,
+            content: `Placeholder for ${selectedFile.name}`, // In a real scenario, this would be a URL from Firebase Storage
             isPremium: formData.get('isPremium') === 'on',
         };
 
-        if (!newNoteData.course || !newNoteData.year || !newNoteData.title || !newNoteData.subject || !newNoteData.content) {
+        if (!newNoteData.course || !newNoteData.year || !newNoteData.title || !newNoteData.subject) {
             toast({
                 title: "All Fields Required",
                 description: "Please fill out all the fields to add a new note.",
@@ -124,6 +135,13 @@ export default function AdminNotesPage() {
             setIsSubmitting(false);
             return;
         }
+        
+        // --- Placeholder for actual file upload logic ---
+        // In a real app, you would upload `selectedFile` to Firebase Storage here
+        // and get a download URL to save in the `content` field.
+        // For now, we'll simulate success.
+        console.log("Simulating upload for:", selectedFile.name);
+        // ------------------------------------------------
 
         try {
             const docRef = await addDoc(collection(db, 'notes'), {
@@ -145,6 +163,7 @@ export default function AdminNotesPage() {
             });
             form.reset();
             setSelectedCourse("");
+            setSelectedFile(null);
         } catch (error) {
             console.error("Error adding note:", error);
             toast({
@@ -206,10 +225,12 @@ export default function AdminNotesPage() {
                                     <Select name="year" required disabled={isSubmitting || !selectedCourse}>
                                         <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
                                         <SelectContent>
-                                            {selectedCourse && yearOptions[selectedCourse] &&
+                                            {selectedCourse && yearOptions[selectedCourse] ?
                                                 yearOptions[selectedCourse].map(year => (
                                                     <SelectItem key={year} value={year}>{year}</SelectItem>
                                                 ))
+                                                :
+                                                <SelectItem value="" disabled>First select a course</SelectItem>
                                             }
                                         </SelectContent>
                                     </Select>
@@ -220,8 +241,23 @@ export default function AdminNotesPage() {
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="content">Paste Note Content Here</Label>
-                                <Textarea id="content" name="content" placeholder="Paste the full note content here. You can use Markdown for formatting, like **bold** text or [links](https://example.com)." required disabled={isSubmitting} rows={6}/>
+                                <Label htmlFor="content-file">Note PDF File</Label>
+                                <Input 
+                                    id="content-file" 
+                                    name="content-file" 
+                                    type="file" 
+                                    accept=".pdf" 
+                                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                    required 
+                                    disabled={isSubmitting}
+                                    className="file:text-primary file:font-semibold"
+                                />
+                                {selectedFile && (
+                                    <div className="flex items-center gap-2 text-sm text-green-600 font-medium pt-2">
+                                        <FileCheck className="h-4 w-4" />
+                                        <span>{selectedFile.name}</span>
+                                    </div>
+                                )}
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>
@@ -316,4 +352,5 @@ export default function AdminNotesPage() {
             </div>
         </div>
     );
-}
+
+    
