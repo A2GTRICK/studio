@@ -19,7 +19,7 @@ Best regards,
 [Your Full Name]
 [Your Contact Number - Optional]
 `;
-  return encodeURIComponent(template);
+  return template;
 };
 
 const servicesList = [

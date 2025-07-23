@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-  }, [loading, pathname, router]);
+  }, [user, loading, pathname, router]);
   
   const logout = async () => {
       await signOut(auth);
