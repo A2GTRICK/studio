@@ -18,13 +18,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 
 const AdminPanel = () => (
-  <Card className="bg-card">
+  <Card className="bg-card border-primary border-2 shadow-lg">
     <CardHeader>
       <CardTitle className="font-headline flex items-center gap-2"><Users /> Admin Dashboard</CardTitle>
-      <CardDescription>This panel is only visible to administrators.</CardDescription>
+      <CardDescription>This panel is only visible to administrators. Manage your application's content and settings here.</CardDescription>
     </CardHeader>
     <CardContent>
-        <Button asChild className="w-full">
+        <Button asChild className="w-full" size="lg">
             <Link href="/admin/notes">Manage Notes Library</Link>
         </Button>
     </CardContent>
@@ -259,6 +259,12 @@ export default function DashboardPage() {
         </div>
       </div>
       
+      {isAdmin && (
+          <div className="mb-6">
+              <AdminPanel />
+          </div>
+      )}
+
       {!isAdmin && <QuickActionsPanel />}
 
       {isLoading && <DashboardSkeleton message={currentLoadingMessage} />}
@@ -278,13 +284,12 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {!isLoading && !insights && !error && (
+      {!isLoading && !insights && !error && !isAdmin && (
         <Card>
             <CardContent className="p-10 text-center">
                 <h3 className="text-xl font-semibold">Your Smart Dashboard is Getting Ready!</h3>
                 <p className="text-muted-foreground mt-2">Your personalized insights will appear here once we have some notes and progress data to analyze.</p>
-                {isAdmin && <Button asChild className="mt-4"><Link href="/admin/notes">Add Notes Now</Link></Button>}
-                 {!isAdmin && <Button asChild className="mt-4"><Link href="/notes">Browse Notes Library</Link></Button>}
+                {!isAdmin && <Button asChild className="mt-4"><Link href="/notes">Browse Notes Library</Link></Button>}
             </CardContent>
         </Card>
       )}
@@ -336,14 +341,6 @@ export default function DashboardPage() {
             </div>
         </div>
       )}
-      
-      {isAdmin && (
-          <div className="mt-6">
-              <AdminPanel />
-          </div>
-      )}
     </div>
   );
 }
-
-    
