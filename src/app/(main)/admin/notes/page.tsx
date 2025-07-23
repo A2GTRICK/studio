@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,7 @@ export default function AdminNotesPage() {
     const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
     const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
+    const [activeTab, setActiveTab] = useState('ai-generate');
     
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -93,7 +95,7 @@ export default function AdminNotesPage() {
      useEffect(() => {
         let interval: NodeJS.Timeout;
         if (isSubmitting) {
-          const messageArray = currentSubmissionMessage.includes('AI') ? aiSubmissionMessages : submissionMessages;
+          const messageArray = activeTab === 'ai-generate' ? aiSubmissionMessages : submissionMessages;
           interval = setInterval(() => {
             setCurrentSubmissionMessage(prev => {
                 const nextIndex = (messageArray.indexOf(prev) + 1) % messageArray.length;
@@ -102,7 +104,7 @@ export default function AdminNotesPage() {
           }, 2500);
         }
         return () => clearInterval(interval);
-    }, [isSubmitting, currentSubmissionMessage]);
+    }, [isSubmitting, activeTab]);
     
     const fetchNotes = useCallback(async () => {
         setIsLoading(true);
@@ -133,7 +135,6 @@ export default function AdminNotesPage() {
         setIsSubmitting(true);
         const form = e.currentTarget;
         const formData = new FormData(form);
-        const activeTab = formData.get('activeTab') as string;
 
         const noteDetails = {
             title: formData.get('title') as string,
@@ -275,13 +276,12 @@ export default function AdminNotesPage() {
                                 <Label htmlFor="isPremium">Mark as Premium</Label>
                             </div>
                         </CardContent>
-                        <Tabs defaultValue="ai-generate" className="w-full">
+                        <Tabs defaultValue="ai-generate" className="w-full" onValueChange={setActiveTab}>
                             <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="ai-generate">AI Generate</TabsTrigger>
                                 <TabsTrigger value="upload-file">Upload File</TabsTrigger>
                                 <TabsTrigger value="g-drive-link">G-Drive Link</TabsTrigger>
                             </TabsList>
-                            <input type="hidden" name="activeTab" value={isSubmitting ? 'ai-generate' : undefined} />
                             <TabsContent value="ai-generate">
                                 <CardContent className="space-y-2 pt-4">
                                     <div className="p-4 text-center bg-primary/5 rounded-lg border border-primary/20">
@@ -398,4 +398,5 @@ export default function AdminNotesPage() {
         </div>
     );
 }
+    
     
