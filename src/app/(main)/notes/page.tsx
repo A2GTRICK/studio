@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, Gem, Lock, ArrowRight, Check, ShoppingCart, Loader2 } from "lucide-react";
+import { Search, BookOpen, Gem, Lock, ArrowRight, Check, ShoppingCart, Loader2, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -22,7 +22,7 @@ export type Note = {
   year: string;
   subject: string;
   isPremium: boolean;
-  content: string; // This will now hold the Google Drive URL
+  content: string; 
   createdAt: any;
 };
 
@@ -41,21 +41,39 @@ const loadingMessages = [
 ];
 
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { title, subject, isPremium, content } = note;
+    const { id, title, subject, isPremium, content } = note;
     
-    // The main button/link action
-    const actionButton = isPremium ? (
-        <Button onClick={onUnlockClick} className="w-full" variant="outline">
-            <Lock className="mr-2 h-4 w-4" />
-            Unlock Note
-        </Button>
-    ) : (
-        <Button asChild className="w-full">
-            <a href={content} target="_blank" rel="noopener noreferrer">
-                Open Note <ArrowRight className="ml-2 h-4 w-4"/>
-            </a>
-        </Button>
-    );
+    const isExternalLink = content.startsWith('http');
+    let actionButton;
+
+    if (isExternalLink) {
+        actionButton = (
+            <Button asChild className="w-full">
+                <a href={content} target="_blank" rel="noopener noreferrer">
+                    Open Note <ExternalLink className="ml-2 h-4 w-4"/>
+                </a>
+            </Button>
+        );
+    } else {
+        actionButton = (
+            <Button asChild className="w-full">
+                <Link href={`/notes/${id}`}>
+                    View Note <ArrowRight className="ml-2 h-4 w-4"/>
+                </Link>
+            </Button>
+        );
+    }
+
+    // Premium notes that are NOT external links require unlocking
+    if (isPremium && !isExternalLink) {
+         actionButton = (
+            <Button onClick={onUnlockClick} className="w-full" variant="outline">
+                <Lock className="mr-2 h-4 w-4" />
+                Unlock Note
+            </Button>
+        )
+    }
+
 
     return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
@@ -83,7 +101,10 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
                     </Badge> : <Badge variant="secondary" className="shrink-0">Free</Badge>}
             </div>
             <CardContent className="p-0 flex-grow">
-                <p className="text-sm text-muted-foreground line-clamp-2">External link to Google Drive. Click below to open.</p>
+                 {isExternalLink ? 
+                    <p className="text-sm text-muted-foreground line-clamp-2">This is a direct link to a Google Drive document. Click below to open.</p> :
+                    <p className="text-sm text-muted-foreground line-clamp-2">Detailed notes on this topic. Click to view inside the app.</p>
+                 }
             </CardContent>
             <CardFooter className="p-0 pt-4">
                 {actionButton}
@@ -312,7 +333,8 @@ export default function NotesPage() {
             // After user clicks "I have paid", we can optimistically open the link
             // In a real app, you'd wait for webhook confirmation
             if (selectedNote) {
-                window.open(selectedNote.content, '_blank');
+                // Since we are not linking directly, we just close the dialogs.
+                // The user would gain access after payment verification.
             }
             setShowPaymentDialog(false);
             setSelectedNote(null);
@@ -321,5 +343,4 @@ export default function NotesPage() {
     </>
   )
 }
-
     
