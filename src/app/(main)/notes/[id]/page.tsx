@@ -55,23 +55,20 @@ export default function NoteDetailPage() {
             if(noteData.content){
                 if (noteData.content.startsWith('https://docs.google.com')) {
                     const gdriveContent = `
-<div class="p-6 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+<div class="p-6 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg dark:bg-blue-900/20 dark:border-blue-700">
     <div class="flex items-center gap-3">
-        <div class="p-2 bg-blue-200 rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-blue-700"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m10.4 17.5 3.1-3.1-3.1-3.1"></path></svg>
+        <div class="p-2 bg-blue-200 rounded-full dark:bg-blue-800/30">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-blue-700 dark:text-blue-300"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" x2="12" y1="18" y2="12"></line><line x1="9" x2="15" y1="15" y2="15"></line></svg>
         </div>
-        <h3 class="text-lg font-semibold text-blue-800">Note Content from Google Drive</h3>
+        <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200">Note Content from Google Drive</h3>
     </div>
-    <p class="mt-3 text-blue-700">This note's content is stored in a Google Drive document. Click the button below to open it in a new tab.</p>
-    <a href="${noteData.content}" target="_blank" rel="noopener noreferrer" class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+    <p class="mt-3 text-blue-700 dark:text-blue-300">This note's content is stored in a Google Drive document. Click the button below to open it in a new tab.</p>
+    <a href="${noteData.content}" target="_blank" rel="noopener noreferrer" class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors no-underline">
         Open Google Drive Document
     </a>
 </div>
                     `;
                     setHtmlContent(gdriveContent);
-                } else if (noteData.content.includes('Note Content from Uploaded File')) {
-                     const fileContent = marked.parse(noteData.content);
-                     setHtmlContent(fileContent);
                 } else {
                     const content = await marked.parse(noteData.content);
                     setHtmlContent(content);
