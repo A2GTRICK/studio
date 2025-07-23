@@ -59,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser && currentUser.emailVerified) {
           setUser(currentUser);
+          // Direct, robust check for the admin email
           setIsAdmin(currentUser.email === ADMIN_EMAIL);
       } else {
           setUser(null);
