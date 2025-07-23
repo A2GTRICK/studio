@@ -7,8 +7,8 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-// --- Hardcoded Admin Email ---
-const ADMIN_EMAIL = 'Sharmaarvind28897@gmail.com';
+// --- Hardcoded Admin User ID ---
+const ADMIN_UID = 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
 // -----------------------------
 
 interface AuthContextType {
@@ -61,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser && currentUser.emailVerified) {
           setUser(currentUser);
-          // Simple hardcoded check for admin email
-          setIsAdmin(currentUser.email === ADMIN_EMAIL);
+          // Simple hardcoded check for admin UID
+          setIsAdmin(currentUser.uid === ADMIN_UID);
       } else {
           setUser(null);
           setIsAdmin(false);
