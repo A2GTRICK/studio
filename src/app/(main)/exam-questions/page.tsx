@@ -112,7 +112,7 @@ export default function ExamQuestionsPage() {
   const dialogTitle = showPremiumDialog === 'download' 
     ? "Download Questions PDF" 
     : "Generate AI Mock Test";
-  const dialogPrice = showPremiumDialog === 'download' ? 'INR 29' : 'INR 49';
+  const dialogPrice = showPremiumDialog === 'download' ? '29' : '49';
 
   return (
     <>
@@ -269,7 +269,7 @@ export default function ExamQuestionsPage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={handleBuyNow}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    Buy Just This for INR 29
+                    Buy Just This for INR {dialogPrice}
                 </Button>
             </div>
         </DialogContent>
@@ -279,9 +279,8 @@ export default function ExamQuestionsPage() {
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
         title={`Buy ${dialogTitle}`}
-        price="INR 29"
+        price={`INR ${dialogPrice}`}
         onPaymentSuccess={() => {
-            // Placeholder for what happens after successful payment confirmation
             setShowPremiumDialog(null);
         }}
     />

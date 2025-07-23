@@ -99,7 +99,7 @@ export default function NoteDetailPage() {
                             <CardTitle className="font-headline text-4xl">{note.title}</CardTitle>
                             <CardDescription className="mt-2 text-base">{note.course} &bull; {note.year} &bull; {note.subject}</CardDescription>
                         </div>
-                        {note.isPremium && <Badge>Premium</Badge>}
+                         {note.isPremium && <Badge>{note.price ? `Premium - INR ${note.price}` : 'Premium'}</Badge>}
                     </div>
                 </CardHeader>
                 <CardContent>

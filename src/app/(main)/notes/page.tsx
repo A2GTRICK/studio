@@ -23,6 +23,7 @@ export type Note = {
   subject: string;
   isPremium: boolean;
   content: string; 
+  price?: string;
   createdAt: any;
 };
 
@@ -315,7 +316,7 @@ export default function NotesPage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={handleBuyNow}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    Buy Just This Note for INR 19
+                    Buy Just This Note for INR {selectedNote?.price || '19'}
                 </Button>
             </div>
         </DialogContent>
@@ -325,13 +326,9 @@ export default function NotesPage() {
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
         title={`Buy "${selectedNote?.title}"`}
-        price="INR 19"
+        price={`INR ${selectedNote?.price || '19'}`}
         onPaymentSuccess={() => {
-            // After user clicks "I have paid", we can optimistically open the link
-            // In a real app, you'd wait for webhook confirmation
             if (selectedNote) {
-                // Since we are not linking directly, we just close the dialogs.
-                // The user would gain access after payment verification.
             }
             setShowPaymentDialog(false);
             setSelectedNote(null);

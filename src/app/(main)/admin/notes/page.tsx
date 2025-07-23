@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Upload, BrainCircuit } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Upload, BrainCircuit, IndianRupee } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -42,6 +42,7 @@ export type Note = {
     subject: string;
     content: string; 
     isPremium: boolean;
+    price?: string; // e.g., "19" or "29"
     createdAt: any;
 };
 
@@ -78,6 +79,7 @@ export default function AdminNotesPage() {
     const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
     const [activeTab, setActiveTab] = useState('ai-generate');
+    const [isPremium, setIsPremium] = useState(false);
     
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -104,7 +106,7 @@ export default function AdminNotesPage() {
           }, 2500);
         }
         return () => clearInterval(interval);
-    }, [isSubmitting, activeTab]);
+    }, [isSubmitting]);
     
     const fetchNotes = useCallback(async () => {
         setIsLoading(true);
@@ -135,20 +137,31 @@ export default function AdminNotesPage() {
         setIsSubmitting(true);
         const form = e.currentTarget;
         const formData = new FormData(form);
+        const isPremiumChecked = formData.get('isPremium') === 'on';
 
-        const noteDetails = {
+        const noteDetails: Partial<Note> = {
             title: formData.get('title') as string,
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
-            isPremium: formData.get('isPremium') === 'on',
+            isPremium: isPremiumChecked,
             content: '', // This will be set based on the tab
         };
+
+        if (isPremiumChecked) {
+            noteDetails.price = formData.get('price') as string;
+        }
 
         if (!noteDetails.course || !noteDetails.year || !noteDetails.title || !noteDetails.subject) {
             toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
             setIsSubmitting(false);
             return;
+        }
+        
+        if (isPremiumChecked && (!noteDetails.price || Number(noteDetails.price) <= 0)) {
+             toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
+             setIsSubmitting(false);
+             return;
         }
 
         try {
@@ -158,21 +171,22 @@ export default function AdminNotesPage() {
                     course: noteDetails.course,
                     year: noteDetails.year,
                     subject: noteDetails.subject,
-                    topic: noteDetails.title,
+                    topic: noteDetails.title!,
                 });
                 noteDetails.content = result.notes;
             } else if (activeTab === 'upload-file') {
-                const file = formData.get('fileUpload') as File;
+                 const file = formData.get('fileUpload') as File;
                 if (!file || file.size === 0) {
                     toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
                     setIsSubmitting(false);
                     return;
                 }
+                // This is a placeholder as actual file upload is not implemented
                 noteDetails.content = `File Uploaded: ${file.name}`;
             } else { // g-drive-link
                 const driveLink = formData.get('driveLink') as string;
-                if (!driveLink) {
-                    toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
+                if (!driveLink || !driveLink.startsWith('http')) {
+                    toast({ title: "Valid Link Required", description: "Please enter a valid Google Drive link.", variant: "destructive" });
                     setIsSubmitting(false);
                     return;
                 }
@@ -188,7 +202,7 @@ export default function AdminNotesPage() {
                 ...noteDetails,
                 id: docRef.id,
                 createdAt: new Date(),
-            };
+            } as Note;
 
             setNotes(prev => [newNoteForState, ...prev]);
 
@@ -198,6 +212,7 @@ export default function AdminNotesPage() {
             });
             form.reset();
             setSelectedCourse("");
+            setIsPremium(false);
 
         } catch (error: any) {
             console.error("Error adding note:", error);
@@ -271,9 +286,24 @@ export default function AdminNotesPage() {
                                 <Label htmlFor="subject">Subject</Label>
                                 <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
                             </div>
-                             <div className="flex items-center space-x-2 pt-2">
-                                <Checkbox id="isPremium" name="isPremium" disabled={isSubmitting}/>
-                                <Label htmlFor="isPremium">Mark as Premium</Label>
+                            <div className="space-y-2 pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="isPremium" name="isPremium" onCheckedChange={(checked) => setIsPremium(Boolean(checked))} disabled={isSubmitting}/>
+                                    <Label htmlFor="isPremium">Mark as Premium</Label>
+                                </div>
+                                {isPremium && (
+                                    <div className="relative pl-6 pt-2">
+                                        <IndianRupee className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            id="price"
+                                            name="price"
+                                            type="number"
+                                            placeholder="e.g., 19"
+                                            className="pl-10"
+                                            disabled={isSubmitting}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                         <Tabs defaultValue="ai-generate" className="w-full" onValueChange={setActiveTab}>
@@ -292,10 +322,10 @@ export default function AdminNotesPage() {
                             </TabsContent>
                             <TabsContent value="upload-file">
                                  <CardContent className="space-y-2 pt-4">
-                                    <Label htmlFor="fileUpload">Upload PDF/DOCX/PPTX</Label>
+                                    <Label htmlFor="fileUpload">Upload PDF/DOCX</Label>
                                      <div className="relative">
                                         <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input id="fileUpload" name="fileUpload" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" className="pl-10" disabled={isSubmitting}/>
+                                        <Input id="fileUpload" name="fileUpload" type="file" accept=".pdf,.doc,.docx" className="pl-10" disabled={isSubmitting}/>
                                      </div>
                                 </CardContent>
                             </TabsContent>
@@ -337,6 +367,7 @@ export default function AdminNotesPage() {
                                     <TableHead>Title</TableHead>
                                     <TableHead>Course</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead>Price</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -347,6 +378,9 @@ export default function AdminNotesPage() {
                                         <TableCell>{note.course} - {note.year}</TableCell>
                                         <TableCell>
                                             {note.isPremium ? <Badge>Premium</Badge> : <Badge variant="secondary">Free</Badge>}
+                                        </TableCell>
+                                         <TableCell>
+                                            {note.isPremium && note.price ? `INR ${note.price}` : 'N/A'}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
