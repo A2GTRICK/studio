@@ -2,7 +2,7 @@
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarMenuBadge } from "@/components/ui/sidebar";
-import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, CheckSquare, Shield, LogOut, BarChart3 } from "lucide-react";
+import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, CheckSquare, Shield, LogOut, BarChart3, User, Settings } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -107,7 +107,7 @@ function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: b
                     <Avatar>
                         <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User avatar'} className="object-cover" />
                         <AvatarFallback>
-                           <A2GLogoIcon />
+                           <User className="h-5 w-5" />
                         </AvatarFallback>
                     </Avatar>
                     <div className="overflow-hidden">
@@ -123,6 +123,12 @@ function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: b
                 </div>
                 <Separator />
                 <div className="p-1 space-y-1">
+                    <Button asChild variant="ghost" className="w-full justify-start">
+                        <Link href="/profile">
+                            <Settings className="mr-2 h-4 w-4" />
+                            Edit Profile
+                        </Link>
+                    </Button>
                     {isAdmin && (
                         <Button asChild variant="ghost" className="w-full justify-start">
                             <Link href="/admin/notes">
@@ -273,6 +279,17 @@ export default function MainLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+
+            {isAdmin && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Admin Panel">
+                        <Link href="/admin/notes">
+                            <Shield />
+                            <span>Admin Panel</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            )}
             
           </SidebarMenu>
         </SidebarContent>
