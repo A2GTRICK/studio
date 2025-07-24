@@ -5,13 +5,13 @@ import { useState, useEffect, useCallback }from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import type { Note } from '@/app/(main)/admin/notes/page';
 import { Loader2, ArrowLeft, ExternalLink, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { marked } from 'marked';
+import type { Note } from '@/context/notes-context';
 
 export default function NoteDetailPage() {
     const [note, setNote] = useState<Note | null>(null);

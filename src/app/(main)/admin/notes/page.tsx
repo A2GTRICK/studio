@@ -30,29 +30,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
-
-export type Note = {
-    id: string;
-    title: string;
-    course: string;
-    year: string;
-    subject: string;
-    content: string; 
-    isPremium: boolean;
-    price?: string; // e.g., "19" or "29"
-    thumbnail?: string;
-    createdAt: any;
-};
-
-const loadingMessages = [
-    "Admin powers activating...",
-    "Database se saare notes laa rahe hain...",
-    "Sorting notes by 'most recently added'...",
-    "Almost there, boss!"
-];
+import { useNotes } from '@/context/notes-context';
+import type { Note } from '@/context/notes-context';
 
 const submissionMessages = [
     "Details ko verify kar rahe hain...",
@@ -72,28 +54,13 @@ const yearOptions: { [key: string]: string[] } = {
 };
 
 export default function AdminNotesPage() {
-    const [notes, setNotes] = useState<Note[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { notes, loading, addNote, deleteNote } = useNotes();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
-    const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
     const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
     const [activeTab, setActiveTab] = useState('ai-generate');
     const [isPremium, setIsPremium] = useState(false);
-    
-     useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (isLoading) {
-          interval = setInterval(() => {
-            setCurrentLoadingMessage(prev => {
-                const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
-                return loadingMessages[nextIndex];
-            });
-          }, 2500);
-        }
-        return () => clearInterval(interval);
-    }, [isLoading]);
 
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -109,53 +76,25 @@ export default function AdminNotesPage() {
         return () => clearInterval(interval);
     }, [isSubmitting, activeTab]);
     
-    const fetchNotes = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const notesCollection = collection(db, 'notes');
-            const q = query(notesCollection, orderBy('createdAt', 'desc'));
-            const notesSnapshot = await getDocs(q);
-            const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
-            setNotes(notesList);
-        } catch (error) {
-            console.error("Error fetching notes:", error);
-            toast({
-                title: "Error fetching notes",
-                description: "Could not retrieve notes from the database.",
-                variant: "destructive"
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [toast]);
-
-    useEffect(() => {
-        if (notes.length === 0) {
-            fetchNotes();
-        }
-    }, [notes.length, fetchNotes]);
 
     const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setCurrentSubmissionMessage(submissionMessages[0]); // Reset message
+        setCurrentSubmissionMessage(submissionMessages[0]);
         const form = e.currentTarget;
         const formData = new FormData(form);
         const isPremiumChecked = formData.get('isPremium') === 'on';
 
-        const noteDetails: Partial<Note> = {
+        const noteDetails: Omit<Note, 'id' | 'createdAt'> = {
             title: formData.get('title') as string,
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
             thumbnail: formData.get('thumbnail') as string,
             isPremium: isPremiumChecked,
-            content: '', // This will be set based on the tab
+            content: '',
+            price: isPremiumChecked ? formData.get('price') as string : undefined,
         };
-
-        if (isPremiumChecked) {
-            noteDetails.price = formData.get('price') as string;
-        }
 
         if (!noteDetails.course || !noteDetails.year || !noteDetails.title || !noteDetails.subject) {
             toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
@@ -197,18 +136,7 @@ export default function AdminNotesPage() {
                 noteDetails.content = driveLink;
             }
 
-            const docRef = await addDoc(collection(db, 'notes'), {
-                ...noteDetails,
-                createdAt: serverTimestamp(),
-            });
-            
-            const newNoteForState: Note = {
-                ...noteDetails,
-                id: docRef.id,
-                createdAt: new Date(),
-            } as Note;
-
-            setNotes(prev => [newNoteForState, ...prev]);
+            await addNote(noteDetails);
 
             toast({
                 title: "Note Added Successfully!",
@@ -232,8 +160,7 @@ export default function AdminNotesPage() {
     
     const handleDeleteNote = async (noteId: string) => {
         try {
-            await deleteDoc(doc(db, 'notes', noteId));
-            setNotes(prev => prev.filter(note => note.id !== noteId));
+            await deleteNote(noteId);
             toast({
                 title: "Note Deleted",
                 description: "The note has been removed from the library.",
@@ -366,10 +293,10 @@ export default function AdminNotesPage() {
                         <CardDescription>View, edit, or delete notes currently in the library.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {isLoading ? (
+                        {loading ? (
                             <div className="flex flex-col items-center justify-center h-48">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
+                                <p className="mt-4 text-muted-foreground">Loading notes...</p>
                             </div>
                         ) : (
                         <Table>
@@ -443,3 +370,4 @@ export default function AdminNotesPage() {
         </div>
     );
 }
+

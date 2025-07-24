@@ -14,12 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, query } from 'firebase/firestore';
-import type { Note } from '@/app/(main)/admin/notes/page';
 import { marked } from 'marked';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useNotes, type Note } from '@/context/notes-context';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -51,7 +49,7 @@ export default function AiNotesPage() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [followUp, setFollowUp] = useState('');
   const [lastTopic, setLastTopic] = useState<NotesFormValues | null>(null);
-  const [allNotes, setAllNotes] = useState<Note[]>([]);
+  const { notes: allNotes } = useNotes();
   const [error, setError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
 
@@ -67,17 +65,6 @@ export default function AiNotesPage() {
     }
     return () => clearInterval(interval);
   }, [isLoading]);
-
-
-  useState(() => {
-    const fetchAllNotes = async () => {
-        const notesCollection = collection(db, 'notes');
-        const notesSnapshot = await getDocs(query(notesCollection));
-        const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
-        setAllNotes(notesList);
-    };
-    fetchAllNotes();
-  });
 
   const form = useForm<NotesFormValues>({
     resolver: zodResolver(notesFormSchema),
@@ -316,5 +303,3 @@ export default function AiNotesPage() {
     </div>
   );
 }
-
-    

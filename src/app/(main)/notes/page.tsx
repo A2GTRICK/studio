@@ -11,37 +11,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { AiImage } from '@/components/ai-image';
-
-export type Note = {
-  id: string;
-  title: string;
-  course: string;
-  year: string;
-  subject: string;
-  isPremium: boolean;
-  content: string; 
-  price?: string;
-  thumbnail?: string;
-  createdAt: any;
-};
+import { useNotes, type Note } from '@/context/notes-context';
+import Image from 'next/image';
 
 const premiumFeatures = [
     "Access to ALL detailed library notes",
     "AI Note & Exam Question Generation",
     "Ask follow-up questions to our AI Tutor",
     "In-depth competitive exam preparation",
-];
-
-const loadingMessages = [
-    "Poori library scan kar rahe hain, aapke liye...",
-    "Notes ke pannon ko palat rahe hain...",
-    "Finding the shiniest notes for you... ✨",
-    "Hold on, dusting off the shelves!",
 ];
 
 const NoteCardSkeleton = () => (
@@ -62,11 +41,11 @@ const NoteCardSkeleton = () => (
     </Card>
 );
 
-
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { id, title, course, year, subject, isPremium, content, price } = note;
+    const { id, title, course, year, subject, isPremium, content, price, thumbnail } = note;
     
     const isExternalLink = content.startsWith('http');
+    const isGoogleDriveLink = thumbnail?.includes('drive.google.com');
 
     let actionButton;
 
@@ -97,7 +76,7 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
 
     return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
-        <CardHeader className="p-4 pb-0">
+        <CardHeader className="p-4">
             <div className="flex justify-between items-start mb-2">
                 <CardTitle className="font-headline text-lg leading-tight flex-1 pr-2">{title}</CardTitle>
                 {isPremium ? 
@@ -112,15 +91,9 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
               <span>{year}</span>
             </CardDescription>
         </CardHeader>
-        <CardContent className="p-4 flex-grow">
+        <CardContent className="p-4 pt-0 flex-grow">
              <p className="text-sm text-muted-foreground">
                 <span className="font-semibold">Subject:</span> {subject}
-             </p>
-             <p className="text-xs text-muted-foreground line-clamp-2 mt-2">
-                {isExternalLink 
-                    ? "This is an external document. Click below to open it in a new tab." 
-                    : "These are detailed notes available to view directly inside the app."
-                }
              </p>
         </CardContent>
         <CardFooter className="p-4 pt-0 mt-auto">
@@ -130,8 +103,7 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
 )};
 
 export default function NotesPage() {
-    const [allNotes, setAllNotes] = useState<Note[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { notes: allNotes, loading: isLoading } = useNotes();
     const [filters, setFilters] = useState({
         course: 'All',
         year: 'All',
@@ -141,43 +113,6 @@ export default function NotesPage() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-    const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
-
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (isLoading) {
-          interval = setInterval(() => {
-            setCurrentLoadingMessage(prev => {
-                const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
-                return loadingMessages[nextIndex];
-            });
-          }, 2500);
-        }
-        return () => clearInterval(interval);
-    }, [isLoading]);
-    
-    const fetchNotes = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const notesCollection = collection(db, 'notes');
-            const q = query(notesCollection, orderBy('createdAt', 'desc'));
-            const notesSnapshot = await getDocs(q);
-            const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
-            setAllNotes(notesList);
-        } catch (error) {
-            console.error("Error fetching notes:", error);
-            // In a real app, you might want to show a toast here.
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        // Only fetch notes if the list is empty (i.e., on first load)
-        if (allNotes.length === 0) {
-            fetchNotes();
-        }
-    }, [allNotes.length, fetchNotes]);
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -310,7 +245,7 @@ export default function NotesPage() {
             <div className="space-y-8">
                 <div className="lg:col-span-full text-center py-10">
                     <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                    <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
+                    <p className="mt-4 text-muted-foreground animate-pulse">Pre-loading notes for a faster experience...</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {Array.from({ length: 8 }).map((_, i) => (
