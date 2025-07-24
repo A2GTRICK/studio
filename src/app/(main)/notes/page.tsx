@@ -46,7 +46,6 @@ const loadingMessages = [
 
 const NoteCardSkeleton = () => (
     <Card className="flex flex-col overflow-hidden">
-        <Skeleton className="h-40 w-full" />
         <div className="p-4 flex flex-col flex-grow">
             <Skeleton className="h-5 w-3/4 mb-2" />
             <Skeleton className="h-4 w-1/2 mb-4" />
@@ -59,14 +58,12 @@ const NoteCardSkeleton = () => (
 
 
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { id, title, subject, isPremium, content, price, thumbnail } = note;
+    const { id, title, course, year, subject, isPremium, content, price } = note;
     
     const isExternalLink = content.startsWith('http');
-    const isInvalidThumbnail = thumbnail && thumbnail.includes("drive.google.com");
 
     let actionButton;
 
-    // The logic is now corrected: Premium check comes first.
     if (isPremium) {
          actionButton = (
             <Button onClick={onUnlockClick} className="w-full" variant="outline">
@@ -92,48 +89,36 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
         );
     }
 
-
     return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
-        <CardHeader className="p-0">
-             <div className="relative h-40 w-full">
-                {thumbnail && !isInvalidThumbnail ? (
-                    <Image
-                        src={thumbnail}
-                        alt={title}
-                        fill
-                        className="object-cover"
-                    />
-                ) : (
-                    <AiImage 
-                        data-ai-hint="pharmacy textbook"
-                        alt={title}
-                        fill
-                        className="object-cover"
-                        height={160}
-                    />
-                )}
-            </div>
-        </CardHeader>
         <div className="p-4 flex flex-col flex-grow">
-            <div className="flex justify-between items-start mb-2">
-                <div>
-                    <CardTitle className="font-headline text-lg leading-tight">{title}</CardTitle>
-                    <CardDescription>{subject}</CardDescription>
+            <CardHeader className="p-0">
+                <div className="flex justify-between items-start mb-2">
+                    <div>
+                        <CardTitle className="font-headline text-lg leading-tight">{title}</CardTitle>
+                        <CardDescription>{subject}</CardDescription>
+                    </div>
+                    {isPremium ? 
+                        <Badge variant="default" className="bg-accent text-accent-foreground flex items-center gap-1 shrink-0">
+                            <Gem className="h-3 w-3" />
+                            Premium
+                        </Badge> : <Badge variant="secondary" className="shrink-0">Free</Badge>}
                 </div>
-                {isPremium ? 
-                    <Badge variant="default" className="bg-accent text-accent-foreground flex items-center gap-1 shrink-0">
-                        <Gem className="h-3 w-3" />
-                        Premium
-                    </Badge> : <Badge variant="secondary" className="shrink-0">Free</Badge>}
-            </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                  <span>{course}</span>
+                  <span>&bull;</span>
+                  <span>{year}</span>
+                </div>
+            </CardHeader>
             <CardContent className="p-0 flex-grow">
-                 {isExternalLink ? 
-                    <p className="text-sm text-muted-foreground line-clamp-2">This is a direct link to an external document. Click below to open.</p> :
-                    <p className="text-sm text-muted-foreground line-clamp-2">Detailed notes on this topic. Click to view inside the app.</p>
-                 }
+                 <p className="text-sm text-muted-foreground line-clamp-2">
+                    {isExternalLink 
+                        ? "This is an external document. Click below to open it in a new tab." 
+                        : "These are detailed notes available to view directly inside the app."
+                    }
+                 </p>
             </CardContent>
-            <CardFooter className="p-0 pt-4">
+            <CardFooter className="p-0 pt-4 mt-auto">
                 {actionButton}
             </CardFooter>
         </div>
