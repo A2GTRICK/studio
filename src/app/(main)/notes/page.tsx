@@ -7,15 +7,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, BookOpen, Gem, Lock, ArrowRight, Check, ShoppingCart, Loader2, ExternalLink } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { AiImage } from '@/components/ai-image';
 import { Skeleton } from '@/components/ui/skeleton';
-import Image from 'next/image';
+import { Separator } from '@/components/ui/separator';
 
 export type Note = {
   id: string;
@@ -49,7 +48,10 @@ const NoteCardSkeleton = () => (
         <div className="p-4 flex flex-col flex-grow">
             <Skeleton className="h-5 w-3/4 mb-2" />
             <Skeleton className="h-4 w-1/2 mb-4" />
-            <Skeleton className="h-8 w-full" />
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+            </div>
             <div className="flex-grow" />
             <Skeleton className="h-10 w-full mt-4" />
         </div>
@@ -91,37 +93,35 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
 
     return (
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
-        <div className="p-4 flex flex-col flex-grow">
-            <CardHeader className="p-0">
-                <div className="flex justify-between items-start mb-2">
-                    <div>
-                        <CardTitle className="font-headline text-lg leading-tight">{title}</CardTitle>
-                        <CardDescription>{subject}</CardDescription>
-                    </div>
-                    {isPremium ? 
-                        <Badge variant="default" className="bg-accent text-accent-foreground flex items-center gap-1 shrink-0">
-                            <Gem className="h-3 w-3" />
-                            Premium
-                        </Badge> : <Badge variant="secondary" className="shrink-0">Free</Badge>}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                  <span>{course}</span>
-                  <span>&bull;</span>
-                  <span>{year}</span>
-                </div>
-            </CardHeader>
-            <CardContent className="p-0 flex-grow">
-                 <p className="text-sm text-muted-foreground line-clamp-2">
-                    {isExternalLink 
-                        ? "This is an external document. Click below to open it in a new tab." 
-                        : "These are detailed notes available to view directly inside the app."
-                    }
-                 </p>
-            </CardContent>
-            <CardFooter className="p-0 pt-4 mt-auto">
-                {actionButton}
-            </CardFooter>
-        </div>
+        <CardHeader className="p-4 pb-0">
+            <div className="flex justify-between items-start mb-2">
+                <CardTitle className="font-headline text-lg leading-tight flex-1 pr-2">{title}</CardTitle>
+                {isPremium ? 
+                    <Badge variant="default" className="bg-accent text-accent-foreground flex items-center gap-1 shrink-0">
+                        <Gem className="h-3 w-3" />
+                        Premium
+                    </Badge> : <Badge variant="secondary" className="shrink-0">Free</Badge>}
+            </div>
+            <CardDescription className="flex items-center gap-2 text-xs">
+              <span>{course}</span>
+              <span>&bull;</span>
+              <span>{year}</span>
+            </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 flex-grow">
+             <p className="text-sm text-muted-foreground">
+                <span className="font-semibold">Subject:</span> {subject}
+             </p>
+             <p className="text-xs text-muted-foreground line-clamp-2 mt-2">
+                {isExternalLink 
+                    ? "This is an external document. Click below to open it in a new tab." 
+                    : "These are detailed notes available to view directly inside the app."
+                }
+             </p>
+        </CardContent>
+        <CardFooter className="p-4 pt-0 mt-auto">
+            {actionButton}
+        </CardFooter>
     </Card>
 )};
 
@@ -169,7 +169,6 @@ export default function NotesPage() {
     }, []);
 
     useEffect(() => {
-        // Fetch notes only if they haven't been loaded yet.
         if (allNotes.length === 0) {
             fetchNotes();
         }
@@ -178,7 +177,7 @@ export default function NotesPage() {
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
-        }, 300); // 300ms debounce delay
+        }, 300); 
 
         return () => {
             clearTimeout(handler);
@@ -244,6 +243,18 @@ export default function NotesPage() {
             return courseMatch && yearMatch && subjectMatch && searchMatch;
         });
     }, [filters, debouncedSearchQuery, allNotes]);
+    
+    const groupedNotes = useMemo(() => {
+        if (!filteredNotes) return {};
+        return filteredNotes.reduce((acc, note) => {
+            const courseKey = note.course || 'Uncategorized';
+            if (!acc[courseKey]) {
+                acc[courseKey] = [];
+            }
+            acc[courseKey].push(note);
+            return acc;
+        }, {} as Record<string, Note[]>);
+    }, [filteredNotes]);
 
 
   return (
@@ -289,21 +300,29 @@ export default function NotesPage() {
         </CardContent>
       </Card>
 
-      <div>
+      <div className="space-y-8">
         {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                 <div className="lg:col-span-full text-center py-10">
+            <div className="space-y-8">
+                <div className="lg:col-span-full text-center py-10">
                     <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
                     <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
-                 </div>
-                 {Array.from({ length: 8 }).map((_, i) => (
-                    <NoteCardSkeleton key={i} />
-                ))}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <NoteCardSkeleton key={i} />
+                    ))}
+                </div>
             </div>
-        ) : filteredNotes.length > 0 ? (
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredNotes.map(note => <NoteCard key={note.id} note={note} onUnlockClick={() => handleUnlockClick(note)} />)}
-             </div>
+        ) : Object.keys(groupedNotes).length > 0 ? (
+             Object.entries(groupedNotes).map(([course, notes]) => (
+                <section key={course}>
+                    <h2 className="text-2xl font-headline font-bold mb-4">{course} Notes</h2>
+                    <Separator className="mb-6"/>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {notes.map(note => <NoteCard key={note.id} note={note} onUnlockClick={() => handleUnlockClick(note)} />)}
+                    </div>
+                </section>
+             ))
         ) : (
             <Card className="mt-8">
                 <CardContent className="p-10 flex flex-col items-center justify-center text-center">
@@ -365,3 +384,5 @@ export default function NotesPage() {
     </>
   )
 }
+
+    
