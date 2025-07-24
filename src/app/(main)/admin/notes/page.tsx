@@ -130,8 +130,10 @@ export default function AdminNotesPage() {
     }, [toast]);
 
     useEffect(() => {
-        fetchNotes();
-    }, [fetchNotes]);
+        if (notes.length === 0) {
+            fetchNotes();
+        }
+    }, [notes.length, fetchNotes]);
 
     const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
