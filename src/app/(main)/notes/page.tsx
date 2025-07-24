@@ -15,6 +15,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { AiImage } from '@/components/ai-image';
 
 export type Note = {
   id: string;
@@ -45,16 +46,19 @@ const loadingMessages = [
 
 const NoteCardSkeleton = () => (
     <Card className="flex flex-col overflow-hidden">
-        <div className="p-4 flex flex-col flex-grow">
+        <CardHeader className="p-4 pb-0">
             <Skeleton className="h-5 w-3/4 mb-2" />
             <Skeleton className="h-4 w-1/2 mb-4" />
+        </CardHeader>
+        <CardContent className="p-4 flex-grow">
             <div className="space-y-2">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-5/6" />
             </div>
-            <div className="flex-grow" />
-            <Skeleton className="h-10 w-full mt-4" />
-        </div>
+        </CardContent>
+        <CardFooter className="p-4 pt-0 mt-auto">
+            <Skeleton className="h-10 w-full" />
+        </CardFooter>
     </Card>
 );
 
@@ -385,5 +389,3 @@ export default function NotesPage() {
     </>
   )
 }
-
-    

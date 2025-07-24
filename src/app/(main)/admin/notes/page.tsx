@@ -294,7 +294,7 @@ export default function AdminNotesPage() {
                                 <Label htmlFor="thumbnail">Thumbnail Image URL (Optional)</Label>
                                 <div className="relative">
                                     <ImageIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input id="thumbnail" name="thumbnail" placeholder="https://example.com/image.png" className="pl-10" disabled={isSubmitting} />
+                                    <Input id="thumbnail" name="thumbnail" placeholder="https://postimages.org/..." className="pl-10" disabled={isSubmitting} />
                                 </div>
                             </div>
                             <div className="space-y-2 pt-2">
