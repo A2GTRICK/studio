@@ -169,6 +169,7 @@ export default function NotesPage() {
     }, []);
 
     useEffect(() => {
+        // Only fetch notes if the list is empty (i.e., on first load)
         if (allNotes.length === 0) {
             fetchNotes();
         }
@@ -384,3 +385,5 @@ export default function NotesPage() {
     </>
   )
 }
+
+    
