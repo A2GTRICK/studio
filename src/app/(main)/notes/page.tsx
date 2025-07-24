@@ -62,6 +62,8 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
     const { id, title, subject, isPremium, content, price, thumbnail } = note;
     
     const isExternalLink = content.startsWith('http');
+    const isInvalidThumbnail = thumbnail && thumbnail.includes("drive.google.com");
+
     let actionButton;
 
     // The logic is now corrected: Premium check comes first.
@@ -95,7 +97,7 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
     <Card className="hover:shadow-lg transition-shadow duration-300 flex flex-col group overflow-hidden">
         <CardHeader className="p-0">
              <div className="relative h-40 w-full">
-                {thumbnail ? (
+                {thumbnail && !isInvalidThumbnail ? (
                     <Image
                         src={thumbnail}
                         alt={title}
