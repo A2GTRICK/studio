@@ -80,63 +80,70 @@ export default function AdminNotesPage() {
     const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setCurrentSubmissionMessage(submissionMessages[0]);
         const form = e.currentTarget;
         const formData = new FormData(form);
+
         const isPremiumChecked = formData.get('isPremium') === 'on';
 
-        const noteDetails: Omit<Note, 'id' | 'createdAt'> = {
+        const baseNoteDetails = {
             title: formData.get('title') as string,
             course: formData.get('course') as string,
             year: formData.get('year') as string,
             subject: formData.get('subject') as string,
             thumbnail: formData.get('thumbnail') as string,
             isPremium: isPremiumChecked,
-            content: '',
             price: isPremiumChecked ? (formData.get('price') as string) : undefined,
         };
-        
-        if (!noteDetails.title || !noteDetails.course || !noteDetails.year || !noteDetails.subject) {
+
+        if (!baseNoteDetails.title || !baseNoteDetails.course || !baseNoteDetails.year || !baseNoteDetails.subject) {
             toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
             setIsSubmitting(false);
             return;
         }
-        
-        if (isPremiumChecked && (!noteDetails.price || Number(noteDetails.price) <= 0)) {
-             toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
-             setIsSubmitting(false);
-             return;
+
+        if (isPremiumChecked && (!baseNoteDetails.price || Number(baseNoteDetails.price) <= 0)) {
+            toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
+            setIsSubmitting(false);
+            return;
         }
 
         try {
+            let noteContent = '';
             if (activeTab === 'ai-generate') {
                 setCurrentSubmissionMessage(aiSubmissionMessages[0]);
                 const result = await generateNotesFromTopic({
-                    course: noteDetails.course,
-                    year: noteDetails.year,
-                    subject: noteDetails.subject,
-                    topic: noteDetails.title!,
+                    course: baseNoteDetails.course,
+                    year: baseNoteDetails.year,
+                    subject: baseNoteDetails.subject,
+                    topic: baseNoteDetails.title,
                 });
-                noteDetails.content = result.notes;
+                noteContent = result.notes;
             } else if (activeTab === 'upload-file') {
-                 const file = formData.get('fileUpload') as File;
+                setCurrentSubmissionMessage(submissionMessages[0]);
+                const file = formData.get('fileUpload') as File;
                 if (!file || file.size === 0) {
                     toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
                     setIsSubmitting(false);
                     return;
                 }
-                noteDetails.content = `File Uploaded: ${file.name}`;
+                noteContent = `File Uploaded: ${file.name}`;
             } else { // g-drive-link
+                setCurrentSubmissionMessage(submissionMessages[0]);
                 const driveLink = formData.get('driveLink') as string;
                 if (!driveLink || !driveLink.startsWith('http')) {
                     toast({ title: "Valid Link Required", description: "Please enter a valid Google Drive link.", variant: "destructive" });
                     setIsSubmitting(false);
                     return;
                 }
-                noteDetails.content = driveLink;
+                noteContent = driveLink;
             }
 
-            const finalNoteDetails: any = { ...noteDetails };
+            const finalNote: Omit<Note, 'id' | 'createdAt'> = {
+                ...baseNoteDetails,
+                content: noteContent,
+            };
+
+            const finalNoteDetails: any = { ...finalNote };
             if (!finalNoteDetails.isPremium) {
                 delete finalNoteDetails.price;
             }
@@ -145,12 +152,12 @@ export default function AdminNotesPage() {
 
             toast({
                 title: "Note Added Successfully!",
-                description: `"${noteDetails.title}" has been added to the library.`
+                description: `"${baseNoteDetails.title}" has been added to the library.`
             });
             form.reset();
             setSelectedCourse("");
             setIsPremium(false);
-
+            
         } catch (error: any) {
             console.error("Error adding note:", error);
             toast({
