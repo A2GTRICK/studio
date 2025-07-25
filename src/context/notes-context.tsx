@@ -64,27 +64,51 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   }, [user, fetchNotes]);
 
   const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>) => {
-    // 1. Save the new note to Firestore first.
-    const docRef = await addDoc(collection(db, 'notes'), {
-      ...noteData,
-      createdAt: serverTimestamp(),
-    });
+    // Optimistic UI Update:
+    // 1. Create a temporary note object and add it to the local state immediately.
+    const tempId = `temp_${Date.now()}`;
+    const tempNote: Note = {
+        ...noteData,
+        id: tempId,
+        createdAt: new Date(), // Use local time for now
+    };
 
-    // 2. Fetch the newly created document from Firestore to get the server-generated timestamp.
-    const newDocSnapshot = await getDoc(docRef);
-    if (newDocSnapshot.exists()) {
-        const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
-        
-        // 3. Update the local state with the confirmed data from the database.
-        setNotes(prevNotes => [newNote, ...prevNotes].sort((a, b) => {
-            const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(0);
-            const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(0);
-            return dateB.getTime() - dateA.getTime();
-        }));
-    } else {
-        // If for some reason the doc doesn't exist, refetch all notes as a fallback.
-        console.warn("Could not find newly created note, refetching all notes.");
-        await fetchNotes();
+    setNotes(prevNotes => [tempNote, ...prevNotes].sort((a, b) => {
+        const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
+        const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(b.createdAt);
+        return dateB.getTime() - dateA.getTime();
+    }));
+
+    try {
+        // 2. Save the new note to Firestore in the background.
+        const docRef = await addDoc(collection(db, 'notes'), {
+            ...noteData,
+            createdAt: serverTimestamp(),
+        });
+
+        // 3. Once saved, fetch the real note data from Firestore.
+        const newDocSnapshot = await getDoc(docRef);
+        if (newDocSnapshot.exists()) {
+            const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
+            
+            // 4. Replace the temporary note in the local state with the permanent one from the database.
+            setNotes(prevNotes => 
+                prevNotes.map(note => (note.id === tempId ? newNote : note))
+                         .sort((a, b) => {
+                            const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
+                            const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(b.createdAt);
+                            return dateB.getTime() - dateA.getTime();
+                          })
+            );
+        } else {
+             throw new Error("Could not retrieve saved note from database.");
+        }
+    } catch (err) {
+        console.error("Error adding note, reverting optimistic update:", err);
+        // If the save fails, remove the temporary note from the list.
+        setNotes(prevNotes => prevNotes.filter(note => note.id !== tempId));
+        // Optionally, show an error toast to the user.
+        throw err; // Re-throw error to be caught by the calling component
     }
   };
 
