@@ -82,7 +82,7 @@ export default function AdminNotesPage() {
         setIsSubmitting(true);
         const form = e.currentTarget;
         const formData = new FormData(form);
-
+        
         const isPremiumChecked = formData.get('isPremium') === 'on';
 
         const baseNoteDetails = {
@@ -109,6 +109,7 @@ export default function AdminNotesPage() {
 
         try {
             let noteContent = '';
+
             if (activeTab === 'ai-generate') {
                 setCurrentSubmissionMessage(aiSubmissionMessages[0]);
                 const result = await generateNotesFromTopic({
@@ -126,11 +127,11 @@ export default function AdminNotesPage() {
                     setIsSubmitting(false);
                     return;
                 }
-                noteContent = `File Uploaded: ${file.name}`;
+                noteContent = `File Uploaded: ${file.name}`; // In a real app, you'd upload this file.
             } else { // g-drive-link
                 setCurrentSubmissionMessage(submissionMessages[0]);
                 const driveLink = formData.get('driveLink') as string;
-                if (!driveLink) {
+                 if (!driveLink) {
                     toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
                     setIsSubmitting(false);
                     return;
@@ -138,13 +139,13 @@ export default function AdminNotesPage() {
                 noteContent = driveLink;
             }
 
-            const finalNote: Omit<Note, 'id' | 'createdAt'> = {
+            const noteToAdd: Omit<Note, 'id' | 'createdAt'> = {
                 ...baseNoteDetails,
                 content: noteContent,
             };
-
-            const finalNoteDetails: any = { ...finalNote };
-            if (!finalNoteDetails.isPremium) {
+            
+            const finalNoteDetails: any = { ...noteToAdd };
+            if (!finalNoteDetails.isPremium || !finalNoteDetails.price) {
                 delete finalNoteDetails.price;
             }
 
@@ -382,5 +383,7 @@ export default function AdminNotesPage() {
         </div>
     );
 }
+
+    
 
     
