@@ -130,8 +130,8 @@ export default function AdminNotesPage() {
             } else { // g-drive-link
                 setCurrentSubmissionMessage(submissionMessages[0]);
                 const driveLink = formData.get('driveLink') as string;
-                if (!driveLink || !driveLink.startsWith('http')) {
-                    toast({ title: "Valid Link Required", description: "Please enter a valid Google Drive link.", variant: "destructive" });
+                if (!driveLink) {
+                    toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
                     setIsSubmitting(false);
                     return;
                 }
@@ -383,3 +383,4 @@ export default function AdminNotesPage() {
     );
 }
 
+    
