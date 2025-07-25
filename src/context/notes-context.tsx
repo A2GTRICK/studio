@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, deleteDoc, doc, getDocs, query, orderBy, serverTimestamp, DocumentData, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, getDocs, query, orderBy, serverTimestamp, DocumentData, Timestamp, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 
 export interface Note {
@@ -56,22 +56,36 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     // Fetch notes only when user is authenticated
     if (user) {
       fetchNotes();
+    } else {
+      // If user logs out, clear notes and stop loading
+      setNotes([]);
+      setLoading(false);
     }
   }, [user, fetchNotes]);
 
   const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>) => {
+    // 1. Save the new note to Firestore first.
     const docRef = await addDoc(collection(db, 'notes'), {
       ...noteData,
       createdAt: serverTimestamp(),
     });
 
-    const newNoteForState: Note = {
-      ...noteData,
-      id: docRef.id,
-      createdAt: new Date(),
-    };
-
-    setNotes(prevNotes => [newNoteForState, ...prevNotes]);
+    // 2. Fetch the newly created document from Firestore to get the server-generated timestamp.
+    const newDocSnapshot = await getDoc(docRef);
+    if (newDocSnapshot.exists()) {
+        const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
+        
+        // 3. Update the local state with the confirmed data from the database.
+        setNotes(prevNotes => [newNote, ...prevNotes].sort((a, b) => {
+            const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(0);
+            const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(0);
+            return dateB.getTime() - dateA.getTime();
+        }));
+    } else {
+        // If for some reason the doc doesn't exist, refetch all notes as a fallback.
+        console.warn("Could not find newly created note, refetching all notes.");
+        await fetchNotes();
+    }
   };
 
   const deleteNote = async (noteId: string) => {
