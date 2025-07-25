@@ -33,7 +33,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth(); // We can use auth state to decide when to fetch
+  const { user } = useAuth();
 
   const fetchNotes = useCallback(async () => {
     setLoading(true);
@@ -53,11 +53,9 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Fetch notes only when user is authenticated
     if (user) {
       fetchNotes();
     } else {
-      // If user logs out, clear notes and stop loading
       setNotes([]);
       setLoading(false);
     }
@@ -79,25 +77,27 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
     try {
         const noteToSave: any = {
-          ...noteData,
+          title: noteData.title,
+          course: noteData.course,
+          year: noteData.year,
+          subject: noteData.subject,
+          content: noteData.content,
+          isPremium: noteData.isPremium,
           createdAt: serverTimestamp(),
         };
 
-        // ** ROBUST DATA CLEANING **
-        // Ensure no undefined or empty values are sent to Firestore for optional fields.
-        if (!noteToSave.price) {
-          delete noteToSave.price;
+        if (noteData.price) {
+          noteToSave.price = noteData.price;
         }
-        if (!noteToSave.thumbnail) {
-          delete noteToSave.thumbnail;
+        if (noteData.thumbnail) {
+          noteToSave.thumbnail = noteData.thumbnail;
         }
-
-        const docRef = await addDoc(collection(db, 'notes'), noteToSave);
         
+        const docRef = await addDoc(collection(db, 'notes'), noteToSave);
         const newDocSnapshot = await getDoc(docRef);
+
         if (newDocSnapshot.exists()) {
             const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
-            
             setNotes(prevNotes => 
                 prevNotes.map(note => (note.id === tempId ? newNote : note))
                          .sort((a, b) => {
@@ -117,7 +117,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteNote = async (noteId: string) => {
-    // Optimistic UI: remove note from list immediately
     const notesBeforeDelete = notes;
     setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
 
@@ -125,7 +124,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         await deleteDoc(doc(db, 'notes', noteId));
     } catch (err) {
         console.error("Error deleting note, reverting optimistic update:", err);
-        // If deletion fails, revert the change
         setNotes(notesBeforeDelete);
         throw err;
     }
