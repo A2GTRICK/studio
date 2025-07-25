@@ -12,15 +12,17 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { marked } from 'marked';
 import type { Note } from '@/context/notes-context';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function NoteDetailPage() {
     const [note, setNote] = useState<Note | null>(null);
     const [loading, setLoading] = useState(true);
     const params = useParams();
     const id = typeof params.id === 'string' ? params.id : '';
+    const { user, loading: authLoading } = useAuth();
 
     const fetchNote = useCallback(async () => {
-        if (!id) return;
+        if (!id || !user) return; // Wait for user to be authenticated
         setLoading(true);
         try {
             const noteDoc = await getDoc(doc(db, 'notes', id));
@@ -35,13 +37,20 @@ export default function NoteDetailPage() {
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, user]);
 
     useEffect(() => {
-        fetchNote();
-    }, [fetchNote]);
+        // Only fetch note when auth state is resolved and user exists
+        if (!authLoading && user) {
+            fetchNote();
+        } else if (!authLoading && !user) {
+            // Handle case where user is not logged in after auth check
+            setLoading(false);
+            // Optionally redirect or show an error
+        }
+    }, [fetchNote, authLoading, user]);
 
-    if (loading) {
+    if (loading || authLoading) {
         return (
             <div className="flex justify-center items-center h-[60vh]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
