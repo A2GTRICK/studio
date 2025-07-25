@@ -25,15 +25,14 @@ const premiumFeatures = [
 
 const NoteCardSkeleton = () => (
     <Card className="flex flex-col overflow-hidden">
-        <CardHeader className="p-4 pb-0">
+        <CardHeader className="p-4">
             <Skeleton className="h-5 w-3/4 mb-2" />
             <Skeleton className="h-4 w-1/2 mb-4" />
         </CardHeader>
-        <CardContent className="p-4 flex-grow">
-            <div className="space-y-2">
+        <CardContent className="p-4 pt-0 flex-grow">
+             <p className="text-sm text-muted-foreground">
                 <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-            </div>
+             </p>
         </CardContent>
         <CardFooter className="p-4 pt-0 mt-auto">
             <Skeleton className="h-10 w-full" />
@@ -42,10 +41,9 @@ const NoteCardSkeleton = () => (
 );
 
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { id, title, course, year, subject, isPremium, content, price, thumbnail } = note;
+    const { id, title, course, year, subject, isPremium, content, price } = note;
     
-    const isExternalLink = content.startsWith('http');
-    const isGoogleDriveLink = thumbnail?.includes('drive.google.com');
+    const isExternalLink = content && content.startsWith('http');
 
     let actionButton;
 

@@ -54,7 +54,7 @@ export default function NoteDetailPage() {
     }
 
     const renderContent = () => {
-        if (note.content.startsWith('http')) {
+        if (note.content && note.content.startsWith('http')) {
              return (
                 <div className="text-center p-8 bg-muted/50 rounded-lg">
                     <ExternalLink className="h-12 w-12 mx-auto text-primary mb-4"/>
@@ -68,7 +68,7 @@ export default function NoteDetailPage() {
                 </div>
              )
         }
-        if (note.content.startsWith('File Uploaded:')) {
+        if (note.content && note.content.startsWith('File Uploaded:')) {
             return (
                  <div className="text-center p-8 bg-muted/50 rounded-lg">
                     <FileText className="h-12 w-12 mx-auto text-primary mb-4"/>
@@ -79,7 +79,7 @@ export default function NoteDetailPage() {
                 </div>
             )
         }
-        const htmlContent = marked.parse(note.content);
+        const htmlContent = marked.parse(note.content || "");
         return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
     };
 
