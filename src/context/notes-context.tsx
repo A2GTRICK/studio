@@ -63,6 +63,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>) => {
     const tempId = `temp_${Date.now()}`;
+    // 1. Optimistic UI Update
     const tempNote: Note = {
         ...noteData,
         id: tempId,
@@ -76,7 +77,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     }));
 
     try {
-        const noteToSave: any = {
+        // 2. Prepare a clean data object for Firestore
+        const noteToSave: { [key: string]: any } = {
           title: noteData.title,
           course: noteData.course,
           year: noteData.year,
@@ -86,6 +88,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
           createdAt: serverTimestamp(),
         };
 
+        // Only add optional fields if they have a value
         if (noteData.price) {
           noteToSave.price = noteData.price;
         }
@@ -93,9 +96,11 @@ export function NotesProvider({ children }: { children: ReactNode }) {
           noteToSave.thumbnail = noteData.thumbnail;
         }
         
+        // 3. Save to Firestore
         const docRef = await addDoc(collection(db, 'notes'), noteToSave);
         const newDocSnapshot = await getDoc(docRef);
 
+        // 4. Update the UI with the real note from the database
         if (newDocSnapshot.exists()) {
             const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
             setNotes(prevNotes => 
@@ -111,7 +116,9 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         }
     } catch (err) {
         console.error("Error adding note, reverting optimistic update:", err);
+        // If saving fails, remove the temporary note from the UI
         setNotes(prevNotes => prevNotes.filter(note => note.id !== tempId));
+        // Rethrow the error so the calling component knows it failed
         throw err;
     }
   };
