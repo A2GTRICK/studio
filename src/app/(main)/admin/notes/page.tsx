@@ -93,10 +93,10 @@ export default function AdminNotesPage() {
             thumbnail: formData.get('thumbnail') as string,
             isPremium: isPremiumChecked,
             content: '',
-            price: isPremiumChecked ? formData.get('price') as string : undefined,
+            price: isPremiumChecked ? (formData.get('price') as string) : undefined,
         };
-
-        if (!noteDetails.course || !noteDetails.year || !noteDetails.title || !noteDetails.subject) {
+        
+        if (!noteDetails.title || !noteDetails.course || !noteDetails.year || !noteDetails.subject) {
             toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
             setIsSubmitting(false);
             return;
@@ -136,7 +136,12 @@ export default function AdminNotesPage() {
                 noteDetails.content = driveLink;
             }
 
-            await addNote(noteDetails);
+            const finalNoteDetails: any = { ...noteDetails };
+            if (!finalNoteDetails.isPremium) {
+                delete finalNoteDetails.price;
+            }
+
+            await addNote(finalNoteDetails);
 
             toast({
                 title: "Note Added Successfully!",
