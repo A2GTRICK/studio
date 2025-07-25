@@ -64,13 +64,11 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   }, [user, fetchNotes]);
 
   const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>) => {
-    // Optimistic UI Update:
-    // 1. Create a temporary note object and add it to the local state immediately.
     const tempId = `temp_${Date.now()}`;
     const tempNote: Note = {
         ...noteData,
         id: tempId,
-        createdAt: new Date(), // Use local time for now
+        createdAt: new Date(), 
     };
 
     setNotes(prevNotes => [tempNote, ...prevNotes].sort((a, b) => {
@@ -80,18 +78,25 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     }));
 
     try {
-        // 2. Save the new note to Firestore in the background.
-        const docRef = await addDoc(collection(db, 'notes'), {
-            ...noteData,
-            createdAt: serverTimestamp(),
-        });
+        const noteToSave: Omit<Note, 'id' | 'createdAt'> & { createdAt: any } = {
+          ...noteData,
+          createdAt: serverTimestamp(),
+        };
 
-        // 3. Once saved, fetch the real note data from Firestore.
+        // Ensure no 'undefined' values are sent to Firestore
+        if (noteToSave.price === undefined) {
+          delete noteToSave.price;
+        }
+        if (noteToSave.thumbnail === undefined) {
+          delete noteToSave.thumbnail;
+        }
+
+        const docRef = await addDoc(collection(db, 'notes'), noteToSave);
+        
         const newDocSnapshot = await getDoc(docRef);
         if (newDocSnapshot.exists()) {
             const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
             
-            // 4. Replace the temporary note in the local state with the permanent one from the database.
             setNotes(prevNotes => 
                 prevNotes.map(note => (note.id === tempId ? newNote : note))
                          .sort((a, b) => {
@@ -105,16 +110,24 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         }
     } catch (err) {
         console.error("Error adding note, reverting optimistic update:", err);
-        // If the save fails, remove the temporary note from the list.
         setNotes(prevNotes => prevNotes.filter(note => note.id !== tempId));
-        // Optionally, show an error toast to the user.
-        throw err; // Re-throw error to be caught by the calling component
+        throw err;
     }
   };
 
   const deleteNote = async (noteId: string) => {
-    await deleteDoc(doc(db, 'notes', noteId));
+    // Optimistic UI: remove note from list immediately
+    const notesBeforeDelete = notes;
     setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+
+    try {
+        await deleteDoc(doc(db, 'notes', noteId));
+    } catch (err) {
+        console.error("Error deleting note, reverting optimistic update:", err);
+        // If deletion fails, revert the change
+        setNotes(notesBeforeDelete);
+        throw err;
+    }
   };
 
   const value = { notes, loading, error, addNote, deleteNote };
