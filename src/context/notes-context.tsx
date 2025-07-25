@@ -78,16 +78,17 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     }));
 
     try {
-        const noteToSave: Omit<Note, 'id' | 'createdAt'> & { createdAt: any } = {
+        const noteToSave: any = {
           ...noteData,
           createdAt: serverTimestamp(),
         };
 
-        // Ensure no 'undefined' values are sent to Firestore
-        if (noteToSave.price === undefined) {
+        // ** ROBUST DATA CLEANING **
+        // Ensure no undefined or empty values are sent to Firestore for optional fields.
+        if (!noteToSave.price) {
           delete noteToSave.price;
         }
-        if (noteToSave.thumbnail === undefined) {
+        if (!noteToSave.thumbnail) {
           delete noteToSave.thumbnail;
         }
 
