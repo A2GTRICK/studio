@@ -30,9 +30,9 @@ const NoteCardSkeleton = () => (
             <Skeleton className="h-4 w-1/2 mb-4" />
         </CardHeader>
         <CardContent className="p-4 pt-0 flex-grow">
-             <p className="text-sm text-muted-foreground">
+             <div className="text-sm text-muted-foreground">
                 <Skeleton className="h-4 w-full" />
-             </p>
+             </div>
         </CardContent>
         <CardFooter className="p-4 pt-0 mt-auto">
             <Skeleton className="h-10 w-full" />
