@@ -29,8 +29,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { db } from '@/lib/firebase';
-import { collection, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
 import { useNotes } from '@/context/notes-context';
@@ -144,12 +142,7 @@ export default function AdminNotesPage() {
                 content: noteContent,
             };
             
-            const finalNoteDetails: any = { ...noteToAdd };
-            if (!finalNoteDetails.isPremium || !finalNoteDetails.price) {
-                delete finalNoteDetails.price;
-            }
-
-            await addNote(finalNoteDetails);
+            await addNote(noteToAdd);
 
             toast({
                 title: "Note Added Successfully!",
@@ -383,7 +376,5 @@ export default function AdminNotesPage() {
         </div>
     );
 }
-
-    
 
     
