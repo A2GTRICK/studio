@@ -24,7 +24,7 @@ const McqQuestionSchema = z.object({
   question: z.string().describe('The question text.'),
   options: z.array(z.string()).length(4).describe('An array of four possible answers.'),
   correctAnswer: z.string().describe('The correct answer from the options array.'),
-  explanation: z.string().describe('A detailed explanation for why the correct answer is right.'),
+  explanation: z.string().describe('A detailed explanation for why the correct answer is right, formatted with Markdown for clarity (e.g., using bold text).'),
   previouslyAsked: z.string().optional().describe('The competitive exam and year this question was previously asked, if known (e.g., "GPAT 2021, Pharmacist Exam 2019"). Leave empty if not applicable.'),
 });
 
@@ -56,7 +56,7 @@ const prompt = ai.definePrompt({
   1.  **Question Standard & Relevance:** Questions must be challenging, concept-based, and directly relevant to the '{{{examType}}}'. A significant portion of the questions should be inspired by or be actual Previous Year Questions (PYQs). Avoid simple, definition-based questions; focus on those requiring analytical thinking.
   2.  **Plausible Options:** The four options provided for each question must be plausible distractors. They should be closely related to the question to test the candidate's deep understanding, not just superficial knowledge.
   3.  **Correct Answer:** Clearly identify the correct answer from the options.
-  4.  **Detailed Explanation:** Provide a thorough, textbook-quality explanation for each question. The explanation must not only state why the correct answer is right but also briefly explain why the other options are incorrect. This is crucial for learning.
+  4.  **Detailed Explanation:** Provide a thorough, textbook-quality explanation for each question. The explanation must not only state why the correct answer is right but also briefly explain why the other options are incorrect. Use simple Markdown for formatting, such as bolding key terms, to improve readability. This is crucial for learning.
   5.  **Previous Appearances:** For each question, if it is based on or identical to a question from a past paper, populate the 'previouslyAsked' field with the exam name and year (e.g., "GPAT 2021, NIPER 2019"). If the question is new or its history is unknown, leave this field empty.
   6.  **Syllabus Alignment:** Ensure the questions align perfectly with the latest syllabus for the '{{{examType}}}'.
   `,

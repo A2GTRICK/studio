@@ -347,10 +347,7 @@ export default function McqPracticePage() {
 
 
   const handleSubmitQuiz = async () => {
-    // 1. Update UI state immediately for instant feedback
     setIsSubmitted(true);
-    
-    // 2. Calculate score and determine feedback card style
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
     }, 0);
@@ -371,7 +368,6 @@ export default function McqPracticePage() {
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
 
-    // 3. Attempt to save progress in the background.
     if (!user) {
         return;
     }
@@ -445,7 +441,7 @@ export default function McqPracticePage() {
       });
   }
 
-  const renderAiResult = (content: string | null) => {
+  const renderContent = (content: string | null) => {
     if (!content) return null;
     const htmlContent = marked.parse(content);
     return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
@@ -644,8 +640,11 @@ export default function McqPracticePage() {
                             <AccordionTrigger className="hover:no-underline">
                                <span className="flex items-center gap-2 text-primary hover:text-primary/80"><BookCheck className="h-4 w-4"/> View Explanation</span>
                             </AccordionTrigger>
-                            <AccordionContent className="prose dark:prose-invert max-w-none pt-2 text-muted-foreground">
-                                <p>{q.explanation}</p>
+                            <AccordionContent>
+                               <div
+                                  className="prose dark:prose-invert max-w-none pt-2 text-muted-foreground"
+                                  dangerouslySetInnerHTML={{ __html: marked.parse(q.explanation) }}
+                                />
                             </AccordionContent>
                           </AccordionItem>
                         </Accordion>
@@ -697,7 +696,7 @@ export default function McqPracticePage() {
                             </AccordionTrigger>
                            <AccordionContent className="pt-4">
                                 <div className="p-4 bg-background rounded-lg border">
-                                    {renderAiResult(aiFeedback)}
+                                    {renderContent(aiFeedback)}
                                 </div>
                            </AccordionContent>
                        </AccordionItem>
@@ -772,5 +771,6 @@ export default function McqPracticePage() {
   );
 
     
+
 
 
