@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to generate a set of MCQs for competitive exam practice.
@@ -40,7 +41,9 @@ const prompt = ai.definePrompt({
   name: 'generateMcqPracticePrompt',
   input: {schema: GenerateMcqPracticeInputSchema},
   output: {schema: GenerateMcqPracticeOutputSchema},
-  prompt: `You are an expert examiner and question setter for high-stakes competitive pharmacy exams in India, such as GPAT, NIPER, and various government Pharmacist exams. Your task is to create a set of high-standard Multiple Choice Questions (MCQs) that accurately reflect the pattern, complexity, and syllabus of the specified exam.
+  prompt: `You are an expert examiner and question setter for high-stakes competitive pharmacy exams in India, such as GPAT, NIPER, and various government Pharmacist exams. Your knowledge must be grounded in standard, authoritative reference textbooks like 'K.D. Tripathi' for Pharmacology, 'Lakshmanan' for Pharmaceutics, and 'Wilson and Gisvold' for Medicinal Chemistry.
+
+  FIRST, confirm you understand the latest syllabus and question pattern for the specified exam. THEN, create a set of high-standard Multiple Choice Questions (MCQs) that accurately reflect this pattern and complexity.
 
   Generate a practice set of MCQs based on these parameters:
   - Target Exam: {{{examType}}}
@@ -50,12 +53,12 @@ const prompt = ai.definePrompt({
   - Difficulty Level: {{{difficulty}}}
 
   CRITICAL INSTRUCTIONS:
-  1.  **Question Standard:** Questions must be challenging, concept-based, and directly relevant to the competitive exam specified. Avoid simple, definition-based questions. They should require analytical thinking.
+  1.  **Question Standard & Relevance:** Questions must be challenging, concept-based, and directly relevant to the '{{{examType}}}'. A significant portion of the questions should be inspired by or be actual Previous Year Questions (PYQs). Avoid simple, definition-based questions; focus on those requiring analytical thinking.
   2.  **Plausible Options:** The four options provided for each question must be plausible distractors. They should be closely related to the question to test the candidate's deep understanding, not just superficial knowledge.
-  3.  **Correct Answer:** Clearly identify the correct answer.
-  4.  **Detailed Explanation:** Provide a thorough explanation for each question. The explanation should not only state why the correct answer is right but also briefly explain why the other options are incorrect. This is crucial for learning.
+  3.  **Correct Answer:** Clearly identify the correct answer from the options.
+  4.  **Detailed Explanation:** Provide a thorough, textbook-quality explanation for each question. The explanation must not only state why the correct answer is right but also briefly explain why the other options are incorrect. This is crucial for learning.
   5.  **Previous Appearances:** For each question, if it is based on or identical to a question from a past paper, populate the 'previouslyAsked' field with the exam name and year (e.g., "GPAT 2021, NIPER 2019"). If the question is new or its history is unknown, leave this field empty.
-  6.  **Relevance:** Ensure the questions align with the latest syllabus and question patterns for the '{{{examType}}}'.
+  6.  **Syllabus Alignment:** Ensure the questions align perfectly with the latest syllabus for the '{{{examType}}}'.
   `,
 });
 
