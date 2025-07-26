@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,12 +12,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { marked } from 'marked';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNotes, type Note } from '@/context/notes-context';
+import Image from 'next/image';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -41,7 +43,6 @@ const loadingMessages = [
     "Syllabus se cross-check kar rahe hain... ✅",
 ];
 
-
 export default function AiNotesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFollowupLoading, setIsFollowupLoading] = useState(false);
@@ -52,6 +53,7 @@ export default function AiNotesPage() {
   const { notes: allNotes } = useNotes();
   const [error, setError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+  const [isExpandViewOpen, setIsExpandViewOpen] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -138,168 +140,219 @@ export default function AiNotesPage() {
     }
   }
   
+  const handlePrint = () => {
+    window.print();
+  };
+
   const renderMessageContent = (content: string) => {
     const htmlContent = marked.parse(content);
-    return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+    return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      <div className="lg:col-span-1 lg:sticky top-20">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> AI Notes Generator</CardTitle>
-            <CardDescription>Generate high-quality, detailed notes on any topic to kickstart your studies.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField control={form.control} name="course" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Course</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="B.Pharm">B.Pharm</SelectItem>
-                        <SelectItem value="D.Pharm">D.Pharm</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}/>
-                <FormField control={form.control} name="year" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Year</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
-                       <FormControl><SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger></FormControl>
-                       <SelectContent>
-                        <SelectItem value="1st Year">1st Year</SelectItem>
-                        <SelectItem value="2nd Year">2nd Year</SelectItem>
-                        <SelectItem value="3rd Year">3rd Year</SelectItem>
-                        <SelectItem value="4th Year">4th Year</SelectItem>
-                       </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}/>
-                <FormField control={form.control} name="subject" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Subject</FormLabel>
-                    <FormControl><Input placeholder="e.g., Pharmaceutics" {...field} disabled={isLoading}/></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}/>
-                <FormField control={form.control} name="topic" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Topic</FormLabel>
-                    <FormControl><Textarea placeholder="e.g., Introduction to Dosage Forms" {...field} disabled={isLoading}/></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}/>
-                <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Generate Notes
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-         {generatedNotes && relatedNotes.length > 0 && (
-            <Card className="mt-8 bg-primary/5 border-primary/20">
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2 text-primary text-lg">
-                        <BookOpen/>
-                        Continue Your Learning
-                    </CardTitle>
-                    <CardDescription>
-                        Unlock our expert-written premium notes on related topics.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 gap-4">
-                    {relatedNotes.map(note => (
-                        <Card key={note.id} className="bg-background">
-                            <CardHeader>
-                                <CardTitle className="text-base">{note.title}</CardTitle>
-                                <CardDescription>{note.subject}</CardDescription>
-                            </CardHeader>
-                            <CardFooter>
-                                <Button asChild className="w-full" variant="outline">
-                                  <Link href={`/notes/${note.id}`}>
-                                      <Lock className="mr-2 h-4 w-4"/>
-                                      Unlock in Library
-                                  </Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </CardContent>
-            </Card>
-        )}
-      </div>
-      <div className="lg:col-span-2">
-        <Card className="flex flex-col h-full">
-          <CardHeader>
-            <CardTitle className="font-headline">Generated Content</CardTitle>
-            <CardDescription>Your AI-generated notes and conversation will appear here.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-grow">
-             <ScrollArea className="h-[70vh] lg:h-[calc(100vh-320px)] w-full pr-4">
-              {isLoading && (
-                  <div className="flex flex-col items-center justify-center h-full">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
-                  </div>
-              )}
-              {!isLoading && error && (
-                 <Alert variant="destructive" className="my-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Generation Failed</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                 </Alert>
-              )}
-              {chatHistory.length === 0 && !isLoading && !error &&(
-                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
-                      <BrainCircuit className="h-16 w-16 mb-4" />
-                      <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
-                      <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes on any topic from your syllabus.</p>
-                  </div>
-              )}
-              <div className="space-y-4">
-                {chatHistory.map((msg, index) => (
-                  <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                    {msg.role === 'assistant' && (
-                       <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
-                         <Bot className="h-5 w-5" />
-                       </div>
-                    )}
-                     <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background border'}`}>
-                       {renderMessageContent(msg.content)}
-                    </div>
-                     {msg.role === 'user' && (
-                       <div className="p-2 rounded-full bg-muted self-start shrink-0">
-                          <User className="h-5 w-5" />
-                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-             </ScrollArea>
-          </CardContent>
-          {generatedNotes && (
-            <CardFooter>
-              <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2 pt-4 border-t">
-                  <Input 
-                      value={followUp}
-                      onChange={(e) => setFollowUp(e.target.value)}
-                      placeholder="Ask a follow-up question..."
-                      disabled={isFollowupLoading}
-                  />
-                  <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()}>
-                      {isFollowupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="lg:col-span-1 lg:sticky top-20">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> AI Notes Generator</CardTitle>
+              <CardDescription>Generate high-quality, detailed notes on any topic to kickstart your studies.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField control={form.control} name="course" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Course</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="B.Pharm">B.Pharm</SelectItem>
+                          <SelectItem value="D.Pharm">D.Pharm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}/>
+                  <FormField control={form.control} name="year" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Year</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                         <FormControl><SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger></FormControl>
+                         <SelectContent>
+                          <SelectItem value="1st Year">1st Year</SelectItem>
+                          <SelectItem value="2nd Year">2nd Year</SelectItem>
+                          <SelectItem value="3rd Year">3rd Year</SelectItem>
+                          <SelectItem value="4th Year">4th Year</SelectItem>
+                         </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}/>
+                  <FormField control={form.control} name="subject" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subject</FormLabel>
+                      <FormControl><Input placeholder="e.g., Pharmaceutics" {...field} disabled={isLoading}/></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                  <FormField control={form.control} name="topic" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Topic</FormLabel>
+                      <FormControl><Textarea placeholder="e.g., Introduction to Dosage Forms" {...field} disabled={isLoading}/></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                  <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Generate Notes
                   </Button>
-              </form>
-            </CardFooter>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+           {generatedNotes && relatedNotes.length > 0 && (
+              <Card className="mt-8 bg-primary/5 border-primary/20">
+                  <CardHeader>
+                      <CardTitle className="font-headline flex items-center gap-2 text-primary text-lg">
+                          <BookOpen/>
+                          Continue Your Learning
+                      </CardTitle>
+                      <CardDescription>
+                          Unlock our expert-written premium notes on related topics.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 gap-4">
+                      {relatedNotes.map(note => (
+                          <Card key={note.id} className="bg-background">
+                              <CardHeader>
+                                  <CardTitle className="text-base">{note.title}</CardTitle>
+                                  <CardDescription>{note.subject}</CardDescription>
+                              </CardHeader>
+                              <CardFooter>
+                                  <Button asChild className="w-full" variant="outline">
+                                    <Link href={`/notes/${note.id}`}>
+                                        <Lock className="mr-2 h-4 w-4"/>
+                                        Unlock in Library
+                                    </Link>
+                                  </Button>
+                              </CardFooter>
+                          </Card>
+                      ))}
+                  </CardContent>
+              </Card>
           )}
-        </Card>
+        </div>
+        <div className="lg:col-span-2">
+          <Card className="flex flex-col h-full">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-headline">Generated Content</CardTitle>
+                <CardDescription>Your AI-generated notes and conversation will appear here.</CardDescription>
+              </div>
+              {chatHistory.length > 0 && (
+                <DialogTrigger asChild>
+                   <Button variant="ghost" size="icon" onClick={() => setIsExpandViewOpen(true)}>
+                    <Expand className="h-5 w-5" />
+                    <span className="sr-only">Expand View</span>
+                  </Button>
+                </DialogTrigger>
+              )}
+            </CardHeader>
+            <CardContent className="flex-grow">
+               <ScrollArea className="h-[70vh] lg:h-[calc(100vh-320px)] w-full pr-4">
+                {isLoading && (
+                    <div className="flex flex-col items-center justify-center h-full">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
+                    </div>
+                )}
+                {!isLoading && error && (
+                   <Alert variant="destructive" className="my-4">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Generation Failed</AlertTitle>
+                      <AlertDescription>{error}</AlertDescription>
+                   </Alert>
+                )}
+                {chatHistory.length === 0 && !isLoading && !error &&(
+                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
+                        <BrainCircuit className="h-16 w-16 mb-4" />
+                        <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
+                        <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes on any topic from your syllabus.</p>
+                    </div>
+                )}
+                <div className="space-y-4">
+                  {chatHistory.map((msg, index) => (
+                    <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                      {msg.role === 'assistant' && (
+                         <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
+                           <Bot className="h-5 w-5" />
+                         </div>
+                      )}
+                       <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background border'}`}>
+                         {renderMessageContent(msg.content)}
+                      </div>
+                       {msg.role === 'user' && (
+                         <div className="p-2 rounded-full bg-muted self-start shrink-0">
+                            <User className="h-5 w-5" />
+                         </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+               </ScrollArea>
+            </CardContent>
+            {generatedNotes && (
+              <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
+                  <FormLabel className="text-sm font-medium">Need more details? Ask the AI!</FormLabel>
+                  <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2">
+                      <Input 
+                          value={followUp}
+                          onChange={(e) => setFollowUp(e.target.value)}
+                          placeholder="Ask a follow-up question..."
+                          disabled={isFollowupLoading}
+                      />
+                      <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()}>
+                          {isFollowupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      </Button>
+                  </form>
+              </CardFooter>
+            )}
+          </Card>
+        </div>
       </div>
-    </div>
+
+      <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
+          <DialogHeader className="flex-row items-center justify-between">
+            <div>
+                <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
+                <DialogDescription>
+                    Topic: {lastTopic?.topic}
+                </DialogDescription>
+            </div>
+            <Button onClick={handlePrint} variant="outline" className="print-hide">
+                <Printer className="mr-2 h-4 w-4" />
+                Print with Watermark
+            </Button>
+          </DialogHeader>
+          <div className="flex-grow overflow-hidden relative">
+            <div className="print-watermark">
+                <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Watermark" width={100} height={100} />
+                <span>A2G Smart Notes</span>
+            </div>
+            <ScrollArea className="h-full w-full pr-6">
+                <div className="space-y-4 printable-content">
+                  {chatHistory.map((msg, index) => (
+                    msg.role === 'assistant' && (
+                        <div key={index} className="bg-background border rounded-lg p-4">
+                           {renderMessageContent(msg.content)}
+                        </div>
+                    )
+                  ))}
+                </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

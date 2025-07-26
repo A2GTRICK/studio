@@ -1,0 +1,52 @@
+
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .print-hide {
+        display: none !important;
+    }
+
+    .print-dialog-content {
+        max-width: 100% !important;
+        height: auto !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    .printable-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .print-watermark {
+        display: block !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1000;
+    }
+
+    .print-watermark::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100"><text x="50%" y="50%" font-size="14" fill="hsl(240, 10%, 3.9%)" fill-opacity="0.08" text-anchor="middle" dominant-baseline="middle" transform="rotate(-30, 70, 50)">A2G Smart Notes</text></svg>');
+        background-repeat: repeat;
+    }
+}
+
+.print-watermark {
+    display: none;
+}
