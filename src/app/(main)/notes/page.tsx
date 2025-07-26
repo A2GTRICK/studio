@@ -241,14 +241,23 @@ export default function NotesPage() {
       <div className="space-y-8">
         {isLoading ? (
             <div className="space-y-8">
-                <div className="lg:col-span-full text-center py-10">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                    <p className="mt-4 text-muted-foreground animate-pulse">Pre-loading notes for a faster experience...</p>
+                <div>
+                    <Skeleton className="h-8 w-1/4 mb-4" />
+                    <Skeleton className="h-px w-full mb-6" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <NoteCardSkeleton key={i} />
+                        ))}
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                        <NoteCardSkeleton key={i} />
-                    ))}
+                 <div>
+                    <Skeleton className="h-8 w-1/4 mb-4" />
+                    <Skeleton className="h-px w-full mb-6" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <NoteCardSkeleton key={i} />
+                        ))}
+                    </div>
                 </div>
             </div>
         ) : Object.keys(groupedNotes).length > 0 ? (
@@ -322,3 +331,5 @@ export default function NotesPage() {
     </>
   )
 }
+
+    
