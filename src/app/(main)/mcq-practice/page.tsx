@@ -18,15 +18,13 @@ import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import { marked } from 'marked';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { saveMcqResult } from '@/services/user-progress-service';
 import { useAuth } from '@/hooks/use-auth';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const mcqFormSchema = z.object({
@@ -92,6 +90,7 @@ const premiumFeatures = [
 type PurchaseDetails = {
     title: string;
     price: string;
+    questions: number;
 }
 
 const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
@@ -333,9 +332,10 @@ export default function McqPracticePage() {
 
 
   const handleSubmitQuiz = async () => {
-    if (!questions) return;
+    // 1. Update UI state immediately for instant feedback
     setIsSubmitted(true);
     
+    // 2. Calculate score and determine feedback card style
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
     }, 0);
@@ -356,33 +356,29 @@ export default function McqPracticePage() {
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
 
+    // 3. Attempt to save progress in the background.
     if (!user) {
-        toast({
-          title: "Not Logged In",
-          description: "Sign in to save your progress and get AI feedback.",
-          variant: "destructive"
-        });
+        // No toast for non-logged-in users. They know they can't save.
         return;
     }
 
-    const currentFormValues = form.getValues();
-    const topicToSave = currentFormValues.topic || "General";
-    
     try {
-      await saveMcqResult({
-        uid: user.uid,
-        subject: currentFormValues.subject,
-        topic: topicToSave,
-        score: newScore,
-        totalQuestions: questions.length
-      });
-      toast({
-        title: "Progress Saved!",
-        description: "Your quiz score has been saved to your progress report.",
-      });
+        const currentFormValues = form.getValues();
+        const topicToSave = currentFormValues.topic || "General";
+        await saveMcqResult({
+          uid: user.uid,
+          subject: currentFormValues.subject,
+          topic: topicToSave,
+          score: newScore,
+          totalQuestions: questions.length
+        });
+        toast({
+          title: "Progress Saved!",
+          description: "Your quiz score has been saved to your progress report.",
+        });
     } catch (error) {
+        // Fail silently as requested. The error is logged for debugging.
         console.error("Failed to save quiz result:", error);
-        // Silently fail as requested
     }
   };
 
@@ -427,10 +423,12 @@ export default function McqPracticePage() {
     setShowPaymentDialog(true);
   };
   
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (questionsToAdd: number) => {
+      const newLimit = dailyLimit + questionsToAdd;
+      updateDailyUsage(0, newLimit); // Update limit without adding to count
       toast({
-          title: "Payment Submitted!",
-          description: `We'll verify your payment and activate your purchase.`
+          title: "Purchase Verified!",
+          description: `Your question limit has been increased by ${questionsToAdd}. You now have ${newLimit - dailyQuestionCount} questions left today.`
       });
   }
 
@@ -666,38 +664,33 @@ export default function McqPracticePage() {
                   </Button>
                 </CardContent>
                 <CardFooter>
-                  <div className="w-full p-4 border rounded-lg bg-primary/5 border-primary/20">
-                    <Dialog>
-                       <DialogTrigger asChild>
-                           <Button 
-                                className="w-full" 
-                                variant="outline" 
-                                onClick={aiFeedbackState === 'idle' ? handleGetAiFeedback : undefined}
-                                disabled={aiFeedbackState === 'loading'}
+                   <div className="w-full p-4 border rounded-lg bg-primary/5 border-primary/20">
+                    <Accordion type="single" collapsible className="w-full" disabled={aiFeedbackState === 'loading'}>
+                       <AccordionItem value="ai-feedback" className="border-0">
+                           <AccordionTrigger
+                               onClick={aiFeedbackState === 'idle' ? handleGetAiFeedback : undefined}
+                               className="hover:no-underline"
                            >
-                              {aiFeedbackState === 'loading' && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                              {aiFeedbackState === 'idle' && <><Lightbulb className="mr-2 h-4 w-4"/>Get AI Feedback</>}
-                              {aiFeedbackState === 'loading' && 'Analyzing...'}
-                              {(aiFeedbackState === 'ready' || aiFeedbackState === 'error') && <><BrainCircuit className="mr-2 h-4 w-4"/>View AI Feedback</>}
-                           </Button>
-                       </DialogTrigger>
-                       <DialogContent className="max-w-xl">
-                            <DialogHeader>
-                                <DialogTitle className="font-headline text-2xl flex items-center gap-2">
-                                  <BrainCircuit className="text-primary"/> AI Performance Analysis
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Here's a breakdown of your performance and tips for improvement.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <ScrollArea className="h-96 pr-6">
+                                <div className="flex items-center gap-2 font-semibold text-primary">
+                                  {aiFeedbackState === 'loading' && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                  {aiFeedbackState === 'idle' && <Lightbulb className="mr-2 h-4 w-4"/>}
+                                  {aiFeedbackState !== 'loading' && aiFeedbackState !== 'idle' && <BrainCircuit className="mr-2 h-4 w-4"/>}
+                                  
+                                  <span>
+                                      {aiFeedbackState === 'idle' && 'Get AI Feedback'}
+                                      {aiFeedbackState === 'loading' && 'Analyzing Performance...'}
+                                      {(aiFeedbackState === 'ready' || aiFeedbackState === 'error') && 'View AI Feedback'}
+                                  </span>
+                                </div>
+                           </AccordionTrigger>
+                           <AccordionContent className="pt-4">
                                 <div className="p-4 bg-background rounded-lg border">
                                     {renderAiResult(aiFeedback)}
                                 </div>
-                            </ScrollArea>
-                       </DialogContent>
-                   </Dialog>
-                  </div>
+                           </AccordionContent>
+                       </AccordionItem>
+                   </Accordion>
+                   </div>
                 </CardFooter>
               </Card>
             )}
@@ -736,15 +729,15 @@ export default function McqPracticePage() {
                 <p className="font-semibold text-center">Buy a Question Pack</p>
                 
                 <div className="grid grid-cols-1 gap-2">
-                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10'})}>
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10', questions: 50})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 50 MCQs for INR 10
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18'})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18', questions: 100})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 100 MCQs for INR 18
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35'})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35', questions: 200})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 200 MCQs for INR 35
                     </Button>
@@ -759,7 +752,11 @@ export default function McqPracticePage() {
         setIsOpen={setShowPaymentDialog}
         title={paymentDetails?.title || ''}
         price={paymentDetails?.price || ''}
-        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentSuccess={() => {
+            // This is now just for show. Verification should be manual.
+        }}
     />
     </>
   );
+
+    
