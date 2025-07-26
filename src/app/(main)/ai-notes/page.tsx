@@ -303,15 +303,18 @@ export default function AiNotesPage() {
                 </CardContent>
                 {generatedNotes && (
                 <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
-                    <FormLabel className="text-sm font-medium">Need more details? Ask the AI!</FormLabel>
                     <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2">
-                        <Input 
-                            value={followUp}
-                            onChange={(e) => setFollowUp(e.target.value)}
-                            placeholder="Ask a follow-up question..."
-                            disabled={isFollowupLoading}
-                        />
-                        <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()}>
+                        <div className="flex-grow space-y-2">
+                            <FormLabel htmlFor="follow-up-input" className="text-sm font-medium">Need more details? Ask the AI!</FormLabel>
+                            <Input 
+                                id="follow-up-input"
+                                value={followUp}
+                                onChange={(e) => setFollowUp(e.target.value)}
+                                placeholder="Ask a follow-up question..."
+                                disabled={isFollowupLoading}
+                            />
+                        </div>
+                        <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()} className="self-end">
                             {isFollowupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </form>
