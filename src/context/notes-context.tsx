@@ -62,6 +62,10 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   }, [user, fetchNotes]);
 
   const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>) => {
+    if (!db) {
+      throw new Error("Firestore is not initialized.");
+    }
+
     const tempId = `temp_${Date.now()}`;
     // 1. Optimistic UI Update
     const tempNote: Note = {
@@ -88,7 +92,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
           createdAt: serverTimestamp(),
         };
 
-        // Only add optional fields if they have a value
+        // Only add optional fields if they have a non-empty value
         if (noteData.price) {
           noteToSave.price = noteData.price;
         }
