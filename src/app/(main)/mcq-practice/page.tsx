@@ -184,15 +184,16 @@ export default function McqPracticePage() {
     }
   }, []);
 
-  const updateDailyUsage = (newQuestions: number) => {
+  const updateDailyUsage = (count: number, limit: number) => {
     const today = new Date().toISOString().split('T')[0];
-    const newTotalCount = dailyQuestionCount + newQuestions;
     try {
-        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: newTotalCount, limit: dailyLimit }));
-        setDailyQuestionCount(newTotalCount);
+        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count, limit }));
+        setDailyQuestionCount(count);
+        setDailyLimit(limit);
     } catch (e) {
         console.warn("Could not access localStorage for daily quiz limit.");
-        setDailyQuestionCount(newTotalCount);
+        setDailyQuestionCount(count);
+        setDailyLimit(limit);
     }
   };
 
@@ -266,7 +267,7 @@ export default function McqPracticePage() {
       }));
       setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
-      updateDailyUsage(result.length);
+      updateDailyUsage(dailyQuestionCount + result.length, dailyLimit);
     } catch (e: any) {
       console.error('Error generating MCQs:', e);
       const errorMessage = e.message.includes('503') 
@@ -292,9 +293,7 @@ export default function McqPracticePage() {
     if (!questions || !user) return;
 
     setIsSubmitted(true);
-    setIsFeedbackLoading(true);
     setAiFeedback(null);
-    setCurrentAiFeedbackTitle(aiFeedbackTitles[Math.floor(Math.random() * aiFeedbackTitles.length)]);
     
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
@@ -324,8 +323,8 @@ export default function McqPracticePage() {
         });
     });
     // --- END: Immediate score saving ---
-
-    // --- START: Background AI feedback generation and UI updates ---
+    
+    // UI update for score feedback
     const newScorePercentage = (newScore / questions.length) * 100;
     
     let category;
@@ -342,6 +341,10 @@ export default function McqPracticePage() {
     }
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
+
+    // --- START: Background AI feedback generation ---
+    setIsFeedbackLoading(true);
+    setCurrentAiFeedbackTitle(aiFeedbackTitles[Math.floor(Math.random() * aiFeedbackTitles.length)]);
 
     try {
         const incorrectPerformance = questions.map((q, index) => ({
@@ -415,6 +418,18 @@ export default function McqPracticePage() {
     setPaymentDetails(details);
     setShowPremiumDialog(false);
     setShowPaymentDialog(true);
+  };
+
+  const handlePaymentSuccess = (purchase: PurchaseDetails | null) => {
+      if (purchase) {
+          const newLimit = dailyLimit + purchase.questions;
+          updateDailyUsage(dailyQuestionCount, newLimit);
+          toast({
+              title: "Questions Added!",
+              description: `Your daily limit has been increased by ${purchase.questions}. You can now generate more quizzes.`,
+          });
+      }
+      setPaymentDetails(null);
   };
 
   const renderAiResult = (content: string | null) => {
@@ -634,45 +649,45 @@ export default function McqPracticePage() {
             )}
             
             {isSubmitted && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
-                </CardHeader>
-                <CardContent className="grid sm:grid-cols-2 gap-2">
-                  <Button onClick={startNewQuiz} variant="outline" className="w-full">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Start New Quiz
-                  </Button>
-                  <Button onClick={practiceSameTopic} className="w-full">
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Practice Same Topic
-                  </Button>
-                </CardContent>
-                <CardFooter>
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
-                      <AccordionTrigger className="px-6 hover:no-underline">
-                        <div className="flex items-center gap-2 text-primary font-headline">
-                          <Lightbulb /> {currentAiFeedbackTitle}
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-6 pb-6">
-                        {isFeedbackLoading && (
-                          <div className="flex items-center justify-center min-h-[100px]">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                            <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
-                          </div>
-                        )}
-                        {!isFeedbackLoading && aiFeedback && (
-                          <div className="p-4 bg-background rounded-lg border">
-                            {renderAiResult(aiFeedback)}
-                          </div>
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </CardFooter>
-              </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid sm:grid-cols-2 gap-2">
+                        <Button onClick={startNewQuiz} variant="outline" className="w-full">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Start New Quiz
+                        </Button>
+                        <Button onClick={practiceSameTopic} className="w-full">
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Practice Same Topic
+                        </Button>
+                    </CardContent>
+                    <CardFooter>
+                        <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
+                            <AccordionTrigger className="px-6 hover:no-underline">
+                                <div className="flex items-center gap-2 text-primary font-headline">
+                                <Lightbulb /> {currentAiFeedbackTitle}
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-6 pb-6">
+                                {isFeedbackLoading && (
+                                <div className="flex items-center justify-center min-h-[100px]">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                    <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
+                                </div>
+                                )}
+                                {!isFeedbackLoading && aiFeedback && (
+                                <div className="p-4 bg-background rounded-lg border">
+                                    {renderAiResult(aiFeedback)}
+                                </div>
+                                )}
+                            </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                    </CardFooter>
+                </Card>
             )}
 
             </FormProvider>
@@ -689,7 +704,7 @@ export default function McqPracticePage() {
                 </div>
                 <DialogTitle className="text-center font-headline text-2xl">Get More Questions</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                   You've used your {dailyLimit} free practice questions for today. Upgrade for more.
+                   You've used your {dailyLimit - questionsLeft} of {dailyLimit} free practice questions for today. Upgrade for more.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
@@ -730,28 +745,8 @@ export default function McqPracticePage() {
     <PaymentDialog 
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
-        title={`Buy ${paymentDetails?.title}`}
-        price={paymentDetails?.price || ''}
-        onPaymentSuccess={() => {
-            // This is now just a callback for after the user has been notified.
-            // No automatic upgrade happens here.
-            setPaymentDetails(null);
-        }}
+        purchaseDetails={paymentDetails}
+        onPaymentSuccess={handlePaymentSuccess}
     />
     </>
   );
-
-    
-
-
-
-    
-
-    
-
-
-
-
-    
-
-    

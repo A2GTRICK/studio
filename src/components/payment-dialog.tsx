@@ -13,15 +13,20 @@ import { AiImage } from '@/components/ai-image';
 const UPI_ID = "a2gtrickacademy@upi";
 // ------------------------------------
 
+interface PurchaseDetails {
+    title: string;
+    price: string;
+    questions: number;
+}
+
 interface PaymentDialogProps {
     isOpen: boolean;
     setIsOpen: (isOpen: boolean) => void;
-    title: string;
-    price: string;
-    onPaymentSuccess?: () => void;
+    purchaseDetails: PurchaseDetails | null;
+    onPaymentSuccess?: (purchase: PurchaseDetails | null) => void;
 }
 
-export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSuccess }: PaymentDialogProps) {
+export function PaymentDialog({ isOpen, setIsOpen, purchaseDetails, onPaymentSuccess }: PaymentDialogProps) {
     const { toast } = useToast();
 
     const handleCopyUpiId = () => {
@@ -39,9 +44,11 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
             description: "We will verify your payment and activate your purchase shortly." 
         });
         if (onPaymentSuccess) {
-            onPaymentSuccess();
+            onPaymentSuccess(purchaseDetails);
         }
     }
+
+    if (!purchaseDetails) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -52,7 +59,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
                     </div>
                     <DialogTitle className="text-center font-headline text-2xl">Complete Your Payment</DialogTitle>
                     <DialogDescription className="text-center text-base">
-                        You are purchasing <strong>{title}</strong> for <strong>{price}</strong>.
+                        You are purchasing <strong>{purchaseDetails.title}</strong> for <strong>{purchaseDetails.price}</strong>.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
