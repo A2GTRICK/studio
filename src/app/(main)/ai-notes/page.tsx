@@ -343,7 +343,7 @@ export default function AiNotesPage() {
                     </Button>
                 </div>
             </DialogHeader>
-            <ScrollArea className="flex-grow overflow-auto h-full pr-6 print-watermark">
+            <ScrollArea className="flex-grow overflow-auto pr-6 print-watermark">
                 <div className="space-y-4 printable-content">
                 {chatHistory.map((msg, index) => (
                     <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
