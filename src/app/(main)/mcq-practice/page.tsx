@@ -358,7 +358,6 @@ export default function McqPracticePage() {
 
     // 3. Attempt to save progress in the background.
     if (!user) {
-        // No toast for non-logged-in users. They know they can't save.
         return;
     }
 
@@ -377,7 +376,7 @@ export default function McqPracticePage() {
           description: "Your quiz score has been saved to your progress report.",
         });
     } catch (error) {
-        // Fail silently as requested. The error is logged for debugging.
+        // Fail silently as requested by user to not show error toasts.
         console.error("Failed to save quiz result:", error);
     }
   };
@@ -667,22 +666,22 @@ export default function McqPracticePage() {
                    <div className="w-full p-4 border rounded-lg bg-primary/5 border-primary/20">
                     <Accordion type="single" collapsible className="w-full" disabled={aiFeedbackState === 'loading'}>
                        <AccordionItem value="ai-feedback" className="border-0">
-                           <AccordionTrigger
-                               onClick={aiFeedbackState === 'idle' ? handleGetAiFeedback : undefined}
-                               className="hover:no-underline"
-                           >
+                            <AccordionTrigger
+                                onClick={aiFeedbackState === 'idle' ? handleGetAiFeedback : undefined}
+                                className="hover:no-underline"
+                            >
                                 <div className="flex items-center gap-2 font-semibold text-primary">
                                   {aiFeedbackState === 'loading' && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                                   {aiFeedbackState === 'idle' && <Lightbulb className="mr-2 h-4 w-4"/>}
-                                  {aiFeedbackState !== 'loading' && aiFeedbackState !== 'idle' && <BrainCircuit className="mr-2 h-4 w-4"/>}
+                                  {(aiFeedbackState === 'ready' || aiFeedbackState === 'error') && <BrainCircuit className="mr-2 h-4 w-4"/>}
                                   
                                   <span>
-                                      {aiFeedbackState === 'idle' && 'Get AI Feedback'}
-                                      {aiFeedbackState === 'loading' && 'Analyzing Performance...'}
-                                      {(aiFeedbackState === 'ready' || aiFeedbackState === 'error') && 'View AI Feedback'}
+                                      {aiFeedbackState === 'idle' && 'Click for AI Performance Analysis'}
+                                      {aiFeedbackState === 'loading' && 'Analyzing...'}
+                                      {(aiFeedbackState === 'ready' || aiFeedbackState === 'error') && 'Show/Hide AI Analysis'}
                                   </span>
                                 </div>
-                           </AccordionTrigger>
+                            </AccordionTrigger>
                            <AccordionContent className="pt-4">
                                 <div className="p-4 bg-background rounded-lg border">
                                     {renderAiResult(aiFeedback)}
