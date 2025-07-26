@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates notes on a specific topic using AI. Follow-up questions can be asked to refine the notes.
@@ -41,6 +42,7 @@ const prompt = ai.definePrompt({
   - Use '###' for sub-headings.
   - Use '*' for bullet points.
   - Use '**text**' for bolding key terms.
+  - Include practical examples where relevant to clarify complex concepts.
 
   Course: {{{course}}}
   Year: {{{year}}}
