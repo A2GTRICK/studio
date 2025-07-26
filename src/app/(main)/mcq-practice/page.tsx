@@ -101,6 +101,7 @@ const aiFeedbackTitles = [
 type PurchaseDetails = {
     title: string;
     price: string;
+    questionsToAdd: number;
 }
 
 const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
@@ -183,14 +184,21 @@ export default function McqPracticePage() {
     }
   }, []);
 
-  const updateDailyUsage = (count: number) => {
+  const updateDailyUsage = (count: number, limit?: number) => {
     const today = new Date().toISOString().split('T')[0];
+    const newLimit = limit ?? dailyLimit;
     try {
-        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count, limit: dailyLimit }));
+        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count, limit: newLimit }));
         setDailyQuestionCount(count);
+        if (limit) {
+            setDailyLimit(limit);
+        }
     } catch (e) {
         console.warn("Could not access localStorage for daily quiz limit.");
         setDailyQuestionCount(count);
+        if (limit) {
+            setDailyLimit(limit);
+        }
     }
   };
 
@@ -287,9 +295,15 @@ export default function McqPracticePage() {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!questions || !user) return;
+    if (!questions || !user) {
+        toast({
+            title: "Error",
+            description: "Could not submit quiz. User not found.",
+            variant: "destructive",
+        });
+        return;
+    }
 
-    // --- START: Save score immediately (fire-and-forget with toast notifications) ---
     const currentFormValues = form.getValues();
     const topicToSave = currentFormValues.topic || "General";
     
@@ -297,32 +311,9 @@ export default function McqPracticePage() {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
     }, 0);
 
-    saveMcqResult({
-        uid: user.uid,
-        subject: currentFormValues.subject,
-        topic: topicToSave,
-        score: newScore,
-        totalQuestions: questions.length
-    }).then(() => {
-        toast({
-            title: "Progress Saved!",
-            description: "Your quiz score has been saved to your progress report.",
-        });
-    }).catch((error) => {
-        console.error("Failed to save quiz result:", error);
-        toast({
-            title: "Could not save progress",
-            description: "Your quiz score could not be saved automatically.",
-            variant: "destructive",
-        });
-    });
-    // --- END: Immediate score saving ---
-
+    // Show results to the user immediately
     setIsSubmitted(true);
-    setAiFeedback(null);
-    
-    
-    // UI update for score feedback
+
     const newScorePercentage = (newScore / questions.length) * 100;
     
     let category;
@@ -339,6 +330,29 @@ export default function McqPracticePage() {
     }
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
+
+    // --- START: Save score in the background and show toast ---
+    try {
+        await saveMcqResult({
+            uid: user.uid,
+            subject: currentFormValues.subject,
+            topic: topicToSave,
+            score: newScore,
+            totalQuestions: questions.length
+        });
+        toast({
+            title: "Progress Saved!",
+            description: "Your quiz score has been saved to your progress report.",
+        });
+    } catch (error) {
+        console.error("Failed to save quiz result:", error);
+        toast({
+            title: "Could not save progress",
+            description: "Your quiz score could not be saved automatically.",
+            variant: "destructive",
+        });
+    }
+    // --- END: Score saving ---
 
     // --- START: Background AI feedback generation ---
     setIsFeedbackLoading(true);
@@ -710,17 +724,17 @@ export default function McqPracticePage() {
                 <p className="font-semibold text-center">Buy a Question Pack</p>
                 
                 <div className="grid grid-cols-1 gap-2">
-                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 5'})}>
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10', questionsToAdd: 50})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Buy 100 MCQs for INR 5
+                        Buy 50 MCQs for INR 10
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 10'})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18', questionsToAdd: 100})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Buy 200 MCQs for INR 10
+                        Buy 100 MCQs for INR 18
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '400 MCQs', price: 'INR 15'})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35', questionsToAdd: 200})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Buy 400 MCQs for INR 15
+                        Buy 200 MCQs for INR 35
                     </Button>
                 </div>
 
@@ -734,7 +748,13 @@ export default function McqPracticePage() {
         title={paymentDetails?.title || ''}
         price={paymentDetails?.price || ''}
         onPaymentSuccess={() => {
+            const questionsToAdd = paymentDetails?.questionsToAdd || 0;
+            updateDailyUsage(dailyQuestionCount, dailyLimit + questionsToAdd);
             setPaymentDetails(null);
+            toast({
+                title: "Questions Added!",
+                description: `You have successfully added ${questionsToAdd} more questions to your daily limit.`
+            })
         }}
     />
     </>
