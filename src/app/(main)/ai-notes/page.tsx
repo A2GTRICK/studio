@@ -1,7 +1,7 @@
 
 'use client';
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useMemo, useEffect, useRef, FormEventHandler } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
@@ -43,12 +43,17 @@ const loadingMessages = [
     "Syllabus se cross-check kar rahe hain... ✅",
 ];
 
+const followupFormSchema = z.object({
+    question: z.string().min(1),
+});
+type FollowupFormValues = z.infer<typeof followupFormSchema>;
+
+
 export default function AiNotesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFollowupLoading, setIsFollowupLoading] = useState(false);
   const [generatedNotes, setGeneratedNotes] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [followUp, setFollowUp] = useState('');
   const [lastTopic, setLastTopic] = useState<NotesFormValues | null>(null);
   const { notes: allNotes } = useNotes();
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +80,13 @@ export default function AiNotesPage() {
       year: '1st Year',
       subject: '',
       topic: '',
+    },
+  });
+
+  const followupForm = useForm<FollowupFormValues>({
+    resolver: zodResolver(followupFormSchema),
+    defaultValues: {
+        question: "",
     },
   });
 
@@ -111,19 +123,17 @@ export default function AiNotesPage() {
     }
   }
 
-  async function handleFollowUpSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!followUp.trim() || !generatedNotes) return;
+  async function handleFollowUpSubmit(data: FollowupFormValues) {
+    if (!data.question.trim() || !generatedNotes) return;
 
-    const newQuestion: ChatMessage = { role: 'user', content: followUp };
+    const newQuestion: ChatMessage = { role: 'user', content: data.question };
     setChatHistory(prev => [...prev, newQuestion]);
     setIsFollowupLoading(true);
-    const currentFollowUp = followUp;
-    setFollowUp('');
+    followupForm.reset();
 
     try {
       const result = await answerFollowUpQuestion({
-        question: currentFollowUp,
+        question: data.question,
         previousNotes: generatedNotes,
       });
       const newAnswer: ChatMessage = { role: 'assistant', content: result.answer };
@@ -242,87 +252,98 @@ export default function AiNotesPage() {
           )}
         </div>
         <div className="lg:col-span-2">
-            <Card className="flex flex-col h-full">
-                <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="font-headline">Generated Content</CardTitle>
-                    <CardDescription>Your AI-generated notes and conversation will appear here.</CardDescription>
-                </div>
-                {chatHistory.length > 0 && (
-                   <Button variant="ghost" size="icon" onClick={() => setIsExpandViewOpen(true)}>
-                    <Expand className="h-5 w-5" />
-                    <span className="sr-only">Expand View</span>
+          <Card className="flex flex-col h-full">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-headline">Generated Content</CardTitle>
+                <CardDescription>Your AI-generated notes and conversation will appear here.</CardDescription>
+              </div>
+              {chatHistory.length > 0 && (
+                 <Button variant="ghost" size="icon" onClick={() => setIsExpandViewOpen(true)}>
+                  <Expand className="h-5 w-5" />
+                  <span className="sr-only">Expand View</span>
                 </Button>
-                )}
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="h-[70vh] lg:h-[calc(100vh-320px)] w-full watermarked-content rounded-lg">
-                    <ScrollArea className="h-full w-full pr-4">
-                        {isLoading && (
-                            <div className="flex flex-col items-center justify-center h-full">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
-                            </div>
+              )}
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <div className="h-[70vh] lg:h-[calc(100vh-320px)] w-full watermarked-content rounded-lg">
+                <ScrollArea className="h-full w-full pr-4">
+                  {isLoading && (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
+                    </div>
+                  )}
+                  {!isLoading && error && (
+                    <Alert variant="destructive" className="my-4">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Generation Failed</AlertTitle>
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  {chatHistory.length === 0 && !isLoading && !error && (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
+                      <BrainCircuit className="h-16 w-16 mb-4" />
+                      <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
+                      <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes on any topic from your syllabus.</p>
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    {chatHistory.map((msg, index) => (
+                      <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                        {msg.role === 'assistant' && (
+                          <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
+                            <Bot className="h-5 w-5" />
+                          </div>
                         )}
-                        {!isLoading && error && (
-                        <Alert variant="destructive" className="my-4">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Generation Failed</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                        )}
-                        {chatHistory.length === 0 && !isLoading && !error &&(
-                            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
-                                <BrainCircuit className="h-16 w-16 mb-4" />
-                                <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
-                                <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes on any topic from your syllabus.</p>
-                            </div>
-                        )}
-                        <div className="space-y-4">
-                        {chatHistory.map((msg, index) => (
-                            <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                            {msg.role === 'assistant' && (
-                                <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
-                                <Bot className="h-5 w-5" />
-                                </div>
-                            )}
-                            <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
-                                {renderMessageContent(msg.content)}
-                            </div>
-                            {msg.role === 'user' && (
-                                <div className="p-2 rounded-full bg-muted self-start shrink-0">
-                                    <User className="h-5 w-5" />
-                                </div>
-                            )}
-                            </div>
-                        ))}
+                        <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
+                          {renderMessageContent(msg.content)}
                         </div>
-                    </ScrollArea>
+                        {msg.role === 'user' && (
+                          <div className="p-2 rounded-full bg-muted self-start shrink-0">
+                            <User className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-                {generatedNotes && (
-                <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
-                    <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2">
+                </ScrollArea>
+              </div>
+            </CardContent>
+            {generatedNotes && (
+              <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
+                <FormProvider {...followupForm}>
+                    <form onSubmit={followupForm.handleSubmit(handleFollowUpSubmit)} className="w-full flex items-center gap-2">
                         <div className="flex-grow space-y-2 w-full">
                             <label htmlFor="follow-up-input" className="text-sm font-medium text-foreground">Need more details? Ask the AI!</label>
-                            <Input 
-                                id="follow-up-input"
-                                value={followUp}
-                                onChange={(e) => setFollowUp(e.target.value)}
-                                placeholder="Ask a follow-up question..."
-                                disabled={isFollowupLoading}
-                            />
+                            <FormField
+                                control={followupForm.control}
+                                name="question"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input
+                                                id="follow-up-input"
+                                                placeholder="Ask a follow-up question..."
+                                                disabled={isFollowupLoading}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                             />
                         </div>
-                        <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()} className="self-end mt-auto">
+                        <Button type="submit" size="icon" disabled={isFollowupLoading || !followupForm.formState.isValid} className="self-end mt-auto">
                             {isFollowupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </form>
-                </CardFooter>
-                )}
-            </Card>
+                </FormProvider>
+              </CardFooter>
+            )}
+          </Card>
         </div>
       </div>
-      
+
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
         <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
             <DialogHeader className="flex-row items-center justify-between print-hide">
@@ -369,3 +390,5 @@ export default function AiNotesPage() {
     </>
   );
 }
+
+    
