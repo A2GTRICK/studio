@@ -3,13 +3,12 @@
 /**
  * @fileOverview A service to manage user progress data.
  *
- * - getSubjectsProgress - Fetches and constructs the user's progress across all subjects.
+ * - getSubjectsProgress - Fetches and constructs the user's progress across all subjects based on their interactions.
  * - saveMcqResult - Saves a user's MCQ quiz performance to Firestore.
  */
 
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, writeBatch, collectionGroup } from 'firebase/firestore';
-import type { Note } from '@/app/(main)/admin/notes/page';
 import type { GenerateDashboardInsightsInput } from '@/ai/flows/generate-dashboard-insights';
 import { z } from 'zod';
 
@@ -43,7 +42,8 @@ export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
     
     try {
         const safeTopicId = topic.replace(/[.\\#$[\]/]/g, '_') || 'general';
-        const progressRef = doc(db, 'user_progress', uid, 'mcqs', safeTopicId);
+        // Securely write to a sub-collection within the specific user's document
+        const progressRef = doc(db, 'users', uid, 'progress', safeTopicId);
         
         await setDoc(progressRef, {
             subject,
@@ -60,40 +60,32 @@ export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
     }
 }
 
-
 /**
- * Fetches all notes from the database and constructs a subject progress report
- * based on the user's saved MCQ attempts.
+ * Fetches only the user's progress data and constructs a subject progress report.
+ * This is much more efficient as it doesn't load the entire notes collection.
  * @returns A promise that resolves to an array of subject progress objects.
  */
 export async function getSubjectsProgress(uid: string): Promise<SubjectProgress[]> {
   
-  // 1. Fetch all notes to build the complete structure of subjects and topics
-  const notesCollection = collection(db, 'notes');
-  const notesQuery = query(notesCollection, orderBy('createdAt', 'desc'));
-  const notesSnapshot = await getDocs(notesQuery);
-  const allNotes = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Note[];
-
-  if (allNotes.length === 0) {
+  if (!uid) {
     return [];
   }
 
-  // 2. Fetch the user's MCQ progress
-  let userProgress: { [topic: string]: { score: number; totalQuestions: number } } = {};
-  if (uid) {
-      const userProgressCollection = collection(db, 'user_progress', uid, 'mcqs');
-      const progressSnapshot = await getDocs(userProgressCollection);
-      progressSnapshot.forEach(doc => {
-          const data = doc.data();
-          userProgress[data.topic] = { score: data.score, totalQuestions: data.totalQuestions };
-      });
+  // 1. Fetch only the user's quiz progress from their sub-collection.
+  const userProgressCollection = collection(db, 'users', uid, 'progress');
+  const progressSnapshot = await getDocs(userProgressCollection);
+
+  if (progressSnapshot.empty) {
+      return [];
   }
 
-  // 3. Construct the progress report by merging notes and user data
+  // 2. Group the results by subject.
   const progressBySubject: { [key: string]: SubjectProgress } = {};
 
-  allNotes.forEach(note => {
-    const subjectName = note.subject || 'Uncategorized';
+  progressSnapshot.forEach(doc => {
+    const data = doc.data();
+    const subjectName = data.subject || 'Uncategorized';
+
     if (!progressBySubject[subjectName]) {
       progressBySubject[subjectName] = {
         subject: subjectName,
@@ -101,22 +93,15 @@ export async function getSubjectsProgress(uid: string): Promise<SubjectProgress[
       };
     }
     
-    // Check if topic already exists to avoid duplicates
-    if (!progressBySubject[subjectName].topics.some(t => t.title === note.title)) {
-        const userTopicProgress = userProgress[note.title];
-        const isCompleted = userTopicProgress && userTopicProgress.score >= userTopicProgress.totalQuestions / 2;
+    const isCompleted = data.score >= data.totalQuestions / 2;
 
-        progressBySubject[subjectName].topics.push({
-          title: note.title,
-          // Mark as 'completed' if user has scored at least 50%
-          status: isCompleted ? 'completed' : 'pending',
-          lastAccessed: userTopicProgress ? 'Attempted' : 'Never',
-          estTime: `${Math.floor(Math.random() * 30) + 15} mins`,
-        });
-    }
+    progressBySubject[subjectName].topics.push({
+      title: data.topic,
+      status: isCompleted ? 'completed' : 'pending',
+      lastAccessed: 'Attempted', // We know it's been attempted because it exists in progress
+      estTime: `${Math.floor(Math.random() * 30) + 15} mins`,
+    });
   });
   
   return Object.values(progressBySubject);
 }
-
-    
