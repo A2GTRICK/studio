@@ -1,0 +1,38 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow users to read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow users to read and write their own progress subcollection
+      match /progress/{progressId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Allow any authenticated user to read from the notes collection
+    match /notes/{noteId} {
+      allow read: if request.auth != null;
+    }
+    
+    // Disallow client-side writes to the notes collection for non-admins.
+    // Admin operations should be handled via a secure backend/cloud function.
+    match /notes/{noteId} {
+      allow write: if false; 
+    }
+    
+    // Allow any authenticated user to read from the newsletter_subscriptions collection
+    match /newsletter_subscriptions/{subscriptionId} {
+        allow read: if request.auth != null;
+    }
+    
+    // Allow anyone to create a newsletter subscription (e.g., from the landing page)
+    match /newsletter_subscriptions/{subscriptionId} {
+      allow create: if true;
+    }
+  }
+}
