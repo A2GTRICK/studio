@@ -8,7 +8,7 @@ import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
 import { answerFollowUpQuestion } from '@/ai/flows/answer-follow-up-question';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -251,7 +251,7 @@ export default function AiNotesPage() {
                 </div>
                 {chatHistory.length > 0 && (
                     <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                       <Button variant="ghost" size="icon">
                         <Expand className="h-5 w-5" />
                         <span className="sr-only">Expand View</span>
                     </Button>
@@ -306,7 +306,7 @@ export default function AiNotesPage() {
                 {generatedNotes && (
                 <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
                     <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2">
-                         <div className="flex-grow space-y-2 w-full">
+                        <div className="flex-grow space-y-2 w-full">
                             <label htmlFor="follow-up-input" className="text-sm font-medium text-foreground">Need more details? Ask the AI!</label>
                             <Input 
                                 id="follow-up-input"
@@ -325,39 +325,32 @@ export default function AiNotesPage() {
             </Card>
 
             <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
-                <DialogHeader className="flex-row items-center justify-between">
+                <DialogHeader className="flex-row items-center justify-between print-hide">
                     <div>
                         <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                         <DialogDescription>
                             Topic: {lastTopic?.topic}
                         </DialogDescription>
                     </div>
-                    <Button onClick={handlePrint} variant="outline" className="print-hide">
+                    <Button onClick={handlePrint} variant="outline">
                         <Printer className="mr-2 h-4 w-4" />
                         Print with Watermark
                     </Button>
                 </DialogHeader>
-                <div className="flex-grow overflow-hidden relative print-watermark">
-                    <ScrollArea className="h-full w-full pr-6">
-                        <div className="space-y-4 printable-content">
-                        {chatHistory.map((msg, index) => (
-                            msg.role === 'assistant' && (
-                                <div key={index} className="bg-background/80 border rounded-lg p-4">
-                                {renderMessageContent(msg.content)}
-                                </div>
-                            )
-                        ))}
-                        </div>
-                    </ScrollArea>
-                </div>
+                <ScrollArea className="flex-grow overflow-auto h-full pr-6 print-watermark">
+                    <div className="space-y-4 printable-content">
+                    {chatHistory.map((msg, index) => (
+                        msg.role === 'assistant' && (
+                            <div key={index} className="bg-background/80 border rounded-lg p-4">
+                            {renderMessageContent(msg.content)}
+                            </div>
+                        )
+                    ))}
+                    </div>
+                </ScrollArea>
             </DialogContent>
            </Dialog>
         </div>
       </div>
     </>
   );
-
-    
-
-
-    
