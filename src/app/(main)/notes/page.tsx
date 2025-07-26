@@ -183,7 +183,7 @@ export default function NotesPage() {
     }, [filters, debouncedSearchQuery, allNotes]);
     
     const groupedNotes = useMemo(() => {
-        if (!filteredNotes) return {};
+        if (isLoading || !filteredNotes) return {};
         return filteredNotes.reduce((acc, note) => {
             const courseKey = note.course || 'Uncategorized';
             if (!acc[courseKey]) {
@@ -192,7 +192,7 @@ export default function NotesPage() {
             acc[courseKey].push(note);
             return acc;
         }, {} as Record<string, Note[]>);
-    }, [filteredNotes]);
+    }, [filteredNotes, isLoading]);
 
 
   return (
@@ -245,16 +245,7 @@ export default function NotesPage() {
                     <Skeleton className="h-8 w-1/4 mb-4" />
                     <Skeleton className="h-px w-full mb-6" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <NoteCardSkeleton key={i} />
-                        ))}
-                    </div>
-                </div>
-                 <div>
-                    <Skeleton className="h-8 w-1/4 mb-4" />
-                    <Skeleton className="h-px w-full mb-6" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {Array.from({ length: 4 }).map((_, i) => (
+                        {Array.from({ length: 8 }).map((_, i) => (
                             <NoteCardSkeleton key={i} />
                         ))}
                     </div>
