@@ -3,34 +3,30 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Allow users to read and write their own user document
+    
+    // --- USERS ---
+    // A user can read and write to their own document in the 'users' collection.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow users to read and write their own progress subcollection
+      allow read, write: if request.auth.uid == userId;
+
+      // A user can write to their own 'progress' subcollection to save quiz results.
       match /progress/{progressId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow write: if request.auth.uid == userId;
       }
     }
 
-    // Allow any authenticated user to read from the notes collection
+    // --- NOTES ---
+    // Any authenticated user can read notes.
+    // Only an admin can write (create, update, delete) notes.
+    // This rule assumes you have an 'isAdmin' field in the user's document.
     match /notes/{noteId} {
       allow read: if request.auth != null;
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
-    
-    // Disallow client-side writes to the notes collection for non-admins.
-    // Admin operations should be handled via a secure backend/cloud function.
-    match /notes/{noteId} {
-      allow write: if false; 
-    }
-    
-    // Allow any authenticated user to read from the newsletter_subscriptions collection
-    match /newsletter_subscriptions/{subscriptionId} {
-        allow read: if request.auth != null;
-    }
-    
-    // Allow anyone to create a newsletter subscription (e.g., from the landing page)
+
+    // --- NEWSLETTER ---
+    // Anyone (even unauthenticated users) can create a document in the newsletter collection.
+    // This allows the landing page subscription form to work.
     match /newsletter_subscriptions/{subscriptionId} {
       allow create: if true;
     }
