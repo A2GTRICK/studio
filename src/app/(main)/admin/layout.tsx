@@ -4,7 +4,7 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePathname, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Shield, Users, NotebookPen } from 'lucide-react';
+import { Shield, Users, NotebookPen, GraduationCap, Gem, Megaphone } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -31,21 +31,33 @@ export default function AdminLayout({
             </div>
             <div>
                 <CardTitle className="font-headline text-3xl">Admin Panel</CardTitle>
-                <CardDescription>Manage your application's content and users.</CardDescription>
+                <CardDescription>Manage your application's content, users, and services.</CardDescription>
             </div>
           </div>
         </CardHeader>
       </Card>
       
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
           <TabsTrigger value="notes">
             <NotebookPen className="mr-2 h-4 w-4" />
-            Manage Notes
+            Notes
           </TabsTrigger>
           <TabsTrigger value="users">
             <Users className="mr-2 h-4 w-4" />
-            Manage Users
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="services">
+            <GraduationCap className="mr-2 h-4 w-4" />
+            Services
+          </TabsTrigger>
+          <TabsTrigger value="plans">
+            <Gem className="mr-2 h-4 w-4" />
+            Plans
+          </TabsTrigger>
+           <TabsTrigger value="marketing">
+            <Megaphone className="mr-2 h-4 w-4" />
+            Marketing
           </TabsTrigger>
         </TabsList>
         {/* The content for each tab is rendered by the page.tsx files */}
