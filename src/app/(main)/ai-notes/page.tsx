@@ -183,7 +183,7 @@ export default function AiNotesPage() {
     
     const ratio = canvasWidth / canvasHeight;
     
-    const imgHeight = pdfWidth / ratio;
+    let imgHeight = pdfWidth / ratio;
     
     let heightLeft = imgHeight;
     let position = 0;
@@ -396,29 +396,27 @@ export default function AiNotesPage() {
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-hidden flex flex-col">
-                <ScrollArea className="flex-grow pr-6">
-                    <div ref={printableContentRef} className="printable-content watermarked-content space-y-4 p-1">
-                    {chatHistory.map((msg, index) => (
-                        <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                          {msg.role === 'assistant' && (
-                              <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
-                              <Bot className="h-5 w-5" />
-                              </div>
-                          )}
-                          <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
-                              {renderMessageContent(msg.content)}
-                          </div>
-                          {msg.role === 'user' && (
-                              <div className="p-2 rounded-full bg-muted self-start shrink-0">
-                                  <User className="h-5 w-5" />
-                              </div>
-                          )}
+            <ScrollArea className="flex-grow pr-6">
+                <div ref={printableContentRef} className="printable-content watermarked-content space-y-4 p-1">
+                {chatHistory.map((msg, index) => (
+                    <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                        {msg.role === 'assistant' && (
+                            <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
+                            <Bot className="h-5 w-5" />
+                            </div>
+                        )}
+                        <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
+                            {renderMessageContent(msg.content)}
                         </div>
-                    ))}
+                        {msg.role === 'user' && (
+                            <div className="p-2 rounded-full bg-muted self-start shrink-0">
+                                <User className="h-5 w-5" />
+                            </div>
+                        )}
                     </div>
-                </ScrollArea>
-            </div>
+                ))}
+                </div>
+            </ScrollArea>
              <DialogFooter className="print-hide">
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
@@ -434,5 +432,3 @@ export default function AiNotesPage() {
     </>
   );
 }
-
-    
