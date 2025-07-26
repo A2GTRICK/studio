@@ -151,7 +151,6 @@ export default function AdminNotesPage() {
             form.reset();
             setSelectedCourse("");
             setIsPremium(false);
-            // This is the key fix for the UI state.
             setIsSubmitting(false); 
             
         } catch (error: any) {
@@ -184,7 +183,7 @@ export default function AdminNotesPage() {
     }
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start p-4 md:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start pt-6">
             <div className="lg:col-span-1">
                 <form onSubmit={handleAddNote}>
                     <Card>
@@ -377,5 +376,3 @@ export default function AdminNotesPage() {
         </div>
     );
 }
-
-    

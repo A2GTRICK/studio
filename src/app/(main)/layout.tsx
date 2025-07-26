@@ -126,7 +126,7 @@ function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: b
                 <div className="p-1 space-y-1">
                     {isAdmin && (
                         <Button asChild variant="ghost" className="w-full justify-start text-primary hover:text-primary">
-                            <Link href="/admin/notes">
+                            <Link href="/admin">
                                 <Shield className="mr-2 h-4 w-4" />
                                 Admin Panel
                             </Link>

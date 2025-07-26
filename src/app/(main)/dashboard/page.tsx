@@ -26,7 +26,7 @@ const AdminPanel = () => (
     </CardHeader>
     <CardContent>
         <Button asChild className="w-full" size="lg">
-            <Link href="/admin/notes">Manage Notes Library</Link>
+            <Link href="/admin">Go to Admin Panel</Link>
         </Button>
     </CardContent>
   </Card>
