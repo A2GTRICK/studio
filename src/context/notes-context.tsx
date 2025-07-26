@@ -34,15 +34,23 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // Use authLoading state
 
   useEffect(() => {
+    // Wait until authentication is resolved
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
+    // If no user is logged in, clear notes and stop loading
     if (!user) {
         setNotes([]);
         setLoading(false);
         return;
     }
 
+    // User is authenticated, set up the real-time listener
     setLoading(true);
     const notesCollection = collection(db, 'notes');
     const q = query(notesCollection, orderBy('createdAt', 'desc'));
@@ -59,7 +67,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [user]);
+  }, [user, authLoading]); // Depend on both user and authLoading
 
   const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>): Promise<Note | null> => {
     if (!db) {
