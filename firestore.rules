@@ -3,32 +3,43 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+  
+    // Helper function to check for Admin UID
+    function isAdmin() {
+      return request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    }
     
-    // --- USERS ---
-    // A user can read and write to their own document in the 'users' collection.
+    // Helper function to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    // Users can create their own profile, and read/update it.
+    // Admin can read/write any user profile.
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
-
-      // A user can write to their own 'progress' subcollection to save quiz results.
-      match /progress/{progressId} {
-        allow write: if request.auth.uid == userId;
-      }
+      allow read, update: if request.auth.uid == userId || isAdmin();
+      allow create: if isSignedIn();
+      allow list: if isAdmin();
+    }
+    
+    // Logged-in users can access their own progress subcollection.
+    // Admin can access anyone's progress.
+    match /users/{userId}/progress/{progressId} {
+       allow read, write: if request.auth.uid == userId || isAdmin();
     }
 
-    // --- NOTES ---
     // Any authenticated user can read notes.
-    // Only an admin can write (create, update, delete) notes.
-    // This rule assumes you have an 'isAdmin' field in the user's document.
+    // Only the admin can create, update, or delete notes.
     match /notes/{noteId} {
-      allow read: if request.auth != null;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
-    // --- NEWSLETTER ---
-    // Anyone (even unauthenticated users) can create a document in the newsletter collection.
-    // This allows the landing page subscription form to work.
+    // Anyone can subscribe to the newsletter.
+    // Only the admin can read the list or delete subscribers.
     match /newsletter_subscriptions/{subscriptionId} {
       allow create: if true;
+      allow read, delete: if isAdmin();
     }
   }
 }
