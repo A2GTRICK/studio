@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, deleteDoc, doc, getDocs, query, orderBy, serverTimestamp, DocumentData, Timestamp, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, getDocs, query, orderBy, serverTimestamp, DocumentData, Timestamp, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 
 export interface Note {
@@ -36,32 +36,30 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const fetchNotes = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const notesCollection = collection(db, 'notes');
-      const q = query(notesCollection, orderBy('createdAt', 'desc'));
-      const notesSnapshot = await getDocs(q);
-      const notesList = notesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Note));
-      setNotes(notesList);
-    } catch (err: any) {
-      console.error("Error fetching notes:", err);
-      setError("Could not retrieve notes from the database.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    if (user) {
-      fetchNotes();
-    } else {
-      // If there's no user, clear notes and stop loading.
-      setNotes([]);
-      setLoading(false);
+    if (!user) {
+        setNotes([]);
+        setLoading(false);
+        return;
     }
-  }, [user, fetchNotes]);
+
+    setLoading(true);
+    const notesCollection = collection(db, 'notes');
+    const q = query(notesCollection, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const notesList = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Note));
+        setNotes(notesList);
+        setLoading(false);
+    }, (err) => {
+        console.error("Error fetching notes with onSnapshot:", err);
+        setError("Could not retrieve notes from the database.");
+        setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [user]);
 
   const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>): Promise<Note | null> => {
     if (!db) {
@@ -90,7 +88,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const newDocSnapshot = await getDoc(docRef);
       if (newDocSnapshot.exists()) {
         const newNote = { id: newDocSnapshot.id, ...newDocSnapshot.data() } as Note;
-        setNotes(prevNotes => [newNote, ...prevNotes]);
+        // No need to manually update state here, onSnapshot will handle it.
         return newNote;
       } else {
         throw new Error("Could not retrieve saved note from database.");
@@ -122,11 +120,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
     try {
         await updateDoc(noteRef, dataToUpdate);
-        setNotes(prevNotes =>
-            prevNotes.map(note =>
-                note.id === noteId ? { ...note, ...dataToUpdate } : note
-            )
-        );
+        // No need to manually update state here, onSnapshot will handle it.
     } catch (err) {
         console.error("Error updating note:", err);
         throw err;
@@ -135,14 +129,11 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
 
   const deleteNote = async (noteId: string) => {
-    const notesBeforeDelete = notes;
-    setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
-
     try {
         await deleteDoc(doc(db, 'notes', noteId));
+        // No need to manually update state here, onSnapshot will handle it.
     } catch (err) {
-        console.error("Error deleting note, reverting optimistic update:", err);
-        setNotes(notesBeforeDelete);
+        console.error("Error deleting note:", err);
         throw err;
     }
   };
