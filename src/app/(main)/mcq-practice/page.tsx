@@ -18,7 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import { marked } from 'marked';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { Separator } from '@/components/ui/separator';
@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { saveMcqResult } from '@/services/user-progress-service';
 import { useAuth } from '@/hooks/use-auth';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const mcqFormSchema = z.object({
@@ -88,20 +89,9 @@ const premiumFeatures = [
     "Ask follow-up questions to our AI Tutor",
 ];
 
-const aiFeedbackTitles = [
-    "Kuch btana h tumko...",
-    "Mistakes se seekhna hai?",
-    "Chalo, paper ka post-mortem karte hain.",
-    "Secret tips chahiye?",
-    "Yahan dekho, kuch kaam ki baat hai.",
-    "Apni performance ka deep-dive karein?",
-    "Jaan'na hai kahan galti hui?",
-];
-
 type PurchaseDetails = {
     title: string;
     price: string;
-    questions?: number;
 }
 
 const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
@@ -126,14 +116,16 @@ type DisplayedFeedback = {
   cardClass: string;
 } | null;
 
+type FeedbackState = 'idle' | 'loading' | 'ready' | 'error';
+
 
 export default function McqPracticePage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
   const [questions, setQuestions] = useState<ShuffledQuestion[] | null>(null);
   const [answers, setAnswers] = useState<AnswersState>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [aiFeedbackState, setAiFeedbackState] = useState<FeedbackState>('idle');
   const { toast } = useToast();
   
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
@@ -145,7 +137,6 @@ export default function McqPracticePage() {
   const [dailyLimit, setDailyLimit] = useState(30);
   
   const [displayedFeedback, setDisplayedFeedback] = useState<DisplayedFeedback | null>(null);
-  const [currentAiFeedbackTitle, setCurrentAiFeedbackTitle] = useState(aiFeedbackTitles[0]);
 
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   
@@ -225,6 +216,7 @@ export default function McqPracticePage() {
   const resetQuiz = (showToast = false) => {
     setIsSubmitted(false);
     setAiFeedback(null);
+    setAiFeedbackState('idle');
     setAnswers(new Array(questions?.length || 0).fill(null));
     if (showToast) {
         toast({ title: "Quiz Reset!", description: "You can now attempt the quiz again." });
@@ -236,6 +228,7 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
+    setAiFeedbackState('idle');
     setError(null);
     form.reset({
       examType: 'GPAT',
@@ -259,6 +252,7 @@ export default function McqPracticePage() {
     setIsSubmitted(false);
     setAnswers([]);
     setAiFeedback(null);
+    setAiFeedbackState('idle');
     setError(null);
     
     const requestData = {
@@ -296,10 +290,50 @@ export default function McqPracticePage() {
     setAnswers(newAnswers);
   };
 
+  const handleGetAiFeedback = async () => {
+    if (!questions || !user) return;
+    
+    setAiFeedbackState('loading');
+    setAiFeedback(null);
+
+    try {
+        const incorrectPerformance = questions.map((q, index) => ({
+            question: q.question,
+            userAnswer: answers[index] ?? "Not Answered",
+            correctAnswer: q.correctAnswer,
+            isCorrect: answers[index] === q.correctAnswer,
+        })).filter(p => !p.isCorrect);
+
+        const currentFormValues = form.getValues();
+        const topicToSave = currentFormValues.topic || "General";
+
+        if (incorrectPerformance.length > 0) {
+            const feedbackResult = await generateMcqFeedback({
+                examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
+                subject: currentFormValues.subject,
+                topic: topicToSave,
+                performance: incorrectPerformance,
+                score: score,
+                totalQuestions: questions.length,
+            });
+            setAiFeedback(feedbackResult.feedback);
+        } else {
+            setAiFeedback("### 🎉 Perfect Score! \n\nCongratulations! You answered all questions correctly. Keep up the excellent work. Try a harder difficulty or a new topic to challenge yourself further!");
+        }
+        setAiFeedbackState('ready');
+    } catch (error: any) {
+        console.error("Error generating feedback:", error);
+        const errorMessage = error.message.includes('503')
+          ? 'The AI model is currently overloaded, so feedback could not be generated. You can still review your answers.'
+          : "Sorry, an error occurred while generating feedback. You can still review your answers and explanations.";
+        setAiFeedback(`<div class="p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">${errorMessage}</div>`);
+        setAiFeedbackState('error');
+    }
+  };
+
+
   const handleSubmitQuiz = async () => {
     if (!questions) return;
-
-    // --- STEP 1: INSTANTLY UPDATE UI & CALCULATE SCORE ---
     setIsSubmitted(true);
     
     const newScore = questions.reduce((score, question, index) => {
@@ -328,10 +362,9 @@ export default function McqPracticePage() {
           description: "Sign in to save your progress and get AI feedback.",
           variant: "destructive"
         });
-        return; // Exit if no user
+        return;
     }
 
-    // --- STEP 2: SAVE SCORE TO DATABASE (CRITICAL PATH) ---
     const currentFormValues = form.getValues();
     const topicToSave = currentFormValues.topic || "General";
     
@@ -348,44 +381,8 @@ export default function McqPracticePage() {
         description: "Your quiz score has been saved to your progress report.",
       });
     } catch (error) {
-      console.error("Failed to save quiz result:", error);
-      // Intentionally not showing a toast message to the user as requested.
-    }
-
-    // --- STEP 3: GENERATE AI FEEDBACK (NON-CRITICAL BACKGROUND TASK) ---
-    setIsFeedbackLoading(true);
-    setCurrentAiFeedbackTitle(aiFeedbackTitles[Math.floor(Math.random() * aiFeedbackTitles.length)]);
-
-    try {
-        const incorrectPerformance = questions.map((q, index) => ({
-            question: q.question,
-            userAnswer: answers[index] ?? "Not Answered",
-            correctAnswer: q.correctAnswer,
-            isCorrect: answers[index] === q.correctAnswer,
-        })).filter(p => !p.isCorrect);
-
-        if (incorrectPerformance.length > 0) {
-            const feedbackResult = await generateMcqFeedback({
-                examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
-                subject: currentFormValues.subject,
-                topic: topicToSave,
-                performance: incorrectPerformance,
-                score: newScore,
-                totalQuestions: questions.length,
-            });
-            setAiFeedback(feedbackResult.feedback);
-        } else {
-            setAiFeedback("### 🎉 Perfect Score! \n\nCongratulations! You answered all questions correctly. Keep up the excellent work. Try a harder difficulty or a new topic to challenge yourself further!");
-        }
-
-    } catch (error: any) {
-        console.error("Error generating feedback:", error);
-        const errorMessage = error.message.includes('503')
-          ? 'The AI model is currently overloaded, so feedback could not be generated. You can still review your answers.'
-          : "Sorry, an error occurred while generating feedback. You can still review your answers and explanations.";
-        setAiFeedback(`<div class="p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">${errorMessage}</div>`);
-    } finally {
-        setIsFeedbackLoading(false);
+        console.error("Failed to save quiz result:", error);
+        // Silently fail as requested
     }
   };
 
@@ -430,12 +427,10 @@ export default function McqPracticePage() {
     setShowPaymentDialog(true);
   };
   
-  const handlePaymentSuccess = (questionsToAdd: number) => {
-      const newLimit = dailyLimit + questionsToAdd;
-      updateDailyUsage(0, newLimit); // This updates the limit and resets the count for the purpose of the limit calculation
+  const handlePaymentSuccess = () => {
       toast({
-          title: "Questions Added!",
-          description: `You can now generate ${questionsToAdd} more questions today.`
+          title: "Payment Submitted!",
+          description: `We'll verify your payment and activate your purchase.`
       });
   }
 
@@ -671,28 +666,38 @@ export default function McqPracticePage() {
                   </Button>
                 </CardContent>
                 <CardFooter>
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
-                      <AccordionTrigger className="px-6 hover:no-underline">
-                        <div className="flex items-center gap-2 text-primary font-headline">
-                          <Lightbulb /> {currentAiFeedbackTitle}
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-6 pb-6">
-                        {isFeedbackLoading && (
-                          <div className="flex items-center justify-center min-h-[100px]">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                            <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
-                          </div>
-                        )}
-                        {!isFeedbackLoading && aiFeedback && (
-                          <div className="p-4 bg-background rounded-lg border">
-                            {renderAiResult(aiFeedback)}
-                          </div>
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
+                  <div className="w-full p-4 border rounded-lg bg-primary/5 border-primary/20">
+                    <Dialog>
+                       <DialogTrigger asChild>
+                           <Button 
+                                className="w-full" 
+                                variant="outline" 
+                                onClick={aiFeedbackState === 'idle' ? handleGetAiFeedback : undefined}
+                                disabled={aiFeedbackState === 'loading'}
+                           >
+                              {aiFeedbackState === 'loading' && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                              {aiFeedbackState === 'idle' && <><Lightbulb className="mr-2 h-4 w-4"/>Get AI Feedback</>}
+                              {aiFeedbackState === 'loading' && 'Analyzing...'}
+                              {(aiFeedbackState === 'ready' || aiFeedbackState === 'error') && <><BrainCircuit className="mr-2 h-4 w-4"/>View AI Feedback</>}
+                           </Button>
+                       </DialogTrigger>
+                       <DialogContent className="max-w-xl">
+                            <DialogHeader>
+                                <DialogTitle className="font-headline text-2xl flex items-center gap-2">
+                                  <BrainCircuit className="text-primary"/> AI Performance Analysis
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Here's a breakdown of your performance and tips for improvement.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <ScrollArea className="h-96 pr-6">
+                                <div className="p-4 bg-background rounded-lg border">
+                                    {renderAiResult(aiFeedback)}
+                                </div>
+                            </ScrollArea>
+                       </DialogContent>
+                   </Dialog>
+                  </div>
                 </CardFooter>
               </Card>
             )}
@@ -731,15 +736,15 @@ export default function McqPracticePage() {
                 <p className="font-semibold text-center">Buy a Question Pack</p>
                 
                 <div className="grid grid-cols-1 gap-2">
-                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10', questions: 50})}>
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 50 MCQs for INR 10
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18', questions: 100})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 100 MCQs for INR 18
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35', questions: 200})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 200 MCQs for INR 35
                     </Button>
@@ -754,14 +759,7 @@ export default function McqPracticePage() {
         setIsOpen={setShowPaymentDialog}
         title={paymentDetails?.title || ''}
         price={paymentDetails?.price || ''}
-        onPaymentSuccess={() => {
-            if (paymentDetails?.questions) {
-                handlePaymentSuccess(paymentDetails.questions);
-            }
-            setPaymentDetails(null);
-        }}
+        onPaymentSuccess={handlePaymentSuccess}
     />
     </>
   );
-
-    
