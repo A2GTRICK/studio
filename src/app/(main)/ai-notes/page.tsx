@@ -131,7 +131,7 @@ export default function AiNotesPage() {
     } catch (error: any) {
       console.error('Error with follow-up:', error);
       const errorMessage = error.message.includes('503')
-        ? 'The AI model is currently overloaded. Please try again in a few moments.'
+        ? 'The AI model is currently overloaded. Please try again.'
         : 'Sorry, I encountered an error. Please try again.';
       const errorAnswer: ChatMessage = { role: 'assistant', content: errorMessage };
       setChatHistory(prev => [...prev, errorAnswer]);
@@ -303,23 +303,21 @@ export default function AiNotesPage() {
                 </CardContent>
                 {generatedNotes && (
                 <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
-                    <div className="flex-grow space-y-2 w-full">
-                      <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2">
-                          <div className="flex-grow space-y-2">
-                              <label htmlFor="follow-up-input" className="text-sm font-medium text-foreground">Need more details? Ask the AI!</label>
-                              <Input 
-                                  id="follow-up-input"
-                                  value={followUp}
-                                  onChange={(e) => setFollowUp(e.target.value)}
-                                  placeholder="Ask a follow-up question..."
-                                  disabled={isFollowupLoading}
-                              />
-                          </div>
-                          <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()} className="self-end mt-auto">
-                              {isFollowupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                          </Button>
-                      </form>
-                    </div>
+                    <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2">
+                        <div className="flex-grow space-y-2 w-full">
+                            <label htmlFor="follow-up-input" className="text-sm font-medium text-foreground">Need more details? Ask the AI!</label>
+                            <Input 
+                                id="follow-up-input"
+                                value={followUp}
+                                onChange={(e) => setFollowUp(e.target.value)}
+                                placeholder="Ask a follow-up question..."
+                                disabled={isFollowupLoading}
+                            />
+                        </div>
+                        <Button type="submit" size="icon" disabled={isFollowupLoading || !followUp.trim()} className="self-end mt-auto">
+                            {isFollowupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                    </form>
                 </CardFooter>
                 )}
             </Card>
