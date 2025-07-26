@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer, Download } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { marked } from 'marked';
@@ -20,8 +20,9 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNotes, type Note } from '@/context/notes-context';
 import Image from 'next/image';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { saveAs } from 'file-saver';
+import htmlToDocx from 'html-to-docx';
+
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -159,43 +160,69 @@ export default function AiNotesPage() {
   };
   
   const handlePrint = () => {
-    window.print();
-  };
-
-  const handleDownloadPdf = () => {
     const content = printableContentRef.current;
     if (!content) return;
-    
+
+    const printWindow = window.open('', '', 'height=800,width=800');
+    if (printWindow) {
+        printWindow.document.write('<html><head><title>Print Notes</title>');
+        // Link to the main stylesheet for consistent styling
+        const styles = Array.from(document.styleSheets)
+            .map(s => s.href ? `<link rel="stylesheet" href="${s.href}">` : '')
+            .join('');
+        printWindow.document.write(styles);
+        printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .print-hide { display: none !important; } }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(content.innerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        
+        // Wait for content to load before printing
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    }
+  };
+
+  const handleDownloadDoc = async () => {
+    const content = printableContentRef.current;
+    if (!content) return;
+
     const safeTopic = lastTopic?.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'notes';
 
-    html2canvas(content, {
-      scale: 2, // Higher scale for better quality
-      useCORS: true, 
-    }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const ratio = canvasWidth / pdfWidth;
-      const imgHeight = canvasHeight / ratio;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
+    const htmlString = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${lastTopic?.topic || 'Notes'}</title>
+          <style>
+            body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; }
+            h1, h2, h3, h4 { font-family: 'Arial', sans-serif; }
+            h1 { font-size: 22pt; color: #2E3A87; }
+            h2 { font-size: 18pt; color: #4F5AA6; }
+            h3 { font-size: 14pt; color: #4F5AA6; }
+            strong { color: #9400D3; }
+            .prose { max-width: 100%; }
+          </style>
+        </head>
+        <body>
+          ${content.innerHTML}
+        </body>
+      </html>
+    `;
+    
+    try {
+        const fileBuffer = await htmlToDocx(htmlString, undefined, {
+            table: { row: { cantSplit: true } },
+            footer: true,
+            pageNumber: true,
+        });
 
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-      
-      pdf.save(`${safeTopic}.pdf`);
-    });
+        saveAs(fileBuffer, `${safeTopic}.docx`);
+    } catch (error) {
+        console.error("Error generating DOCX file:", error);
+    }
   };
 
 
@@ -385,15 +412,15 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="max-w-full w-full h-full p-0 flex flex-col print-dialog-content">
-            <DialogHeader className="print-hide p-6 pb-2">
+        <DialogContent className="fixed inset-0 w-full h-full max-w-full p-0 flex flex-col print-dialog-content">
+            <DialogHeader className="print-hide p-4 border-b">
                 <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                 <DialogDescription>
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-grow px-6">
-                <div ref={printableContentRef} className="printable-content watermarked-content space-y-4 py-4">
+            <ScrollArea className="flex-grow p-4">
+                <div ref={printableContentRef} className="printable-content watermarked-content space-y-4">
                 {chatHistory.map((msg, index) => (
                     <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                         {msg.role === 'assistant' && (
@@ -413,14 +440,14 @@ export default function AiNotesPage() {
                 ))}
                 </div>
             </ScrollArea>
-             <DialogFooter className="print-hide p-6 pt-2 border-t">
+             <DialogFooter className="print-hide p-4 border-t">
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
-                    Print with Watermark
+                    Print
                 </Button>
-                <Button onClick={handleDownloadPdf}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download as PDF
+                <Button onClick={handleDownloadDoc}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Download as Word
                 </Button>
             </DialogFooter>
         </DialogContent>
