@@ -29,6 +29,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
 import { useNotes } from '@/context/notes-context';
@@ -52,13 +60,20 @@ const yearOptions: { [key: string]: string[] } = {
 };
 
 export default function AdminNotesPage() {
-    const { notes, loading, addNote, deleteNote } = useNotes();
+    const { notes, loading, addNote, deleteNote, updateNote } = useNotes();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
     const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
     const [activeTab, setActiveTab] = useState('ai-generate');
     const [isPremium, setIsPremium] = useState(false);
+    
+    // For Edit Dialog
+    const [editingNote, setEditingNote] = useState<Note | null>(null);
+    const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+    const [editSelectedCourse, setEditSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
+    const [isEditPremium, setIsEditPremium] = useState(false);
+
 
      useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -74,6 +89,16 @@ export default function AdminNotesPage() {
         return () => clearInterval(interval);
     }, [isSubmitting, activeTab]);
     
+    // Set states when an edit dialog is opened
+    useEffect(() => {
+        if (editingNote) {
+            setEditSelectedCourse(editingNote.course as any);
+            setIsEditPremium(editingNote.isPremium);
+        } else {
+            setEditSelectedCourse("");
+            setIsEditPremium(false);
+        }
+    }, [editingNote]);
 
     const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -143,7 +168,7 @@ export default function AdminNotesPage() {
             };
             
             await addNote(noteToAdd);
-
+            
             toast({
                 title: "Note Added Successfully!",
                 description: `"${baseNoteDetails.title}" has been added to the library.`
@@ -161,6 +186,44 @@ export default function AdminNotesPage() {
                 variant: "destructive"
             });
             setIsSubmitting(false); 
+        }
+    };
+
+    const handleUpdateNote = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!editingNote) return;
+
+        setIsEditSubmitting(true);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
+        const isPremiumChecked = formData.get('isPremium') === 'on';
+
+        const updatedData: Partial<Note> = {
+            title: formData.get('title') as string,
+            course: formData.get('course') as string,
+            year: formData.get('year') as string,
+            subject: formData.get('subject') as string,
+            thumbnail: formData.get('thumbnail') as string,
+            isPremium: isPremiumChecked,
+            price: isPremiumChecked ? (formData.get('price') as string) : undefined,
+        };
+        
+        try {
+            await updateNote(editingNote.id, updatedData);
+            toast({
+                title: "Note Updated!",
+                description: `"${updatedData.title}" has been successfully updated.`,
+            });
+            setEditingNote(null); // Close dialog
+        } catch(error: any) {
+             console.error("Error updating note:", error);
+            toast({
+                title: "Error updating note",
+                description: error.message || "There was a problem saving the changes.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsEditSubmitting(false);
         }
     };
     
@@ -181,8 +244,9 @@ export default function AdminNotesPage() {
             });
         }
     }
-
+    
     return (
+      <>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start pt-6">
             <div className="lg:col-span-1">
                 <form onSubmit={handleAddNote}>
@@ -327,43 +391,47 @@ export default function AdminNotesPage() {
                                             {note.isPremium && note.price ? `INR ${note.price}` : 'N/A'}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <AlertDialog>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                            <span className="sr-only">Actions</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={() => toast({title: "Edit feature coming soon!"})}>
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete the note titled "{note.title}".
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteNote(note.id)} className="bg-destructive hover:bg-destructive/90">
-                                                            Yes, delete note
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            <Dialog onOpenChange={(open) => !open && setEditingNote(null)}>
+                                                <AlertDialog>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Actions</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                            <DialogTrigger asChild>
+                                                                <DropdownMenuItem onSelect={() => setEditingNote(note)}>
+                                                                    <Edit className="mr-2 h-4 w-4" />
+                                                                    Edit
+                                                                </DropdownMenuItem>
+                                                            </DialogTrigger>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    Delete
+                                                                </DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete the note titled "{note.title}".
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteNote(note.id)} className="bg-destructive hover:bg-destructive/90">
+                                                                Yes, delete note
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </Dialog>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -374,5 +442,87 @@ export default function AdminNotesPage() {
                 </Card>
             </div>
         </div>
+
+        {/* Edit Note Dialog */}
+        <Dialog open={!!editingNote} onOpenChange={(open) => !open && setEditingNote(null)}>
+             <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <DialogTitle className="font-headline">Edit Note</DialogTitle>
+                    <DialogDescription>
+                        Make changes to the note details. Note content cannot be edited here.
+                    </DialogDescription>
+                </DialogHeader>
+                {editingNote && (
+                    <form onSubmit={handleUpdateNote} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-title">Note Title / Topic</Label>
+                            <Input id="edit-title" name="title" defaultValue={editingNote.title} required disabled={isEditSubmitting} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-course">Course</Label>
+                                <Select name="course" required disabled={isEditSubmitting} defaultValue={editingNote.course} onValueChange={(value) => setEditSelectedCourse(value as any)}>
+                                    <SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="B.Pharm">B.Pharm</SelectItem>
+                                        <SelectItem value="D.Pharm">D.Pharm</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-year">Year</Label>
+                                <Select name="year" required disabled={isEditSubmitting || !editSelectedCourse} defaultValue={editingNote.year}>
+                                    <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+                                    <SelectContent>
+                                        {editSelectedCourse && yearOptions[editSelectedCourse]?.map(year => (
+                                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-subject">Subject</Label>
+                            <Input id="edit-subject" name="subject" defaultValue={editingNote.subject} required disabled={isEditSubmitting}/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-thumbnail">Thumbnail Image URL (Optional)</Label>
+                            <div className="relative">
+                                <ImageIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input id="edit-thumbnail" name="thumbnail" defaultValue={editingNote.thumbnail} placeholder="https://postimages.org/..." className="pl-10" disabled={isEditSubmitting} />
+                            </div>
+                        </div>
+                        <div className="space-y-2 pt-2">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="edit-isPremium" name="isPremium" defaultChecked={editingNote.isPremium} onCheckedChange={(checked) => setIsEditPremium(Boolean(checked))} disabled={isEditSubmitting}/>
+                                <Label htmlFor="edit-isPremium">Mark as Premium</Label>
+                            </div>
+                            {isEditPremium && (
+                                <div className="relative pl-6 pt-2">
+                                    <IndianRupee className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        id="edit-price"
+                                        name="price"
+                                        type="number"
+                                        defaultValue={editingNote.price}
+                                        placeholder="e.g., 19"
+                                        className="pl-10"
+                                        disabled={isEditSubmitting}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setEditingNote(null)} disabled={isEditSubmitting}>Cancel</Button>
+                            <Button type="submit" disabled={isEditSubmitting}>
+                                {isEditSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Changes
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                )}
+            </DialogContent>
+        </Dialog>
+      </>
     );
 }

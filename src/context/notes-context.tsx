@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, deleteDoc, doc, getDocs, query, orderBy, serverTimestamp, DocumentData, Timestamp, getDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, getDocs, query, orderBy, serverTimestamp, DocumentData, Timestamp, getDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 
 export interface Note {
@@ -25,6 +25,7 @@ interface NotesContextType {
   error: string | null;
   addNote: (noteData: Omit<Note, 'id' | 'createdAt'>) => Promise<void>;
   deleteNote: (noteId: string) => Promise<void>;
+  updateNote: (noteId: string, noteData: Partial<Note>) => Promise<void>;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -66,8 +67,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       throw new Error("Firestore is not initialized.");
     }
   
-    // --- Definitive Fix for Vanishing Notes ---
-    // 1. Create a clean object for Firestore with only required fields.
     const noteToSave: { [key: string]: any } = {
       title: noteData.title,
       course: noteData.course,
@@ -78,24 +77,18 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       createdAt: serverTimestamp(),
     };
   
-    // 2. Conditionally add optional fields ONLY if they have a valid value.
-    // This prevents sending `undefined` or empty strings to Firestore.
     if (noteData.isPremium && noteData.price) {
       noteToSave.price = noteData.price;
     }
     if (noteData.thumbnail && noteData.thumbnail.trim() !== '') {
       noteToSave.thumbnail = noteData.thumbnail;
     }
-    // --- End of Fix ---
 
     try {
       const docRef = await addDoc(collection(db, 'notes'), noteToSave);
-      
-      // Fetch the newly created document to get the server-generated timestamp
       const newDocSnapshot = await getDoc(docRef);
       if (newDocSnapshot.exists()) {
         const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
-        // Update the local state with the permanent, saved note
         setNotes(prevNotes => 
           [newNote, ...prevNotes].sort((a, b) => {
              const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
@@ -104,16 +97,44 @@ export function NotesProvider({ children }: { children: ReactNode }) {
            })
         );
       } else {
-        // This case is unlikely but handled for safety
         throw new Error("Could not retrieve saved note from database.");
       }
     } catch (err) {
       console.error("Error adding note to Firestore:", err);
-      // If saving fails, we re-throw the error to be caught by the UI.
-      // The optimistic update is avoided to prevent confusion.
       throw err;
     }
   };
+
+  const updateNote = async (noteId: string, noteData: Partial<Note>) => {
+    const noteRef = doc(db, 'notes', noteId);
+    
+    // Prepare data for Firestore, handling undefined values
+    const dataToUpdate: { [key: string]: any } = {};
+    Object.entries(noteData).forEach(([key, value]) => {
+      if (value !== undefined) {
+        dataToUpdate[key] = value;
+      }
+    });
+
+    // Ensure price is not set if note is not premium
+    if (dataToUpdate.isPremium === false) {
+        dataToUpdate.price = null; // or delete field
+    }
+
+    try {
+        await updateDoc(noteRef, dataToUpdate);
+        // Optimistically update UI or refetch
+        setNotes(prevNotes =>
+            prevNotes.map(note =>
+                note.id === noteId ? { ...note, ...dataToUpdate } : note
+            )
+        );
+    } catch (err) {
+        console.error("Error updating note:", err);
+        throw err;
+    }
+  };
+
 
   const deleteNote = async (noteId: string) => {
     const notesBeforeDelete = notes;
@@ -128,7 +149,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = { notes, loading, error, addNote, deleteNote };
+  const value = { notes, loading, error, addNote, deleteNote, updateNote };
 
   return (
     <NotesContext.Provider value={value}>
@@ -144,5 +165,3 @@ export function useNotes() {
   }
   return context;
 }
-
-    
