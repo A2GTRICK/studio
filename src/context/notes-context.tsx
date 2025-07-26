@@ -34,23 +34,26 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, loading: authLoading } = useAuth(); // Use authLoading state
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    // Wait until authentication is resolved
+    // Wait until authentication is resolved before fetching notes.
     if (authLoading) {
       setLoading(true);
       return;
     }
 
-    // If no user is logged in, clear notes and stop loading
+    // If no user is logged in, there are no notes to fetch.
     if (!user) {
         setNotes([]);
         setLoading(false);
         return;
     }
 
-    // User is authenticated, set up the real-time listener
+    // User is authenticated. Set up the real-time listener.
+    // This `onSnapshot` listener is the key to why you don't need to republish.
+    // It automatically detects any changes (add, edit, delete) in the Firestore 'notes' collection
+    // and updates the app for all users in real-time.
     setLoading(true);
     const notesCollection = collection(db, 'notes');
     const q = query(notesCollection, orderBy('createdAt', 'desc'));
@@ -65,9 +68,9 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         setLoading(false);
     });
 
-    // Cleanup subscription on unmount
+    // Cleanup subscription on unmount to prevent memory leaks
     return () => unsubscribe();
-  }, [user, authLoading]); // Depend on both user and authLoading
+  }, [user, authLoading]);
 
   const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>): Promise<Note | null> => {
     if (!db) {
@@ -95,9 +98,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const docRef = await addDoc(collection(db, 'notes'), noteToSave);
       const newDocSnapshot = await getDoc(docRef);
       if (newDocSnapshot.exists()) {
-        const newNote = { id: newDocSnapshot.id, ...newDocSnapshot.data() } as Note;
-        // No need to manually update state here, onSnapshot will handle it.
-        return newNote;
+        // Return the newly created note object. The onSnapshot listener will handle updating the state.
+        return { id: newDocSnapshot.id, ...newDocSnapshot.data() } as Note;
       } else {
         throw new Error("Could not retrieve saved note from database.");
       }
@@ -117,10 +119,12 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // If a note is made not-premium, remove its price.
     if (dataToUpdate.isPremium === false) {
         dataToUpdate.price = null;
     }
-
+    
+    // If the thumbnail URL is cleared, remove it from the database.
     if (dataToUpdate.thumbnail === '') {
         dataToUpdate.thumbnail = null;
     }
@@ -128,7 +132,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
     try {
         await updateDoc(noteRef, dataToUpdate);
-        // No need to manually update state here, onSnapshot will handle it.
     } catch (err) {
         console.error("Error updating note:", err);
         throw err;
@@ -139,7 +142,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const deleteNote = async (noteId: string) => {
     try {
         await deleteDoc(doc(db, 'notes', noteId));
-        // No need to manually update state here, onSnapshot will handle it.
     } catch (err) {
         console.error("Error deleting note:", err);
         throw err;
