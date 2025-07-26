@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo, useEffect, useRef, FormEventHandler } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,6 +20,8 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNotes, type Note } from '@/context/notes-context';
 import Image from 'next/image';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -59,6 +61,7 @@ export default function AiNotesPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   const [isExpandViewOpen, setIsExpandViewOpen] = useState(false);
+  const printableContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -157,6 +160,47 @@ export default function AiNotesPage() {
   
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    const element = printableContentRef.current;
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2, // Increase scale for better resolution
+      backgroundColor: null, // Use transparent background
+      useCORS: true,
+    });
+
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const ratio = canvasWidth / canvasHeight;
+    const imgHeight = pdfWidth / ratio;
+    
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+      position -= pdfHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+    }
+
+    const safeTopic = lastTopic?.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'notes';
+    pdf.save(`${safeTopic}.pdf`);
   };
 
 
@@ -353,9 +397,9 @@ export default function AiNotesPage() {
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-hidden printable-content">
-                <ScrollArea className="h-full pr-6 watermarked-content">
-                    <div className="space-y-4">
+            <div className="flex-grow overflow-hidden flex">
+                <ScrollArea className="flex-grow h-full pr-6">
+                    <div ref={printableContentRef} className="printable-content watermarked-content space-y-4">
                     {chatHistory.map((msg, index) => (
                         <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                           {msg.role === 'assistant' && (
@@ -379,9 +423,9 @@ export default function AiNotesPage() {
              <DialogFooter className="print-hide">
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
-                    Print
+                    Print with Watermark
                 </Button>
-                <Button onClick={handlePrint}>
+                <Button onClick={handleDownloadPdf}>
                     <Download className="mr-2 h-4 w-4" />
                     Download as PDF
                 </Button>
