@@ -23,7 +23,7 @@ interface NotesContextType {
   notes: Note[];
   loading: boolean;
   error: string | null;
-  addNote: (noteData: Omit<Note, 'id' | 'createdAt'>) => Promise<Note>;
+  addNote: (noteData: Omit<Note, 'id' | 'createdAt'>) => Promise<Note | null>;
   deleteNote: (noteId: string) => Promise<void>;
   updateNote: (noteId: string, noteData: Partial<Note>) => Promise<void>;
 }
@@ -62,7 +62,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     }
   }, [user, fetchNotes]);
 
-  const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>): Promise<Note> => {
+  const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>): Promise<Note | null> => {
     if (!db) {
       throw new Error("Firestore is not initialized.");
     }
@@ -89,14 +89,16 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const newDocSnapshot = await getDoc(docRef);
       if (newDocSnapshot.exists()) {
         const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
+        // The serverTimestamp is resolved on the server, so we get the correct date here
+        // We prepend the new note to our local state
         setNotes(prevNotes => [newNote, ...prevNotes]);
-        return newNote;
+        return newNote; // Return the created note object on success
       } else {
         throw new Error("Could not retrieve saved note from database.");
       }
     } catch (err) {
       console.error("Error adding note to Firestore:", err);
-      throw err;
+      throw err; // Re-throw the error to be caught by the calling component
     }
   };
 

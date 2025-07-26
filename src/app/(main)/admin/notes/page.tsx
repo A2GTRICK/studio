@@ -122,13 +122,13 @@ export default function AdminNotesPage() {
 
             if (!baseNoteDetails.title || !baseNoteDetails.course || !baseNoteDetails.year || !baseNoteDetails.subject) {
                 toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
-                setIsSubmitting(false);
+                setIsSubmitting(false); // Manually reset on validation failure
                 return;
             }
 
             if (isPremiumChecked && (!baseNoteDetails.price || Number(baseNoteDetails.price) <= 0)) {
                 toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
-                setIsSubmitting(false);
+                setIsSubmitting(false); // Manually reset on validation failure
                 return;
             }
 
@@ -148,7 +148,7 @@ export default function AdminNotesPage() {
                 const file = formData.get('fileUpload') as File;
                 if (!file || file.size === 0) {
                     toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
-                    setIsSubmitting(false);
+                    setIsSubmitting(false); // Manually reset on validation failure
                     return;
                 }
                 noteContent = `File Uploaded: ${file.name}`; // In a real app, you'd upload this file.
@@ -157,7 +157,7 @@ export default function AdminNotesPage() {
                 const driveLink = formData.get('driveLink') as string;
                  if (!driveLink) {
                     toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
-                    setIsSubmitting(false);
+                    setIsSubmitting(false); // Manually reset on validation failure
                     return;
                 }
                 noteContent = driveLink;
@@ -168,15 +168,17 @@ export default function AdminNotesPage() {
                 content: noteContent,
             };
             
-            await addNote(noteToAdd);
-            
-            toast({
-                title: "Note Added Successfully!",
-                description: `"${baseNoteDetails.title}" has been added to the library.`
-            });
-            form.reset();
-            setSelectedCourse("");
-            setIsPremium(false);
+            const newNote = await addNote(noteToAdd);
+
+            if (newNote) {
+              toast({
+                  title: "Note Added Successfully!",
+                  description: `"${newNote.title}" has been added to the library.`
+              });
+              form.reset();
+              setSelectedCourse("");
+              setIsPremium(false);
+            }
             
         } catch (error: any) {
             console.error("Error adding note:", error);
@@ -527,3 +529,4 @@ export default function AdminNotesPage() {
       </>
     );
 }
+
