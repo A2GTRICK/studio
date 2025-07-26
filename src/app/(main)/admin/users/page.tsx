@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, getDocs, query, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, User, Shield, MoreHorizontal, Edit } from 'lucide-react';
@@ -14,6 +14,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 
 // --- Hardcoded Admin User ID ---
@@ -27,11 +28,6 @@ interface AppUser {
     photoURL: string | null;
 }
 
-// NOTE: In a real production app, fetching users should be done via a secure backend function
-// as listing users directly from the client is often restricted by security rules.
-// For this prototype, we'll assume a simplified (and less secure) `users` collection exists.
-// A more robust implementation would use Firebase Functions.
-
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<AppUser[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,49 +35,45 @@ export default function AdminUsersPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
 
-    const fetchUsers = useCallback(async () => {
-        setLoading(true);
-        try {
-            // This is a placeholder. In a real app, you would have a 'users' collection
-            // populated by a Firebase Function on user creation.
-            // For now, we will simulate this by creating a mock user list.
-            const mockUsers: AppUser[] = [
-                { uid: ADMIN_UID, email: 'admin@example.com', displayName: 'Admin User', photoURL: null },
-                { uid: 'user123', email: 'student1@example.com', displayName: 'Priya Sharma', photoURL: null },
-                { uid: 'user456', email: 'student2@example.com', displayName: 'Rahul Kumar', photoURL: null },
-            ];
-
-            setUsers(mockUsers);
-
-        } catch (error) {
-            console.error("Error fetching users:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
+        setLoading(true);
+        const usersCollection = collection(db, 'users');
+        const q = query(usersCollection);
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const usersList = snapshot.docs.map(doc => doc.data() as AppUser);
+            setUsers(usersList);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching users:", error);
+            setLoading(false);
+            toast({ title: "Error", description: "Could not fetch users.", variant: "destructive" });
+        });
+
+        return () => unsubscribe();
+    }, [toast]);
     
-    const handleUpdateUser = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!editingUser) return;
         setIsSubmitting(true);
         
         const formData = new FormData(e.currentTarget);
-        const updatedUser: AppUser = {
-            ...editingUser,
-            displayName: formData.get('displayName') as string,
-        };
+        const newDisplayName = formData.get('displayName') as string;
 
-        // Simulate API call for prototype
-        setTimeout(() => {
-            setUsers(users.map(u => u.uid === updatedUser.uid ? updatedUser : u));
-            toast({ title: "User Updated!", description: `Display name for ${updatedUser.email} has been updated.` });
+        try {
+            const userRef = doc(db, 'users', editingUser.uid);
+            await updateDoc(userRef, {
+                displayName: newDisplayName,
+            });
+            toast({ title: "User Updated!", description: `Display name for ${editingUser.email} has been updated.` });
             setEditingUser(null);
+        } catch (error) {
+            console.error("Error updating user:", error);
+            toast({ title: "Update Failed", description: "Could not update user details.", variant: "destructive" });
+        } finally {
             setIsSubmitting(false);
-        }, 500);
+        }
     };
 
 

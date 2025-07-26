@@ -10,8 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, AuthError, updateProfile, sendEmailVerification, signOut, UserCredential } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, Eye, EyeOff, LogIn, UserPlus, MailCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -78,6 +79,22 @@ export default function LoginPage() {
                 return 'An unexpected error occurred. Please try again later.';
         }
     }
+    
+    // Function to create a user document in Firestore
+    const createUserDocument = async (userCredential: UserCredential) => {
+        const user = userCredential.user;
+        if (!user) return;
+        
+        const userRef = doc(db, "users", user.uid);
+        await setDoc(userRef, {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+        }, { merge: true }); // Use merge to avoid overwriting existing data if any
+    };
 
     const handleAuth = async (data: any) => {
         setIsSubmitting(true);
@@ -88,6 +105,10 @@ export default function LoginPage() {
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                 await updateProfile(userCredential.user, { displayName: data.name });
+                
+                // **Create user document in Firestore**
+                await createUserDocument(userCredential);
+
                 await sendEmailVerification(userCredential.user);
                 await signOut(auth); // IMPORTANT: Sign out the user immediately after creation.
                 
@@ -137,7 +158,11 @@ export default function LoginPage() {
         setError(null);
         const provider = new GoogleAuthProvider();
         try {
-            await signInWithPopup(auth, provider);
+            const userCredential = await signInWithPopup(auth, provider);
+            
+            // **Create user document in Firestore on Google Sign-In**
+            await createUserDocument(userCredential);
+
             toast({ title: "Logged In Successfully!", description: "Welcome!" });
             router.push('/dashboard');
         } catch(err: any) {
