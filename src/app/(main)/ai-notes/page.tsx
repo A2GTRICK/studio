@@ -149,10 +149,6 @@ export default function AiNotesPage() {
       setIsFollowupLoading(false);
     }
   }
-  
-  const handlePrint = () => {
-    window.print();
-  };
 
   const renderMessageContent = (content: string) => {
     const htmlContent = marked.parse(content);
@@ -345,51 +341,38 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
-            <DialogHeader className="flex-row items-center justify-between print-hide">
-                <div>
-                    <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
-                    <DialogDescription>
-                        Topic: {lastTopic?.topic}
-                    </DialogDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button onClick={handlePrint} variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Download as PDF
-                    </Button>
-                    <Button onClick={handlePrint} variant="outline">
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print with Watermark
-                    </Button>
-                </div>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+            <DialogHeader>
+                <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
+                <DialogDescription>
+                    Topic: {lastTopic?.topic}
+                </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-grow overflow-auto pr-6 print-watermark">
-                <div className="space-y-4 printable-content">
-                {chatHistory.map((msg, index) => (
-                    <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                      {msg.role === 'assistant' && (
-                          <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0 print-hide">
-                          <Bot className="h-5 w-5" />
+            <div className="flex-grow overflow-hidden">
+                <ScrollArea className="h-full pr-6">
+                    <div className="space-y-4">
+                    {chatHistory.map((msg, index) => (
+                        <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                          {msg.role === 'assistant' && (
+                              <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
+                              <Bot className="h-5 w-5" />
+                              </div>
+                          )}
+                          <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
+                              {renderMessageContent(msg.content)}
                           </div>
-                      )}
-                      <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
-                          {renderMessageContent(msg.content)}
-                      </div>
-                      {msg.role === 'user' && (
-                          <div className="p-2 rounded-full bg-muted self-start shrink-0 print-hide">
-                              <User className="h-5 w-5" />
-                          </div>
-                      )}
+                          {msg.role === 'user' && (
+                              <div className="p-2 rounded-full bg-muted self-start shrink-0">
+                                  <User className="h-5 w-5" />
+                              </div>
+                          )}
+                        </div>
+                    ))}
                     </div>
-                ))}
-                </div>
-            </ScrollArea>
+                </ScrollArea>
+            </div>
         </DialogContent>
       </Dialog>
     </>
   );
 }
-
-    
-    
