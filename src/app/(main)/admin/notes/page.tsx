@@ -109,29 +109,29 @@ export default function AdminNotesPage() {
         
         const isPremiumChecked = formData.get('isPremium') === 'on';
 
-        const baseNoteDetails = {
-            title: formData.get('title') as string,
-            course: formData.get('course') as string,
-            year: formData.get('year') as string,
-            subject: formData.get('subject') as string,
-            thumbnail: formData.get('thumbnail') as string,
-            isPremium: isPremiumChecked,
-            price: isPremiumChecked ? (formData.get('price') as string) : undefined,
-        };
-
-        if (!baseNoteDetails.title || !baseNoteDetails.course || !baseNoteDetails.year || !baseNoteDetails.subject) {
-            toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
-            setIsSubmitting(false);
-            return;
-        }
-
-        if (isPremiumChecked && (!baseNoteDetails.price || Number(baseNoteDetails.price) <= 0)) {
-            toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
-            setIsSubmitting(false);
-            return;
-        }
-
         try {
+            const baseNoteDetails = {
+                title: formData.get('title') as string,
+                course: formData.get('course') as string,
+                year: formData.get('year') as string,
+                subject: formData.get('subject') as string,
+                thumbnail: formData.get('thumbnail') as string,
+                isPremium: isPremiumChecked,
+                price: isPremiumChecked ? (formData.get('price') as string) : undefined,
+            };
+
+            if (!baseNoteDetails.title || !baseNoteDetails.course || !baseNoteDetails.year || !baseNoteDetails.subject) {
+                toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
+                setIsSubmitting(false);
+                return;
+            }
+
+            if (isPremiumChecked && (!baseNoteDetails.price || Number(baseNoteDetails.price) <= 0)) {
+                toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
+                setIsSubmitting(false);
+                return;
+            }
+
             let noteContent = '';
 
             if (activeTab === 'ai-generate') {
@@ -170,8 +170,6 @@ export default function AdminNotesPage() {
             
             await addNote(noteToAdd);
             
-            setIsSubmitting(false); // **FIX:** Reset loading state immediately
-
             toast({
                 title: "Note Added Successfully!",
                 description: `"${baseNoteDetails.title}" has been added to the library.`
@@ -182,12 +180,13 @@ export default function AdminNotesPage() {
             
         } catch (error: any) {
             console.error("Error adding note:", error);
-            setIsSubmitting(false); // Ensure loading state is reset on error too
             toast({
                 title: "Error adding note",
                 description: error.message || "There was a problem saving the note.",
                 variant: "destructive"
             });
+        } finally {
+            setIsSubmitting(false); // This will now run regardless of success or error.
         }
     };
 
