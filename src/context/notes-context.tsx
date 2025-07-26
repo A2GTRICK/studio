@@ -23,7 +23,7 @@ interface NotesContextType {
   notes: Note[];
   loading: boolean;
   error: string | null;
-  addNote: (noteData: Omit<Note, 'id' | 'createdAt'>) => Promise<void>;
+  addNote: (noteData: Omit<Note, 'id' | 'createdAt'>) => Promise<Note>;
   deleteNote: (noteId: string) => Promise<void>;
   updateNote: (noteId: string, noteData: Partial<Note>) => Promise<void>;
 }
@@ -62,7 +62,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     }
   }, [user, fetchNotes]);
 
-  const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>) => {
+  const addNote = async (noteData: Omit<Note, 'id' | 'createdAt'>): Promise<Note> => {
     if (!db) {
       throw new Error("Firestore is not initialized.");
     }
@@ -91,11 +91,15 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
         setNotes(prevNotes => 
           [newNote, ...prevNotes].sort((a, b) => {
-             const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
-             const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(b.createdAt);
+             const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(0);
+             const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(0);
+             // Handle serverTimestamp which might be null before committed
+             if (!dateA.getTime()) return -1;
+             if (!dateB.getTime()) return 1;
              return dateB.getTime() - dateA.getTime();
            })
         );
+        return newNote;
       } else {
         throw new Error("Could not retrieve saved note from database.");
       }
