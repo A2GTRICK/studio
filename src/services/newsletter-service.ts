@@ -49,7 +49,7 @@ export async function subscribeToNewsletter(input: SubscribeToNewsletterInput): 
 
   // The link now points to a real file in the `public` directory.
   return {
-    message: `Thanks for subscribing! While your PDF downloads, feel free to explore our app's features.`,
+    message: "Thanks for subscribing! Your PDF is downloading now. Feel free to explore our app's features.",
     downloadLink: '/assets/Top-20-Pharmacology-Questions.pdf',
   };
 }
