@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer, Download } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { marked } from 'marked';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -154,11 +154,16 @@ export default function AiNotesPage() {
     const htmlContent = marked.parse(content);
     return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
+  
+  const handlePrint = () => {
+    window.print();
+  };
+
 
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-1 lg:sticky top-20">
+        <div className="lg:col-span-1 lg:sticky top-20 print-hide">
           <Card>
             <CardHeader>
               <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> AI Notes Generator</CardTitle>
@@ -247,7 +252,7 @@ export default function AiNotesPage() {
               </Card>
           )}
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 print-hide">
           <Card className="flex flex-col h-full">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -341,15 +346,15 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-            <DialogHeader>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
+            <DialogHeader className="print-hide">
                 <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                 <DialogDescription>
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-hidden watermarked-content">
-                <ScrollArea className="h-full pr-6">
+            <div className="flex-grow overflow-hidden printable-content">
+                <ScrollArea className="h-full pr-6 watermarked-content">
                     <div className="space-y-4">
                     {chatHistory.map((msg, index) => (
                         <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
@@ -371,6 +376,16 @@ export default function AiNotesPage() {
                     </div>
                 </ScrollArea>
             </div>
+             <DialogFooter className="print-hide">
+                <Button variant="outline" onClick={handlePrint}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print
+                </Button>
+                <Button onClick={handlePrint}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download as PDF
+                </Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

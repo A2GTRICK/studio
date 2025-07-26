@@ -172,7 +172,7 @@ export default function MainLayout({
   return (
     <NotesProvider>
       <SidebarProvider>
-        <Sidebar>
+        <Sidebar className="print-hide">
           <SidebarHeader>
             <div className="flex items-center gap-2 p-2">
               <Image
@@ -287,7 +287,7 @@ export default function MainLayout({
             {/* Footer is now empty as profile is moved to header */}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset>
+        <SidebarInset className="print-hide">
           <header className="sticky top-0 z-20 flex items-center h-16 px-4 border-b bg-background/80 backdrop-blur-sm">
             <SidebarTrigger className="md:hidden" />
             <div className="ml-auto flex items-center gap-2">
