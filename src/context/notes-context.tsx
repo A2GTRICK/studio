@@ -66,8 +66,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       throw new Error("Firestore is not initialized.");
     }
   
-    // --- OPTIMISTIC UPDATE ---
-    // Create a temporary note to display instantly.
     const tempId = `temp_${Date.now()}`;
     const tempNote: Note = {
       ...noteData,
@@ -75,7 +73,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       createdAt: new Date(),
     };
   
-    // Add the temporary note to the UI.
     setNotes(prevNotes => [tempNote, ...prevNotes].sort((a, b) => {
       const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
       const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(b.createdAt);
@@ -83,8 +80,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     }));
   
     try {
-      // --- PERMANENT SAVE ---
-      // Create a clean object with only the data Firestore needs.
+      // Create a clean object with only the required fields.
       const noteToSave: { [key: string]: any } = {
         title: noteData.title,
         course: noteData.course,
@@ -95,21 +91,19 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         createdAt: serverTimestamp(),
       };
   
-      // Only add optional fields if they have a value.
-      if (noteData.price) {
+      // Only add optional fields if they have a non-empty value.
+      if (noteData.isPremium && noteData.price) {
         noteToSave.price = noteData.price;
       }
-      if (noteData.thumbnail) {
+      if (noteData.thumbnail && noteData.thumbnail.trim() !== '') {
         noteToSave.thumbnail = noteData.thumbnail;
       }
       
-      // Save to Firestore.
       const docRef = await addDoc(collection(db, 'notes'), noteToSave);
       const newDocSnapshot = await getDoc(docRef);
   
       if (newDocSnapshot.exists()) {
         const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
-        // Replace the temporary note with the real one from the database.
         setNotes(prevNotes => 
           prevNotes.map(note => (note.id === tempId ? newNote : note))
                    .sort((a, b) => {
@@ -123,9 +117,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error("Error adding note, reverting optimistic update:", err);
-      // If saving fails, remove the temporary note from the UI.
       setNotes(prevNotes => prevNotes.filter(note => note.id !== tempId));
-      throw err; // Re-throw the error to be caught by the component.
+      throw err;
     }
   };
 
