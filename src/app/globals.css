@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer base {
   :root {
     --background: 240 67% 94%;
@@ -83,7 +79,7 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
   }
   /* Style for bold text within prose to be the primary color */
   .prose strong {
@@ -91,6 +87,11 @@ body {
   }
   .dark .prose strong {
     color: hsl(var(--primary));
+  }
+
+  /* Apply headline font to all headings */
+  h1, h2, h3, h4, h5, h6, .font-headline {
+      @apply font-headline;
   }
 }
 
