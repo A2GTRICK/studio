@@ -290,7 +290,8 @@ export default function McqPracticePage() {
 
   const handleSubmitQuiz = async () => {
     if (!questions) return;
-    
+
+    // --- Start: Immediate UI updates ---
     setIsSubmitted(true);
     setIsFeedbackLoading(true);
     setAiFeedback(null);
@@ -315,34 +316,37 @@ export default function McqPracticePage() {
     }
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
+    // --- End: Immediate UI updates ---
 
+
+    // --- Start: Background tasks (don't block UI) ---
     const currentFormValues = form.getValues();
     const topicToSave = currentFormValues.topic || "General";
-    
+
+    // 1. Save score (fire-and-forget, with toast notifications)
     if (user) {
-        try {
-            await saveMcqResult({
-                uid: user.uid,
-                subject: currentFormValues.subject,
-                topic: topicToSave,
-                score: newScore,
-                totalQuestions: questions.length
-            });
+        saveMcqResult({
+            uid: user.uid,
+            subject: currentFormValues.subject,
+            topic: topicToSave,
+            score: newScore,
+            totalQuestions: questions.length
+        }).then(() => {
             toast({
                 title: "Progress Saved!",
                 description: "Your quiz score has been saved to your progress report.",
             });
-        } catch (error) {
+        }).catch((error) => {
             console.error("Failed to save quiz result:", error);
             toast({
                 title: "Could not save progress",
                 description: "Your quiz score could not be saved automatically.",
                 variant: "destructive",
             });
-        }
+        });
     }
 
-
+    // 2. Generate AI feedback
     try {
         const incorrectPerformance = questions.map((q, index) => ({
             question: q.question,
@@ -374,6 +378,7 @@ export default function McqPracticePage() {
     } finally {
         setIsFeedbackLoading(false);
     }
+    // --- End: Background tasks ---
   };
 
   const score = useMemo(() => {
@@ -748,3 +753,6 @@ export default function McqPracticePage() {
     
 
 
+
+
+    
