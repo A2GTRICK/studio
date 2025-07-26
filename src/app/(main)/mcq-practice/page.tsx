@@ -117,6 +117,14 @@ type DisplayedFeedback = {
 
 type FeedbackState = 'idle' | 'loading' | 'ready' | 'error';
 
+const analysisButtonPhrases = [
+    "Chalo, postmortem karte hain!",
+    "Dekho, galti kahan hui?",
+    "AI ko kuch batana hai...",
+    "Click karo for a surprise!",
+    "Ready for your report card?"
+];
+
 
 export default function McqPracticePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -140,6 +148,8 @@ export default function McqPracticePage() {
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   
   const { user } = useAuth();
+  
+  const [analysisButtonText, setAnalysisButtonText] = useState('Click for AI Performance Analysis');
 
 
   useEffect(() => {
@@ -217,6 +227,7 @@ export default function McqPracticePage() {
     setAiFeedback(null);
     setAiFeedbackState('idle');
     setAnswers(new Array(questions?.length || 0).fill(null));
+    setAnalysisButtonText('Click for AI Performance Analysis');
     if (showToast) {
         toast({ title: "Quiz Reset!", description: "You can now attempt the quiz again." });
     }
@@ -228,6 +239,7 @@ export default function McqPracticePage() {
     setAnswers([]);
     setAiFeedback(null);
     setAiFeedbackState('idle');
+    setAnalysisButtonText('Click for AI Performance Analysis');
     setError(null);
     form.reset({
       examType: 'GPAT',
@@ -252,6 +264,7 @@ export default function McqPracticePage() {
     setAnswers([]);
     setAiFeedback(null);
     setAiFeedbackState('idle');
+    setAnalysisButtonText('Click for AI Performance Analysis');
     setError(null);
     
     const requestData = {
@@ -320,6 +333,7 @@ export default function McqPracticePage() {
             setAiFeedback("### 🎉 Perfect Score! \n\nCongratulations! You answered all questions correctly. Keep up the excellent work. Try a harder difficulty or a new topic to challenge yourself further!");
         }
         setAiFeedbackState('ready');
+        setAnalysisButtonText(analysisButtonPhrases[Math.floor(Math.random() * analysisButtonPhrases.length)]);
     } catch (error: any) {
         console.error("Error generating feedback:", error);
         const errorMessage = error.message.includes('503')
@@ -327,6 +341,7 @@ export default function McqPracticePage() {
           : "Sorry, an error occurred while generating feedback. You can still review your answers and explanations.";
         setAiFeedback(`<div class="p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">${errorMessage}</div>`);
         setAiFeedbackState('error');
+        setAnalysisButtonText('Analysis Failed. Try Again?');
     }
   };
 
@@ -376,7 +391,6 @@ export default function McqPracticePage() {
           description: "Your quiz score has been saved to your progress report.",
         });
     } catch (error) {
-        // Fail silently as requested by user to not show error toasts.
         console.error("Failed to save quiz result:", error);
     }
   };
@@ -667,7 +681,7 @@ export default function McqPracticePage() {
                     <Accordion type="single" collapsible className="w-full" disabled={aiFeedbackState === 'loading'}>
                        <AccordionItem value="ai-feedback" className="border-0">
                             <AccordionTrigger
-                                onClick={aiFeedbackState === 'idle' ? handleGetAiFeedback : undefined}
+                                onClick={aiFeedbackState === 'idle' || aiFeedbackState === 'error' ? handleGetAiFeedback : undefined}
                                 className="hover:no-underline"
                             >
                                 <div className="flex items-center gap-2 font-semibold text-primary">
@@ -676,9 +690,8 @@ export default function McqPracticePage() {
                                   {(aiFeedbackState === 'ready' || aiFeedbackState === 'error') && <BrainCircuit className="mr-2 h-4 w-4"/>}
                                   
                                   <span>
-                                      {aiFeedbackState === 'idle' && 'Click for AI Performance Analysis'}
                                       {aiFeedbackState === 'loading' && 'Analyzing...'}
-                                      {(aiFeedbackState === 'ready' || aiFeedbackState === 'error') && 'Show/Hide AI Analysis'}
+                                      {(aiFeedbackState === 'idle' || aiFeedbackState === 'ready' || aiFeedbackState === 'error') && analysisButtonText}
                                   </span>
                                 </div>
                             </AccordionTrigger>
@@ -759,3 +772,4 @@ export default function McqPracticePage() {
   );
 
     
+
