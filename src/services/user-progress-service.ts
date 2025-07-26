@@ -13,6 +13,7 @@ import type { GenerateDashboardInsightsInput } from '@/ai/flows/generate-dashboa
 import { z } from 'zod';
 
 type SubjectProgress = GenerateDashboardInsightsInput['subjectsProgress'][0];
+type TopicProgress = SubjectProgress['topics'][0];
 
 const SaveMcqResultInputSchema = z.object({
   uid: z.string().min(1, 'User ID is required.'),
@@ -56,52 +57,70 @@ export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
 
     } catch (error) {
         console.error("Error saving MCQ result to Firestore:", error);
-        throw new Error("Could not save your progress to the database.");
+        // Silently fail as requested by user to not show error toasts.
     }
 }
 
+
 /**
- * Fetches only the user's progress data and constructs a subject progress report.
- * This is much more efficient as it doesn't load the entire notes collection.
+ * Constructs a comprehensive subject progress report for a user.
+ * It fetches all notes to create a complete syllabus structure and then
+ * overlays the user's quiz attempt data on top of it.
+ * @param uid The user's ID.
  * @returns A promise that resolves to an array of subject progress objects.
  */
 export async function getSubjectsProgress(uid: string): Promise<SubjectProgress[]> {
-  
   if (!uid) {
     return [];
   }
 
-  // 1. Fetch only the user's quiz progress from their sub-collection.
+  // 1. Fetch all notes to build the complete structure of subjects and topics.
+  const notesCollection = collection(db, 'notes');
+  const notesSnapshot = await getDocs(query(notesCollection));
+  const allTopicsBySubject: { [subject: string]: { [topic: string]: TopicProgress } } = {};
+
+  notesSnapshot.forEach(doc => {
+    const note = doc.data();
+    const subjectName = note.subject || 'Uncategorized';
+    if (!allTopicsBySubject[subjectName]) {
+      allTopicsBySubject[subjectName] = {};
+    }
+    // Initialize all topics from the library as 'pending'.
+    allTopicsBySubject[subjectName][note.title] = {
+      title: note.title,
+      status: 'pending',
+      lastAccessed: 'Never',
+      estTime: `${Math.floor(Math.random() * 30) + 30} mins`, // Random time for placeholder
+    };
+  });
+
+  // 2. Fetch only the user's quiz progress from their sub-collection.
   const userProgressCollection = collection(db, 'users', uid, 'progress');
   const progressSnapshot = await getDocs(query(userProgressCollection));
 
-  if (progressSnapshot.empty) {
-      return [];
-  }
-
-  // 2. Group the results by subject.
-  const progressBySubject: { [key: string]: SubjectProgress } = {};
-
+  // 3. Overlay the user's progress on top of the complete topic list.
   progressSnapshot.forEach(doc => {
-    const data = doc.data();
-    const subjectName = data.subject || 'Uncategorized';
+    const progressData = doc.data();
+    const subjectName = progressData.subject || 'Uncategorized';
+    const topicName = progressData.topic;
 
-    if (!progressBySubject[subjectName]) {
-      progressBySubject[subjectName] = {
-        subject: subjectName,
-        topics: [],
-      };
+    if (allTopicsBySubject[subjectName] && allTopicsBySubject[subjectName][topicName]) {
+      const isCompleted = progressData.score >= progressData.totalQuestions / 2;
+      allTopicsBySubject[subjectName][topicName].status = isCompleted ? 'completed' : 'pending';
+      allTopicsBySubject[subjectName][topicName].lastAccessed = 'Attempted';
+      if(isCompleted) {
+        allTopicsBySubject[subjectName][topicName].estTime = 'N/A';
+      }
     }
-    
-    const isCompleted = data.score >= data.totalQuestions / 2;
-
-    progressBySubject[subjectName].topics.push({
-      title: data.topic,
-      status: isCompleted ? 'completed' : 'pending',
-      lastAccessed: 'Attempted', // We know it's been attempted because it exists in progress
-      estTime: `${Math.floor(Math.random() * 30) + 15} mins`,
-    });
   });
-  
-  return Object.values(progressBySubject);
+
+  // 4. Convert the nested object structure into the final array format.
+  const finalProgress: SubjectProgress[] = Object.keys(allTopicsBySubject).map(subjectName => {
+    return {
+      subject: subjectName,
+      topics: Object.values(allTopicsBySubject[subjectName]),
+    };
+  });
+
+  return finalProgress;
 }
