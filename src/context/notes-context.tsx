@@ -65,58 +65,67 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     if (!db) {
       throw new Error("Firestore is not initialized.");
     }
-
+  
+    // --- OPTIMISTIC UPDATE ---
+    // Create a temporary note to display instantly.
     const tempId = `temp_${Date.now()}`;
     const tempNote: Note = {
-        ...noteData,
-        id: tempId,
-        createdAt: new Date(), 
+      ...noteData,
+      id: tempId,
+      createdAt: new Date(),
     };
-
+  
+    // Add the temporary note to the UI.
     setNotes(prevNotes => [tempNote, ...prevNotes].sort((a, b) => {
-        const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
-        const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(b.createdAt);
-        return dateB.getTime() - dateA.getTime();
+      const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
+      const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(b.createdAt);
+      return dateB.getTime() - dateA.getTime();
     }));
-
+  
     try {
-        const noteToSave: { [key: string]: any } = {
-          title: noteData.title,
-          course: noteData.course,
-          year: noteData.year,
-          subject: noteData.subject,
-          content: noteData.content,
-          isPremium: noteData.isPremium,
-          createdAt: serverTimestamp(),
-        };
-
-        if (noteData.price) {
-          noteToSave.price = noteData.price;
-        }
-        if (noteData.thumbnail) {
-          noteToSave.thumbnail = noteData.thumbnail;
-        }
-        
-        const docRef = await addDoc(collection(db, 'notes'), noteToSave);
-        const newDocSnapshot = await getDoc(docRef);
-
-        if (newDocSnapshot.exists()) {
-            const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
-            setNotes(prevNotes => 
-                prevNotes.map(note => (note.id === tempId ? newNote : note))
-                         .sort((a, b) => {
-                            const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
-                            const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(b.createdAt);
-                            return dateB.getTime() - dateA.getTime();
-                          })
-            );
-        } else {
-             throw new Error("Could not retrieve saved note from database.");
-        }
+      // --- PERMANENT SAVE ---
+      // Create a clean object with only the data Firestore needs.
+      const noteToSave: { [key: string]: any } = {
+        title: noteData.title,
+        course: noteData.course,
+        year: noteData.year,
+        subject: noteData.subject,
+        content: noteData.content,
+        isPremium: noteData.isPremium,
+        createdAt: serverTimestamp(),
+      };
+  
+      // Only add optional fields if they have a value.
+      if (noteData.price) {
+        noteToSave.price = noteData.price;
+      }
+      if (noteData.thumbnail) {
+        noteToSave.thumbnail = noteData.thumbnail;
+      }
+      
+      // Save to Firestore.
+      const docRef = await addDoc(collection(db, 'notes'), noteToSave);
+      const newDocSnapshot = await getDoc(docRef);
+  
+      if (newDocSnapshot.exists()) {
+        const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
+        // Replace the temporary note with the real one from the database.
+        setNotes(prevNotes => 
+          prevNotes.map(note => (note.id === tempId ? newNote : note))
+                   .sort((a, b) => {
+                      const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(a.createdAt);
+                      const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(b.createdAt);
+                      return dateB.getTime() - dateA.getTime();
+                    })
+        );
+      } else {
+        throw new Error("Could not retrieve saved note from database.");
+      }
     } catch (err) {
-        console.error("Error adding note, reverting optimistic update:", err);
-        setNotes(prevNotes => prevNotes.filter(note => note.id !== tempId));
-        throw err;
+      console.error("Error adding note, reverting optimistic update:", err);
+      // If saving fails, remove the temporary note from the UI.
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== tempId));
+      throw err; // Re-throw the error to be caught by the component.
     }
   };
 
