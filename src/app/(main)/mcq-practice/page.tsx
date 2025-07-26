@@ -621,38 +621,46 @@ export default function McqPracticePage() {
             )}
 
             {isSubmitted && (
-                 <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
-                        <AccordionTrigger className="px-6 hover:no-underline">
-                            <div className="flex items-center gap-2 text-primary font-headline">
-                                <Lightbulb/> AI Feedback &amp; Analysis
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-6 pb-6">
-                            {isFeedbackLoading && (
-                                <div className="flex items-center justify-center min-h-[100px]">
-                                    <Loader2 className="h-6 w-6 animate-spin text-primary"/>
-                                    <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
+                <div className="space-y-4">
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
+                            <AccordionTrigger className="px-6 hover:no-underline">
+                                <div className="flex items-center gap-2 text-primary font-headline">
+                                    <Lightbulb/> AI Feedback &amp; Analysis
                                 </div>
-                            )}
-                            {!isFeedbackLoading && aiFeedback && (
-                                <div className="p-4 bg-background rounded-lg border">
-                                    {renderAiResult(aiFeedback)}
-                                </div>
-                            )}
-                            <div className="grid sm:grid-cols-2 gap-2 mt-4">
-                                <Button onClick={startNewQuiz} variant="outline" className="w-full">
-                                    <PlusCircle className="mr-2 h-4 w-4"/>
-                                    Start New Quiz
-                                </Button>
-                                <Button onClick={practiceSameTopic} className="w-full">
-                                    <RefreshCw className="mr-2 h-4 w-4"/>
-                                    Practice Same Topic
-                                </Button>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                 </Accordion>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-6 pb-6">
+                                {isFeedbackLoading && (
+                                    <div className="flex items-center justify-center min-h-[100px]">
+                                        <Loader2 className="h-6 w-6 animate-spin text-primary"/>
+                                        <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
+                                    </div>
+                                )}
+                                {!isFeedbackLoading && aiFeedback && (
+                                    <div className="p-4 bg-background rounded-lg border">
+                                        {renderAiResult(aiFeedback)}
+                                    </div>
+                                )}
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid sm:grid-cols-2 gap-2">
+                             <Button onClick={startNewQuiz} variant="outline" className="w-full">
+                                <PlusCircle className="mr-2 h-4 w-4"/>
+                                Start New Quiz
+                            </Button>
+                            <Button onClick={practiceSameTopic} className="w-full">
+                                <RefreshCw className="mr-2 h-4 w-4"/>
+                                Practice Same Topic
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
             </FormProvider>
           )}
