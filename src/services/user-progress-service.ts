@@ -8,7 +8,7 @@
  */
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, doc, setDoc, serverTimestamp, writeBatch, collectionGroup } from 'firestore/lite';
+import { collection, getDocs, query, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { GenerateDashboardInsightsInput } from '@/ai/flows/generate-dashboard-insights';
 import { z } from 'zod';
 
