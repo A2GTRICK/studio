@@ -169,6 +169,8 @@ export default function AdminNotesPage() {
             
             await addNote(noteToAdd);
             
+            setIsSubmitting(false); // **FIX:** Reset loading state immediately
+
             toast({
                 title: "Note Added Successfully!",
                 description: `"${baseNoteDetails.title}" has been added to the library.`
@@ -176,16 +178,15 @@ export default function AdminNotesPage() {
             form.reset();
             setSelectedCourse("");
             setIsPremium(false);
-            setIsSubmitting(false); 
             
         } catch (error: any) {
             console.error("Error adding note:", error);
+            setIsSubmitting(false); // Ensure loading state is reset on error too
             toast({
                 title: "Error adding note",
                 description: error.message || "There was a problem saving the note.",
                 variant: "destructive"
             });
-            setIsSubmitting(false); 
         }
     };
 
