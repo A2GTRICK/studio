@@ -109,29 +109,29 @@ export default function AdminNotesPage() {
         
         const isPremiumChecked = formData.get('isPremium') === 'on';
 
+        const baseNoteDetails = {
+            title: formData.get('title') as string,
+            course: formData.get('course') as string,
+            year: formData.get('year') as string,
+            subject: formData.get('subject') as string,
+            thumbnail: formData.get('thumbnail') as string,
+            isPremium: isPremiumChecked,
+            price: isPremiumChecked ? (formData.get('price') as string) : undefined,
+        };
+
+        if (!baseNoteDetails.title || !baseNoteDetails.course || !baseNoteDetails.year || !baseNoteDetails.subject) {
+            toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (isPremiumChecked && (!baseNoteDetails.price || Number(baseNoteDetails.price) <= 0)) {
+            toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
+            setIsSubmitting(false);
+            return;
+        }
+
         try {
-            const baseNoteDetails = {
-                title: formData.get('title') as string,
-                course: formData.get('course') as string,
-                year: formData.get('year') as string,
-                subject: formData.get('subject') as string,
-                thumbnail: formData.get('thumbnail') as string,
-                isPremium: isPremiumChecked,
-                price: isPremiumChecked ? (formData.get('price') as string) : undefined,
-            };
-
-            if (!baseNoteDetails.title || !baseNoteDetails.course || !baseNoteDetails.year || !baseNoteDetails.subject) {
-                toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
-                setIsSubmitting(false); // Manually reset on validation failure
-                return;
-            }
-
-            if (isPremiumChecked && (!baseNoteDetails.price || Number(baseNoteDetails.price) <= 0)) {
-                toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
-                setIsSubmitting(false); // Manually reset on validation failure
-                return;
-            }
-
             let noteContent = '';
 
             if (activeTab === 'ai-generate') {
@@ -148,7 +148,7 @@ export default function AdminNotesPage() {
                 const file = formData.get('fileUpload') as File;
                 if (!file || file.size === 0) {
                     toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
-                    setIsSubmitting(false); // Manually reset on validation failure
+                    setIsSubmitting(false);
                     return;
                 }
                 noteContent = `File Uploaded: ${file.name}`; // In a real app, you'd upload this file.
@@ -157,7 +157,7 @@ export default function AdminNotesPage() {
                 const driveLink = formData.get('driveLink') as string;
                  if (!driveLink) {
                     toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
-                    setIsSubmitting(false); // Manually reset on validation failure
+                    setIsSubmitting(false);
                     return;
                 }
                 noteContent = driveLink;

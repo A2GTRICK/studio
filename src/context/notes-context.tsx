@@ -89,7 +89,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const docRef = await addDoc(collection(db, 'notes'), noteToSave);
       const newDocSnapshot = await getDoc(docRef);
       if (newDocSnapshot.exists()) {
-        const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
+        const newNote = { id: newDocSnapshot.id, ...newDocSnapshot.data() } as Note;
         setNotes(prevNotes => [newNote, ...prevNotes]);
         return newNote;
       } else {
