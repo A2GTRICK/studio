@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer, Download } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { marked } from 'marked';
@@ -242,7 +242,6 @@ export default function AiNotesPage() {
           )}
         </div>
         <div className="lg:col-span-2">
-           <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
             <Card className="flex flex-col h-full">
                 <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -250,12 +249,10 @@ export default function AiNotesPage() {
                     <CardDescription>Your AI-generated notes and conversation will appear here.</CardDescription>
                 </div>
                 {chatHistory.length > 0 && (
-                    <DialogTrigger asChild>
-                       <Button variant="ghost" size="icon">
-                        <Expand className="h-5 w-5" />
-                        <span className="sr-only">Expand View</span>
-                    </Button>
-                    </DialogTrigger>
+                   <Button variant="ghost" size="icon" onClick={() => setIsExpandViewOpen(true)}>
+                    <Expand className="h-5 w-5" />
+                    <span className="sr-only">Expand View</span>
+                </Button>
                 )}
                 </CardHeader>
                 <CardContent className="flex-grow">
@@ -323,34 +320,52 @@ export default function AiNotesPage() {
                 </CardFooter>
                 )}
             </Card>
-
-            <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
-                <DialogHeader className="flex-row items-center justify-between print-hide">
-                    <div>
-                        <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
-                        <DialogDescription>
-                            Topic: {lastTopic?.topic}
-                        </DialogDescription>
-                    </div>
+        </div>
+      </div>
+      
+      <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
+            <DialogHeader className="flex-row items-center justify-between print-hide">
+                <div>
+                    <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
+                    <DialogDescription>
+                        Topic: {lastTopic?.topic}
+                    </DialogDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button onClick={handlePrint} variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download as PDF
+                    </Button>
                     <Button onClick={handlePrint} variant="outline">
                         <Printer className="mr-2 h-4 w-4" />
                         Print with Watermark
                     </Button>
-                </DialogHeader>
-                <ScrollArea className="flex-grow overflow-auto h-full pr-6 print-watermark">
-                    <div className="space-y-4 printable-content">
-                    {chatHistory.map((msg, index) => (
-                        msg.role === 'assistant' && (
-                            <div key={index} className="bg-background/80 border rounded-lg p-4">
-                            {renderMessageContent(msg.content)}
-                            </div>
-                        )
-                    ))}
+                </div>
+            </DialogHeader>
+            <ScrollArea className="flex-grow overflow-auto h-full pr-6 print-watermark">
+                <div className="space-y-4 printable-content">
+                {chatHistory.map((msg, index) => (
+                    <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                      {msg.role === 'assistant' && (
+                          <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0 print-hide">
+                          <Bot className="h-5 w-5" />
+                          </div>
+                      )}
+                      <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
+                          {renderMessageContent(msg.content)}
+                      </div>
+                      {msg.role === 'user' && (
+                          <div className="p-2 rounded-full bg-muted self-start shrink-0 print-hide">
+                              <User className="h-5 w-5" />
+                          </div>
+                      )}
                     </div>
-                </ScrollArea>
-            </DialogContent>
-           </Dialog>
-        </div>
-      </div>
+                ))}
+                </div>
+            </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </>
   );
+}
