@@ -101,7 +101,6 @@ const aiFeedbackTitles = [
 type PurchaseDetails = {
     title: string;
     price: string;
-    questionsToAdd: number;
 }
 
 const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
@@ -295,26 +294,23 @@ export default function McqPracticePage() {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!questions) return;
-    if (!user) {
-      toast({
-        title: "Not Logged In",
-        description: "You must be logged in to save your progress.",
-        variant: "destructive",
-      });
+    if (!questions || !user) {
+      if (!user) {
+        toast({
+          title: "Not Logged In",
+          description: "You must be logged in to save your progress.",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
-    const currentFormValues = form.getValues();
-    const topicToSave = currentFormValues.topic || "General";
+    // --- STEP 1: INSTANTLY UPDATE UI & CALCULATE SCORE ---
+    setIsSubmitted(true);
     
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
     }, 0);
-
-    // Show results to the user immediately
-    setIsSubmitted(true);
-
     const newScorePercentage = (newScore / questions.length) * 100;
     
     let category;
@@ -331,8 +327,12 @@ export default function McqPracticePage() {
     }
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
+    
 
-    // --- START: Save score in the background and show toast ---
+    // --- STEP 2: SAVE SCORE TO DATABASE (CRITICAL PATH) ---
+    const currentFormValues = form.getValues();
+    const topicToSave = currentFormValues.topic || "General";
+    
     try {
       await saveMcqResult({
         uid: user.uid,
@@ -353,9 +353,8 @@ export default function McqPracticePage() {
         variant: "destructive",
       });
     }
-    // --- END: Score saving ---
 
-    // --- START: Background AI feedback generation ---
+    // --- STEP 3: GENERATE AI FEEDBACK (NON-CRITICAL BACKGROUND TASK) ---
     setIsFeedbackLoading(true);
     setCurrentAiFeedbackTitle(aiFeedbackTitles[Math.floor(Math.random() * aiFeedbackTitles.length)]);
 
@@ -390,8 +389,8 @@ export default function McqPracticePage() {
     } finally {
         setIsFeedbackLoading(false);
     }
-    // --- END: Background AI tasks ---
   };
+
 
   const score = useMemo(() => {
     if (!questions || !isSubmitted) return 0;
@@ -725,15 +724,15 @@ export default function McqPracticePage() {
                 <p className="font-semibold text-center">Buy a Question Pack</p>
                 
                 <div className="grid grid-cols-1 gap-2">
-                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10', questionsToAdd: 50})}>
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 50 MCQs for INR 10
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18', questionsToAdd: 100})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 100 MCQs for INR 18
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35', questionsToAdd: 200})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 200 MCQs for INR 35
                     </Button>
@@ -749,14 +748,11 @@ export default function McqPracticePage() {
         title={paymentDetails?.title || ''}
         price={paymentDetails?.price || ''}
         onPaymentSuccess={() => {
-            const questionsToAdd = paymentDetails?.questionsToAdd || 0;
-            updateDailyUsage(dailyQuestionCount, dailyLimit + questionsToAdd);
+            // Note: This is a manual verification flow. No automatic renewal happens here.
             setPaymentDetails(null);
-            toast({
-                title: "Questions Added!",
-                description: `You have successfully added ${questionsToAdd} more questions to your daily limit.`
-            })
         }}
     />
     </>
   );
+
+    
