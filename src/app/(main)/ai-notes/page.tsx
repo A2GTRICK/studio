@@ -21,7 +21,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNotes, type Note } from '@/context/notes-context';
 import Image from 'next/image';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -163,43 +162,30 @@ export default function AiNotesPage() {
   };
 
   const handleDownloadPdf = async () => {
-    const element = printableContentRef.current;
-    if (!element) return;
-
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: null,
-    });
-    
-    const imgData = canvas.toDataURL('image/png');
-    
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    
-    const ratio = canvasWidth / canvasHeight;
-    
-    let imgHeight = pdfWidth / ratio;
-    
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-    heightLeft -= pdfHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
+    const content = printableContentRef.current;
+    if (!content) {
+      return;
     }
-    
+
+    const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'pt',
+        format: 'a4',
+    });
+
     const safeTopic = lastTopic?.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'notes';
-    pdf.save(`${safeTopic}.pdf`);
+
+    pdf.html(content, {
+        callback: function (doc) {
+            doc.save(`${safeTopic}.pdf`);
+        },
+        margin: [40, 40, 40, 40],
+        autoPaging: 'text',
+        x: 0,
+        y: 0,
+        width: 515, // A4 width in points, minus margins
+        windowWidth: content.scrollWidth,
+    });
   };
 
 
