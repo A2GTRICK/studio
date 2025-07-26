@@ -295,13 +295,14 @@ export default function McqPracticePage() {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!questions || !user) {
-        toast({
-            title: "Error",
-            description: "Could not submit quiz. User not found.",
-            variant: "destructive",
-        });
-        return;
+    if (!questions) return;
+    if (!user) {
+      toast({
+        title: "Not Logged In",
+        description: "You must be logged in to save your progress.",
+        variant: "destructive",
+      });
+      return;
     }
 
     const currentFormValues = form.getValues();
@@ -333,24 +334,24 @@ export default function McqPracticePage() {
 
     // --- START: Save score in the background and show toast ---
     try {
-        await saveMcqResult({
-            uid: user.uid,
-            subject: currentFormValues.subject,
-            topic: topicToSave,
-            score: newScore,
-            totalQuestions: questions.length
-        });
-        toast({
-            title: "Progress Saved!",
-            description: "Your quiz score has been saved to your progress report.",
-        });
+      await saveMcqResult({
+        uid: user.uid,
+        subject: currentFormValues.subject,
+        topic: topicToSave,
+        score: newScore,
+        totalQuestions: questions.length
+      });
+      toast({
+        title: "Progress Saved!",
+        description: "Your quiz score has been saved to your progress report.",
+      });
     } catch (error) {
-        console.error("Failed to save quiz result:", error);
-        toast({
-            title: "Could not save progress",
-            description: "Your quiz score could not be saved automatically.",
-            variant: "destructive",
-        });
+      console.error("Failed to save quiz result:", error);
+      toast({
+        title: "Could Not Save Progress",
+        description: "Your quiz score could not be saved automatically.",
+        variant: "destructive",
+      });
     }
     // --- END: Score saving ---
 
@@ -759,4 +760,3 @@ export default function McqPracticePage() {
     />
     </>
   );
-

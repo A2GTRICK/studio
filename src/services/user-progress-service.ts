@@ -73,7 +73,7 @@ export async function getSubjectsProgress(uid: string): Promise<SubjectProgress[
 
   // 1. Fetch only the user's quiz progress from their sub-collection.
   const userProgressCollection = collection(db, 'users', uid, 'progress');
-  const progressSnapshot = await getDocs(userProgressCollection);
+  const progressSnapshot = await getDocs(query(userProgressCollection));
 
   if (progressSnapshot.empty) {
       return [];
