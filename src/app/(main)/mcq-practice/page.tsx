@@ -88,6 +88,16 @@ const premiumFeatures = [
     "Ask follow-up questions to our AI Tutor",
 ];
 
+const aiFeedbackTitles = [
+    "Kuch btana h tumko...",
+    "Mistakes se seekhna hai?",
+    "Chalo, paper ka post-mortem karte hain.",
+    "Secret tips chahiye?",
+    "Yahan dekho, kuch kaam ki baat hai.",
+    "Apni performance ka deep-dive karein?",
+    "Jaan'na hai kahan galti hui?",
+];
+
 type PurchaseDetails = {
     title: string;
     price: string;
@@ -135,6 +145,7 @@ export default function McqPracticePage() {
   const [dailyLimit, setDailyLimit] = useState(30);
   
   const [displayedFeedback, setDisplayedFeedback] = useState<DisplayedFeedback | null>(null);
+  const [currentAiFeedbackTitle, setCurrentAiFeedbackTitle] = useState(aiFeedbackTitles[0]);
 
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   
@@ -283,6 +294,7 @@ export default function McqPracticePage() {
     setIsSubmitted(true);
     setIsFeedbackLoading(true);
     setAiFeedback(null);
+    setCurrentAiFeedbackTitle(aiFeedbackTitles[Math.floor(Math.random() * aiFeedbackTitles.length)]);
 
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
@@ -622,11 +634,26 @@ export default function McqPracticePage() {
 
             {isSubmitted && (
                 <div className="space-y-4">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid sm:grid-cols-2 gap-2">
+                             <Button onClick={startNewQuiz} variant="outline" className="w-full">
+                                <PlusCircle className="mr-2 h-4 w-4"/>
+                                Start New Quiz
+                            </Button>
+                            <Button onClick={practiceSameTopic} className="w-full">
+                                <RefreshCw className="mr-2 h-4 w-4"/>
+                                Practice Same Topic
+                            </Button>
+                        </CardContent>
+                    </Card>
                     <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
                             <AccordionTrigger className="px-6 hover:no-underline">
                                 <div className="flex items-center gap-2 text-primary font-headline">
-                                    <Lightbulb/> AI Feedback &amp; Analysis
+                                    <Lightbulb/> {currentAiFeedbackTitle}
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-6 pb-6">
@@ -644,22 +671,6 @@ export default function McqPracticePage() {
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid sm:grid-cols-2 gap-2">
-                             <Button onClick={startNewQuiz} variant="outline" className="w-full">
-                                <PlusCircle className="mr-2 h-4 w-4"/>
-                                Start New Quiz
-                            </Button>
-                            <Button onClick={practiceSameTopic} className="w-full">
-                                <RefreshCw className="mr-2 h-4 w-4"/>
-                                Practice Same Topic
-                            </Button>
-                        </CardContent>
-                    </Card>
                 </div>
             )}
             </FormProvider>
@@ -735,3 +746,4 @@ export default function McqPracticePage() {
     
 
     
+
