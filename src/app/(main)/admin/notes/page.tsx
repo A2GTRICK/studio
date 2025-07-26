@@ -151,6 +151,7 @@ export default function AdminNotesPage() {
             form.reset();
             setSelectedCourse("");
             setIsPremium(false);
+            setIsSubmitting(false); // Reset submitting state on success
             
         } catch (error: any) {
             console.error("Error adding note:", error);
@@ -159,8 +160,7 @@ export default function AdminNotesPage() {
                 description: error.message || "There was a problem saving the note.",
                 variant: "destructive"
             });
-        } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false); // Also reset on error
         }
     };
     
