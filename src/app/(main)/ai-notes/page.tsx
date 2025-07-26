@@ -8,7 +8,7 @@ import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
 import { answerFollowUpQuestion } from '@/ai/flows/answer-follow-up-question';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -306,7 +306,7 @@ export default function AiNotesPage() {
                 {generatedNotes && (
                 <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
                     <form onSubmit={handleFollowUpSubmit} className="w-full flex items-center gap-2">
-                        <div className="flex-grow space-y-2 w-full">
+                         <div className="flex-grow space-y-2 w-full">
                             <label htmlFor="follow-up-input" className="text-sm font-medium text-foreground">Need more details? Ask the AI!</label>
                             <Input 
                                 id="follow-up-input"
@@ -337,12 +337,8 @@ export default function AiNotesPage() {
                         Print with Watermark
                     </Button>
                 </DialogHeader>
-                <div className="flex-grow overflow-hidden relative">
-                    <div className="print-watermark">
-                        <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Watermark" width={100} height={100} />
-                        <span>A2G Smart Notes</span>
-                    </div>
-                    <ScrollArea className="h-full w-full pr-6 watermarked-content">
+                <div className="flex-grow overflow-hidden relative print-watermark">
+                    <ScrollArea className="h-full w-full pr-6">
                         <div className="space-y-4 printable-content">
                         {chatHistory.map((msg, index) => (
                             msg.role === 'assistant' && (
@@ -360,5 +356,8 @@ export default function AiNotesPage() {
       </div>
     </>
   );
+
+    
+
 
     
