@@ -57,6 +57,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     if (user) {
       fetchNotes();
     } else {
+      // If there's no user, clear notes and stop loading.
       setNotes([]);
       setLoading(false);
     }
@@ -89,23 +90,20 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const newDocSnapshot = await getDoc(docRef);
       if (newDocSnapshot.exists()) {
         const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
-        // The serverTimestamp is resolved on the server, so we get the correct date here
-        // We prepend the new note to our local state
         setNotes(prevNotes => [newNote, ...prevNotes]);
-        return newNote; // Return the created note object on success
+        return newNote;
       } else {
         throw new Error("Could not retrieve saved note from database.");
       }
     } catch (err) {
       console.error("Error adding note to Firestore:", err);
-      throw err; // Re-throw the error to be caught by the calling component
+      throw err;
     }
   };
 
   const updateNote = async (noteId: string, noteData: Partial<Note>) => {
     const noteRef = doc(db, 'notes', noteId);
     
-    // Prepare data for Firestore, handling undefined values
     const dataToUpdate: { [key: string]: any } = {};
     Object.entries(noteData).forEach(([key, value]) => {
       if (value !== undefined) {
@@ -113,7 +111,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Ensure price is set to null if note is not premium
     if (dataToUpdate.isPremium === false) {
         dataToUpdate.price = null;
     }
@@ -125,7 +122,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
     try {
         await updateDoc(noteRef, dataToUpdate);
-        // Optimistically update UI or refetch
         setNotes(prevNotes =>
             prevNotes.map(note =>
                 note.id === noteId ? { ...note, ...dataToUpdate } : note
