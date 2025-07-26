@@ -1,5 +1,20 @@
 
-import { FileText, BookCopy, ScrollText, User, PenTool, Presentation } from 'lucide-react';
+import { FileText, BookCopy, ScrollText, User, PenTool, Presentation, LucideIcon } from 'lucide-react';
+
+export interface Service {
+    icon: LucideIcon;
+    title: string;
+    slug: string;
+    category: string;
+    description: string;
+    target: string;
+    price: string;
+    dataAiHint: string;
+    features: string[];
+    sampleUrl: string;
+    emailBody: string;
+    link: string;
+}
 
 const createEmailBody = (serviceDetails: string) => {
   const template = `Hello A2G Smart Notes Team,
@@ -22,7 +37,7 @@ Best regards,
   return template;
 };
 
-const servicesList = [
+const servicesList: Omit<Service, 'link'>[] = [
   {
     icon: FileText,
     title: "Internship Reports",
@@ -166,7 +181,7 @@ const servicesList = [
   }
 ];
 
-export const services = servicesList.map(service => ({
+export const services: Service[] = servicesList.map(service => ({
   ...service,
   link: `/services/${service.slug}`,
 }));
