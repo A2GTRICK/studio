@@ -278,15 +278,12 @@ export default function McqPracticePage() {
   };
 
   const handleSubmitQuiz = async () => {
+    if (!questions) return;
+    
     setIsSubmitted(true);
     setIsFeedbackLoading(true);
     setAiFeedback(null);
 
-    if (!questions) {
-        setIsFeedbackLoading(false);
-        return;
-    }
-    
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
     }, 0);
@@ -335,23 +332,28 @@ export default function McqPracticePage() {
 
 
     try {
-        const quizPerformance = questions.map((q, index) => ({
+        const incorrectPerformance = questions.map((q, index) => ({
             question: q.question,
             userAnswer: answers[index] ?? "Not Answered",
             correctAnswer: q.correctAnswer,
             isCorrect: answers[index] === q.correctAnswer,
-        }));
-        
-        const feedbackResult = await generateMcqFeedback({
-            examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
-            subject: currentFormValues.subject,
-            topic: topicToSave,
-            performance: quizPerformance, // Send all performance data
-            score: newScore,
-            totalQuestions: questions.length,
-        });
+        })).filter(p => !p.isCorrect);
 
-        setAiFeedback(feedbackResult.feedback);
+        // Only call for feedback if there are incorrect answers
+        if (incorrectPerformance.length > 0) {
+            const feedbackResult = await generateMcqFeedback({
+                examType: currentFormValues.examType === 'Other' ? currentFormValues.otherExamType! : currentFormValues.examType,
+                subject: currentFormValues.subject,
+                topic: topicToSave,
+                performance: incorrectPerformance,
+                score: newScore,
+                totalQuestions: questions.length,
+            });
+            setAiFeedback(feedbackResult.feedback);
+        } else {
+            setAiFeedback("### 🎉 Perfect Score! \n\nCongratulations! You answered all questions correctly. Keep up the excellent work. Try a harder difficulty or a new topic to challenge yourself further!");
+        }
+
     } catch (error: any) {
         console.error("Error generating feedback:", error);
         const errorMessage = error.message.includes('503')
@@ -722,3 +724,6 @@ export default function McqPracticePage() {
 
     
 
+
+
+    
