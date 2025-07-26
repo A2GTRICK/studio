@@ -166,11 +166,10 @@ export default function AiNotesPage() {
     const element = printableContentRef.current;
     if (!element) return;
 
-    // Use a higher scale for better resolution
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
-      backgroundColor: null, // Ensures transparent background is captured correctly
+      backgroundColor: null,
     });
     
     const imgData = canvas.toDataURL('image/png');
@@ -182,22 +181,18 @@ export default function AiNotesPage() {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     
-    // Calculate the aspect ratio
     const ratio = canvasWidth / canvasHeight;
     
-    // Calculate the height of the image in the PDF based on the PDF's width and the image's aspect ratio
     const imgHeight = pdfWidth / ratio;
     
     let heightLeft = imgHeight;
     let position = 0;
 
-    // Add the first page
     pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
     heightLeft -= pdfHeight;
 
-    // Add new pages if the content is longer than one page
     while (heightLeft > 0) {
-      position = heightLeft - imgHeight; // Set the position for the next chunk of the image
+      position = heightLeft - imgHeight;
       pdf.addPage();
       pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
       heightLeft -= pdfHeight;
@@ -394,7 +389,7 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
+        <DialogContent className="max-w-none w-[95vw] h-[95vh] flex flex-col print-dialog-content">
             <DialogHeader className="print-hide">
                 <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                 <DialogDescription>
@@ -439,3 +434,5 @@ export default function AiNotesPage() {
     </>
   );
 }
+
+    
