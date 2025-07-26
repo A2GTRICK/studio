@@ -101,6 +101,7 @@ const aiFeedbackTitles = [
 type PurchaseDetails = {
     title: string;
     price: string;
+    questions?: number;
 }
 
 const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
@@ -187,16 +188,18 @@ export default function McqPracticePage() {
     const today = new Date().toISOString().split('T')[0];
     const newLimit = limit ?? dailyLimit;
     try {
-        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count, limit: newLimit }));
-        setDailyQuestionCount(count);
+        const newCount = dailyQuestionCount + count;
+        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: newCount, limit: newLimit }));
+        setDailyQuestionCount(newCount);
         if (limit) {
-            setDailyLimit(limit);
+            setDailyLimit(newLimit);
         }
     } catch (e) {
         console.warn("Could not access localStorage for daily quiz limit.");
-        setDailyQuestionCount(count);
+        const newCount = dailyQuestionCount + count;
+        setDailyQuestionCount(newCount);
         if (limit) {
-            setDailyLimit(limit);
+            setDailyLimit(newLimit);
         }
     }
   };
@@ -271,7 +274,7 @@ export default function McqPracticePage() {
       }));
       setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
-      updateDailyUsage(dailyQuestionCount + result.length);
+      updateDailyUsage(result.length);
     } catch (e: any) {
       console.error('Error generating MCQs:', e);
       const errorMessage = e.message.includes('503') 
@@ -294,16 +297,7 @@ export default function McqPracticePage() {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!questions || !user) {
-      if (!user) {
-        toast({
-          title: "Not Logged In",
-          description: "You must be logged in to save your progress.",
-          variant: "destructive",
-        });
-      }
-      return;
-    }
+    if (!questions) return;
 
     // --- STEP 1: INSTANTLY UPDATE UI & CALCULATE SCORE ---
     setIsSubmitted(true);
@@ -327,7 +321,15 @@ export default function McqPracticePage() {
     }
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
-    
+
+    if (!user) {
+        toast({
+          title: "Not Logged In",
+          description: "Sign in to save your progress and get AI feedback.",
+          variant: "destructive"
+        });
+        return; // Exit if no user
+    }
 
     // --- STEP 2: SAVE SCORE TO DATABASE (CRITICAL PATH) ---
     const currentFormValues = form.getValues();
@@ -347,11 +349,7 @@ export default function McqPracticePage() {
       });
     } catch (error) {
       console.error("Failed to save quiz result:", error);
-      toast({
-        title: "Could Not Save Progress",
-        description: "Your quiz score could not be saved automatically.",
-        variant: "destructive",
-      });
+      // Intentionally not showing a toast message to the user as requested.
     }
 
     // --- STEP 3: GENERATE AI FEEDBACK (NON-CRITICAL BACKGROUND TASK) ---
@@ -431,6 +429,15 @@ export default function McqPracticePage() {
     setShowPremiumDialog(false);
     setShowPaymentDialog(true);
   };
+  
+  const handlePaymentSuccess = (questionsToAdd: number) => {
+      const newLimit = dailyLimit + questionsToAdd;
+      updateDailyUsage(0, newLimit); // This updates the limit and resets the count for the purpose of the limit calculation
+      toast({
+          title: "Questions Added!",
+          description: `You can now generate ${questionsToAdd} more questions today.`
+      });
+  }
 
   const renderAiResult = (content: string | null) => {
     if (!content) return null;
@@ -704,7 +711,7 @@ export default function McqPracticePage() {
                 </div>
                 <DialogTitle className="text-center font-headline text-2xl">Get More Questions</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                   You've used your {dailyLimit - questionsLeft} of {dailyLimit} free practice questions for today. Upgrade for more.
+                   You've used your {dailyQuestionCount} of {dailyLimit} free practice questions for today. Upgrade for more.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
@@ -724,15 +731,15 @@ export default function McqPracticePage() {
                 <p className="font-semibold text-center">Buy a Question Pack</p>
                 
                 <div className="grid grid-cols-1 gap-2">
-                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10'})}>
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10', questions: 50})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 50 MCQs for INR 10
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18'})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18', questions: 100})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 100 MCQs for INR 18
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35'})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35', questions: 200})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 200 MCQs for INR 35
                     </Button>
@@ -748,7 +755,9 @@ export default function McqPracticePage() {
         title={paymentDetails?.title || ''}
         price={paymentDetails?.price || ''}
         onPaymentSuccess={() => {
-            // Note: This is a manual verification flow. No automatic renewal happens here.
+            if (paymentDetails?.questions) {
+                handlePaymentSuccess(paymentDetails.questions);
+            }
             setPaymentDetails(null);
         }}
     />
