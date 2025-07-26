@@ -175,12 +175,16 @@ export default function AiNotesPage() {
 
     const safeTopic = lastTopic?.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'notes';
 
-    pdf.html(content, {
+    await pdf.html(content, {
         callback: function (doc) {
             doc.save(`${safeTopic}.pdf`);
         },
         margin: [40, 40, 40, 40],
         autoPaging: 'text',
+        html2canvas: {
+          scale: 0.75, // Adjust scale to fit content better
+          useCORS: true,
+        },
         x: 0,
         y: 0,
         width: 515, // A4 width in points, minus margins
@@ -375,15 +379,15 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="max-w-none w-[95vw] h-[95vh] flex flex-col print-dialog-content">
-            <DialogHeader className="print-hide">
+        <DialogContent className="max-w-full w-full h-full p-0 flex flex-col print-dialog-content">
+            <DialogHeader className="print-hide p-6 pb-2">
                 <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                 <DialogDescription>
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-grow pr-6">
-                <div ref={printableContentRef} className="printable-content watermarked-content space-y-4 p-1">
+            <ScrollArea className="flex-grow px-6">
+                <div ref={printableContentRef} className="printable-content watermarked-content space-y-4 py-4">
                 {chatHistory.map((msg, index) => (
                     <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                         {msg.role === 'assistant' && (
@@ -403,7 +407,7 @@ export default function AiNotesPage() {
                 ))}
                 </div>
             </ScrollArea>
-             <DialogFooter className="print-hide">
+             <DialogFooter className="print-hide p-6 pt-2 border-t">
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print with Watermark
@@ -418,3 +422,4 @@ export default function AiNotesPage() {
     </>
   );
 }
+
