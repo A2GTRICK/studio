@@ -166,39 +166,43 @@ export default function AiNotesPage() {
     const element = printableContentRef.current;
     if (!element) return;
 
+    // Use a higher scale for better resolution
     const canvas = await html2canvas(element, {
-      scale: 2, // Increase scale for better resolution
-      backgroundColor: null, // Use transparent background
+      scale: 2,
       useCORS: true,
-    });
-
-    const pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: 'a4'
+      backgroundColor: null, // Ensures transparent background is captured correctly
     });
     
     const imgData = canvas.toDataURL('image/png');
+    
+    const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
+    
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
+    
+    // Calculate the aspect ratio
     const ratio = canvasWidth / canvasHeight;
+    
+    // Calculate the height of the image in the PDF based on the PDF's width and the image's aspect ratio
     const imgHeight = pdfWidth / ratio;
     
     let heightLeft = imgHeight;
     let position = 0;
 
+    // Add the first page
     pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
     heightLeft -= pdfHeight;
 
+    // Add new pages if the content is longer than one page
     while (heightLeft > 0) {
-      position -= pdfHeight;
+      position = heightLeft - imgHeight; // Set the position for the next chunk of the image
       pdf.addPage();
       pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
       heightLeft -= pdfHeight;
     }
-
+    
     const safeTopic = lastTopic?.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'notes';
     pdf.save(`${safeTopic}.pdf`);
   };
@@ -397,9 +401,9 @@ export default function AiNotesPage() {
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-hidden flex">
-                <ScrollArea className="flex-grow h-full pr-6">
-                    <div ref={printableContentRef} className="printable-content watermarked-content space-y-4">
+            <div className="flex-grow overflow-hidden flex flex-col">
+                <ScrollArea className="flex-grow pr-6">
+                    <div ref={printableContentRef} className="printable-content watermarked-content space-y-4 p-1">
                     {chatHistory.map((msg, index) => (
                         <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                           {msg.role === 'assistant' && (
