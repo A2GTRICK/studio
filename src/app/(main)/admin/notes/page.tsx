@@ -122,13 +122,11 @@ export default function AdminNotesPage() {
 
             if (!baseNoteDetails.title || !baseNoteDetails.course || !baseNoteDetails.year || !baseNoteDetails.subject) {
                 toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
-                setIsSubmitting(false);
                 return;
             }
 
             if (isPremiumChecked && (!baseNoteDetails.price || Number(baseNoteDetails.price) <= 0)) {
                 toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
-                setIsSubmitting(false);
                 return;
             }
 
@@ -148,7 +146,6 @@ export default function AdminNotesPage() {
                 const file = formData.get('fileUpload') as File;
                 if (!file || file.size === 0) {
                     toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
-                    setIsSubmitting(false);
                     return;
                 }
                 noteContent = `File Uploaded: ${file.name}`; // In a real app, you'd upload this file.
@@ -157,7 +154,6 @@ export default function AdminNotesPage() {
                 const driveLink = formData.get('driveLink') as string;
                  if (!driveLink) {
                     toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
-                    setIsSubmitting(false);
                     return;
                 }
                 noteContent = driveLink;
@@ -186,7 +182,7 @@ export default function AdminNotesPage() {
                 variant: "destructive"
             });
         } finally {
-            setIsSubmitting(false); // This will now run regardless of success or error.
+            setIsSubmitting(false);
         }
     };
 
@@ -526,4 +522,5 @@ export default function AdminNotesPage() {
         </Dialog>
       </>
     );
-}
+
+    
