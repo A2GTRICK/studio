@@ -633,45 +633,45 @@ export default function McqPracticePage() {
             )}
 
             {isSubmitted && (
-                <div className="space-y-4">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid sm:grid-cols-2 gap-2">
-                             <Button onClick={startNewQuiz} variant="outline" className="w-full">
-                                <PlusCircle className="mr-2 h-4 w-4"/>
-                                Start New Quiz
-                            </Button>
-                            <Button onClick={practiceSameTopic} className="w-full">
-                                <RefreshCw className="mr-2 h-4 w-4"/>
-                                Practice Same Topic
-                            </Button>
-                        </CardContent>
-                    </Card>
-                    <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
-                            <AccordionTrigger className="px-6 hover:no-underline">
-                                <div className="flex items-center gap-2 text-primary font-headline">
-                                    <Lightbulb/> {currentAiFeedbackTitle}
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="px-6 pb-6">
-                                {isFeedbackLoading && (
-                                    <div className="flex items-center justify-center min-h-[100px]">
-                                        <Loader2 className="h-6 w-6 animate-spin text-primary"/>
-                                        <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid sm:grid-cols-2 gap-2">
+                            <Button onClick={startNewQuiz} variant="outline" className="w-full">
+                            <PlusCircle className="mr-2 h-4 w-4"/>
+                            Start New Quiz
+                        </Button>
+                        <Button onClick={practiceSameTopic} className="w-full">
+                            <RefreshCw className="mr-2 h-4 w-4"/>
+                            Practice Same Topic
+                        </Button>
+                    </CardContent>
+                    <CardFooter>
+                         <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
+                                <AccordionTrigger className="px-6 hover:no-underline">
+                                    <div className="flex items-center gap-2 text-primary font-headline">
+                                        <Lightbulb/> {currentAiFeedbackTitle}
                                     </div>
-                                )}
-                                {!isFeedbackLoading && aiFeedback && (
-                                    <div className="p-4 bg-background rounded-lg border">
-                                        {renderAiResult(aiFeedback)}
-                                    </div>
-                                )}
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-6 pb-6">
+                                    {isFeedbackLoading && (
+                                        <div className="flex items-center justify-center min-h-[100px]">
+                                            <Loader2 className="h-6 w-6 animate-spin text-primary"/>
+                                            <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
+                                        </div>
+                                    )}
+                                    {!isFeedbackLoading && aiFeedback && (
+                                        <div className="p-4 bg-background rounded-lg border">
+                                            {renderAiResult(aiFeedback)}
+                                        </div>
+                                    )}
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                    </CardFooter>
+                </Card>
             )}
             </FormProvider>
           )}
@@ -746,4 +746,5 @@ export default function McqPracticePage() {
     
 
     
+
 
