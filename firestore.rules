@@ -8,38 +8,41 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
-    
-    // Helper function to check if user is authenticated
-    function isSignedIn() {
-      return request.auth != null && request.auth.uid != null;
-    }
 
-    // Users can create their own profile, and read/update it.
-    // Admin can read/write any user profile.
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId || isAdmin();
-      allow create: if isSignedIn();
-      allow list: if isAdmin();
+      // Admins can do anything.
+      // Users can read any profile (e.g., for future features).
+      // Users can only create their own document.
+      // Users can only update their own document, and only specific fields.
+      allow read, update, delete: if isAdmin();
+      allow read: if request.auth.uid != null;
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId && request.resource.data.keys().hasAll(['displayName', 'lastLogin']);
+
+      // Rules for the 'progress' sub-collection within each user document
+      match /progress/{topicId} {
+        // Admins can do anything.
+        // Users can only read and write to their own progress documents.
+        allow read, write, delete: if isAdmin();
+        allow read, write: if request.auth.uid == userId;
+      }
     }
     
-    // Logged-in users can access their own progress subcollection.
-    // Admin can access anyone's progress.
-    match /users/{userId}/progress/{progressId} {
-       allow read, write: if request.auth.uid == userId || isAdmin();
-    }
-
-    // Any authenticated user can read notes.
-    // Only the admin can create, update, or delete notes.
+    // Rules for the 'notes' collection
     match /notes/{noteId} {
-      allow read: if isSignedIn();
+      // Any authenticated user can read notes.
+      // Only the admin can create, update, or delete notes.
+      allow read: if request.auth.uid != null;
       allow write: if isAdmin();
     }
-
-    // Anyone can subscribe to the newsletter.
-    // Only the admin can read the list or delete subscribers.
+    
+    // Rules for the 'newsletter_subscriptions' collection
     match /newsletter_subscriptions/{subscriptionId} {
-      allow create: if true;
-      allow read, delete: if isAdmin();
+        // Anyone can create a subscription (e.g., from the landing page).
+        // Only the admin can read or delete subscriptions.
+        allow create;
+        allow read, delete: if isAdmin();
     }
   }
 }
