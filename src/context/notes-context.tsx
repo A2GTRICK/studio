@@ -89,16 +89,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const newDocSnapshot = await getDoc(docRef);
       if (newDocSnapshot.exists()) {
         const newNote = { ...newDocSnapshot.data(), id: newDocSnapshot.id } as Note;
-        setNotes(prevNotes => 
-          [newNote, ...prevNotes].sort((a, b) => {
-             const dateA = (a.createdAt as Timestamp)?.toDate?.() || new Date(0);
-             const dateB = (b.createdAt as Timestamp)?.toDate?.() || new Date(0);
-             // Handle serverTimestamp which might be null before committed
-             if (!dateA.getTime()) return -1;
-             if (!dateB.getTime()) return 1;
-             return dateB.getTime() - dateA.getTime();
-           })
-        );
+        setNotes(prevNotes => [newNote, ...prevNotes]);
         return newNote;
       } else {
         throw new Error("Could not retrieve saved note from database.");
@@ -120,10 +111,15 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Ensure price is not set if note is not premium
+    // Ensure price is set to null if note is not premium
     if (dataToUpdate.isPremium === false) {
-        dataToUpdate.price = null; // or delete field
+        dataToUpdate.price = null;
     }
+
+    if (dataToUpdate.thumbnail === '') {
+        dataToUpdate.thumbnail = null;
+    }
+
 
     try {
         await updateDoc(noteRef, dataToUpdate);

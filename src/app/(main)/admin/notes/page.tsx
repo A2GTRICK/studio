@@ -490,7 +490,7 @@ export default function AdminNotesPage() {
                             <Label htmlFor="edit-thumbnail">Thumbnail Image URL (Optional)</Label>
                             <div className="relative">
                                 <ImageIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input id="edit-thumbnail" name="thumbnail" defaultValue={editingNote.thumbnail} placeholder="https://postimages.org/..." className="pl-10" disabled={isEditSubmitting} />
+                                <Input id="edit-thumbnail" name="thumbnail" defaultValue={editingNote.thumbnail || ''} placeholder="https://postimages.org/..." className="pl-10" disabled={isEditSubmitting} />
                             </div>
                         </div>
                         <div className="space-y-2 pt-2">
@@ -526,5 +526,4 @@ export default function AdminNotesPage() {
         </Dialog>
       </>
     );
-
-    
+}
