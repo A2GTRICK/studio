@@ -8,7 +8,7 @@
  */
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import type { GenerateDashboardInsightsInput } from '@/ai/flows/generate-dashboard-insights';
 import { z } from 'zod';
 
@@ -63,9 +63,7 @@ export async function saveMcqResult(data: SaveMcqResultInput): Promise<void> {
 
 
 /**
- * Constructs a comprehensive subject progress report for a user.
- * It fetches all notes to create a complete syllabus structure and then
- * overlays the user's quiz attempt data on top of it.
+ * Constructs a comprehensive subject progress report for a user based on their saved quiz data.
  * @param uid The user's ID.
  * @returns A promise that resolves to an array of subject progress objects.
  */
@@ -74,51 +72,40 @@ export async function getSubjectsProgress(uid: string): Promise<SubjectProgress[
     return [];
   }
 
-  // 1. Fetch all notes to build the complete structure of subjects and topics.
-  const notesCollection = collection(db, 'notes');
-  const notesSnapshot = await getDocs(query(notesCollection));
-  const allTopicsBySubject: { [subject: string]: { [topic: string]: TopicProgress } } = {};
-
-  notesSnapshot.forEach(doc => {
-    const note = doc.data();
-    const subjectName = note.subject || 'Uncategorized';
-    if (!allTopicsBySubject[subjectName]) {
-      allTopicsBySubject[subjectName] = {};
-    }
-    // Initialize all topics from the library as 'pending'.
-    allTopicsBySubject[subjectName][note.title] = {
-      title: note.title,
-      status: 'pending',
-      lastAccessed: 'Never',
-      estTime: `${Math.floor(Math.random() * 30) + 30} mins`, // Random time for placeholder
-    };
-  });
-
-  // 2. Fetch only the user's quiz progress from their sub-collection.
+  // 1. Fetch all of the user's saved quiz progress. This is the single source of truth.
   const userProgressCollection = collection(db, 'users', uid, 'progress');
   const progressSnapshot = await getDocs(query(userProgressCollection));
 
-  // 3. Overlay the user's progress on top of the complete topic list.
+  if (progressSnapshot.empty) {
+    return [];
+  }
+
+  // 2. Process the fetched quiz data into a structured format.
+  const progressBySubject: { [subjectName: string]: TopicProgress[] } = {};
+
   progressSnapshot.forEach(doc => {
     const progressData = doc.data();
     const subjectName = progressData.subject || 'Uncategorized';
-    const topicName = progressData.topic;
-
-    if (allTopicsBySubject[subjectName] && allTopicsBySubject[subjectName][topicName]) {
-      const isCompleted = progressData.score >= progressData.totalQuestions / 2;
-      allTopicsBySubject[subjectName][topicName].status = isCompleted ? 'completed' : 'pending';
-      allTopicsBySubject[subjectName][topicName].lastAccessed = 'Attempted';
-      if(isCompleted) {
-        allTopicsBySubject[subjectName][topicName].estTime = 'N/A';
-      }
+    
+    if (!progressBySubject[subjectName]) {
+      progressBySubject[subjectName] = [];
     }
+
+    const isCompleted = progressData.score >= progressData.totalQuestions / 2;
+
+    progressBySubject[subjectName].push({
+      title: progressData.topic,
+      status: isCompleted ? 'completed' : 'pending',
+      lastAccessed: 'Attempted',
+      estTime: isCompleted ? 'N/A' : `${Math.floor(Math.random() * 30) + 30} mins`,
+    });
   });
 
-  // 4. Convert the nested object structure into the final array format.
-  const finalProgress: SubjectProgress[] = Object.keys(allTopicsBySubject).map(subjectName => {
+  // 3. Convert the processed data into the final array format required by the dashboard.
+  const finalProgress: SubjectProgress[] = Object.keys(progressBySubject).map(subjectName => {
     return {
       subject: subjectName,
-      topics: Object.values(allTopicsBySubject[subjectName]),
+      topics: progressBySubject[subjectName],
     };
   });
 
