@@ -348,7 +348,7 @@ export default function AiNotesPage() {
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-hidden">
+            <div className="flex-grow overflow-hidden watermarked-content">
                 <ScrollArea className="h-full pr-6">
                     <div className="space-y-4">
                     {chatHistory.map((msg, index) => (
