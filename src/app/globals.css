@@ -114,4 +114,25 @@
             transform: rotate(-2.5deg) scale(1.1);
         }
     }
+
+    /* Watermark for view mode */
+    .watermarked-content {
+      position: relative;
+    }
+    .watermarked-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100"><text x="50%" y="50%" font-size="14" fill="hsl(240 10% 3.9% / 0.06)" text-anchor="middle" dominant-baseline="middle" transform="rotate(-30, 70, 50)">A2G Smart Notes</text></svg>');
+      background-repeat: repeat;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .dark .watermarked-content::before {
+       background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100"><text x="50%" y="50%" font-size="14" fill="hsl(0 0% 98% / 0.05)" text-anchor="middle" dominant-baseline="middle" transform="rotate(-30, 70, 50)">A2G Smart Notes</text></svg>');
+    }
 }

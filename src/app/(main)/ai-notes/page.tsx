@@ -259,47 +259,49 @@ export default function AiNotesPage() {
                 )}
                 </CardHeader>
                 <CardContent className="flex-grow">
-                <ScrollArea className="h-[70vh] lg:h-[calc(100vh-320px)] w-full pr-4">
-                    {isLoading && (
-                        <div className="flex flex-col items-center justify-center h-full">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
-                        </div>
-                    )}
-                    {!isLoading && error && (
-                    <Alert variant="destructive" className="my-4">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Generation Failed</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                    )}
-                    {chatHistory.length === 0 && !isLoading && !error &&(
-                        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
-                            <BrainCircuit className="h-16 w-16 mb-4" />
-                            <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
-                            <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes on any topic from your syllabus.</p>
-                        </div>
-                    )}
-                    <div className="space-y-4">
-                    {chatHistory.map((msg, index) => (
-                        <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                        {msg.role === 'assistant' && (
-                            <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
-                            <Bot className="h-5 w-5" />
+                  <div className="h-[70vh] lg:h-[calc(100vh-320px)] w-full watermarked-content rounded-lg">
+                    <ScrollArea className="h-full w-full pr-4">
+                        {isLoading && (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
                             </div>
                         )}
-                        <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background border'}`}>
-                            {renderMessageContent(msg.content)}
-                        </div>
-                        {msg.role === 'user' && (
-                            <div className="p-2 rounded-full bg-muted self-start shrink-0">
-                                <User className="h-5 w-5" />
+                        {!isLoading && error && (
+                        <Alert variant="destructive" className="my-4">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Generation Failed</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                        )}
+                        {chatHistory.length === 0 && !isLoading && !error &&(
+                            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
+                                <BrainCircuit className="h-16 w-16 mb-4" />
+                                <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
+                                <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes on any topic from your syllabus.</p>
                             </div>
                         )}
+                        <div className="space-y-4">
+                        {chatHistory.map((msg, index) => (
+                            <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                            {msg.role === 'assistant' && (
+                                <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
+                                <Bot className="h-5 w-5" />
+                                </div>
+                            )}
+                            <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
+                                {renderMessageContent(msg.content)}
+                            </div>
+                            {msg.role === 'user' && (
+                                <div className="p-2 rounded-full bg-muted self-start shrink-0">
+                                    <User className="h-5 w-5" />
+                                </div>
+                            )}
+                            </div>
+                        ))}
                         </div>
-                    ))}
-                    </div>
-                </ScrollArea>
+                    </ScrollArea>
+                  </div>
                 </CardContent>
                 {generatedNotes && (
                 <CardFooter className="flex-col items-start gap-2 pt-4 border-t">
@@ -340,11 +342,11 @@ export default function AiNotesPage() {
                         <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Watermark" width={100} height={100} />
                         <span>A2G Smart Notes</span>
                     </div>
-                    <ScrollArea className="h-full w-full pr-6">
+                    <ScrollArea className="h-full w-full pr-6 watermarked-content">
                         <div className="space-y-4 printable-content">
                         {chatHistory.map((msg, index) => (
                             msg.role === 'assistant' && (
-                                <div key={index} className="bg-background border rounded-lg p-4">
+                                <div key={index} className="bg-background/80 border rounded-lg p-4">
                                 {renderMessageContent(msg.content)}
                                 </div>
                             )
