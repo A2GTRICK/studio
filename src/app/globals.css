@@ -85,6 +85,13 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  /* Style for bold text within prose to be the primary color */
+  .prose strong {
+    color: hsl(var(--primary));
+  }
+  .dark .prose strong {
+    color: hsl(var(--primary));
+  }
 }
 
 @layer utilities {
