@@ -448,7 +448,7 @@ export default function McqPracticePage() {
   const renderAiResult = (content: string | null) => {
     if (!content) return null;
     const htmlContent = marked.parse(content);
-    return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+    return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
 
   const hasAnsweredAtLeastOne = answers.some(a => a !== null);
@@ -644,7 +644,7 @@ export default function McqPracticePage() {
                             <AccordionTrigger className="hover:no-underline">
                                <span className="flex items-center gap-2 text-primary hover:text-primary/80"><BookCheck className="h-4 w-4"/> View Explanation</span>
                             </AccordionTrigger>
-                            <AccordionContent className="prose prose-sm dark:prose-invert max-w-none pt-2 text-muted-foreground">
+                            <AccordionContent className="prose dark:prose-invert max-w-none pt-2 text-muted-foreground">
                                 <p>{q.explanation}</p>
                             </AccordionContent>
                           </AccordionItem>
@@ -772,4 +772,5 @@ export default function McqPracticePage() {
   );
 
     
+
 
