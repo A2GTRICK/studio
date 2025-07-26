@@ -289,17 +289,43 @@ export default function McqPracticePage() {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!questions) return;
+    if (!questions || !user) return;
 
-    // --- Start: Immediate UI updates ---
     setIsSubmitted(true);
     setIsFeedbackLoading(true);
     setAiFeedback(null);
     setCurrentAiFeedbackTitle(aiFeedbackTitles[Math.floor(Math.random() * aiFeedbackTitles.length)]);
-
+    
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);
     }, 0);
+    
+    // --- START: Save score immediately (fire-and-forget with toast notifications) ---
+    const currentFormValues = form.getValues();
+    const topicToSave = currentFormValues.topic || "General";
+    
+    saveMcqResult({
+        uid: user.uid,
+        subject: currentFormValues.subject,
+        topic: topicToSave,
+        score: newScore,
+        totalQuestions: questions.length
+    }).then(() => {
+        toast({
+            title: "Progress Saved!",
+            description: "Your quiz score has been saved to your progress report.",
+        });
+    }).catch((error) => {
+        console.error("Failed to save quiz result:", error);
+        toast({
+            title: "Could not save progress",
+            description: "Your quiz score could not be saved automatically.",
+            variant: "destructive",
+        });
+    });
+    // --- END: Immediate score saving ---
+
+    // --- START: Background AI feedback generation and UI updates ---
     const newScorePercentage = (newScore / questions.length) * 100;
     
     let category;
@@ -316,37 +342,7 @@ export default function McqPracticePage() {
     }
     const feedback = getRandomFeedback(category);
     setDisplayedFeedback({ ...feedback, cardClass });
-    // --- End: Immediate UI updates ---
 
-
-    // --- Start: Background tasks (don't block UI) ---
-    const currentFormValues = form.getValues();
-    const topicToSave = currentFormValues.topic || "General";
-
-    // 1. Save score (fire-and-forget, with toast notifications)
-    if (user) {
-        saveMcqResult({
-            uid: user.uid,
-            subject: currentFormValues.subject,
-            topic: topicToSave,
-            score: newScore,
-            totalQuestions: questions.length
-        }).then(() => {
-            toast({
-                title: "Progress Saved!",
-                description: "Your quiz score has been saved to your progress report.",
-            });
-        }).catch((error) => {
-            console.error("Failed to save quiz result:", error);
-            toast({
-                title: "Could not save progress",
-                description: "Your quiz score could not be saved automatically.",
-                variant: "destructive",
-            });
-        });
-    }
-
-    // 2. Generate AI feedback
     try {
         const incorrectPerformance = questions.map((q, index) => ({
             question: q.question,
@@ -378,7 +374,7 @@ export default function McqPracticePage() {
     } finally {
         setIsFeedbackLoading(false);
     }
-    // --- End: Background tasks ---
+    // --- END: Background AI tasks ---
   };
 
   const score = useMemo(() => {
@@ -636,48 +632,49 @@ export default function McqPracticePage() {
                    Submit Quiz & View Results
                 </Button>
             )}
-
+            
             {isSubmitted && (
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid sm:grid-cols-2 gap-2">
-                            <Button onClick={startNewQuiz} variant="outline" className="w-full">
-                            <PlusCircle className="mr-2 h-4 w-4"/>
-                            Start New Quiz
-                        </Button>
-                        <Button onClick={practiceSameTopic} className="w-full">
-                            <RefreshCw className="mr-2 h-4 w-4"/>
-                            Practice Same Topic
-                        </Button>
-                    </CardContent>
-                    <CardFooter>
-                         <Accordion type="single" collapsible className="w-full">
-                            <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
-                                <AccordionTrigger className="px-6 hover:no-underline">
-                                    <div className="flex items-center gap-2 text-primary font-headline">
-                                        <Lightbulb/> {currentAiFeedbackTitle}
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-6 pb-6">
-                                    {isFeedbackLoading && (
-                                        <div className="flex items-center justify-center min-h-[100px]">
-                                            <Loader2 className="h-6 w-6 animate-spin text-primary"/>
-                                            <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
-                                        </div>
-                                    )}
-                                    {!isFeedbackLoading && aiFeedback && (
-                                        <div className="p-4 bg-background rounded-lg border">
-                                            {renderAiResult(aiFeedback)}
-                                        </div>
-                                    )}
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
-                    </CardFooter>
-                </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-headline text-xl">Next Steps</CardTitle>
+                </CardHeader>
+                <CardContent className="grid sm:grid-cols-2 gap-2">
+                  <Button onClick={startNewQuiz} variant="outline" className="w-full">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Start New Quiz
+                  </Button>
+                  <Button onClick={practiceSameTopic} className="w-full">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Practice Same Topic
+                  </Button>
+                </CardContent>
+                <CardFooter>
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="ai-feedback" className="border rounded-lg bg-primary/5 border-primary/20">
+                      <AccordionTrigger className="px-6 hover:no-underline">
+                        <div className="flex items-center gap-2 text-primary font-headline">
+                          <Lightbulb /> {currentAiFeedbackTitle}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-6 pb-6">
+                        {isFeedbackLoading && (
+                          <div className="flex items-center justify-center min-h-[100px]">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            <p className="ml-4 text-muted-foreground">Analyzing your performance...</p>
+                          </div>
+                        )}
+                        {!isFeedbackLoading && aiFeedback && (
+                          <div className="p-4 bg-background rounded-lg border">
+                            {renderAiResult(aiFeedback)}
+                          </div>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </CardFooter>
+              </Card>
             )}
+
             </FormProvider>
           )}
         </div>
@@ -754,5 +751,7 @@ export default function McqPracticePage() {
 
 
 
+
+    
 
     
