@@ -4,7 +4,7 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePathname, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Shield, Users, NotebookPen, GraduationCap, Gem, Megaphone } from 'lucide-react';
+import { Shield, Users, NotebookPen, GraduationCap, Gem, Megaphone, CheckBadge } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -38,7 +38,7 @@ export default function AdminLayout({
       </Card>
       
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="notes">
             <NotebookPen className="mr-2 h-4 w-4" />
             Notes
@@ -46,6 +46,10 @@ export default function AdminLayout({
           <TabsTrigger value="users">
             <Users className="mr-2 h-4 w-4" />
             Users
+          </TabsTrigger>
+           <TabsTrigger value="verifications">
+            <CheckBadge className="mr-2 h-4 w-4" />
+            Verifications
           </TabsTrigger>
           <TabsTrigger value="services">
             <GraduationCap className="mr-2 h-4 w-4" />

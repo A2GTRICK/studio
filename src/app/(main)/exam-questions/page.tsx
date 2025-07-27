@@ -29,6 +29,12 @@ type ExamQuestionsFormValues = z.infer<typeof examQuestionsFormSchema>;
 
 type PremiumAction = 'download' | 'mock_test' | null;
 
+type PaymentDetails = {
+    title: string;
+    price: string;
+}
+
+
 const premiumFeatures = [
     "Download generated questions as PDF",
     "Create full-length AI mock tests",
@@ -52,6 +58,7 @@ export default function ExamQuestionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState<PremiumAction>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
 
   useEffect(() => {
@@ -106,6 +113,10 @@ export default function ExamQuestionsPage() {
 
   const handleBuyNow = () => {
     setShowPremiumDialog(null);
+    setPaymentDetails({
+        title: showPremiumDialog === 'download' ? 'Download Questions PDF' : 'AI Mock Test Generation',
+        price: showPremiumDialog === 'download' ? 'INR 29' : 'INR 49'
+    });
     setShowPaymentDialog(true);
   };
 
@@ -278,11 +289,9 @@ export default function ExamQuestionsPage() {
     <PaymentDialog 
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
-        title={`Buy ${dialogTitle}`}
-        price={`INR ${dialogPrice}`}
+        title={paymentDetails?.title || 'Purchase'}
+        price={paymentDetails?.price || ''}
     />
     </>
   );
 }
-
-    

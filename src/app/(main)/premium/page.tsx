@@ -3,12 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Check, X, Copy, QrCode } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import Image from "next/image";
-import { useToast } from "@/hooks/use-toast";
 import { PaymentDialog } from "@/components/payment-dialog";
 
 const freePlanFeatures = [
@@ -22,7 +18,7 @@ const freePlanFeatures = [
 const plans = [
   {
     name: "Weekly",
-    price: "INR 99",
+    price: "99",
     period: "/ week",
     description: "Perfect for a quick boost for your upcoming exams.",
     features: ["Unlock All Premium Notes", "AI Note Generation", "AI Exam Questions", "Email Support"],
@@ -30,7 +26,7 @@ const plans = [
   },
   {
     name: "Monthly",
-    price: "INR 299",
+    price: "299",
     period: "/ month",
     description: "Our most popular plan for semester-long learning.",
     features: ["Unlock All Premium Notes", "AI Note Generation", "AI Exam Questions", "Priority Email Support", "Ask Follow-up Questions to AI"],
@@ -38,7 +34,7 @@ const plans = [
   },
   {
     name: "Yearly",
-    price: "INR 1,499",
+    price: "1499",
     period: "/ year",
     description: "Best value for dedicated, year-round study.",
     features: ["Unlock All Premium Notes", "AI Note Generation", "AI Exam Questions", "Priority Email Support", "Ask Follow-up Questions to AI", "Early Access to New Notes"],
@@ -49,12 +45,20 @@ const plans = [
 
 type Plan = typeof plans[0];
 
+type PaymentDetails = {
+    title: string;
+    price: string;
+}
+
 export default function PremiumPage() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
   const handleChoosePlan = (plan: Plan) => {
-    setSelectedPlan(plan);
+    setPaymentDetails({
+        title: `${plan.name} Plan`,
+        price: `INR ${plan.price}`,
+    });
     setShowPaymentDialog(true);
   };
 
@@ -101,7 +105,7 @@ export default function PremiumPage() {
             <CardHeader className="text-center">
               <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
               <div>
-                <span className="text-4xl font-bold">{plan.price}</span>
+                <span className="text-4xl font-bold">INR {plan.price}</span>
                 <span className="text-muted-foreground">{plan.period}</span>
               </div>
               <CardDescription>{plan.description}</CardDescription>
@@ -128,8 +132,8 @@ export default function PremiumPage() {
     <PaymentDialog
         isOpen={showPaymentDialog}
         setIsOpen={setShowPaymentDialog}
-        title={`${selectedPlan?.name} Plan`}
-        price={selectedPlan?.price || ''}
+        title={paymentDetails?.title || 'Premium Plan'}
+        price={paymentDetails?.price || ''}
     />
     </>
   );

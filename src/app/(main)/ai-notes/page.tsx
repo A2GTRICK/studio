@@ -61,7 +61,6 @@ const premiumFeatures = [
 type PaymentDetails = {
     title: string;
     price: string;
-    type: 'day-pass' | 'print';
 }
 
 export default function AiNotesPage() {
@@ -83,7 +82,6 @@ export default function AiNotesPage() {
     count: dailyGenerations,
     limit: dailyGenerationLimit,
     increment: incrementGenerations,
-    reset: resetGenerations,
     canUse: canGenerate,
   } = useUsageLimiter('aiNotesGenerations', 2);
 
@@ -460,7 +458,7 @@ export default function AiNotesPage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={() => {
                     setShowPremiumDialog(false);
-                    setPaymentDetails({ title: "AI Notes Day Pass", price: "INR 29", type: "day-pass" });
+                    setPaymentDetails({ title: "AI Notes Day Pass", price: "INR 29" });
                     setShowPaymentDialog(true);
                 }}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
@@ -502,7 +500,7 @@ export default function AiNotesPage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={() => {
                     setShowPrintPremiumDialog(false);
-                    setPaymentDetails({ title: "Single Note Print/PDF", price: "INR 2", type: "print" });
+                    setPaymentDetails({ title: "Single Note Print/PDF", price: "INR 2" });
                     setShowPaymentDialog(true);
                 }}>
                     <ShoppingCart className="mr-2 h-4 w-4" />

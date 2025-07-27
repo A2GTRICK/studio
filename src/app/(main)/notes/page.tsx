@@ -23,6 +23,12 @@ const premiumFeatures = [
     "In-depth competitive exam preparation",
 ];
 
+type PaymentDetails = {
+    title: string;
+    price: string;
+}
+
+
 const NoteCardSkeleton = () => (
     <Card className="flex flex-col overflow-hidden">
         <CardHeader className="p-4">
@@ -111,6 +117,8 @@ export default function NotesPage() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
+
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -129,6 +137,11 @@ export default function NotesPage() {
 
     const handleBuyNow = () => {
         if (selectedNote) {
+            setPaymentDetails({
+                title: `Note: "${selectedNote.title}"`,
+                price: `INR ${selectedNote.price || '19'}`
+            });
+            setSelectedNote(null);
             setShowPaymentDialog(true);
         }
     };
@@ -310,8 +323,8 @@ export default function NotesPage() {
     <PaymentDialog 
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
-        title={`Buy "${selectedNote?.title}"`}
-        price={`INR ${selectedNote?.price || '19'}`}
+        title={paymentDetails?.title || 'Purchase'}
+        price={paymentDetails?.price || ''}
     />
     </>
   )
