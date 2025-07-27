@@ -246,23 +246,25 @@ export default function DashboardClient() {
         const userProgress = await getSubjectsProgress(user.uid);
         
         if (userProgress.length === 0) {
-             setInsights(null); // This is correct, handle the display logic below
-        } else {
-            const result = await generateDashboardInsights({
-                studentName: user.displayName?.split(' ')[0] || 'Student',
-                course: 'B.Pharm', 
-                year: '2nd Year', 
-                subjectsProgress: userProgress,
-            });
-            setInsights(result);
+             setInsights(null);
+             if (!isRefresh) setIsLoading(false);
+             if (isRefresh) setIsRefreshing(false);
+             return;
         }
+
+        const result = await generateDashboardInsights({
+            studentName: user.displayName?.split(' ')[0] || 'Student',
+            course: 'B.Pharm', 
+            year: '2nd Year', 
+            subjectsProgress: userProgress,
+        });
+        setInsights(result);
     } catch (e: any) {
         console.error("Error generating dashboard insights:", e);
         const errorMessage = e.message.includes('503') 
             ? 'The AI model is currently overloaded. Please try again in a few moments.'
             : 'Failed to load smart insights. Please try refreshing.';
         setError(errorMessage);
-        setInsights(null); // Ensure insights are cleared on error
     } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -274,7 +276,7 @@ export default function DashboardClient() {
     if (user) {
       fetchInsights();
     } else {
-      setIsLoading(false); // Not loading if there's no user
+      setIsLoading(false);
     }
   }, [user, fetchInsights]);
   
@@ -312,7 +314,7 @@ export default function DashboardClient() {
 
       {isLoading && <DashboardSkeleton message={currentLoadingMessage} />}
       
-      {!isLoading && error && (
+      {!isLoading && error && !insights && (
          <Card className="border-destructive bg-destructive/10">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle /> Error Loading Dashboard</CardTitle>
@@ -331,8 +333,8 @@ export default function DashboardClient() {
         <Card>
             <CardContent className="p-10 text-center">
                 <h3 className="text-xl font-semibold">Your Smart Dashboard is Getting Ready!</h3>
-                <p className="text-muted-foreground mt-2">Your personalized insights will appear here once we have some notes and progress data to analyze.</p>
-                <Button asChild className="mt-4"><Link href="/notes">Start Learning</Link></Button>
+                <p className="text-muted-foreground mt-2">Your personalized insights will appear here once you complete a few MCQs or notes are added to the library.</p>
+                <Button asChild className="mt-4"><Link href="/mcq-practice">Start a Quiz</Link></Button>
             </CardContent>
         </Card>
       )}
