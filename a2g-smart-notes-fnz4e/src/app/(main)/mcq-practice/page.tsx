@@ -90,7 +90,6 @@ const premiumFeatures = [
 type PurchaseDetails = {
     title: string;
     price: string;
-    questions: number;
 }
 
 const getRandomFeedback = (feedbacks: typeof scoreFeedbacks.good) => {
@@ -731,15 +730,15 @@ export default function McqPracticePage() {
                 <p className="font-semibold text-center">Buy a Question Pack</p>
                 
                 <div className="grid grid-cols-1 gap-2">
-                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10', questions: 50})}>
+                    <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '50 MCQs', price: 'INR 10'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 50 MCQs for INR 10
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18', questions: 100})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '100 MCQs', price: 'INR 18'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 100 MCQs for INR 18
                     </Button>
-                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35', questions: 200})}>
+                     <Button size="lg" variant="outline" onClick={() => handleBuyNow({title: '200 MCQs', price: 'INR 35'})}>
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Buy 200 MCQs for INR 35
                     </Button>
@@ -754,15 +753,13 @@ export default function McqPracticePage() {
         setIsOpen={setShowPaymentDialog}
         title={paymentDetails?.title || ''}
         price={paymentDetails?.price || ''}
-        onPaymentSuccess={() => {
-             // This function is for future use after admin verifies the payment.
-             // It is not called automatically by the dialog.
-        }}
     />
     </>
   );
 
     
+
+
 
 
 
