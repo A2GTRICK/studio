@@ -5,14 +5,25 @@
         color: #000000 !important;
     }
 
-    /* Hide elements that should not be printed */
-    .no-print {
+    /* Hide everything by default */
+    body > * {
         display: none !important;
     }
-    
-    /* Show only the content marked for printing */
-    .printable-content {
+
+    /* Show only the printable content and its parents */
+    .printable-content, .printable-content * {
         display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Ensure the direct parent of printable-content is visible */
+    body .printable-container {
+        display: block !important;
+        visibility: visible !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
     }
     
     /* Watermark for the printable content */
@@ -36,3 +47,5 @@
         z-index: -1;
     }
 }
+
+    
