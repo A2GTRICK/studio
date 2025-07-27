@@ -43,7 +43,7 @@ const NoteCardSkeleton = () => (
 const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
     const { id, title, course, year, subject, isPremium, content, price } = note;
     
-    const isExternalLink = content && content.startsWith('http');
+    const isExternalLink = content && (content.startsWith('http://') || content.startsWith('https://'));
 
     let actionButton;
 
