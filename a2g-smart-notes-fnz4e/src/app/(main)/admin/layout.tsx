@@ -64,7 +64,6 @@ export default function AdminLayout({
             Marketing
           </TabsTrigger>
         </TabsList>
-        {/* The content for each tab is rendered by the page.tsx files */}
       </Tabs>
 
       <div>{children}</div>
