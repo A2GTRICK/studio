@@ -12,16 +12,14 @@ import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer, Download, Gem, ArrowRight, ShoppingCart } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { marked } from 'marked';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNotes, type Note } from '@/context/notes-context';
-import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import Image from 'next/image';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -37,11 +35,6 @@ interface ChatMessage {
   content: string;
 }
 
-const yearOptions: { [key: string]: string[] } = {
-    "B.Pharm": ["1st Year", "2nd Year", "3rd Year", "4th Year"],
-    "D.Pharm": ["1st Year", "2nd Year"],
-};
-
 const loadingMessages = [
     "AI aapke notes bana raha hai... ☕",
     "Digital textbooks se gyan le rahe hain...",
@@ -55,7 +48,6 @@ const followupFormSchema = z.object({
 });
 type FollowupFormValues = z.infer<typeof followupFormSchema>;
 
-const DAILY_LIMIT = 5;
 
 export default function AiNotesPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -67,42 +59,11 @@ export default function AiNotesPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   const [isExpandViewOpen, setIsExpandViewOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<string>('B.Pharm');
-  const [usageCount, setUsageCount] = useState(0);
-  const [showLimitDialog, setShowLimitDialog] = useState(false);
-  const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const printContentRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        const usageData = JSON.parse(localStorage.getItem('aiUsage') || '{}');
-        if (usageData.date === today) {
-            setUsageCount(usageData.count || 0);
-        } else {
-            localStorage.setItem('aiUsage', JSON.stringify({ date: today, count: 0 }));
-            setUsageCount(0);
-        }
-    } catch (e) {
-        console.warn("Could not access localStorage. Usage tracking will be session-based.");
-    }
-  }, []);
-
-  const updateUsage = () => {
-    const newCount = usageCount + 1;
-    setUsageCount(newCount);
-     try {
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem('aiUsage', JSON.stringify({ date: today, count: newCount }));
-    } catch (e) {
-        console.warn("Could not access localStorage.");
-    }
-  }
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isLoading || isFollowupLoading) {
+    if (isLoading) {
       interval = setInterval(() => {
         setCurrentLoadingMessage(prev => {
             const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
@@ -111,13 +72,14 @@ export default function AiNotesPage() {
       }, 2500);
     }
     return () => clearInterval(interval);
-  }, [isLoading, isFollowupLoading]);
-  
-  useEffect(() => {
+  }, [isLoading]);
+
+    useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [chatHistory]);
+
 
   const form = useForm<NotesFormValues>({
     resolver: zodResolver(notesFormSchema),
@@ -148,10 +110,6 @@ export default function AiNotesPage() {
   
 
   async function onSubmit(data: NotesFormValues) {
-    if (usageCount >= DAILY_LIMIT) {
-        setShowLimitDialog(true);
-        return;
-    }
     setIsLoading(true);
     setGeneratedNotes(null);
     setChatHistory([]);
@@ -159,8 +117,7 @@ export default function AiNotesPage() {
     setLastTopic(data);
     try {
       const result = await generateNotesFromTopic(data);
-      updateUsage();
-      const assistantMessage: ChatMessage = { role: 'assistant', content: result.notes };
+      const assistantMessage = { role: 'assistant', content: result.notes };
       setGeneratedNotes(result.notes);
       setChatHistory([assistantMessage]);
     } catch (e: any) {
@@ -176,10 +133,6 @@ export default function AiNotesPage() {
 
   async function handleFollowUpSubmit(data: FollowupFormValues) {
     if (!data.question.trim() || !generatedNotes) return;
-     if (usageCount >= DAILY_LIMIT) {
-        setShowLimitDialog(true);
-        return;
-    }
 
     const newQuestion: ChatMessage = { role: 'user', content: data.question };
     setChatHistory(prev => [...prev, newQuestion]);
@@ -191,12 +144,9 @@ export default function AiNotesPage() {
         question: data.question,
         previousNotes: generatedNotes,
       });
-      updateUsage();
       const newAnswer: ChatMessage = { role: 'assistant', content: result.answer };
       setChatHistory(prev => [...prev, newAnswer]);
-      setGeneratedNotes(prev => prev + "\n\n---\n\n### Follow-up:\n" + data.question + "\n\n### Answer:\n" + result.answer);
-
-    } catch (error: any)      {
+    } catch (error: any) {
       console.error('Error with follow-up:', error);
       const errorMessage = error.message.includes('503')
         ? 'The AI model is currently overloaded. Please try again.'
@@ -217,57 +167,15 @@ export default function AiNotesPage() {
     window.print();
   };
 
-  const handleDownloadPdf = async () => {
-    const contentToPrint = printContentRef.current;
-    if (!contentToPrint) {
-        toast({ title: 'Error', description: 'Could not find content to download.', variant: 'destructive' });
-        return;
-    }
-
-    toast({ title: 'Preparing PDF...', description: 'Please wait, this may take a moment.' });
-
-    const canvas = await html2canvas(contentToPrint, {
-        scale: 2,
-        useCORS: true,
-    });
-
-    const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: 'a4',
-    });
-
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    
-    let position = 0;
-    let pageHeight = (canvasWidth / pdfWidth) * pdfHeight;
-    let heightLeft = canvasHeight;
-
-    while (heightLeft > 0) {
-        pdf.addImage(canvas, 'PNG', 0, -position, pdfWidth, canvasHeight, undefined, 'FAST');
-        heightLeft -= pageHeight;
-        if (heightLeft > 0) {
-            pdf.addPage();
-            position += pageHeight;
-        }
-    }
-    
-    pdf.save(`${lastTopic?.topic || 'AI-Generated-Notes'}.pdf`);
-  };
-
-  const isGenerationDisabled = isLoading || isFollowupLoading || usageCount >= DAILY_LIMIT;
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 main-content">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start main-content">
         <div className="lg:col-span-1 lg:sticky top-20">
           <Card>
             <CardHeader>
               <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> AI Notes Generator</CardTitle>
-              <CardDescription>Generate high-quality notes on any topic. Daily limit: {usageCount}/{DAILY_LIMIT} generations.</CardDescription>
+              <CardDescription>Generate high-quality, detailed notes on any topic to kickstart your studies.</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -275,28 +183,27 @@ export default function AiNotesPage() {
                   <FormField control={form.control} name="course" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Course</FormLabel>
-                      <Select onValueChange={(value) => { field.onChange(value); setSelectedCourse(value); form.setValue('year', ''); }} defaultValue={field.value} disabled={isLoading}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger></FormControl>
                         <SelectContent>
                           <SelectItem value="B.Pharm">B.Pharm</SelectItem>
                           <SelectItem value="D.Pharm">D.Pharm</SelectItem>
                         </SelectContent>
                       </Select>
-                      <FormMessage />
                     </FormItem>
                   )}/>
                   <FormField control={form.control} name="year" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Year</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || !selectedCourse}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                          <FormControl><SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger></FormControl>
                          <SelectContent>
-                          {selectedCourse && yearOptions[selectedCourse]?.map(year => (
-                            <SelectItem key={year} value={year}>{year}</SelectItem>
-                          ))}
+                          <SelectItem value="1st Year">1st Year</SelectItem>
+                          <SelectItem value="2nd Year">2nd Year</SelectItem>
+                          <SelectItem value="3rd Year">3rd Year</SelectItem>
+                          <SelectItem value="4th Year">4th Year</SelectItem>
                          </SelectContent>
                       </Select>
-                      <FormMessage />
                     </FormItem>
                   )}/>
                   <FormField control={form.control} name="subject" render={({ field }) => (
@@ -313,9 +220,9 @@ export default function AiNotesPage() {
                       <FormMessage />
                     </FormItem>
                   )}/>
-                  <Button type="submit" disabled={isGenerationDisabled} className="w-full">
+                  <Button type="submit" disabled={isLoading} className="w-full">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {usageCount >= DAILY_LIMIT ? 'Daily Limit Reached' : 'Generate Notes'}
+                    Generate Notes
                   </Button>
                 </form>
               </Form>
@@ -370,7 +277,7 @@ export default function AiNotesPage() {
             <CardContent className="flex-grow">
               <div className="h-[70vh] lg:h-[calc(100vh-320px)] w-full rounded-lg">
                 <ScrollArea className="h-full w-full pr-4" viewportRef={scrollAreaRef}>
-                  {(isLoading || isFollowupLoading) && (
+                  {isLoading && (
                     <div className="flex flex-col items-center justify-center h-full">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                       <p className="mt-4 text-muted-foreground animate-pulse">{currentLoadingMessage}</p>
@@ -383,7 +290,7 @@ export default function AiNotesPage() {
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
-                  {chatHistory.length === 0 && !isLoading && !isFollowupLoading && !error && (
+                  {chatHistory.length === 0 && !isLoading && !error && (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
                       <BrainCircuit className="h-16 w-16 mb-4" />
                       <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
@@ -427,7 +334,7 @@ export default function AiNotesPage() {
                                             <Input
                                                 id="follow-up-input"
                                                 placeholder="Ask a follow-up question..."
-                                                disabled={isGenerationDisabled}
+                                                disabled={isFollowupLoading}
                                                 {...field}
                                             />
                                         </FormControl>
@@ -435,7 +342,7 @@ export default function AiNotesPage() {
                                 )}
                              />
                         </div>
-                        <Button type="submit" size="icon" disabled={isGenerationDisabled || !followupForm.formState.isValid} className="self-end mt-auto">
+                        <Button type="submit" size="icon" disabled={isFollowupLoading || !followupForm.formState.isValid} className="self-end mt-auto">
                             {isFollowupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </form>
@@ -455,17 +362,29 @@ export default function AiNotesPage() {
                 </DialogDescription>
             </DialogHeader>
             <div className="flex-grow overflow-hidden p-6 pt-0">
-                <ScrollArea className="h-full pr-6 dialog-content">
-                    <div ref={printContentRef} className="watermarked-content">
-                        {generatedNotes ? renderMessageContent(generatedNotes) : <p>No content to display.</p>}
+                <ScrollArea className="h-full pr-6 dialog-content watermarked-content">
+                    <div className="space-y-4">
+                    {chatHistory.map((msg, index) => (
+                        <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                            {msg.role === 'assistant' && (
+                                <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
+                                <Bot className="h-5 w-5" />
+                                </div>
+                            )}
+                            <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
+                                {renderMessageContent(msg.content)}
+                            </div>
+                            {msg.role === 'user' && (
+                                <div className="p-2 rounded-full bg-muted self-start shrink-0">
+                                    <User className="h-5 w-5" />
+                                </div>
+                            )}
+                        </div>
+                    ))}
                     </div>
                 </ScrollArea>
             </div>
              <DialogFooter className="p-6 pt-0 dialog-footer">
-                <Button variant="outline" onClick={handleDownloadPdf}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                </Button>
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print
@@ -473,29 +392,8 @@ export default function AiNotesPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-       <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
-        <DialogContent className="max-w-md">
-            <DialogHeader>
-                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
-                    <Gem className="h-6 w-6 text-primary" />
-                </div>
-                <DialogTitle className="text-center font-headline text-2xl">Daily Limit Reached</DialogTitle>
-                <DialogDescription className="text-center text-base">
-                   You've used all your free generations for today. Upgrade for unlimited access.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-2 pt-4">
-                <Button asChild size="lg">
-                    <Link href="/premium">Upgrade to Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                </Button>
-                <Button size="lg" variant="outline" onClick={() => toast({ title: "Coming Soon!", description: "Generation packs will be available shortly."})}>
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Buy 10 Generations for ₹9
-                </Button>
-            </div>
-        </DialogContent>
-    </Dialog>
     </>
   );
 }
+
+    
