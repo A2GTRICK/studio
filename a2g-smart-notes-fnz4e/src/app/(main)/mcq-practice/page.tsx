@@ -755,7 +755,8 @@ export default function McqPracticePage() {
         title={paymentDetails?.title || ''}
         price={paymentDetails?.price || ''}
         onPaymentSuccess={() => {
-            // This is now just for show. Verification should be manual.
+             // This function is for future use after admin verifies the payment.
+             // It is not called automatically by the dialog.
         }}
     />
     </>
