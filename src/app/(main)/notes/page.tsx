@@ -312,12 +312,6 @@ export default function NotesPage() {
         setIsOpen={setShowPaymentDialog}
         title={`Buy "${selectedNote?.title}"`}
         price={`INR ${selectedNote?.price || '19'}`}
-        onPaymentSuccess={() => {
-            if (selectedNote) {
-            }
-            setShowPaymentDialog(false);
-            setSelectedNote(null);
-        }}
     />
     </>
   )

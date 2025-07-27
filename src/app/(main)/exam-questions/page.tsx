@@ -280,9 +280,6 @@ export default function ExamQuestionsPage() {
         setIsOpen={setShowPaymentDialog}
         title={`Buy ${dialogTitle}`}
         price={`INR ${dialogPrice}`}
-        onPaymentSuccess={() => {
-            setShowPremiumDialog(null);
-        }}
     />
     </>
   );

@@ -130,9 +130,6 @@ export default function PremiumPage() {
         setIsOpen={setShowPaymentDialog}
         title={`${selectedPlan?.name} Plan`}
         price={selectedPlan?.price || ''}
-        onPaymentSuccess={() => {
-            setSelectedPlan(null);
-        }}
     />
     </>
   );
