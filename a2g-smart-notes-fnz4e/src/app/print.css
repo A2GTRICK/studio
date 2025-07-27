@@ -1,25 +1,42 @@
 
 
+
 @media print {
-    body {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+    body, html {
         background-color: #ffffff !important;
         color: #000000 !important;
     }
-    
-    /* Hide everything that is not meant for printing by default */
-    .non-printable {
+
+    /* Hide all elements that are not part of the dialog's content area by default */
+    body > *:not(.print-dialog-container) {
         display: none !important;
     }
+    
+    /* Ensure the dialog container itself is not displayed, only its content */
+    .print-dialog-container {
+        display: block !important;
+        position: static !important;
+    }
 
-    /* Show only the dedicated print container */
-    .only-for-print {
+    /* Style the content that should be printed */
+    .print-this-content {
         display: block !important;
         position: absolute;
         left: 0;
         top: 0;
-        right: 0;
+        width: 100%;
+        padding: 1rem; /* Add some padding for print layout */
+    }
+    
+    /* Hide specific parts of the dialog we don't want to print */
+    .dialog-header, .dialog-footer {
+        display: none !important;
+    }
+
+    /* Reset dialog content styles for printing */
+    .print-dialog > * {
+       box-shadow: none !important;
+       border: none !important;
     }
     
     /* Watermark for the printable content */
@@ -42,9 +59,4 @@
         pointer-events: none;
         z-index: -1; /* Place it behind the content */
     }
-}
-
-/* Hide the print-only container in screen view */
-.only-for-print {
-    display: none;
 }
