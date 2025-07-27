@@ -63,7 +63,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
         } catch (error: any) {
             toast({
                 title: "Submission Failed",
-                description: error.message,
+                description: error.message || "Could not log your payment for verification. Please contact support.",
                 variant: "destructive",
             });
         } finally {

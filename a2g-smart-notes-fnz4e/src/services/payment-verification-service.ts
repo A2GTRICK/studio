@@ -1,11 +1,11 @@
 
 'use server';
 /**
- * @fileOverview A service to manage payment verification requests by updating the user's document.
+ * @fileOverview A service to manage payment verification requests by creating a new document in a dedicated collection.
  */
 
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 
 const CreateVerificationRequestInputSchema = z.object({
@@ -19,7 +19,7 @@ const CreateVerificationRequestInputSchema = z.object({
 export type CreateVerificationRequestInput = z.infer<typeof CreateVerificationRequestInputSchema>;
 
 /**
- * Creates a new payment verification request document in Firestore.
+ * Creates a new payment verification request document in the 'payment_verifications' collection.
  * This is triggered when a user clicks "I Have Paid" in the payment dialog.
  * @param data The details of the purchase to be verified.
  */
@@ -30,8 +30,6 @@ export async function createVerificationRequest(data: CreateVerificationRequestI
     }
 
     try {
-        // This creates a request in a separate collection, which is a more robust pattern
-        // to avoid complex security rules on the main user collection.
         await addDoc(collection(db, 'payment_verifications'), {
             ...parsedData.data,
             status: 'pending', // Default status is always pending
