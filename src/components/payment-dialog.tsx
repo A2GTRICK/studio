@@ -58,7 +58,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
                 <div className="py-4 space-y-4">
                     <p className="text-center text-muted-foreground text-sm">Scan the QR code below with any UPI app or copy the UPI ID.</p>
                     <div className="flex justify-center">
-                        <AiImage data-ai-hint="upi qr code" alt="UPI QR Code" width={250} height={250} />
+                        <AiImage data-ai-hint="upi qr code payment" alt="UPI QR Code" width={250} height={250} />
                     </div>
                     <Card>
                         <CardContent className="p-3 flex items-center justify-between">
@@ -79,3 +79,5 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
         </Dialog>
     );
 }
+
+    
