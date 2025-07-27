@@ -164,7 +164,7 @@ export default function AiNotesPage() {
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start non-printable">
-        <div className="lg:col-span-1 lg:sticky top-20 print-hide">
+        <div className="lg:col-span-1 lg:sticky top-20">
           <Card>
             <CardHeader>
               <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary"/> AI Notes Generator</CardTitle>
@@ -253,7 +253,7 @@ export default function AiNotesPage() {
               </Card>
           )}
         </div>
-        <div className="lg:col-span-2 print-hide">
+        <div className="lg:col-span-2">
           <Card className="flex flex-col h-full">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -347,15 +347,15 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="fixed inset-0 w-full h-full max-w-full p-0 flex flex-col print-dialog-content">
-            <DialogHeader className="print-hide p-4 border-b">
+        <DialogContent className="non-printable fixed inset-0 w-full h-full max-w-full p-0 flex flex-col">
+            <DialogHeader className="p-4 border-b">
                 <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                 <DialogDescription>
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
             <div id="printable-area" className="flex-grow p-4 overflow-y-auto">
-                <div ref={printableContentRef} className="printable-content watermarked-content space-y-4">
+                <div ref={printableContentRef} className="watermarked-content space-y-4">
                 {chatHistory.map((msg, index) => (
                     <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                         {msg.role === 'assistant' && (
@@ -375,7 +375,7 @@ export default function AiNotesPage() {
                 ))}
                 </div>
             </div>
-             <DialogFooter className="print-hide p-4 border-t">
+             <DialogFooter className="p-4 border-t">
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print
@@ -387,23 +387,15 @@ export default function AiNotesPage() {
       {/* This div is only for printing */}
       <div className="only-for-print">
         {chatHistory.length > 0 && (
-          <div className="printable-content watermarked-content space-y-4 p-4">
+          <div className="watermarked-content space-y-4 p-4">
             <h1 className="font-headline text-2xl font-bold">Notes on: {lastTopic?.topic}</h1>
-            <h2 className="text-lg font-semibold text-muted-foreground">{lastTopic?.subject}</h2>
+            <h2 className="text-lg font-semibold text-muted-foreground">{lastTopic?.subject} ({lastTopic?.course} - {lastTopic?.year})</h2>
             <hr className="my-4"/>
             {chatHistory.map((msg, index) => (
-              <div key={index} className="flex items-start gap-3">
+              <div key={index} className={`py-2 ${msg.role === 'user' ? 'hidden' : ''}`}>
                 {msg.role === 'assistant' && (
-                  <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
-                    <Bot className="h-5 w-5" />
-                  </div>
-                )}
-                <div className="flex-1">
-                  {renderMessageContent(msg.content)}
-                </div>
-                {msg.role === 'user' && (
-                  <div className="p-2 rounded-full bg-muted self-start shrink-0">
-                      <User className="h-5 w-5" />
+                  <div>
+                    {renderMessageContent(msg.content)}
                   </div>
                 )}
               </div>
