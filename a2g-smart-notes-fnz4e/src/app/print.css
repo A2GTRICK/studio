@@ -1,42 +1,37 @@
 
-
-
 @media print {
     body, html {
         background-color: #ffffff !important;
         color: #000000 !important;
     }
 
-    /* Hide all elements that are not part of the dialog's content area by default */
-    body > *:not(.print-dialog-container) {
+    /* Hide everything that isn't part of the print dialog's content */
+    body > *:not(.print-dialog-container), .main-content {
         display: none !important;
     }
     
-    /* Ensure the dialog container itself is not displayed, only its content */
+    /* When printing, the Radix dialog portal becomes the print container */
     .print-dialog-container {
         display: block !important;
         position: static !important;
     }
 
-    /* Style the content that should be printed */
-    .print-this-content {
+    /* Target the dialog content itself for printing */
+    .print-dialog {
         display: block !important;
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
-        padding: 1rem; /* Add some padding for print layout */
+        height: auto !important;
+        padding: 1rem;
+        box-shadow: none !important;
+        border: none !important;
     }
     
-    /* Hide specific parts of the dialog we don't want to print */
+    /* Hide the dialog's header and footer during print */
     .dialog-header, .dialog-footer {
         display: none !important;
-    }
-
-    /* Reset dialog content styles for printing */
-    .print-dialog > * {
-       box-shadow: none !important;
-       border: none !important;
     }
     
     /* Watermark for the printable content */
@@ -47,7 +42,7 @@
 
     .watermarked-content::before {
         content: '';
-        position: fixed; /* Use fixed to cover the whole viewport */
+        position: fixed;
         top: 0;
         left: 0;
         right: 0;
@@ -57,6 +52,8 @@
         background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100"><text x="50%" y="50%" font-size="14" fill="hsl(240, 10%, 3.9%)" fill-opacity="0.08" text-anchor="middle" dominant-baseline="middle" transform="rotate(-30, 70, 50)">A2G Smart Notes</text></svg>');
         background-repeat: repeat;
         pointer-events: none;
-        z-index: -1; /* Place it behind the content */
+        z-index: -1;
     }
 }
+
+    

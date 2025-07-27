@@ -346,35 +346,37 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="fixed inset-0 w-full h-full max-w-full p-0 flex flex-col print-dialog">
-            <DialogHeader className="p-4 border-b dialog-header">
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog">
+            <DialogHeader className="p-6 pb-0 dialog-header">
                 <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                 <DialogDescription>
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="flex-grow p-4 dialog-content watermarked-content">
-                <div className="space-y-4">
-                {chatHistory.map((msg, index) => (
-                    <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                        {msg.role === 'assistant' && (
-                            <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
-                            <Bot className="h-5 w-5" />
+            <div className="flex-grow overflow-hidden p-6 pt-0">
+                <ScrollArea className="h-full pr-6 dialog-content watermarked-content">
+                    <div className="space-y-4">
+                    {chatHistory.map((msg, index) => (
+                        <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                            {msg.role === 'assistant' && (
+                                <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
+                                <Bot className="h-5 w-5" />
+                                </div>
+                            )}
+                            <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
+                                {renderMessageContent(msg.content)}
                             </div>
-                        )}
-                        <div className={`p-4 rounded-lg flex-1 ${msg.role === 'user' ? 'bg-muted' : 'bg-background/80 border'}`}>
-                            {renderMessageContent(msg.content)}
+                            {msg.role === 'user' && (
+                                <div className="p-2 rounded-full bg-muted self-start shrink-0">
+                                    <User className="h-5 w-5" />
+                                </div>
+                            )}
                         </div>
-                        {msg.role === 'user' && (
-                            <div className="p-2 rounded-full bg-muted self-start shrink-0">
-                                <User className="h-5 w-5" />
-                            </div>
-                        )}
+                    ))}
                     </div>
-                ))}
-                </div>
-            </ScrollArea>
-             <DialogFooter className="p-4 border-t dialog-footer">
+                </ScrollArea>
+            </div>
+             <DialogFooter className="p-6 pt-0 dialog-footer">
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print
@@ -385,3 +387,5 @@ export default function AiNotesPage() {
     </>
   );
 }
+
+    
