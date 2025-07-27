@@ -50,7 +50,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
             await createVerificationRequest({
                 uid: user.uid,
                 email: user.email!,
-                displayName: user.displayName,
+                displayName: user.displayName || null, // Ensure null is passed if undefined
                 productName: title,
                 price: price,
             });
