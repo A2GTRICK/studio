@@ -60,6 +60,24 @@ const yearOptions: { [key: string]: string[] } = {
     "D.Pharm": ["1st Year", "2nd Year"],
 };
 
+const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            if (event.target && typeof event.target.result === 'string') {
+                resolve(event.target.result);
+            } else {
+                reject(new Error("Failed to read file."));
+            }
+        };
+        reader.onerror = (error) => {
+            reject(error);
+        };
+        reader.readAsText(file);
+    });
+};
+
+
 export default function AdminNotesPage() {
     const { notes, loading, addNote, deleteNote, updateNote } = useNotes();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,7 +169,7 @@ export default function AdminNotesPage() {
                     setIsSubmitting(false);
                     return;
                 }
-                noteContent = `File Uploaded: ${file.name}`; // In a real app, you'd upload this file.
+                noteContent = await readFileAsText(file);
             } else { // g-drive-link
                 setCurrentSubmissionMessage(submissionMessages[0]);
                 const driveLink = formData.get('driveLink') as string;
@@ -333,10 +351,10 @@ export default function AdminNotesPage() {
                             </TabsContent>
                             <TabsContent value="upload-file">
                                  <CardContent className="space-y-2 pt-4">
-                                    <Label htmlFor="fileUpload">Upload PDF/DOCX</Label>
+                                    <Label htmlFor="fileUpload">Upload .txt or .md file</Label>
                                      <div className="relative">
                                         <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input id="fileUpload" name="fileUpload" type="file" accept=".pdf,.doc,.docx" className="pl-10" disabled={isSubmitting}/>
+                                        <Input id="fileUpload" name="fileUpload" type="file" accept=".txt,.md" className="pl-10" disabled={isSubmitting}/>
                                      </div>
                                 </CardContent>
                             </TabsContent>

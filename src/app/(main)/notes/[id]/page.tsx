@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback }from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Loader2, ArrowLeft, ExternalLink, FileText } from 'lucide-react';
+import { Loader2, ArrowLeft, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -77,17 +77,7 @@ export default function NoteDetailPage() {
                 </div>
              )
         }
-        if (note.content && note.content.startsWith('File Uploaded:')) {
-            return (
-                 <div className="text-center p-8 bg-muted/50 rounded-lg">
-                    <FileText className="h-12 w-12 mx-auto text-primary mb-4"/>
-                    <h3 className="text-xl font-semibold mb-2">Content from Uploaded File</h3>
-                    <p className="text-muted-foreground">This note's content originated from an uploaded file named:</p>
-                    <p className="font-mono text-sm bg-background p-2 rounded-md my-4 inline-block">{note.content.replace('File Uploaded: ', '')}</p>
-                    <p className="text-muted-foreground mt-2 text-xs">(Full file content viewing is not yet supported in the app.)</p>
-                </div>
-            )
-        }
+        
         const htmlContent = marked.parse(note.content || "");
         return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
     };
