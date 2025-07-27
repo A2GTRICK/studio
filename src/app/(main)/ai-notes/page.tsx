@@ -58,6 +58,12 @@ const premiumFeatures = [
     "Priority support and early access",
 ];
 
+type PaymentDetails = {
+    title: string;
+    price: string;
+    type: 'day-pass' | 'print';
+}
+
 export default function AiNotesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFollowupLoading, setIsFollowupLoading] = useState(false);
@@ -83,6 +89,8 @@ export default function AiNotesPage() {
 
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
+  const [showPrintPremiumDialog, setShowPrintPremiumDialog] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -416,9 +424,9 @@ export default function AiNotesPage() {
                 </ScrollArea>
             </div>
              <DialogFooter className="print-hide">
-                <Button variant="outline" onClick={() => handlePrint(printableContentRef)}>
+                <Button variant="outline" onClick={() => setShowPrintPremiumDialog(true)}>
                     <Printer className="mr-2 h-4 w-4" />
-                    Print
+                    Print / Save as PDF
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -452,6 +460,7 @@ export default function AiNotesPage() {
                 </Button>
                 <Button size="lg" variant="outline" onClick={() => {
                     setShowPremiumDialog(false);
+                    setPaymentDetails({ title: "AI Notes Day Pass", price: "INR 29", type: "day-pass" });
                     setShowPaymentDialog(true);
                 }}>
                     <ShoppingCart className="mr-2 h-4 w-4" />
@@ -461,17 +470,61 @@ export default function AiNotesPage() {
         </DialogContent>
     </Dialog>
     
+    <Dialog open={showPrintPremiumDialog} onOpenChange={setShowPrintPremiumDialog}>
+        <DialogContent className="max-w-md">
+            <DialogHeader>
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+                    <Printer className="h-6 w-6 text-primary" />
+                </div>
+                <DialogTitle className="text-center font-headline text-2xl">Unlock Printing</DialogTitle>
+                <DialogDescription className="text-center text-base">
+                   This is a premium feature. Choose how you want to unlock it.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <p className="font-semibold mb-3">Premium benefits include:</p>
+                 <ul className="space-y-3">
+                    <li className="flex items-center gap-3">
+                        <Check className="h-5 w-5 text-green-500" />
+                        <span className="text-muted-foreground">Unlimited Printing and PDF Downloads</span>
+                    </li>
+                    {premiumFeatures.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-3">
+                            <Check className="h-5 w-5 text-green-500" />
+                            <span className="text-muted-foreground">{feature}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+            <div className="flex flex-col gap-2">
+                <Button asChild size="lg">
+                    <Link href="/premium">Upgrade to Full Premium <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+                <Button size="lg" variant="outline" onClick={() => {
+                    setShowPrintPremiumDialog(false);
+                    setPaymentDetails({ title: "Single Note Print/PDF", price: "INR 2", type: "print" });
+                    setShowPaymentDialog(true);
+                }}>
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Buy One-Time Print for INR 2
+                </Button>
+            </div>
+        </DialogContent>
+    </Dialog>
+
     <PaymentDialog 
         isOpen={showPaymentDialog} 
         setIsOpen={setShowPaymentDialog}
-        title="AI Notes Day Pass"
-        price="INR 29"
+        title={paymentDetails?.title || "Purchase"}
+        price={paymentDetails?.price || ""}
         onPaymentSuccess={() => {
-            resetGenerations(dailyGenerationLimit + 10); // Give 10 more generations for the day
+            if (paymentDetails?.type === 'day-pass') {
+                resetGenerations(dailyGenerationLimit + 10); // Give 10 more generations for the day
+            } else if (paymentDetails?.type === 'print') {
+                handlePrint(printableContentRef); // Trigger print after "payment"
+            }
         }}
     />
     </>
   );
 }
-
-    
