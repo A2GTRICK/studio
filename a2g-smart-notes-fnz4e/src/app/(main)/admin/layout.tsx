@@ -4,7 +4,7 @@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePathname, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Shield, Users, NotebookPen, GraduationCap, Gem, Megaphone, CheckBadge } from 'lucide-react';
+import { Shield, Users, NotebookPen, GraduationCap, Gem, Megaphone, BadgeCheck } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -48,7 +48,7 @@ export default function AdminLayout({
             Users
           </TabsTrigger>
            <TabsTrigger value="verifications">
-            <CheckBadge className="mr-2 h-4 w-4" />
+            <BadgeCheck className="mr-2 h-4 w-4" />
             Verifications
           </TabsTrigger>
           <TabsTrigger value="services">
