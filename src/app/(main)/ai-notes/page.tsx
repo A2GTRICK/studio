@@ -170,7 +170,7 @@ export default function AiNotesPage() {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start main-content">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start no-print">
         <div className="lg:col-span-1 lg:sticky top-20">
           <Card>
             <CardHeader>
@@ -275,7 +275,7 @@ export default function AiNotesPage() {
               )}
             </CardHeader>
             <CardContent className="flex-grow">
-              <div className="h-[70vh] lg:h-[calc(100vh-320px)] w-full rounded-lg">
+              <div className="h-[70vh] lg:h-[calc(100vh-320px)] w-full watermarked-content rounded-lg">
                 <ScrollArea className="h-full w-full pr-4" viewportRef={scrollAreaRef}>
                   {isLoading && (
                     <div className="flex flex-col items-center justify-center h-full">
@@ -354,16 +354,16 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog">
-            <DialogHeader className="p-6 pb-0 dialog-header">
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col no-print">
+            <DialogHeader>
                 <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                 <DialogDescription>
                     Topic: {lastTopic?.topic}
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-hidden p-6 pt-0">
-                <ScrollArea className="h-full pr-6 dialog-content watermarked-content">
-                    <div className="space-y-4">
+            <div className="flex-grow overflow-hidden">
+                <ScrollArea className="h-full pr-6">
+                    <div className="printable-content watermarked-content space-y-4">
                     {chatHistory.map((msg, index) => (
                         <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                             {msg.role === 'assistant' && (
@@ -384,7 +384,7 @@ export default function AiNotesPage() {
                     </div>
                 </ScrollArea>
             </div>
-             <DialogFooter className="p-6 pt-0 dialog-footer">
+             <DialogFooter>
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print
@@ -395,5 +395,3 @@ export default function AiNotesPage() {
     </>
   );
 }
-
-    

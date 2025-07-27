@@ -5,33 +5,14 @@
         color: #000000 !important;
     }
 
-    /* Hide everything that isn't part of the print dialog's content */
-    body > *:not(.print-dialog-container), .main-content, .print-hide {
+    /* Hide elements that should not be printed */
+    .no-print {
         display: none !important;
     }
     
-    /* When printing, the Radix dialog portal becomes the print container */
-    .print-dialog-container {
+    /* Show only the content marked for printing */
+    .printable-content {
         display: block !important;
-        position: static !important;
-    }
-
-    /* Target the dialog content itself for printing */
-    .print-dialog {
-        display: block !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: auto !important;
-        padding: 1rem;
-        box-shadow: none !important;
-        border: none !important;
-    }
-    
-    /* Hide the dialog's header and footer during print */
-    .dialog-header, .dialog-footer {
-        display: none !important;
     }
     
     /* Watermark for the printable content */
@@ -55,5 +36,3 @@
         z-index: -1;
     }
 }
-
-    
