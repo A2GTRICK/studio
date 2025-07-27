@@ -63,7 +63,9 @@ export default function NoteDetailPage() {
     }
 
     const renderContent = () => {
-        if (note.content && (note.content.startsWith('http://') || note.content.startsWith('https://'))) {
+        const isExternalLink = note.content && (note.content.startsWith('http://') || note.content.startsWith('https://'));
+        
+        if (isExternalLink) {
              return (
                 <div className="text-center p-8 bg-muted/50 rounded-lg">
                     <Download className="h-12 w-12 mx-auto text-primary mb-4"/>
