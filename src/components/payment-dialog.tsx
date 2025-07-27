@@ -49,16 +49,14 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
         try {
             await createVerificationRequest({
                 uid: user.uid,
-                email: user.email!,
-                displayName: user.displayName || null, // Ensure null is passed if undefined
                 productName: title,
                 price: price,
             });
 
             setIsOpen(false);
             toast({ 
-                title: "Payment Submitted for Verification", 
-                description: "We have received your request. Your purchase will be activated shortly after our team confirms your payment." 
+                title: "Request Submitted for Verification!", 
+                description: "Your request has been sent to the admin. Your features will be activated shortly after payment confirmation." 
             });
         } catch (error: any) {
             toast({

@@ -38,7 +38,7 @@ export default function AdminLayout({
       </Card>
       
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-7">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-6">
           <TabsTrigger value="notes">
             <NotebookPen className="mr-2 h-4 w-4" />
             Notes
@@ -46,10 +46,6 @@ export default function AdminLayout({
           <TabsTrigger value="users">
             <Users className="mr-2 h-4 w-4" />
             Users
-          </TabsTrigger>
-           <TabsTrigger value="verifications">
-            <BadgeCheck className="mr-2 h-4 w-4" />
-            Verifications
           </TabsTrigger>
           <TabsTrigger value="services">
             <GraduationCap className="mr-2 h-4 w-4" />
@@ -64,7 +60,6 @@ export default function AdminLayout({
             Marketing
           </TabsTrigger>
         </TabsList>
-        {/* The content for each tab is rendered by the page.tsx files */}
       </Tabs>
 
       <div>{children}</div>
