@@ -246,19 +246,16 @@ export default function DashboardClient() {
         const userProgress = await getSubjectsProgress(user.uid);
         
         if (userProgress.length === 0) {
-             setInsights(null);
-             setIsLoading(false);
-             setIsRefreshing(false);
-             return;
+             setInsights(null); // Explicitly set insights to null for new users
+        } else {
+            const result = await generateDashboardInsights({
+                studentName: user.displayName?.split(' ')[0] || 'Student',
+                course: 'B.Pharm', 
+                year: '2nd Year', 
+                subjectsProgress: userProgress,
+            });
+            setInsights(result);
         }
-
-        const result = await generateDashboardInsights({
-            studentName: user.displayName?.split(' ')[0] || 'Student',
-            course: 'B.Pharm', 
-            year: '2nd Year', 
-            subjectsProgress: userProgress,
-        });
-        setInsights(result);
     } catch (e: any) {
         console.error("Error generating dashboard insights:", e);
         const errorMessage = e.message.includes('503') 
