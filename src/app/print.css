@@ -5,18 +5,20 @@
         color: #000000 !important;
     }
 
-    /* Hide everything that isn't part of the print dialog's content */
-    body > *:not(.print-dialog-container), .main-content {
+    /* Hide everything by default */
+    body > *:not(.print-dialog-container),
+    .main-content,
+    .print-hide {
         display: none !important;
     }
     
-    /* When printing, the Radix dialog portal becomes the print container */
+    /* Make sure the dialog's portal container is visible */
     .print-dialog-container {
         display: block !important;
         position: static !important;
     }
-
-    /* Target the dialog content itself for printing */
+    
+    /* Style the dialog content itself for printing */
     .print-dialog {
         display: block !important;
         position: absolute;
@@ -32,6 +34,13 @@
     /* Hide the dialog's header and footer during print */
     .dialog-header, .dialog-footer {
         display: none !important;
+    }
+
+    /* Ensure the scroll area and its content are fully visible */
+    .dialog-content, 
+    .dialog-content > div[data-radix-scroll-area-viewport] {
+       height: auto !important;
+       overflow: visible !important;
     }
     
     /* Watermark for the printable content */

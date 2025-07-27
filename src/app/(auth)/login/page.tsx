@@ -80,7 +80,6 @@ export default function LoginPage() {
         }
     }
     
-    // Function to create a user document in Firestore
     const createUserDocument = async (userCredential: UserCredential) => {
         const user = userCredential.user;
         if (!user) return;
@@ -93,7 +92,7 @@ export default function LoginPage() {
             photoURL: user.photoURL,
             createdAt: serverTimestamp(),
             lastLogin: serverTimestamp(),
-        }, { merge: true }); // Use merge to avoid overwriting existing data if any
+        }, { merge: true }); 
     };
 
     const handleAuth = async (data: any) => {
@@ -106,11 +105,9 @@ export default function LoginPage() {
                 const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                 await updateProfile(userCredential.user, { displayName: data.name });
                 
-                // **Create user document in Firestore**
                 await createUserDocument(userCredential);
 
                 await sendEmailVerification(userCredential.user);
-                await signOut(auth); // IMPORTANT: Sign out the user immediately after creation.
                 
                 setSuccessMessage("Account created! Please check your email inbox (and spam folder) for a verification link to activate your account. You can close this tab after verifying.");
                 setView('login');
@@ -125,7 +122,7 @@ export default function LoginPage() {
                 
                 if (!userCredential.user.emailVerified) {
                     setError("Your email address is not verified. Please check your inbox for the verification link.");
-                    // Provide a way to resend verification
+                    
                     const resendEmail = async () => {
                        try {
                            await sendEmailVerification(userCredential.user);
@@ -139,7 +136,7 @@ export default function LoginPage() {
                          Your email is not verified. Please check your inbox. <Button variant="link" className="p-0 h-auto" onClick={resendEmail}>Resend link</Button>
                         </> as any
                     );
-                    await signOut(auth); // Sign out the unverified user.
+                    await signOut(auth);
                     setIsSubmitting(false);
                     return;
                 }
@@ -160,7 +157,6 @@ export default function LoginPage() {
         try {
             const userCredential = await signInWithPopup(auth, provider);
             
-            // **Create user document in Firestore on Google Sign-In**
             await createUserDocument(userCredential);
 
             toast({ title: "Logged In Successfully!", description: "Welcome!" });
