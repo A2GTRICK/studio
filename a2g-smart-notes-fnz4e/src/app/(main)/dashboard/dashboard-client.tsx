@@ -209,18 +209,17 @@ const SummaryStats = ({ insights }: { insights: GenerateDashboardInsightsOutput 
 
 
 export default function DashboardClient() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [insights, setInsights] = useState<GenerateDashboardInsightsOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
-  const [canRefresh, setCanRefresh] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isLoading || isRefreshing) {
+    if (isLoading) {
       interval = setInterval(() => {
         setCurrentLoadingMessage(prev => {
             const nextIndex = (loadingMessages.indexOf(prev) + 1) % loadingMessages.length;
@@ -229,36 +228,28 @@ export default function DashboardClient() {
       }, 2500);
     }
     return () => clearInterval(interval);
-  }, [isLoading, isRefreshing]);
+  }, [isLoading]);
 
-  const fetchInsights = useCallback(async (isRefresh = false) => {
+  const fetchInsights = useCallback(async () => {
     if (!user) return;
-    if (isRefresh) {
-        setIsRefreshing(true);
-    } else {
-        setIsLoading(true);
-    }
+    setIsLoading(true);
     setError(null);
-    setCanRefresh(false);
-
+    setHasFetched(true);
 
     try {
         const userProgress = await getSubjectsProgress(user.uid);
         
         if (userProgress.length === 0) {
-             setInsights(null);
-             if (!isRefresh) setIsLoading(false);
-             if (isRefresh) setIsRefreshing(false);
-             return;
+             setInsights(null); 
+        } else {
+            const result = await generateDashboardInsights({
+                studentName: user.displayName?.split(' ')[0] || 'Student',
+                course: 'B.Pharm', 
+                year: '2nd Year', 
+                subjectsProgress: userProgress,
+            });
+            setInsights(result);
         }
-
-        const result = await generateDashboardInsights({
-            studentName: user.displayName?.split(' ')[0] || 'Student',
-            course: 'B.Pharm', 
-            year: '2nd Year', 
-            subjectsProgress: userProgress,
-        });
-        setInsights(result);
     } catch (e: any) {
         console.error("Error generating dashboard insights:", e);
         const errorMessage = e.message.includes('503') 
@@ -267,18 +258,8 @@ export default function DashboardClient() {
         setError(errorMessage);
     } finally {
         setIsLoading(false);
-        setIsRefreshing(false);
-        setTimeout(() => setCanRefresh(true), 3000);
     }
   }, [user]);
-
-  useEffect(() => {
-    if (user) {
-      fetchInsights();
-    } else {
-      setIsLoading(false);
-    }
-  }, [user, fetchInsights]);
   
   const chartConfig = {
       yourScore: { label: 'Your Score', color: 'hsl(var(--primary))' },
@@ -290,17 +271,7 @@ export default function DashboardClient() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 className="text-3xl font-headline font-bold text-foreground">Welcome back, {user?.displayName?.split(' ')[0] || 'Student'}!</h1>
-            <p className="mt-1 text-muted-foreground">{isLoading ? 'AI is analyzing your progress... 🧠' : 'Here is your smart dashboard for today.'}</p>
-        </div>
-        <div>
-          <Button onClick={() => fetchInsights(true)} variant="outline" size="sm" disabled={isRefreshing || isLoading || !canRefresh}>
-            {isRefreshing || isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-             {isRefreshing || isLoading ? 'Refreshing...' : 'Refresh Insights'}
-          </Button>
+            <p className="mt-1 text-muted-foreground">{authLoading ? 'Loading your profile...' : 'Here are your quick actions for today.'}</p>
         </div>
       </div>
       
@@ -311,43 +282,67 @@ export default function DashboardClient() {
       )}
 
       <QuickActionsPanel />
+      
+      {!hasFetched && (
+        <Card className="mt-6">
+            <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2"><BrainCircuit className="text-primary"/> Your Smart Dashboard</CardTitle>
+                <CardDescription>Get personalized insights and suggestions based on your study progress.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted-foreground mb-4">Click the button below to generate your AI-powered progress report.</p>
+                <Button onClick={fetchInsights} disabled={isLoading || authLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BarChart3 className="mr-2 h-4 w-4"/>}
+                    {isLoading ? 'Generating...' : 'View My Insights'}
+                </Button>
+            </CardContent>
+        </Card>
+      )}
 
       {isLoading && <DashboardSkeleton message={currentLoadingMessage} />}
       
-      {!isLoading && error && !insights && (
+      {hasFetched && !isLoading && error && (
          <Card className="border-destructive bg-destructive/10">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle /> Error Loading Dashboard</CardTitle>
                 <CardDescription className="text-destructive/80">{error}</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button variant="destructive" onClick={() => fetchInsights(true)} disabled={isRefreshing || !canRefresh}>
-                    {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                <Button variant="destructive" onClick={fetchInsights} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                     Try Again
                 </Button>
             </CardContent>
         </Card>
       )}
 
-      {!isLoading && !insights && !error && (
+      {hasFetched && !isLoading && !insights && !error && (
         <Card>
-            <CardContent className="p-10 text-center">
-                <h3 className="text-xl font-semibold">Your Smart Dashboard is Getting Ready!</h3>
-                <p className="text-muted-foreground mt-2">Your personalized insights will appear here once you complete a few MCQs or notes are added to the library.</p>
-                <Button asChild className="mt-4"><Link href="/mcq-practice">Start a Quiz</Link></Button>
+            <CardHeader>
+                <CardTitle className="font-headline">Your Smart Dashboard is Ready!</CardTitle>
+                <CardDescription>Your personalized insights will appear here once we have some progress data to analyze.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted-foreground mb-4">Start by completing a few MCQs or exploring the notes library.</p>
+                <Button asChild><Link href="/mcq-practice">Start a Quiz</Link></Button>
             </CardContent>
         </Card>
       )}
 
-      {!isLoading && insights && (
+      {hasFetched && !isLoading && insights && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
             <div className="lg:col-span-1 flex flex-col gap-6">
                 <SummaryStats insights={insights} />
                  <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">AI-Powered Suggestions</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                       <div>
+                         <CardTitle className="font-headline">AI-Powered Suggestions</CardTitle>
                          <CardDescription>Personalized tips to guide your study.</CardDescription>
+                       </div>
+                        <Button onClick={fetchInsights} variant="ghost" size="icon" disabled={isLoading}>
+                          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                       </Button>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {insights.aiSuggestions.map((tip, index) => (
