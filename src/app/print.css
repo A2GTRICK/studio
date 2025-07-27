@@ -4,29 +4,11 @@
         background-color: #ffffff !important;
         color: #000000 !important;
     }
-
-    /* Hide everything by default */
-    body > * {
+    
+    .print-hide {
         display: none !important;
     }
 
-    /* Show only the printable content and its parents */
-    .printable-content, .printable-content * {
-        display: block !important;
-        visibility: visible !important;
-    }
-
-    /* Ensure the direct parent of printable-content is visible */
-    body .printable-container {
-        display: block !important;
-        visibility: visible !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-    
-    /* Watermark for the printable content */
     .watermarked-content {
         position: relative;
         z-index: 1;
@@ -47,5 +29,3 @@
         z-index: -1;
     }
 }
-
-    

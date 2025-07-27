@@ -20,8 +20,7 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNotes, type Note } from '@/context/notes-context';
 import Image from 'next/image';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { handlePrint } from '@/lib/print-helper';
 
 
 const notesFormSchema = z.object({
@@ -55,7 +54,6 @@ type FollowupFormValues = z.infer<typeof followupFormSchema>;
 export default function AiNotesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFollowupLoading, setIsFollowupLoading] = useState(false);
-  const [isSavingPdf, setIsSavingPdf] = useState(false);
   const [generatedNotes, setGeneratedNotes] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [lastTopic, setLastTopic] = useState<NotesFormValues | null>(null);
@@ -64,6 +62,7 @@ export default function AiNotesPage() {
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   const [isExpandViewOpen, setIsExpandViewOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const printableContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -166,60 +165,10 @@ export default function AiNotesPage() {
     const htmlContent = marked.parse(content);
     return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
-  
-  const handleSaveAsPdf = async () => {
-    const input = document.getElementById('printable-notes');
-    if (!input) {
-        console.error("Printable element not found!");
-        return;
-    }
-
-    setIsSavingPdf(true);
-
-    try {
-        const canvas = await html2canvas(input, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true, 
-            backgroundColor: null // Use transparent background
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = imgWidth / imgHeight;
-        
-        const widthInPdf = pdfWidth - 20; // with some margin
-        const heightInPdf = widthInPdf / ratio;
-
-        let position = 0;
-        let remainingHeight = heightInPdf;
-
-        while (remainingHeight > 0) {
-            pdf.addImage(imgData, 'PNG', 10, position - heightInPdf + (remainingHeight > pdfHeight - 20 ? pdfHeight - 20 : remainingHeight), widthInPdf, heightInPdf);
-            remainingHeight -= (pdfHeight - 20);
-            if (remainingHeight > 0) {
-                pdf.addPage();
-            }
-            position -= pdfHeight - 20;
-        }
-
-        pdf.save(`${lastTopic?.topic || 'a2g-smart-notes'}.pdf`);
-
-    } catch (error) {
-        console.error("Error saving PDF:", error);
-    } finally {
-        setIsSavingPdf(false);
-    }
-  };
-
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start no-print">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-1 lg:sticky top-20">
           <Card>
             <CardHeader>
@@ -413,8 +362,8 @@ export default function AiNotesPage() {
       </div>
 
       <Dialog open={isExpandViewOpen} onOpenChange={setIsExpandViewOpen}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col no-print">
-            <DialogHeader>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+            <DialogHeader className="print-hide">
                 <DialogTitle className="font-headline text-2xl">Expanded View</DialogTitle>
                 <DialogDescription>
                     Topic: {lastTopic?.topic}
@@ -422,11 +371,11 @@ export default function AiNotesPage() {
             </DialogHeader>
             <div className="flex-grow overflow-hidden">
                 <ScrollArea className="h-full pr-6">
-                    <div id="printable-notes" className="printable-content watermarked-content space-y-4 bg-background text-foreground p-4">
+                    <div ref={printableContentRef} className="watermarked-content space-y-4 bg-background text-foreground p-4">
                     {chatHistory.map((msg, index) => (
-                        <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                        <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end print-hide' : ''}`}>
                             {msg.role === 'assistant' && (
-                                <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0">
+                                <div className="p-2 rounded-full bg-primary text-primary-foreground self-start shrink-0 print-hide">
                                 <Bot className="h-5 w-5" />
                                 </div>
                             )}
@@ -434,7 +383,7 @@ export default function AiNotesPage() {
                                 {renderMessageContent(msg.content)}
                             </div>
                             {msg.role === 'user' && (
-                                <div className="p-2 rounded-full bg-muted self-start shrink-0">
+                                <div className="p-2 rounded-full bg-muted self-start shrink-0 print-hide">
                                     <User className="h-5 w-5" />
                                 </div>
                             )}
@@ -443,10 +392,10 @@ export default function AiNotesPage() {
                     </div>
                 </ScrollArea>
             </div>
-             <DialogFooter>
-                <Button variant="outline" onClick={handleSaveAsPdf} disabled={isSavingPdf}>
-                    {isSavingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                    {isSavingPdf ? 'Saving...' : 'Save as PDF'}
+             <DialogFooter className="print-hide">
+                <Button variant="outline" onClick={() => handlePrint(printableContentRef)}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -454,5 +403,3 @@ export default function AiNotesPage() {
     </>
   );
 }
-
-    
