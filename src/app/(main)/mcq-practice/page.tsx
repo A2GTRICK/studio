@@ -432,15 +432,6 @@ export default function McqPracticePage() {
     setShowPaymentDialog(true);
   };
   
-  const handlePaymentSuccess = (questionsToAdd: number) => {
-      const newLimit = dailyLimit + questionsToAdd;
-      updateDailyUsage(0, newLimit); // Update limit without adding to count
-      toast({
-          title: "Purchase Verified!",
-          description: `Your question limit has been increased by ${questionsToAdd}. You now have ${newLimit - dailyQuestionCount} questions left today.`
-      });
-  }
-
   const renderContent = (content: string | null) => {
     if (!content) return null;
     const htmlContent = marked.parse(content);
@@ -763,14 +754,12 @@ export default function McqPracticePage() {
         setIsOpen={setShowPaymentDialog}
         title={paymentDetails?.title || ''}
         price={paymentDetails?.price || ''}
-        onPaymentSuccess={() => {
-            // This is now just for show. Verification should be manual.
-        }}
     />
     </>
   );
 
     
+
 
 
 

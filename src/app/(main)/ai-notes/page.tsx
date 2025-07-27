@@ -517,13 +517,6 @@ export default function AiNotesPage() {
         setIsOpen={setShowPaymentDialog}
         title={paymentDetails?.title || "Purchase"}
         price={paymentDetails?.price || ""}
-        onPaymentSuccess={() => {
-            if (paymentDetails?.type === 'day-pass') {
-                resetGenerations(dailyGenerationLimit + 10); // Give 10 more generations for the day
-            } else if (paymentDetails?.type === 'print') {
-                handlePrint(printableContentRef); // Trigger print after "payment"
-            }
-        }}
     />
     </>
   );

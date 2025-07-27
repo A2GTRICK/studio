@@ -18,6 +18,8 @@ interface PaymentDialogProps {
     setIsOpen: (isOpen: boolean) => void;
     title: string;
     price: string;
+    // The onPaymentSuccess callback is for future use, potentially after server-side verification.
+    // It is NOT called directly on the client anymore to prevent unauthorized access.
     onPaymentSuccess?: () => void;
 }
 
@@ -35,12 +37,11 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
     const handlePaymentConfirmation = () => {
         setIsOpen(false);
         toast({ 
-            title: "Payment Submitted!", 
-            description: "We will verify your payment and activate your purchase shortly." 
+            title: "Payment Submitted for Verification", 
+            description: "We have received your request. Your purchase will be activated shortly after we confirm your payment." 
         });
-        if (onPaymentSuccess) {
-            onPaymentSuccess();
-        }
+        // The onPaymentSuccess callback is INTENTIONALLY NOT CALLED here.
+        // The admin must manually verify the payment before granting access.
     }
 
     return (
@@ -79,5 +80,3 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price, onPaymentSucces
         </Dialog>
     );
 }
-
-    
