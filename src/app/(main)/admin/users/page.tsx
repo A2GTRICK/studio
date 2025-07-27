@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, onSnapshot, updateDoc, doc } from 'firebase/firestore';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { collection, query, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, User, Shield, MoreHorizontal, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { User as FirebaseUser } from 'firebase/auth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 // --- Hardcoded Admin User ID ---
@@ -105,7 +105,13 @@ export default function AdminUsersPage() {
                             <TableBody>
                                 {users.map(user => (
                                     <TableRow key={user.uid}>
-                                        <TableCell className="font-medium">{user.displayName || 'N/A'}</TableCell>
+                                        <TableCell className="font-medium flex items-center gap-3">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+                                                <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                                            </Avatar>
+                                            {user.displayName || 'N/A'}
+                                        </TableCell>
                                         <TableCell>{user.email}</TableCell>
                                         <TableCell>
                                             {user.uid === ADMIN_UID ? (

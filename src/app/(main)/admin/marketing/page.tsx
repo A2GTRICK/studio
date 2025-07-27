@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, Timestamp, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp, addDoc, serverTimestamp, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Trash2, PlusCircle, MoreHorizontal } from 'lucide-react';
@@ -27,35 +27,31 @@ export default function AdminMarketingPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
 
-    const fetchSubscribers = useCallback(async () => {
-        setLoading(true);
-        try {
-            const subscribersCollection = collection(db, 'newsletter_subscriptions');
-            const q = query(subscribersCollection, orderBy('subscribedAt', 'desc'));
-            const subscribersSnapshot = await getDocs(q);
-            
-            const subscribersList = subscribersSnapshot.docs.map(doc => {
+    useEffect(() => {
+        const subscribersCollection = collection(db, 'newsletter_subscriptions');
+        const q = query(subscribersCollection, orderBy('subscribedAt', 'desc'));
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const subscribersList = snapshot.docs.map(doc => {
                 const data = doc.data();
                 const timestamp = data.subscribedAt as Timestamp;
                 return { 
                     id: doc.id, 
                     email: data.email,
-                    subscribedAt: timestamp.toDate() // Convert Firestore Timestamp to JS Date
-                } as Subscriber
+                    subscribedAt: timestamp ? timestamp.toDate() : new Date()
+                } as Subscriber;
             });
             setSubscribers(subscribersList);
-
-        } catch (error) {
+            setLoading(false);
+        }, (error) => {
             console.error("Error fetching subscribers:", error);
             toast({ title: "Error", description: "Could not fetch subscribers.", variant: "destructive" });
-        } finally {
             setLoading(false);
-        }
+        });
+
+        return () => unsubscribe();
     }, [toast]);
 
-    useEffect(() => {
-        fetchSubscribers();
-    }, [fetchSubscribers]);
 
     const handleAddSubscriber = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -77,7 +73,6 @@ export default function AdminMarketingPage() {
             });
             toast({ title: "Success!", description: `${email} has been added to the newsletter list.`});
             form.reset();
-            fetchSubscribers(); // Refresh the list
         } catch (error) {
             console.error("Error adding subscriber:", error);
             toast({ title: "Error", description: "Could not add subscriber.", variant: "destructive" });
@@ -90,7 +85,6 @@ export default function AdminMarketingPage() {
         try {
             await deleteDoc(doc(db, 'newsletter_subscriptions', subscriberId));
             toast({ title: "Subscriber Deleted", description: "The email has been removed from the list.", variant: "destructive" });
-            fetchSubscribers(); // Refresh the list
         } catch (error) {
             console.error("Error deleting subscriber:", error);
             toast({ title: "Error", description: "Could not delete subscriber.", variant: "destructive" });
@@ -127,7 +121,9 @@ export default function AdminMarketingPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="font-headline">Newsletter Subscribers</CardTitle>
-                        <CardDescription>View and manage all users who subscribed to your newsletter.</CardDescription>
+                        <CardDescription>
+                          A total of {subscribers.length} {subscribers.length === 1 ? 'user has' : 'users have'} subscribed.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {loading ? (
@@ -148,7 +144,7 @@ export default function AdminMarketingPage() {
                                     {subscribers.map(subscriber => (
                                         <TableRow key={subscriber.id}>
                                             <TableCell className="font-medium">{subscriber.email}</TableCell>
-                                            <TableCell>{format(subscriber.subscribedAt, "PPP p")}</TableCell>
+                                            <TableCell>{subscriber.subscribedAt ? format(subscriber.subscribedAt, "PPP p") : 'Just now'}</TableCell>
                                             <TableCell className="text-right">
                                                 <AlertDialog>
                                                     <DropdownMenu>
