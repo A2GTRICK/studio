@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
-    // Fixes npm packages that depend on `fs` module
+    // Fixes npm packages that depend on `fs` module and other Node.js built-ins
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
