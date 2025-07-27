@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen, Youtube, Send, Globe, MessageSquare, Loader2, FileText, BookCopy, User } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { subscribeToNewsletter } from '@/services/newsletter-service';
 import { useToast } from '@/hooks/use-toast';
@@ -190,31 +190,43 @@ export default function LandingPage() {
             </div>
         </section>
 
-        <section className="bg-card py-20 lg:py-24">
+        <section className="bg-muted/30 py-20 lg:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-3xl font-headline font-bold text-center mb-12">Our Core Pillars</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center p-6 bg-background rounded-lg shadow-md transition-transform hover:scale-105">
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mx-auto mb-4">
-                  <BookOpen className="h-8 w-8" />
-                </div>
-                <h3 className="text-xl font-headline font-semibold mb-2">The Library</h3>
-                <p className="text-muted-foreground">Comprehensive, curated notes for D.Pharm & B.Pharm. Structured for easy navigation and quick access.</p>
-              </div>
-              <div className="text-center p-6 bg-background rounded-lg shadow-md transition-transform hover:scale-105">
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mx-auto mb-4">
-                  <BrainCircuit className="h-8 w-8" />
-                </div>
-                <h3 className="text-xl font-headline font-semibold mb-2">The Tutor</h3>
-                <p className="text-muted-foreground">Intelligent AI tools to generate custom notes and predict exam questions, providing a personalized learning experience.</p>
-              </div>
-              <div className="text-center p-6 bg-background rounded-lg shadow-md transition-transform hover:scale-105">
-                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mx-auto mb-4">
-                  <GraduationCap className="h-8 w-8" />
-                </div>
-                <h3 className="text-xl font-headline font-semibold mb-2">The Mentor</h3>
-                <p className="text-muted-foreground">Expert academic and project support for dissertations, reports, and more, guiding you to success.</p>
-              </div>
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <BookOpen className="h-8 w-8" />
+                  </div>
+                  <CardTitle className="font-headline text-2xl mt-4">The Library</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">Comprehensive, curated notes for D.Pharm & B.Pharm. Structured for easy navigation and quick access.</CardDescription>
+                </CardContent>
+              </Card>
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <BrainCircuit className="h-8 w-8" />
+                  </div>
+                  <CardTitle className="font-headline text-2xl mt-4">The Tutor</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">Intelligent AI tools to generate custom notes and predict exam questions, providing a personalized learning experience.</CardDescription>
+                </CardContent>
+              </Card>
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <GraduationCap className="h-8 w-8" />
+                  </div>
+                  <CardTitle className="font-headline text-2xl mt-4">The Mentor</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-base">Expert academic and project support for dissertations, reports, and more, guiding you to success.</CardDescription>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>

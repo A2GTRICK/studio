@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer, FileText } from 'lucide-react';
+import { BrainCircuit, Loader2, Send, User, Bot, Lock, Sparkles, BookOpen, AlertCircle, Expand, Printer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { marked } from 'marked';
@@ -20,9 +20,6 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNotes, type Note } from '@/context/notes-context';
 import Image from 'next/image';
-import { saveAs } from 'file-saver';
-import htmlToDocx from 'html-to-docx';
-
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -182,46 +179,6 @@ export default function AiNotesPage() {
             printWindow.print();
             printWindow.close();
         }, 500);
-    }
-  };
-
-  const handleDownloadDoc = async () => {
-    const content = printableContentRef.current;
-    if (!content) return;
-
-    const safeTopic = lastTopic?.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'notes';
-
-    const htmlString = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${lastTopic?.topic || 'Notes'}</title>
-          <style>
-            body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; }
-            h1, h2, h3, h4 { font-family: 'Arial', sans-serif; }
-            h1 { font-size: 22pt; color: #2E3A87; }
-            h2 { font-size: 18pt; color: #4F5AA6; }
-            h3 { font-size: 14pt; color: #4F5AA6; }
-            strong { color: #9400D3; }
-            .prose { max-width: 100%; }
-          </style>
-        </head>
-        <body>
-          ${content.innerHTML}
-        </body>
-      </html>
-    `;
-    
-    try {
-        const fileBuffer = await htmlToDocx(htmlString, undefined, {
-            table: { row: { cantSplit: true } },
-            footer: true,
-            pageNumber: true,
-        });
-
-        saveAs(fileBuffer, `${safeTopic}.docx`);
-    } catch (error) {
-        console.error("Error generating DOCX file:", error);
     }
   };
 
@@ -444,10 +401,6 @@ export default function AiNotesPage() {
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print
-                </Button>
-                <Button onClick={handleDownloadDoc}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Download as Word
                 </Button>
             </DialogFooter>
         </DialogContent>

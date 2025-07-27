@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { User as FirebaseUser } from 'firebase/auth';
 import Image from "next/image";
 import { NotesProvider } from "@/context/notes-context";
+import { Badge } from "@/components/ui/badge";
 
 const A2GLogoIcon = () => (
     <Image src="/assets/a2g-logo.svg" alt="A2G Logo" width={24} height={24} />
@@ -119,8 +120,13 @@ function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: b
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2">
                 <div className="p-2">
-                    <p className="font-bold text-sm">{user.displayName}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-bold text-sm">{user.displayName}</p>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                      </div>
+                      {isAdmin ? <Badge variant="destructive">Admin</Badge> : <Badge variant="secondary">User</Badge>}
+                    </div>
                 </div>
                 <Separator />
                 <div className="p-1 space-y-1">
