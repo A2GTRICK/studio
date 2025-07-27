@@ -2,50 +2,34 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if a user is an admin.
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
 
-    // Helper function to check if the user is the owner of the document.
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    // Rules for the 'users' collection
-    match /users/{userId} {
-      // Any authenticated user can create their own user document.
-      allow create: if isOwner(userId);
-      // Only the owner or an admin can read the user document.
-      allow read: if isOwner(userId) || isAdmin();
-      // Only the owner or an admin can update the user document.
-      allow update: if isOwner(userId) || isAdmin();
-      // Deletion of user documents is not allowed from the client.
-      allow delete: if false;
-
-      // Rules for the 'progress' sub-collection within a user document
-      match /progress/{progressId} {
-        // Users can only read/write their own progress.
-        allow read, write: if isOwner(userId);
-      }
-    }
-
-    // Rules for the 'notes' collection
+    // Notes Collection:
+    // - Authenticated users can read all notes.
+    // - Only the admin can create, update, or delete notes.
     match /notes/{noteId} {
-      // Any authenticated user can read notes.
       allow read: if request.auth != null;
-      // Only an admin can create, update, or delete notes.
-      allow create, update, delete: if isAdmin();
+      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2'; // Hardcoded Admin UID
+    }
+
+    // Users Collection:
+    // - A user can create their own user document (on signup).
+    // - A user can update their own document (e.g., display name).
+    // - Only the admin can read the full list of users.
+    match /users/{userId} {
+      allow read: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+      allow create, update: if request.auth.uid == userId;
+    }
+
+    // User Progress Sub-collection:
+    // - A user can only read and write to their own progress data.
+    match /users/{userId}/progress/{progressId} {
+      allow read, write: if request.auth.uid == userId;
     }
     
-    // Rules for newsletter subscriptions
+    // Newsletter Subscriptions:
+    // - Anyone can subscribe to the newsletter (no authentication required).
     match /newsletter_subscriptions/{subscriptionId} {
-      // Anyone can subscribe to the newsletter.
-      allow create: if true;
-      // Only an admin can read or delete subscriptions.
-      allow read, delete: if isAdmin();
-      // Updates are not allowed.
-      allow update: if false;
+        allow create: if true;
     }
   }
 }
