@@ -3,37 +3,34 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Allow users to read and update their own user document.
-    // This is required for saving profile information and payment requests.
-    match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Allow anyone (even unauthenticated users) to read public notes.
+    // Notes can be read by any authenticated user.
+    // Only admins can create, update, or delete notes.
     match /notes/{noteId} {
-      allow read: if true;
+      allow read: if request.auth != null;
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
-    // Allow only authenticated admins to create, update or delete notes.
-    // This assumes an 'admin' custom claim is set on the user's token.
-    // As a fallback, I'm locking it down completely for write operations to non-admins.
-    match /notes/{noteId} {
-      allow write: if false; // Secure by default
-    }
+    // Users can only read and write to their own document.
+    // Admins can read any user document for management purposes.
+    match /users/{userId} {
+      allow read, update: if request.auth.uid == userId;
+      allow create: if request.auth.uid != null;
+      
+      // Allow admin to read user data
+      allow get: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
 
-    // Allow users to write to their own progress subcollection
-    match /users/{userId}/progress/{progressId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Users can write to their own progress subcollection
+      match /progress/{progressId} {
+        allow read, write: if request.auth.uid == userId;
+      }
     }
-
-    // Allow newsletter subscriptions from anyone
+    
+    // Anyone can subscribe to the newsletter.
+    // Only admins can read the list of subscribers.
     match /newsletter_subscriptions/{subscriptionId} {
         allow create: if true;
+        allow read, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    // Admins can read newsletter subscriptions
-    match /newsletter_subscriptions/{subscriptionId} {
-        allow read, delete: if false; // Locked down for now for security
-    }
   }
 }
