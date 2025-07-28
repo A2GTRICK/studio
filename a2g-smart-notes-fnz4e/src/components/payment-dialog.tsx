@@ -3,16 +3,15 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, Loader2 } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { AiImage } from '@/components/ai-image';
 import { useAuth } from "@/hooks/use-auth";
-import { createVerificationRequest } from "@/services/payment-verification-service";
-import { useState } from "react";
 
 // --- PAYMENT DETAILS: EDIT HERE ---
 const UPI_ID = "a2gtrickacademy@upi";
+const ADMIN_EMAIL = "a2gtrickacademy@gmail.com";
 // ------------------------------------
 
 interface PaymentDialogProps {
@@ -25,7 +24,6 @@ interface PaymentDialogProps {
 export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialogProps) {
     const { toast } = useToast();
     const { user } = useAuth();
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleCopyUpiId = () => {
         navigator.clipboard.writeText(UPI_ID);
@@ -35,7 +33,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
         });
     };
 
-    const handlePaymentConfirmation = async () => {
+    const handlePaymentConfirmation = () => {
         if (!user) {
             toast({
                 title: "Not Logged In",
@@ -45,35 +43,38 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
             return;
         }
 
-        setIsSubmitting(true);
-        try {
-            await createVerificationRequest({
-                uid: user.uid,
-                productName: title,
-                price: price,
-            });
+        const subject = `Payment Verification Request: ${title}`;
+        const body = `
+Hello,
 
-            setIsOpen(false);
-            toast({ 
-                title: "Payment Submitted for Verification", 
-                description: "We have received your request. Your purchase will be activated shortly after our team confirms your payment." 
-            });
-        } catch (error: any) {
-            console.error("Payment submission failed:", error);
-            toast({
-                title: "Submission Failed",
-                description: error.message || "Could not log your payment for verification. Please contact support.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
+I have completed the payment for the following item. Please verify and activate my purchase.
+
+---
+Item: ${title}
+Price: ${price}
+---
+My User ID: ${user.uid}
+My Email: ${user.email}
+---
+
+Thank you,
+${user.displayName || 'A2G Smart Notes User'}
+        `;
+
+        const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        
+        // Open the user's default email client
+        window.location.href = mailtoLink;
+
+        setIsOpen(false);
+        toast({ 
+            title: "Check Your Email App", 
+            description: "Your email app has been opened with a pre-filled message. Please send the email to complete your verification request." 
+        });
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => {
-            if (!isSubmitting) setIsOpen(open);
-        }}>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-2">
@@ -99,12 +100,14 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
                     </Card>
                 </div>
                 <div className="flex flex-col gap-2">
-                    <Button size="lg" onClick={handlePaymentConfirmation} disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isSubmitting ? 'Submitting...' : 'I Have Paid'}
+                    <Button size="lg" onClick={handlePaymentConfirmation}>
+                        I Have Paid
                     </Button>
-                    <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Cancel</Button>
+                    <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
                 </div>
+                 <DialogDescription className="text-center text-xs text-muted-foreground pt-2">
+                    Clicking "I Have Paid" will open your email client to send a verification email to our team.
+                </DialogDescription>
             </DialogContent>
         </Dialog>
     );
