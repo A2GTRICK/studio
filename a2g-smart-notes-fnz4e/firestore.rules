@@ -2,50 +2,60 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Default deny all reads/writes
+
+    // Helper function to check if the user is the admin
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    }
+    
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Secure by default: deny all reads/writes unless explicitly allowed
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Allow authenticated users to read their own user document
+    // Allow public read access ONLY to the lead magnet configuration document.
+    // This is required for the newsletter signup feature on the public landing page.
+    match /marketing_config/lead_magnet {
+      allow read: if true;
+      // ONLY the admin can ever change this link.
+      allow write: if isAdmin();
+    }
+
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      // Allow users to be created
-      allow create: if request.auth != null;
-      // Allow user to update their own payment request
-      allow update: if request.auth.uid == userId;
+      // Allow a user to create their own document upon signup
+      allow create: if request.auth.uid == userId;
+      // Users can read/update their own data. Admin can read/update any user's data.
+      allow read, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
     }
 
-    // Allow admin to read/write all user documents
-    match /users/{userId} {
-      allow read, write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    // Rules for user-specific sub-collections
+    match /users/{userId}/{subcollection}/{docId} {
+        // Users can read/write to their own sub-collections (e.g., progress, payments)
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+        // Admin can also read from these sub-collections for support.
+        allow read: if isAdmin();
     }
-
-    // Allow users to manage their own progress
-    match /users/{userId}/progress/{docId} {
-      allow read, write: if request.auth.uid == userId;
-    }
-
-    // Allow ONLY the admin to write to the lead magnet config
-    match /marketing_config/{docId} {
-      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
-      // Allow authenticated users to read the config
-      allow read: if request.auth != null;
-    }
-
-    // Allow authenticated users to read notes
+    
+    // Rules for the 'notes' collection
     match /notes/{noteId} {
-      allow read: if request.auth != null;
-      // Allow admin to write notes
-      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+      // Any authenticated user can read the notes list.
+      allow read: if isAuthenticated();
+      // Only the admin can create, update, or delete notes.
+      allow create, update, delete: if isAdmin();
     }
-
-    // Allow anyone to submit to the newsletter
-    match /newsletter_subscriptions/{docId} {
-      allow create: if true;
-      // Only admin can read/delete subscribers
-      allow read, delete: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    
+    // Rules for the 'newsletter_subscriptions' collection
+    match /newsletter_subscriptions/{subscriptionId} {
+        // Anyone can create a subscription (i.e., sign up for the newsletter)
+        allow create: if true;
+        // Only the admin can read or delete subscribers
+        allow read, delete: if isAdmin();
     }
   }
 }
