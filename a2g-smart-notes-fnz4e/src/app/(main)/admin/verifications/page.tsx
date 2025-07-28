@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, getDoc } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -81,6 +81,7 @@ export default function AdminVerificationsPage() {
         const q = query(verificationsCollection, orderBy('createdAt', 'desc'));
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
+            setLoading(true);
             const requestsListPromises = snapshot.docs.map(async (docSnapshot) => {
                 const data = docSnapshot.data();
                 const timestamp = data.createdAt as Timestamp;
@@ -165,8 +166,8 @@ export default function AdminVerificationsPage() {
                                         </TableCell>
                                         <TableCell>{request.productName}</TableCell>
                                         <TableCell className="font-semibold">{request.price}</TableCell>
-                                        <TableCell title={format(request.createdAt, "PPP p")}>
-                                            {formatDistanceToNow(request.createdAt, { addSuffix: true })}
+                                        <TableCell title={request.createdAt ? format(request.createdAt, "PPP p") : ''}>
+                                            {request.createdAt ? formatDistanceToNow(request.createdAt, { addSuffix: true }) : 'Just now'}
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant={getStatusVariant(request.status)} className="capitalize flex items-center gap-1 w-fit">

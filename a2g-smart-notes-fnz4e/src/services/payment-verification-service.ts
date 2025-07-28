@@ -9,7 +9,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 
 const CreateVerificationRequestInputSchema = z.object({
-  uid: z.string().min(1),
+  uid: z.string().min(1, "User ID is required"),
   productName: z.string(),
   price: z.string(),
 });
