@@ -1,9 +1,11 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import './print.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth';
-import { PT_Sans, Georgia } from 'next/font/google';
+import { PT_Sans } from 'next/font/google';
+import { Playfair_Display } from 'next/font/google';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -12,10 +14,10 @@ const ptSans = PT_Sans({
   display: 'swap',
 });
 
-const georgia = Georgia({
+const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
   weight: ['400', '700'],
-  variable: '--font-georgia',
+  variable: '--font-playfair-display',
   display: 'swap',
 });
 
@@ -34,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${ptSans.variable} ${georgia.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${ptSans.variable} ${playfairDisplay.variable}`}>
       <head>
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>

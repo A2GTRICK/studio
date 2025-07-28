@@ -6,13 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
-import { AiImage } from '@/components/ai-image';
 import { useAuth } from "@/hooks/use-auth";
-
-// --- PAYMENT DETAILS: EDIT HERE ---
-const UPI_ID = "a2gtrickacademy@upi";
-const ADMIN_EMAIL = "a2gtrickacademy@gmail.com";
-// ------------------------------------
+import { createVerificationRequest } from "@/services/payment-verification-service";
+import { paymentConfig } from "@/lib/payment-config";
 
 interface PaymentDialogProps {
     isOpen: boolean;
@@ -24,6 +20,11 @@ interface PaymentDialogProps {
 export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialogProps) {
     const { toast } = useToast();
     const { user } = useAuth();
+    
+    // Use the centrally managed, secure payment config
+    const UPI_ID = paymentConfig.upiId;
+    const ADMIN_EMAIL = paymentConfig.adminEmail;
+    const QR_CODE_PATH = paymentConfig.qrCodePath;
 
     const handleCopyUpiId = () => {
         navigator.clipboard.writeText(UPI_ID);
@@ -33,7 +34,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
         });
     };
 
-    const handlePaymentConfirmation = () => {
+    const handlePaymentConfirmation = async () => {
         if (!user) {
             toast({
                 title: "Not Logged In",
@@ -43,36 +44,53 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
             return;
         }
 
-        const subject = `Payment Verification Request: ${title}`;
-        const body = `
-Hello A2G Smart Notes Team,
+        try {
+            // Step 1: Attempt to log the verification request in the database first.
+            await createVerificationRequest({
+                uid: user.uid,
+                productName: title,
+                price: price,
+            });
 
-I have completed the payment for the following item. Please verify and activate my purchase.
+            // Step 2: If the database log is successful, then prepare and trigger the email.
+            const subject = `Payment Made: ${title}`;
+            const body = `
+    Hello A2G Smart Notes Team,
 
----
-Item: ${title}
-Price: ${price}
----
-My User ID: ${user.uid}
-My Email: ${user.email}
-My Name: ${user.displayName || 'N/A'}
----
+    I have just completed the payment for the item listed below. Please verify and activate my purchase.
 
-Thank you,
-${user.displayName || 'A2G Smart Notes User'}
-        `;
+    ---
+    Item: ${title}
+    Price: ${price}
+    ---
+    My User ID: ${user.uid}
+    My Email: ${user.email}
+    My Name: ${user.displayName || 'N/A'}
+    ---
 
-        const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        
-        // Open the user's default email client
-        window.location.href = mailtoLink;
+    Thank you,
+    ${user.displayName || 'A2G Smart Notes User'}
+            `;
+            const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-        setIsOpen(false);
-        toast({ 
-            title: "Check Your Email App", 
-            description: "Your email app has been opened with a pre-filled message. Please send the email to complete your verification request.",
-            duration: 8000,
-        });
+            // Step 3: Open the user's default email client.
+            window.location.href = mailtoLink;
+
+            setIsOpen(false);
+            toast({
+                title: "Request Sent & Email Ready",
+                description: "Your verification request was logged! Please send the pre-filled email from your email app to complete the process.",
+                duration: 8000,
+            });
+
+        } catch (error) {
+            console.error("Payment confirmation failed:", error);
+            toast({
+                title: "Request Failed",
+                description: "Could not log your payment request. Please try again or contact support.",
+                variant: "destructive",
+            });
+        }
     }
 
     return (
@@ -90,7 +108,7 @@ ${user.displayName || 'A2G Smart Notes User'}
                 <div className="py-4 space-y-4">
                     <p className="text-center text-muted-foreground text-sm">Scan the QR code below with any UPI app or copy the UPI ID.</p>
                     <div className="flex justify-center">
-                        <AiImage data-ai-hint="upi qr code payment" alt="UPI QR Code" width={250} height={250} />
+                        <Image src={QR_CODE_PATH} alt="UPI QR Code" width={250} height={250} />
                     </div>
                     <Card>
                         <CardContent className="p-3 flex items-center justify-between">
@@ -103,11 +121,11 @@ ${user.displayName || 'A2G Smart Notes User'}
                 </div>
                 <DialogFooter className="flex-col gap-2">
                     <Button size="lg" onClick={handlePaymentConfirmation}>
-                        I Have Paid
+                        I Have Paid, Verify My Purchase
                     </Button>
                     <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
                      <p className="text-center text-xs text-muted-foreground pt-2">
-                        Clicking "I Have Paid" will open your email client to send a verification email to our team. Your purchase will be activated after manual confirmation.
+                        Clicking "I Have Paid" will log your request and open your email client to send a confirmation. Your purchase is activated after manual approval.
                     </p>
                 </DialogFooter>
             </DialogContent>
