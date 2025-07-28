@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,6 +11,7 @@ import { subscribeToNewsletter } from '@/services/newsletter-service';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const socialLinks = [
     { name: 'Website', href: 'https://a2gtricks.wordpress.com', icon: Globe },
@@ -284,7 +284,9 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"The AI question generator is a lifesaver! It helped me focus on the most important topics for my exams."</p>
                             <div className="flex items-center gap-4 mt-4">
-                                <Image src="https://i.postimg.cc/8z0L3bY1/female-student-1.jpg" alt="User avatar for Priya S." width={40} height={40} className="rounded-full object-cover" />
+                                <Avatar>
+                                    <AvatarFallback>P</AvatarFallback>
+                                </Avatar>
                                 <div>
                                     <p className="font-semibold">Priya S.</p>
                                     <p className="text-sm text-muted-foreground">B.Pharm, 2nd Year</p>
@@ -296,7 +298,9 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"Finally, all my notes in one place. The library is incredibly well-organized. A must-have for any pharmacy student."</p>
                             <div className="flex items-center gap-4 mt-4">
-                                <Image src="https://i.postimg.cc/5fN1Y3W9/male-student-1.jpg" alt="User avatar for Rahul K." width={40} height={40} className="rounded-full object-cover" />
+                               <Avatar>
+                                    <AvatarFallback>R</AvatarFallback>
+                                </Avatar>
                                 <div>
                                     <p className="font-semibold">Rahul K.</p>
                                     <p className="text-sm text-muted-foreground">D.Pharm, 1st Year</p>
@@ -308,7 +312,9 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"The premium subscription is worth every rupee. The detailed notes and follow-up question feature gave me the confidence I needed."</p>
                              <div className="flex items-center gap-4 mt-4">
-                                <Image src="https://i.postimg.cc/J47fYC8p/female-student-2.jpg" alt="User avatar for Anjali M." width={40} height={40} className="rounded-full object-cover" />
+                                <Avatar>
+                                    <AvatarFallback>A</AvatarFallback>
+                                </Avatar>
                                 <div>
                                     <p className="font-semibold">Anjali M.</p>
                                     <p className="text-sm text-muted-foreground">B.Pharm, 3rd Year</p>
