@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -15,14 +14,22 @@ type UsageData = {
  *
  * @param featureKey A unique key for the feature being tracked (e.g., 'aiNotesGenerations').
  * @param defaultLimit The default daily limit for the feature.
+ * @param hasPremiumAccess A boolean to bypass the limit.
  * @returns An object with the current count, limit, and functions to interact with the usage data.
  */
-export function useUsageLimiter(featureKey: string, defaultLimit: number) {
+export function useUsageLimiter(featureKey: string, defaultLimit: number, hasPremiumAccess = false) {
   const [count, setCount] = useState(0);
   const [limit, setLimit] = useState(defaultLimit);
 
   // Load usage data from localStorage on initial render
   useEffect(() => {
+    // If user has premium, no need to track limits.
+    if (hasPremiumAccess) {
+        setCount(0);
+        setLimit(Infinity);
+        return;
+    }
+
     try {
       const today = new Date().toISOString().split('T')[0];
       const storedData = localStorage.getItem(featureKey);
@@ -51,7 +58,7 @@ export function useUsageLimiter(featureKey: string, defaultLimit: number) {
     } catch (error) {
       console.warn(`Could not access localStorage for ${featureKey}. Usage tracking will be session-based.`);
     }
-  }, [featureKey, defaultLimit]);
+  }, [featureKey, defaultLimit, hasPremiumAccess]);
 
   /**
    * Updates the usage data in both state and localStorage.
@@ -75,11 +82,12 @@ export function useUsageLimiter(featureKey: string, defaultLimit: number) {
    * Increments the usage count by a specified amount (default is 1).
    */
   const increment = useCallback((amount = 1) => {
+    if (hasPremiumAccess) return;
     const newCount = count + amount;
     if (newCount <= limit) {
         updateUsage(newCount);
     }
-  }, [count, limit, updateUsage]);
+  }, [count, limit, updateUsage, hasPremiumAccess]);
   
   /**
    * Resets the daily usage count and optionally sets a new limit for the day.
@@ -88,14 +96,19 @@ export function useUsageLimiter(featureKey: string, defaultLimit: number) {
   const reset = useCallback((newLimit?: number) => {
       updateUsage(0, newLimit ?? defaultLimit);
   }, [updateUsage, defaultLimit]);
+  
+  /**
+   * Updates just the limit for the current day.
+   */
+  const updateLimit = useCallback((newLimit: number) => {
+      updateUsage(count, newLimit);
+  }, [count, updateUsage]);
 
 
   /**
    * A boolean indicating if the user can still use the feature.
    */
-  const canUse = count < limit;
+  const canUse = hasPremiumAccess || count < limit;
 
-  return { count, limit, increment, reset, canUse };
+  return { count, limit, increment, reset, canUse, updateLimit };
 }
-
-    

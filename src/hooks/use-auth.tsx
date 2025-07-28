@@ -1,9 +1,9 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
@@ -15,6 +15,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  hasPremiumAccess: boolean;
   logout: () => Promise<void>;
 }
 
@@ -53,24 +54,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
       if (currentUser && currentUser.emailVerified) {
           setUser(currentUser);
-          // Simple hardcoded check for admin UID
-          setIsAdmin(currentUser.uid === ADMIN_UID);
+          const isAdminUser = currentUser.uid === ADMIN_UID;
+          setIsAdmin(isAdminUser);
+
+          // Check for premium access
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists() && userDoc.data()?.paymentRequest?.status === 'verified') {
+              setHasPremiumAccess(true);
+          } else {
+              // Also consider admin as having premium access
+              setHasPremiumAccess(isAdminUser);
+          }
       } else {
           setUser(null);
           setIsAdmin(false);
+          setHasPremiumAccess(false);
       }
       setLoading(false);
     }, (error) => {
       console.error("Firebase Auth Error:", error);
       setUser(null);
       setIsAdmin(false);
+      setHasPremiumAccess(false);
       setLoading(false);
     });
 
@@ -104,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push('/login');
   }
 
-  const value = { user, loading, isAdmin, logout };
+  const value = { user, loading, isAdmin, hasPremiumAccess, logout };
 
   const isPublicPage = pathname === '/' || pathname === '/login';
   

@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -25,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { saveMcqResult } from '@/services/user-progress-service';
 import { useAuth } from '@/hooks/use-auth';
+import { useUsageLimiter } from '@/hooks/use-usage-limiter';
 
 
 const mcqFormSchema = z.object({
@@ -139,14 +139,18 @@ export default function McqPracticePage() {
   const [paymentDetails, setPaymentDetails] = useState<PurchaseDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const [dailyQuestionCount, setDailyQuestionCount] = useState(0);
-  const [dailyLimit, setDailyLimit] = useState(30);
+  const { user, hasPremiumAccess } = useAuth();
+  const {
+      count: dailyQuestionCount,
+      limit: dailyQuestionLimit,
+      increment: incrementQuestionCount,
+      updateLimit: updateQuestionLimit
+  } = useUsageLimiter('mcqUsage', 30, hasPremiumAccess);
   
   const [displayedFeedback, setDisplayedFeedback] = useState<DisplayedFeedback | null>(null);
 
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
   
-  const { user } = useAuth();
   
   const [analysisButtonText, setAnalysisButtonText] = useState('Click for AI Performance Analysis');
 
@@ -164,48 +168,8 @@ export default function McqPracticePage() {
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  useEffect(() => {
-    try {
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        const usageData = JSON.parse(localStorage.getItem('mcqUsage') || '{}');
-        
-        if (usageData.date === today) {
-            setDailyQuestionCount(usageData.count || 0);
-            setDailyLimit(usageData.limit || 30);
-        } else {
-            // Reset for a new day
-            localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: 0, limit: 30 }));
-            setDailyQuestionCount(0);
-            setDailyLimit(30);
-        }
-    } catch (e) {
-        console.warn("Could not access localStorage for daily quiz limit. Usage tracking will be session-based.");
-    }
-  }, []);
-
-  const updateDailyUsage = (count: number, limit?: number) => {
-    const today = new Date().toISOString().split('T')[0];
-    const newLimit = limit ?? dailyLimit;
-    try {
-        const newCount = dailyQuestionCount + count;
-        localStorage.setItem('mcqUsage', JSON.stringify({ date: today, count: newCount, limit: newLimit }));
-        setDailyQuestionCount(newCount);
-        if (limit) {
-            setDailyLimit(newLimit);
-        }
-    } catch (e) {
-        console.warn("Could not access localStorage for daily quiz limit.");
-        const newCount = dailyQuestionCount + count;
-        setDailyQuestionCount(newCount);
-        if (limit) {
-            setDailyLimit(newLimit);
-        }
-    }
-  };
-
-
-  const questionsLeft = Math.max(0, dailyLimit - dailyQuestionCount);
-  const usageProgress = (dailyQuestionCount / dailyLimit) * 100;
+  const questionsLeft = Math.max(0, dailyQuestionLimit - dailyQuestionCount);
+  const usageProgress = (dailyQuestionCount / dailyQuestionLimit) * 100;
 
   const form = useForm<McqFormValues>({
     resolver: zodResolver(mcqFormSchema),
@@ -252,7 +216,7 @@ export default function McqPracticePage() {
   
   const handleQuizGeneration = async (data: McqFormValues) => {
     const questionsToGenerate = data.numberOfQuestions;
-    if ((dailyQuestionCount + questionsToGenerate) > dailyLimit) {
+    if (!hasPremiumAccess && (dailyQuestionCount + questionsToGenerate) > dailyQuestionLimit) {
         setShowPremiumDialog(true);
         return;
     }
@@ -279,7 +243,9 @@ export default function McqPracticePage() {
       }));
       setQuestions(shuffledResult);
       setAnswers(new Array(result.length).fill(null));
-      updateDailyUsage(result.length);
+      if (!hasPremiumAccess) {
+        incrementQuestionCount(result.length);
+      }
     } catch (e: any) {
       console.error('Error generating MCQs:', e);
       const errorMessage = e.message.includes('503') 
@@ -427,6 +393,16 @@ export default function McqPracticePage() {
   
   const handleBuyNow = (details: PurchaseDetails) => {
     setPaymentDetails(details);
+    if(details.title === '50 MCQs'){
+        updateQuestionLimit(dailyQuestionLimit + 50);
+        toast({title: '50 Questions Added!', description: 'You can now generate 50 more questions today.'});
+    } else if (details.title === '100 MCQs') {
+        updateQuestionLimit(dailyQuestionLimit + 100);
+        toast({title: '100 Questions Added!', description: 'You can now generate 100 more questions today.'});
+    } else if (details.title === '200 MCQs') {
+        updateQuestionLimit(dailyQuestionLimit + 200);
+        toast({title: '200 Questions Added!', description: 'You can now generate 200 more questions today.'});
+    }
     setShowPremiumDialog(false);
     setShowPaymentDialog(true);
   };
@@ -520,17 +496,19 @@ export default function McqPracticePage() {
               </form>
             </FormProvider>
           </CardContent>
-          <CardFooter className="flex flex-col gap-2 pt-4 border-t">
-              <div className="w-full text-center">
-                  <p className="text-sm font-medium text-muted-foreground">
-                      {questionsLeft > 0 ? `${questionsLeft} of ${dailyLimit} free questions left today.` : "You've used all your free questions for today."}
-                  </p>
-                  <Progress value={usageProgress} className="h-2 mt-2" />
-              </div>
-              <Button asChild variant="outline" className="w-full mt-2" onClick={() => setShowPremiumDialog(true)}>
-                 <div><Gem className="mr-2 h-4 w-4"/> Upgrade for More</div>
-              </Button>
-          </CardFooter>
+          {!hasPremiumAccess && (
+            <CardFooter className="flex flex-col gap-2 pt-4 border-t">
+                <div className="w-full text-center">
+                    <p className="text-sm font-medium text-muted-foreground">
+                        {questionsLeft > 0 ? `${questionsLeft} of ${dailyQuestionLimit} free questions left today.` : "You've used all your free questions for today."}
+                    </p>
+                    <Progress value={usageProgress} className="h-2 mt-2" />
+                </div>
+                <Button asChild variant="outline" className="w-full mt-2" onClick={() => setShowPremiumDialog(true)}>
+                    <div><Gem className="mr-2 h-4 w-4"/> Upgrade for More</div>
+                </Button>
+            </CardFooter>
+          )}
         </Card>
       </div>
 
@@ -555,7 +533,7 @@ export default function McqPracticePage() {
               <div className="flex flex-col items-center justify-center h-96 text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
                   <BrainCircuit className="h-16 w-16 mb-4" />
                   <h3 className="text-xl font-semibold">Your Smart Quiz Awaits</h3>
-                  <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs. You get {dailyLimit} free questions per day.</p>
+                  <p className="mt-2 max-w-sm">Fill out the form to generate a set of targeted MCQs. You get {hasPremiumAccess ? 'unlimited' : dailyQuestionLimit} free questions per day.</p>
               </div>
           )}
 
@@ -710,7 +688,7 @@ export default function McqPracticePage() {
                 </div>
                 <DialogTitle className="text-center font-headline text-2xl">Get More Questions</DialogTitle>
                 <DialogDescription className="text-center text-base">
-                   You've used your {dailyQuestionCount} of {dailyLimit} free practice questions for today. Upgrade for more.
+                   You've used your {dailyQuestionCount} of {dailyQuestionLimit} free practice questions for today. Upgrade for more.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
@@ -756,12 +734,3 @@ export default function McqPracticePage() {
     />
     </>
   );
-
-    
-
-
-
-
-
-
-

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -15,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { useNotes, type Note } from '@/context/notes-context';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/use-auth';
 
 const premiumFeatures = [
     "Access to ALL detailed library notes",
@@ -46,14 +46,14 @@ const NoteCardSkeleton = () => (
     </Card>
 );
 
-const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => void; }) => {
-    const { id, title, course, year, subject, isPremium, content, price } = note;
+const NoteCard = ({ note, onUnlockClick, hasPremiumAccess }: { note: Note; onUnlockClick: () => void; hasPremiumAccess: boolean; }) => {
+    const { id, title, course, year, subject, isPremium, content } = note;
     
     const isExternalLink = content && (content.startsWith('http://') || content.startsWith('https://'));
 
     let actionButton;
 
-    if (isPremium) {
+    if (isPremium && !hasPremiumAccess) {
          actionButton = (
             <Button onClick={onUnlockClick} className="w-full" variant="outline">
                 <Lock className="mr-2 h-4 w-4" />
@@ -108,6 +108,7 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
 
 export default function NotesPage() {
     const { notes: allNotes, loading: isLoading } = useNotes();
+    const { hasPremiumAccess } = useAuth();
     const [filters, setFilters] = useState({
         course: 'All',
         year: 'All',
@@ -270,7 +271,7 @@ export default function NotesPage() {
                     <h2 className="text-2xl font-headline font-bold mb-4">{course} Notes</h2>
                     <Separator className="mb-6"/>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {notes.map(note => <NoteCard key={note.id} note={note} onUnlockClick={() => handleUnlockClick(note)} />)}
+                        {notes.map(note => <NoteCard key={note.id} note={note} onUnlockClick={() => handleUnlockClick(note)} hasPremiumAccess={hasPremiumAccess} />)}
                     </div>
                 </section>
              ))

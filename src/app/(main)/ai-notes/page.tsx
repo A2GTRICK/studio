@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -23,6 +22,7 @@ import { handlePrint } from '@/lib/print-helper';
 import { useUsageLimiter } from '@/hooks/use-usage-limiter';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { Progress } from '@/components/ui/progress';
+import { useAuth } from '@/hooks/use-auth';
 
 const notesFormSchema = z.object({
   course: z.string().min(1, 'Course is required'),
@@ -75,6 +75,7 @@ export default function AiNotesPage() {
   const [isExpandViewOpen, setIsExpandViewOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const printableContentRef = useRef<HTMLDivElement>(null);
+  const { hasPremiumAccess } = useAuth();
   
   const [followUpCount, setFollowUpCount] = useState(0);
 
@@ -83,7 +84,7 @@ export default function AiNotesPage() {
     limit: dailyGenerationLimit,
     increment: incrementGenerations,
     canUse: canGenerate,
-  } = useUsageLimiter('aiNotesGenerations', 2);
+  } = useUsageLimiter('aiNotesGenerations', 2, hasPremiumAccess);
 
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -138,7 +139,7 @@ export default function AiNotesPage() {
   
 
   async function onSubmit(data: NotesFormValues) {
-    if (!canGenerate) {
+    if (!canGenerate && !hasPremiumAccess) {
         setShowPremiumDialog(true);
         return;
     }
@@ -154,7 +155,9 @@ export default function AiNotesPage() {
       const assistantMessage = { role: 'assistant', content: result.notes };
       setGeneratedNotes(result.notes);
       setChatHistory([assistantMessage]);
-      incrementGenerations();
+      if (!hasPremiumAccess) {
+          incrementGenerations();
+      }
     } catch (e: any) {
       console.error('Error generating notes:', e);
        const errorMessage = e.message.includes('503') 
@@ -169,7 +172,7 @@ export default function AiNotesPage() {
   async function handleFollowUpSubmit(data: FollowupFormValues) {
     if (!data.question.trim() || !generatedNotes) return;
 
-    if (followUpCount >= 3) {
+    if (followUpCount >= 3 && !hasPremiumAccess) {
         setShowPremiumDialog(true);
         return;
     }
@@ -186,7 +189,9 @@ export default function AiNotesPage() {
       });
       const newAnswer: ChatMessage = { role: 'assistant', content: result.answer };
       setChatHistory(prev => [...prev, newAnswer]);
-      setFollowUpCount(prev => prev + 1);
+      if (!hasPremiumAccess) {
+          setFollowUpCount(prev => prev + 1);
+      }
     } catch (error: any) {
       console.error('Error with follow-up:', error);
       const errorMessage = error.message.includes('503')
@@ -266,17 +271,19 @@ export default function AiNotesPage() {
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="flex flex-col gap-2 pt-4 border-t">
-              <div className="w-full text-center">
-                  <p className="text-sm font-medium text-muted-foreground">
-                      {dailyGenerationLimit - dailyGenerations} of {dailyGenerationLimit} free note generations left today.
-                  </p>
-                  <Progress value={usageProgress} className="h-2 mt-2" />
-              </div>
-              <Button asChild variant="outline" className="w-full mt-2" onClick={() => setShowPremiumDialog(true)}>
-                 <div><Gem className="mr-2 h-4 w-4"/> Upgrade for More</div>
-              </Button>
-            </CardFooter>
+            {!hasPremiumAccess && (
+                <CardFooter className="flex flex-col gap-2 pt-4 border-t">
+                <div className="w-full text-center">
+                    <p className="text-sm font-medium text-muted-foreground">
+                        {dailyGenerationLimit - dailyGenerations} of {dailyGenerationLimit} free note generations left today.
+                    </p>
+                    <Progress value={usageProgress} className="h-2 mt-2" />
+                </div>
+                <Button asChild variant="outline" className="w-full mt-2" onClick={() => setShowPremiumDialog(true)}>
+                    <div><Gem className="mr-2 h-4 w-4"/> Upgrade for More</div>
+                </Button>
+                </CardFooter>
+            )}
           </Card>
         </div>
         <div className="lg:col-span-2">
@@ -313,7 +320,7 @@ export default function AiNotesPage() {
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
                       <BrainCircuit className="h-16 w-16 mb-4" />
                       <h3 className="text-xl font-semibold">AI Notes Generator is Ready</h3>
-                      <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes. You get {dailyGenerationLimit} free generations per day.</p>
+                      <p className="mt-2 max-w-sm">Fill out the form on the left to generate detailed notes. You get {hasPremiumAccess ? 'unlimited' : dailyGenerationLimit} generations per day.</p>
                     </div>
                   )}
                   <div className="space-y-4">
@@ -378,12 +385,14 @@ export default function AiNotesPage() {
                         </form>
                     </FormProvider>
                  </div>
-                 <div className="w-full text-center pt-2">
-                      <p className="text-xs font-medium text-muted-foreground">
-                          {3 - followUpCount} of 3 free follow-ups left for this note.
-                      </p>
-                      <Progress value={followUpProgress} className="h-1 mt-1" />
-                  </div>
+                 {!hasPremiumAccess && (
+                    <div className="w-full text-center pt-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                            {3 - followUpCount} of 3 free follow-ups left for this note.
+                        </p>
+                        <Progress value={followUpProgress} className="h-1 mt-1" />
+                    </div>
+                 )}
               </CardFooter>
             )}
           </Card>
@@ -422,7 +431,13 @@ export default function AiNotesPage() {
                 </ScrollArea>
             </div>
              <DialogFooter className="print-hide">
-                <Button variant="outline" onClick={() => setShowPrintPremiumDialog(true)}>
+                <Button variant="outline" onClick={() => {
+                    if (hasPremiumAccess) {
+                        handlePrint(printableContentRef);
+                    } else {
+                        setShowPrintPremiumDialog(true);
+                    }
+                }}>
                     <Printer className="mr-2 h-4 w-4" />
                     Print / Save as PDF
                 </Button>
