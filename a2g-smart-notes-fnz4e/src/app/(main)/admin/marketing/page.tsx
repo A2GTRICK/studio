@@ -4,19 +4,15 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, Timestamp, deleteDoc, doc } from 'firebase/firestore';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Trash2, MoreHorizontal, Save, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { Loader2, Trash2, MoreHorizontal, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { getLeadMagnetPath, updateLeadMagnetPath } from '@/services/marketing-service';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-
+import { leadMagnetPath } from '@/services/marketing-config';
 
 interface Subscriber {
     id: string;
@@ -25,108 +21,29 @@ interface Subscriber {
 }
 
 const LeadMagnetManager = () => {
-    const { toast } = useToast();
-    const [currentPath, setCurrentPath] = useState('');
-    const [newPath, setNewPath] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchPath = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const path = await getLeadMagnetPath();
-                setCurrentPath(path);
-                setNewPath(path);
-            } catch (err: any) {
-                console.error("Error fetching lead magnet path:", err);
-                setError(err.message || "Could not load the current lead magnet path from the database.");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchPath();
-    }, []);
-
-    const handleUpdatePath = async () => {
-        setIsSubmitting(true);
-        setError(null);
-        try {
-            await updateLeadMagnetPath(newPath);
-            setCurrentPath(newPath);
-            toast({
-                title: "Success!",
-                description: "The lead magnet path has been updated successfully.",
-            });
-        } catch (err: any) {
-            console.error("Error updating lead magnet path:", err);
-            setError(err.message || "An unknown error occurred while saving the path.");
-            toast({
-                title: "Update Failed",
-                description: err.message || "Could not save the new path to the database.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    
     return (
         <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
                 <CardTitle className="font-headline">Manage Lead Magnet</CardTitle>
                 <CardDescription>
-                    This is the file users receive when they subscribe. Paste a public URL (e.g., from Google Drive) below and save.
+                    This is the file users receive when they subscribe. To change it, the link in the central configuration file must be updated.
                 </CardDescription>
             </CardHeader>
-             <CardContent className="space-y-4">
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-                {loading ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Loading current path...</span>
-                    </div>
-                ) : (
-                    <>
-                    <div>
-                        <Label htmlFor="current-path">Current File URL</Label>
-                        <Input id="current-path" value={currentPath} readOnly disabled className="text-xs" />
-                    </div>
-                    <div>
-                        <Label htmlFor="new-path">New File URL</Label>
-                        <div className="relative">
-                             <LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                             <Input 
-                                id="new-path" 
-                                value={newPath} 
-                                onChange={(e) => setNewPath(e.target.value)}
-                                placeholder="https://example.com/file.pdf"
-                                className="pl-10"
-                                disabled={isSubmitting}
-                             />
-                        </div>
-                    </div>
-                    </>
-                )}
+             <CardContent>
+                <p className="text-sm font-semibold mb-2">Current Lead Magnet File URL:</p>
+                <div className="flex items-center gap-2 p-3 rounded-md bg-background border">
+                    <LinkIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <p className="text-xs text-muted-foreground truncate">{leadMagnetPath}</p>
+                </div>
             </CardContent>
-            <CardFooter>
-                 <Button className="w-full" onClick={handleUpdatePath} disabled={loading || isSubmitting || newPath === currentPath}>
-                    {isSubmitting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                    )}
-                    {isSubmitting ? "Saving..." : "Save New Path"}
+            <CardContent>
+                 <Button asChild className="w-full">
+                    <a href={leadMagnetPath} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View Current Lead Magnet File
+                    </a>
                 </Button>
-            </CardFooter>
+            </CardContent>
         </Card>
     );
 };
@@ -226,7 +143,7 @@ export default function AdminMarketingPage() {
                                                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                                             <AlertDialogDescription>
                                                                 This will permanently delete the subscriber "{subscriber.email}". This action cannot be undone.
-                                                            </Description>
+                                                            </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>

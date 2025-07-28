@@ -11,7 +11,7 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { getLeadMagnetPath } from '@/services/marketing-service';
+import { leadMagnetPath } from '@/services/marketing-config';
 
 const SubscribeToNewsletterInputSchema = z.object({
   email: z.string().email(),
@@ -49,15 +49,7 @@ export async function subscribeToNewsletter(input: SubscribeToNewsletterInput): 
   }
 
   // The download link is now sourced from a central, easily-editable config file.
-  const downloadLink = await getLeadMagnetPath();
-
-  if (!downloadLink) {
-    // Fallback in case the link is not set in the admin panel
-    return {
-        message: "Thanks for subscribing! We will send you the promised content shortly.",
-        downloadLink: "#", // Prevents a broken download attempt
-    }
-  }
+  const downloadLink = leadMagnetPath;
 
   return {
     message: "Thanks for subscribing! Your PDF is downloading now. Feel free to explore our app's features.",
