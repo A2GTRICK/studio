@@ -1,0 +1,497 @@
+
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Upload, BrainCircuit, IndianRupee, Image as ImageIcon } from "lucide-react";
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { useNotes } from '@/context/notes-context';
+import type { Note } from '@/context/notes-context';
+
+const submissionMessages = [
+    "Details ko verify kar rahe hain...",
+    "Note ko library mein save kar rahe hain...",
+    "Ek second, bas ho gaya...",
+];
+
+const yearOptions: { [key: string]: string[] } = {
+    "B.Pharm": ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+    "D.Pharm": ["1st Year", "2nd Year"],
+};
+
+const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            if (event.target && typeof event.target.result === 'string') {
+                resolve(event.target.result);
+            } else {
+                reject(new Error("Failed to read file."));
+            }
+        };
+        reader.onerror = (error) => {
+            reject(error);
+        };
+        reader.readAsText(file);
+    });
+};
+
+
+export default function AdminNotesPage() {
+    const { notes, loading, addNote, deleteNote, updateNote } = useNotes();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+    const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
+    const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
+    const [isPremium, setIsPremium] = useState(false);
+    
+    // For Edit Dialog
+    const [editingNote, setEditingNote] = useState<Note | null>(null);
+    const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+    const [editSelectedCourse, setEditSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
+    const [isEditPremium, setIsEditPremium] = useState(false);
+
+
+     useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isSubmitting) {
+          const messageArray = submissionMessages;
+          interval = setInterval(() => {
+            setCurrentSubmissionMessage(prev => {
+                const nextIndex = (messageArray.indexOf(prev) + 1) % messageArray.length;
+                return messageArray[nextIndex];
+            });
+          }, 2500);
+        }
+        return () => clearInterval(interval);
+    }, [isSubmitting]);
+    
+    // Set states when an edit dialog is opened
+    useEffect(() => {
+        if (editingNote) {
+            setEditSelectedCourse(editingNote.course as any);
+            setIsEditPremium(editingNote.isPremium);
+        } else {
+            setEditSelectedCourse("");
+            setIsEditPremium(false);
+        }
+    }, [editingNote]);
+
+    const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setCurrentSubmissionMessage(submissionMessages[0]);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
+        
+        const isPremiumChecked = formData.get('isPremium') === 'on';
+
+        const baseNoteDetails = {
+            title: formData.get('title') as string,
+            course: formData.get('course') as string,
+            year: formData.get('year') as string,
+            subject: formData.get('subject') as string,
+            thumbnail: formData.get('thumbnail') as string,
+            isPremium: isPremiumChecked,
+            price: isPremiumChecked ? (formData.get('price') as string) : undefined,
+        };
+
+        if (!baseNoteDetails.title || !baseNoteDetails.course || !baseNoteDetails.year || !baseNoteDetails.subject) {
+            toast({ title: "Core Fields Required", description: "Please fill out Title, Course, Year, and Subject.", variant: "destructive" });
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (isPremiumChecked && (!baseNoteDetails.price || Number(baseNoteDetails.price) <= 0)) {
+            toast({ title: "Invalid Price", description: "Premium notes must have a valid price.", variant: "destructive" });
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            const file = formData.get('fileUpload') as File;
+            let noteContent = '';
+
+            if (file && file.size > 0) {
+                 noteContent = await readFileAsText(file);
+            } else {
+                 toast({ title: "File Required", description: "Please select a .txt or .md file to upload.", variant: "destructive" });
+                 setIsSubmitting(false);
+                 return;
+            }
+
+            const noteToAdd: Omit<Note, 'id' | 'createdAt'> = {
+                ...baseNoteDetails,
+                content: noteContent,
+            };
+            
+            const newNote = await addNote(noteToAdd);
+
+            if (newNote) {
+              toast({
+                  title: "Note Added Successfully!",
+                  description: `"${newNote.title}" has been added to the library.`
+              });
+              form.reset();
+              setSelectedCourse("");
+              setIsPremium(false);
+            }
+            
+        } catch (error: any) {
+            console.error("Error adding note:", error);
+            toast({
+                title: "Error adding note",
+                description: error.message || "There was a problem saving the note.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleUpdateNote = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!editingNote) return;
+
+        setIsEditSubmitting(true);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
+        const isPremiumChecked = formData.get('isPremium') === 'on';
+
+        const updatedData: Partial<Note> = {
+            title: formData.get('title') as string,
+            course: formData.get('course') as string,
+            year: formData.get('year') as string,
+            subject: formData.get('subject') as string,
+            thumbnail: formData.get('thumbnail') as string,
+            isPremium: isPremiumChecked,
+            price: isPremiumChecked ? (formData.get('price') as string) : undefined,
+        };
+        
+        try {
+            await updateNote(editingNote.id, updatedData);
+            toast({
+                title: "Note Updated!",
+                description: `"${updatedData.title}" has been successfully updated.`,
+            });
+            setEditingNote(null); // Close dialog
+        } catch(error: any) {
+             console.error("Error updating note:", error);
+            toast({
+                title: "Error updating note",
+                description: error.message || "There was a problem saving the changes.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsEditSubmitting(false);
+        }
+    };
+    
+    const handleDeleteNote = async (noteId: string) => {
+        try {
+            await deleteNote(noteId);
+            toast({
+                title: "Note Deleted",
+                description: "The note has been removed from the library.",
+                variant: "destructive"
+            });
+        } catch (error) {
+            console.error("Error deleting note:", error);
+            toast({
+                title: "Error deleting note",
+                description: "There was a problem deleting the note.",
+                variant: "destructive"
+            });
+        }
+    }
+    
+    return (
+      <>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start pt-6">
+            <div className="lg:col-span-1">
+                <form onSubmit={handleAddNote}>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="font-headline flex items-center gap-2"><PlusCircle /> Add New Note</CardTitle>
+                            <CardDescription>Fill in the details and upload the note file.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="title">Note Title / Topic</Label>
+                                <Input id="title" name="title" placeholder="e.g., Human Anatomy..." required disabled={isSubmitting} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="course">Course</Label>
+                                    <Select name="course" required disabled={isSubmitting} onValueChange={(value) => setSelectedCourse(value as any)}>
+                                        <SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="B.Pharm">B.Pharm</SelectItem>
+                                            <SelectItem value="D.Pharm">D.Pharm</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="year">Year</Label>
+                                    <Select name="year" required disabled={isSubmitting || !selectedCourse}>
+                                        <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+                                        <SelectContent>
+                                            {selectedCourse && yearOptions[selectedCourse]?.map(year => (
+                                                <SelectItem key={year} value={year}>{year}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="subject">Subject</Label>
+                                <Input id="subject" name="subject" placeholder="e.g., HAP I" required disabled={isSubmitting}/>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="thumbnail">Thumbnail Image URL (Optional)</Label>
+                                <div className="relative">
+                                    <ImageIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input id="thumbnail" name="thumbnail" placeholder="https://postimages.org/..." className="pl-10" disabled={isSubmitting} />
+                                </div>
+                            </div>
+                            <div className="space-y-2 pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="isPremium" name="isPremium" onCheckedChange={(checked) => setIsPremium(Boolean(checked))} disabled={isSubmitting}/>
+                                    <Label htmlFor="isPremium">Mark as Premium</Label>
+                                </div>
+                                {isPremium && (
+                                    <div className="relative pl-6 pt-2">
+                                        <IndianRupee className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            id="price"
+                                            name="price"
+                                            type="number"
+                                            placeholder="e.g., 19"
+                                            className="pl-10"
+                                            disabled={isSubmitting}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="space-y-2 pt-2">
+                                <Label htmlFor="fileUpload">Note Content File</Label>
+                                <div className="relative">
+                                    <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input id="fileUpload" name="fileUpload" type="file" accept=".txt,.md" className="pl-10" disabled={isSubmitting} required/>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Upload a .txt or .md file containing the note content.</p>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                {isSubmitting ? currentSubmissionMessage : 'Add Note'}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </form>
+            </div>
+            <div className="lg:col-span-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">Manage Existing Notes</CardTitle>
+                        <CardDescription>View, edit, or delete notes currently in the library.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center h-48">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <p className="mt-4 text-muted-foreground">Loading notes...</p>
+                            </div>
+                        ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Title</TableHead>
+                                    <TableHead>Course</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Price</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {notes.map(note => (
+                                    <TableRow key={note.id}>
+                                        <TableCell className="font-medium">{note.title}</TableCell>
+                                        <TableCell>{note.course} - {note.year}</TableCell>
+                                        <TableCell>
+                                            {note.isPremium ? <Badge>Premium</Badge> : <Badge variant="secondary">Free</Badge>}
+                                        </TableCell>
+                                         <TableCell>
+                                            {note.isPremium && note.price ? `INR ${note.price}` : 'N/A'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Dialog onOpenChange={(open) => !open && setEditingNote(null)}>
+                                                <AlertDialog>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Actions</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                            <DialogTrigger asChild>
+                                                                <DropdownMenuItem onSelect={() => setEditingNote(note)}>
+                                                                    <Edit className="mr-2 h-4 w-4" />
+                                                                    Edit
+                                                                </DropdownMenuItem>
+                                                            </DialogTrigger>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    Delete
+                                                                </DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete the note titled "{note.title}".
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteNote(note.id)} className="bg-destructive hover:bg-destructive/90">
+                                                                Yes, delete note
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </Dialog>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+
+        {/* Edit Note Dialog */}
+        <Dialog open={!!editingNote} onOpenChange={(open) => !open && setEditingNote(null)}>
+             <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <DialogTitle className="font-headline">Edit Note</DialogTitle>
+                    <DialogDescription>
+                        Make changes to the note details. Note content cannot be edited here.
+                    </DialogDescription>
+                </DialogHeader>
+                {editingNote && (
+                    <form onSubmit={handleUpdateNote} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-title">Note Title / Topic</Label>
+                            <Input id="edit-title" name="title" defaultValue={editingNote.title} required disabled={isEditSubmitting} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-course">Course</Label>
+                                <Select name="course" required disabled={isEditSubmitting} defaultValue={editingNote.course} onValueChange={(value) => setEditSelectedCourse(value as any)}>
+                                    <SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="B.Pharm">B.Pharm</SelectItem>
+                                        <SelectItem value="D.Pharm">D.Pharm</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-year">Year</Label>
+                                <Select name="year" required disabled={isEditSubmitting || !editSelectedCourse} defaultValue={editingNote.year}>
+                                    <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+                                    <SelectContent>
+                                        {editSelectedCourse && yearOptions[editSelectedCourse]?.map(year => (
+                                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-subject">Subject</Label>
+                            <Input id="edit-subject" name="subject" defaultValue={editingNote.subject} required disabled={isEditSubmitting}/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-thumbnail">Thumbnail Image URL (Optional)</Label>
+                            <div className="relative">
+                                <ImageIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input id="edit-thumbnail" name="thumbnail" defaultValue={editingNote.thumbnail || ''} placeholder="https://postimages.org/..." className="pl-10" disabled={isEditSubmitting} />
+                            </div>
+                        </div>
+                        <div className="space-y-2 pt-2">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="edit-isPremium" name="isPremium" defaultChecked={editingNote.isPremium} onCheckedChange={(checked) => setIsEditPremium(Boolean(checked))} disabled={isEditSubmitting}/>
+                                <Label htmlFor="edit-isPremium">Mark as Premium</Label>
+                            </div>
+                            {isEditPremium && (
+                                <div className="relative pl-6 pt-2">
+                                    <IndianRupee className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        id="edit-price"
+                                        name="price"
+                                        type="number"
+                                        defaultValue={editingNote.price}
+                                        placeholder="e.g., 19"
+                                        className="pl-10"
+                                        disabled={isEditSubmitting}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setEditingNote(null)} disabled={isEditSubmitting}>Cancel</Button>
+                            <Button type="submit" disabled={isEditSubmitting}>
+                                {isEditSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Changes
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                )}
+            </DialogContent>
+        </Dialog>
+      </>
+    );
+
+    
