@@ -13,5 +13,5 @@ interface PaymentConfig {
 export const paymentConfig: PaymentConfig = {
   upiId: "sharmaarvind28897-2@okaxis",
   adminEmail: "a2gtrickacademy@gmail.com",
-  qrCodePath: "/assets/upi-qr-code.png",
+  qrCodePath: "https://i.postimg.cc/52vDpQYZ/aa6d830b-56c0-46be-a89a-71ed7ac0642d.jpg",
 };
