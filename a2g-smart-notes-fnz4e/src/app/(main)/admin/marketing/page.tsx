@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, Timestamp, deleteDoc, doc } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Trash2, MoreHorizontal, Link as LinkIcon, ExternalLink } from 'lucide-react';
+import { Loader2, Trash2, MoreHorizontal, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -29,8 +29,9 @@ const LeadMagnetDisplay = () => (
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <a href={leadMagnetPath} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline break-all">
-                {leadMagnetPath}
+            <a href={leadMagnetPath} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline break-all flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+                <span>{leadMagnetPath}</span>
             </a>
         </CardContent>
     </Card>

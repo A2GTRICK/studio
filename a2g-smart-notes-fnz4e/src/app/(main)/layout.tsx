@@ -15,7 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { User as FirebaseUser } from 'firebase/auth';
 import Image from "next/image";
 import { NotesProvider } from "@/context/notes-context";
-import { MarketingProvider } from "@/context/marketing-context";
 import { Badge } from "@/components/ui/badge";
 
 const A2GLogoIcon = () => (
@@ -178,142 +177,140 @@ export default function MainLayout({
 
   return (
     <NotesProvider>
-      <MarketingProvider>
-        <SidebarProvider>
-          <Sidebar className="print-hide">
-            <SidebarHeader>
-              <div className="flex items-center gap-2 p-2">
-                <Image
-                  src="/assets/a2g-logo.svg"
-                  alt="A2G Smart Notes Logo"
-                  width={36}
-                  height={36}
-                  className="rounded-md"
-                />
-                <h1 className="text-xl font-headline font-bold text-primary">A2G Smart Notes</h1>
-              </div>
-              <Separator />
-              {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} isAdmin={isAdmin} logout={logout} /> : null}
-            </SidebarHeader>
-            <SidebarContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Dashboard">
-                    <Link href="/dashboard">
-                      <Home />
-                      <span>Dashboard</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="My Progress">
-                    <Link href="/my-progress">
-                      <BarChart3 />
-                      <span>My Progress</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+      <SidebarProvider>
+        <Sidebar className="print-hide">
+          <SidebarHeader>
+            <div className="flex items-center gap-2 p-2">
+              <Image
+                src="/assets/a2g-logo.svg"
+                alt="A2G Smart Notes Logo"
+                width={36}
+                height={36}
+                className="rounded-md"
+              />
+              <h1 className="text-xl font-headline font-bold text-primary">A2G Smart Notes</h1>
+            </div>
+            <Separator />
+            {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} isAdmin={isAdmin} logout={logout} /> : null}
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Dashboard">
+                  <Link href="/dashboard">
+                    <Home />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="My Progress">
+                  <Link href="/my-progress">
+                    <BarChart3 />
+                    <span>My Progress</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Notes Library">
-                    <Link href="/notes">
-                      <BookOpen />
-                      <span>Notes Library</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Notes Library">
+                  <Link href="/notes">
+                    <BookOpen />
+                    <span>Notes Library</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="AI Notes Generator">
-                    <Link href="/ai-notes">
-                      <BrainCircuit />
-                      <span>AI Notes Generator</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="AI Notes Generator">
+                  <Link href="/ai-notes">
+                    <BrainCircuit />
+                    <span>AI Notes Generator</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="AI Exam Questions">
-                    <Link href="/exam-questions">
-                      <NotebookPen />
-                      <span>AI Exam Questions</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="MCQ Practice">
-                    <Link href="/mcq-practice">
-                      <CheckSquare />
-                      <span>MCQ Practice</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="AI Exam Questions">
+                  <Link href="/exam-questions">
+                    <NotebookPen />
+                    <span>AI Exam Questions</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="MCQ Practice">
+                  <Link href="/mcq-practice">
+                    <CheckSquare />
+                    <span>MCQ Practice</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Academic Services">
-                    <Link href="/services">
-                      <GraduationCap />
-                      <span>Academic Services</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Store">
-                    <Link href="/store">
-                      <ShoppingCart />
-                      <span>Store</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Academic Services">
+                  <Link href="/services">
+                    <GraduationCap />
+                    <span>Academic Services</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Store">
+                  <Link href="/store">
+                    <ShoppingCart />
+                    <span>Store</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Premium Plans">
-                    <Link href="/premium">
-                      <Gem />
-                      <span>Premium Plans</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Premium Plans">
+                  <Link href="/premium">
+                    <Gem />
+                    <span>Premium Plans</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Notifications">
-                    <Link href="/notifications">
-                      <Bell />
-                      <span>Notifications</span>
-                      {unreadNotificationCount > 0 && (
-                          <SidebarMenuBadge>{unreadNotificationCount}</SidebarMenuBadge>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarContent>
-            <SidebarFooter>
-              {/* Footer is now empty as profile is moved to header */}
-            </SidebarFooter>
-          </Sidebar>
-          <SidebarInset className="print-hide">
-            <header className="sticky top-0 z-20 flex items-center h-16 px-4 border-b bg-background/80 backdrop-blur-sm">
-              <SidebarTrigger className="md:hidden" />
-              <div className="ml-auto flex items-center gap-2">
-                <Button variant="outline" size="sm" asChild>
-                    <Link href="/premium">
-                        <Gem className="mr-2 h-4 w-4"/>
-                        Go Premium
-                    </Link>
-                </Button>
-                <NotificationPopover />
-              </div>
-            </header>
-            <main className="flex-1 p-4 md:p-6 overflow-auto">
-              {children}
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-      </MarketingProvider>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Notifications">
+                  <Link href="/notifications">
+                    <Bell />
+                    <span>Notifications</span>
+                    {unreadNotificationCount > 0 && (
+                        <SidebarMenuBadge>{unreadNotificationCount}</SidebarMenuBadge>
+                    )}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter>
+            {/* Footer is now empty as profile is moved to header */}
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset className="print-hide">
+          <header className="sticky top-0 z-20 flex items-center h-16 px-4 border-b bg-background/80 backdrop-blur-sm">
+            <SidebarTrigger className="md:hidden" />
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                  <Link href="/premium">
+                      <Gem className="mr-2 h-4 w-4"/>
+                      Go Premium
+                  </Link>
+              </Button>
+              <NotificationPopover />
+            </div>
+          </header>
+          <main className="flex-1 p-4 md:p-6 overflow-auto">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
     </NotesProvider>
   );
 }

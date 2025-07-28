@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A function to handle newsletter subscriptions and provide a lead magnet download.
