@@ -6,37 +6,18 @@ import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, Timestamp, deleteDoc, doc } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Trash2, MoreHorizontal, ExternalLink } from 'lucide-react';
+import { Loader2, Trash2, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { leadMagnetPath } from '@/services/marketing-config';
 
 interface Subscriber {
     id: string;
     email: string;
     subscribedAt: Date;
 }
-
-const LeadMagnetDisplay = () => (
-    <Card className="bg-primary/5 border-primary/20">
-        <CardHeader>
-            <CardTitle className="font-headline">Current Lead Magnet</CardTitle>
-            <CardDescription>
-                This is the file new subscribers receive. To change it, you must edit the link in the `src/services/marketing-config.ts` file and republish the app.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <a href={leadMagnetPath} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline break-all flex items-center gap-2">
-                <ExternalLink className="h-4 w-4" />
-                <span>{leadMagnetPath}</span>
-            </a>
-        </CardContent>
-    </Card>
-);
-
 
 export default function AdminMarketingPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -79,83 +60,78 @@ export default function AdminMarketingPage() {
     };
 
     return (
-        <div className="pt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Newsletter Subscribers</CardTitle>
-                        <CardDescription>
-                          A list of all users who have subscribed. A total of {subscribers.length} {subscribers.length === 1 ? 'user has' : 'users have'} subscribed.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <div className="flex flex-col items-center justify-center h-48">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <p className="mt-4 text-muted-foreground">Loading subscribers...</p>
-                            </div>
-                        ) : subscribers.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Subscription Date</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+        <div className="pt-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Newsletter Subscribers</CardTitle>
+                    <CardDescription>
+                      A list of all users who have subscribed. A total of {subscribers.length} {subscribers.length === 1 ? 'user has' : 'users have'} subscribed.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center h-48">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="mt-4 text-muted-foreground">Loading subscribers...</p>
+                        </div>
+                    ) : subscribers.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Subscription Date</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {subscribers.map(subscriber => (
+                                    <TableRow key={subscriber.id}>
+                                        <TableCell className="font-medium">{subscriber.email}</TableCell>
+                                        <TableCell>{subscriber.subscribedAt ? format(subscriber.subscribedAt, "PPP p") : 'Just now'}</TableCell>
+                                        <TableCell className="text-right">
+                                            <AlertDialog>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <span className="sr-only">Actions</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This will permanently delete the subscriber "{subscriber.email}". This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteSubscriber(subscriber.id)} className="bg-destructive hover:bg-destructive/90">
+                                                            Yes, delete subscriber
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {subscribers.map(subscriber => (
-                                        <TableRow key={subscriber.id}>
-                                            <TableCell className="font-medium">{subscriber.email}</TableCell>
-                                            <TableCell>{subscriber.subscribedAt ? format(subscriber.subscribedAt, "PPP p") : 'Just now'}</TableCell>
-                                            <TableCell className="text-right">
-                                                <AlertDialog>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                <span className="sr-only">Actions</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <AlertDialogTrigger asChild>
-                                                                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                                    Delete
-                                                                </DropdownMenuItem>
-                                                            </AlertDialogTrigger>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This will permanently delete the subscriber "{subscriber.email}". This action cannot be undone.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteSubscriber(subscriber.id)} className="bg-destructive hover:bg-destructive/90">
-                                                                Yes, delete subscriber
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <p className="text-center text-muted-foreground py-10">No subscribers yet.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="lg:col-span-1">
-                <LeadMagnetDisplay />
-            </div>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-center text-muted-foreground py-10">No subscribers yet.</p>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
