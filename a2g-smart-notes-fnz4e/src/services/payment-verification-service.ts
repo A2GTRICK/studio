@@ -5,13 +5,11 @@
  */
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
 import { z } from 'zod';
 
 const CreateVerificationRequestInputSchema = z.object({
   uid: z.string().min(1),
-  email: z.string().email(),
-  displayName: z.string().nullable(),
   productName: z.string(),
   price: z.string(),
 });
@@ -30,8 +28,22 @@ export async function createVerificationRequest(data: CreateVerificationRequestI
     }
 
     try {
+        // Fetch user details on the server-side to ensure data integrity
+        const userRef = doc(db, 'users', parsedData.data.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+            throw new Error("User submitting payment not found in database.");
+        }
+        
+        const userData = userSnap.data();
+
         await addDoc(collection(db, 'payment_verifications'), {
-            ...parsedData.data,
+            uid: parsedData.data.uid,
+            email: userData.email || 'No email on record',
+            displayName: userData.displayName || 'No name on record',
+            productName: parsedData.data.productName,
+            price: parsedData.data.price,
             status: 'pending', // Default status is always pending
             createdAt: serverTimestamp(),
         });

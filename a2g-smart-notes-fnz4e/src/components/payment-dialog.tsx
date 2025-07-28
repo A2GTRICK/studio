@@ -49,8 +49,6 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
         try {
             await createVerificationRequest({
                 uid: user.uid,
-                email: user.email!,
-                displayName: user.displayName,
                 productName: title,
                 price: price,
             });
