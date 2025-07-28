@@ -1,19 +1,19 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, Timestamp, deleteDoc, doc } from 'firebase/firestore';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Trash2, MoreHorizontal, Link as LinkIcon, ExternalLink, FileText } from 'lucide-react';
+import { Loader2, Trash2, MoreHorizontal, Link as LinkIcon, ExternalLink, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { marketingLinks } from '@/lib/marketing-links';
-import Link from 'next/link';
+import { getLeadMagnetPath, updateLeadMagnetPath } from '@/services/marketing-service';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface Subscriber {
     id: string;
@@ -21,40 +21,76 @@ interface Subscriber {
     subscribedAt: Date;
 }
 
-const MarketingLinksManager = () => {
+const LeadMagnetManager = () => {
+    const [path, setPath] = useState('');
+    const [newPath, setNewPath] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchPath = async () => {
+            setLoading(true);
+            try {
+                const currentPath = await getLeadMagnetPath();
+                setPath(currentPath);
+                setNewPath(currentPath);
+            } catch (error: any) {
+                toast({ title: "Error", description: error.message, variant: "destructive" });
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPath();
+    }, [toast]);
+    
+    const handleSave = async () => {
+        setIsSubmitting(true);
+        try {
+            await updateLeadMagnetPath(newPath);
+            setPath(newPath);
+            toast({ title: "Success!", description: "Lead magnet link has been updated." });
+        } catch (error: any) {
+             toast({ title: "Error", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2"><FileText /> Configured Marketing Links</CardTitle>
+                <CardTitle className="font-headline">Manage Lead Magnet</CardTitle>
                 <CardDescription>
-                    This is the list of files shared with users. To add, remove, or change them, edit the `src/lib/marketing-links.ts` file.
+                    Update the file users receive when they subscribe. Paste the new public Google Drive link below and save.
                 </CardDescription>
             </CardHeader>
-             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {marketingLinks.map((linkItem, index) => (
-                            <TableRow key={index}>
-                                <TableCell className="font-medium">{linkItem.title}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button asChild size="sm" variant="outline">
-                                        <a href={linkItem.url} target="_blank" rel="noopener noreferrer">
-                                            <ExternalLink className="mr-2 h-4 w-4" />
-                                            View File
-                                        </a>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+             <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="lead-magnet-link">Lead Magnet Google Drive Link</Label>
+                  {loading ? (
+                    <div className="flex items-center justify-center h-10 rounded-md border bg-background px-3">
+                      <Loader2 className="h-4 w-4 animate-spin"/>
+                    </div>
+                  ) : (
+                    <Input id="lead-magnet-link" value={newPath} onChange={(e) => setNewPath(e.target.value)} placeholder="https://drive.google.com/..." disabled={isSubmitting}/>
+                  )}
+                </div>
+                <Button onClick={handleSave} disabled={isSubmitting || loading || newPath === path}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                    {isSubmitting ? 'Saving...' : 'Save New Path'}
+                </Button>
             </CardContent>
+            {path && (
+                <CardFooter>
+                     <Button asChild className="w-full" variant="outline">
+                        <a href={path} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            View Current File
+                        </a>
+                    </Button>
+                </CardFooter>
+            )}
         </Card>
     );
 };
@@ -176,7 +212,7 @@ export default function AdminMarketingPage() {
                 </Card>
             </div>
             <div className="lg:col-span-1">
-                <MarketingLinksManager />
+                <LeadMagnetManager />
             </div>
         </div>
     );

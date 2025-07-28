@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A function to handle newsletter subscriptions and provide a lead magnet download.
@@ -11,7 +10,7 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { marketingLinks } from '@/lib/marketing-links';
+import { getLeadMagnetPath } from '@/services/marketing-service';
 
 const SubscribeToNewsletterInputSchema = z.object({
   email: z.string().email(),
@@ -48,12 +47,11 @@ export async function subscribeToNewsletter(input: SubscribeToNewsletterInput): 
     // In a production app, you might want more robust error handling/logging here.
   }
 
-  // The download link is now sourced from a central, easily-editable config file.
-  // We'll use the first link in the array as the default lead magnet.
-  const downloadLink = marketingLinks.length > 0 ? marketingLinks[0].url : '';
+  // The download link is now sourced dynamically from the database.
+  const downloadLink = await getLeadMagnetPath();
 
   if (!downloadLink) {
-      console.error("No lead magnet link configured in marketing-links.ts");
+      console.error("No lead magnet link configured in the database.");
       throw new Error("Sorry, the download is currently unavailable.");
   }
 

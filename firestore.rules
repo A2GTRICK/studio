@@ -2,51 +2,63 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check for admin role
+  
+    // --- Hardcoded Admin User ID ---
     function isAdmin() {
-      // UID for the admin user 'a2gtrickacademy@gmail.com'
       return request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
+    
+    // --- Helper function to check if a user is authenticated ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // --- Helper function to check if the user is the owner of the document ---
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
-    // Default Deny: Secure all collections by default
+    // Default Deny: Secure by default.
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Allow authenticated users to read their own user document
-    // Allow admin to read/write any user document
+    // USERS
+    // Users can be created by anyone (for signup).
+    // Users can only read/update their own data.
+    // The Admin can read/write any user's data.
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId || isAdmin();
-      allow create: if request.auth.uid != null;
-
-      // Allow authenticated users to write to their own progress subcollection
-      // Allow admin to read any user's progress
-      match /progress/{progressId} {
-         allow read: if request.auth.uid == userId || isAdmin();
-         allow write: if request.auth.uid == userId;
+      allow create: if true;
+      allow read, update: if isOwner(userId) || isAdmin();
+      
+      // Progress data is private to the user, but the admin can also view it.
+      match /progress/{docId} {
+         allow read, write: if isOwner(userId) || isAdmin();
       }
     }
-
-    // Allow authenticated users to read notes
-    // Allow admin to create, update, and delete notes
+    
+    // NOTES
+    // Authenticated users can read all notes.
+    // Only the Admin can create, update, or delete notes.
     match /notes/{noteId} {
-        allow read: if request.auth != null;
-        allow create, update, delete: if isAdmin();
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
     }
     
-    // Allow admin to read/write marketing configuration
-    // Allow any authenticated user to read the configuration
-    match /marketing_config/{docId} {
-        allow read: if request.auth != null;
-        allow write: if isAdmin();
+    // NEWSLETTER SUBSCRIPTIONS
+    // Anyone can subscribe to the newsletter (create).
+    // Only the Admin can read or delete subscriptions.
+    match /newsletter_subscriptions/{subId} {
+      allow create: if true;
+      allow read, delete: if isAdmin();
     }
-
-    // Allow anyone to submit a newsletter subscription
-    match /newsletter_subscriptions/{docId} {
-        allow create: if true;
-        // Only admin can read or delete subscribers
-        allow read, delete: if isAdmin();
+    
+    // MARKETING CONFIGURATION
+    // The admin is the only one who can write to the marketing config.
+    // Any authenticated user can read it to get the link.
+    match /marketing_config/{docId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
     }
   }
 }
