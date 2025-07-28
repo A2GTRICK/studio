@@ -38,7 +38,7 @@ export default function AdminLayout({
       </Card>
       
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
           <TabsTrigger value="notes">
             <NotebookPen className="mr-2 h-4 w-4" />
             Notes
