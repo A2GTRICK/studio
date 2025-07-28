@@ -1,51 +1,50 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Default Security: Disallow all reads and writes by default.
+
+    // Default: Disallow all reads/writes unless explicitly allowed.
     match /{document=**} {
       allow read, write: if false;
     }
-    
-    // --- User Profiles ---
-    // A user can create their own profile upon signup.
-    // A user can read/update their own profile.
-    // The admin can read/write any user profile.
+
+    // Users collection:
+    // - Allow anyone to create a user document (on signup).
+    // - Allow users to read their own data.
+    // - Allow admin to read/write any user document.
     match /users/{userId} {
-      allow create: if request.auth.uid == userId;
-      allow read, update: if request.auth.uid == userId || request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
-      // Deleting users should be handled via Firebase Admin SDK, not client-side.
-      allow delete: if false;
+      allow create: if request.auth != null;
+      allow read: if request.auth.uid == userId;
+      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
 
-    // --- User-Specific Subcollections (e.g., Progress) ---
-    // A user can read and write to their own progress subcollection.
-    // The admin can also access this data.
-    match /users/{userId}/progress/{progressId} {
-        allow read, write: if request.auth.uid == userId || request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    // Progress sub-collection for users:
+    // - Allow a user to write to their own progress data.
+    // - Allow admin to read any progress data.
+    match /users/{userId}/progress/{docId} {
+      allow read, write: if request.auth.uid == userId || request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
-    
-    // --- Notes Collection ---
-    // Anyone who is logged in can read notes.
-    // Only the admin can create, update, or delete notes.
+
+    // Notes collection:
+    // - Allow any authenticated user to read notes.
+    // - Allow only the admin to write/delete notes.
     match /notes/{noteId} {
       allow read: if request.auth != null;
-      allow create, update, delete: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
 
-    // --- Marketing Configuration (Lead Magnet) ---
-    // This rule is the specific fix for the "permission denied" error.
-    // It allows ONLY the admin to write to the lead magnet config document.
-    // It allows any authenticated user to read it.
-    match /marketing_config/lead_magnet {
-      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    // Marketing config:
+    // - Allow any authenticated user to read the config.
+    // - Allow only the admin to write to the config.
+    match /marketing_config/{docId} {
       allow read: if request.auth != null;
+      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
-    
-    // --- Newsletter Subscriptions ---
-    // Anyone can subscribe to the newsletter (no auth required for this action).
-    // Only the admin can read or delete subscriber emails.
+
+    // Newsletter subscriptions:
+    // - Allow anyone to create a subscription.
+    // - Allow only the admin to read/delete subscriptions.
     match /newsletter_subscriptions/{subscriptionId} {
       allow create: if true;
       allow read, delete: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
