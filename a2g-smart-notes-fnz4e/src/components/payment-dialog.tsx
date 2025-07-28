@@ -119,7 +119,7 @@ ${user.displayName || 'A2G Smart Notes User'}
                     </Button>
                     <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
                      <p className="text-center text-xs text-muted-foreground pt-2">
-                        Clicking "I Have Paid" will open your email client to send a confirmation. Your purchase will be activated after our team approves the request.
+                        Clicking "I Have Paid" will log your request for our team to verify and open your email client to send a confirmation. Your purchase will be activated after manual approval.
                     </p>
                 </DialogFooter>
             </DialogContent>

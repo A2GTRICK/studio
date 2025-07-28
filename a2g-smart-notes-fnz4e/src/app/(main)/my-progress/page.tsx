@@ -94,7 +94,7 @@ export default function MyProgressPage() {
         setProgressData(userProgress);
     } catch (e: any) {
         console.error("Error fetching progress report:", e);
-        setError("Failed to load your progress report.");
+        setError("Failed to load your progress report. Please try again later.");
     } finally {
         setIsLoading(false);
     }
@@ -134,6 +134,11 @@ export default function MyProgressPage() {
                 <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle /> Error Loading Report</CardTitle>
                 <CardDescription className="text-destructive/80">{error}</CardDescription>
             </CardHeader>
+             <CardContent>
+                <Button onClick={fetchProgress} variant="destructive">
+                    Retry Now
+                </Button>
+            </CardContent>
         </Card>
       )}
 
