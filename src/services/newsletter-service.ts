@@ -12,6 +12,12 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 
+// --- ADMIN-MANAGED DOWNLOAD LINK ---
+// To change the file users get when they subscribe,
+// update the file in the `public/assets` folder and then change the link below.
+const LEAD_MAGNET_DOWNLOAD_LINK = '/assets/Top-20-Pharmacology-Questions.pdf';
+// ------------------------------------
+
 const SubscribeToNewsletterInputSchema = z.object({
   email: z.string().email(),
 });
@@ -47,9 +53,9 @@ export async function subscribeToNewsletter(input: SubscribeToNewsletterInput): 
     // In a production app, you might want more robust error handling/logging here.
   }
 
-  // The link now points to a real file in the `public` directory.
+  // Return the configured download link.
   return {
     message: "Thanks for subscribing! Your PDF is downloading now. Feel free to explore our app's features.",
-    downloadLink: '/assets/Top-20-Pharmacology-Questions.pdf',
+    downloadLink: LEAD_MAGNET_DOWNLOAD_LINK,
   };
 }
