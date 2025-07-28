@@ -11,7 +11,7 @@ import { subscribeToNewsletter } from '@/services/newsletter-service';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const socialLinks = [
     { name: 'Website', href: 'https://a2gtricks.wordpress.com', icon: Globe },
@@ -284,7 +284,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"The AI question generator is a lifesaver! It helped me focus on the most important topics for my exams."</p>
                             <div className="flex items-center gap-4 mt-4">
-                                <Avatar>
+                                <Avatar className="h-10 w-10">
                                     <AvatarFallback>P</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -298,7 +298,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"Finally, all my notes in one place. The library is incredibly well-organized. A must-have for any pharmacy student."</p>
                             <div className="flex items-center gap-4 mt-4">
-                               <Avatar>
+                               <Avatar className="h-10 w-10">
                                     <AvatarFallback>R</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -312,7 +312,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"The premium subscription is worth every rupee. The detailed notes and follow-up question feature gave me the confidence I needed."</p>
                              <div className="flex items-center gap-4 mt-4">
-                                <Avatar>
+                                <Avatar className="h-10 w-10">
                                     <AvatarFallback>A</AvatarFallback>
                                 </Avatar>
                                 <div>
