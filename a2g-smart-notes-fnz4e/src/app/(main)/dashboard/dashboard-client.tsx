@@ -214,6 +214,7 @@ export default function DashboardClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
+  const [hasFetched, setHasFetched] = useState(false); // New state to track if fetch has been attempted
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -232,12 +233,14 @@ export default function DashboardClient() {
     if (!user) return;
     setIsLoading(true);
     setError(null);
+    setHasFetched(true); // Mark that a fetch has been attempted
 
     try {
         const userProgress = await getSubjectsProgress(user.uid);
         
         if (userProgress.length === 0) {
              setInsights(null); 
+             setError("No progress data found. Complete some MCQs to get started.");
         } else {
             const result = await generateDashboardInsights({
                 studentName: user.displayName?.split(' ')[0] || 'Student',
@@ -253,6 +256,7 @@ export default function DashboardClient() {
             ? 'The AI model is currently overloaded. Please try again in a few moments.'
             : 'Failed to load smart insights. Please try refreshing.';
         setError(errorMessage);
+        setInsights(null);
     } finally {
         setIsLoading(false);
     }
@@ -263,7 +267,7 @@ export default function DashboardClient() {
       classAverage: { label: 'Class Average', color: 'hsl(var(--muted-foreground))' },
   };
 
-  const showInitialCard = !isLoading && !insights && !error;
+  const showInitialCard = !hasFetched;
 
   return (
     <div className="space-y-6">
@@ -300,7 +304,7 @@ export default function DashboardClient() {
 
       {isLoading && <DashboardSkeleton message={currentLoadingMessage} />}
       
-      {!isLoading && error && (
+      {hasFetched && !isLoading && error && (
          <Card className="border-destructive bg-destructive/10">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle /> Error Loading Dashboard</CardTitle>
@@ -315,7 +319,7 @@ export default function DashboardClient() {
         </Card>
       )}
 
-      {!isLoading && insights && (
+      {hasFetched && !isLoading && insights && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
             <div className="lg:col-span-1 flex flex-col gap-6">
