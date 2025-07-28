@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, onSnapshot, updateDoc, doc, where, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, User, CheckCircle, Wrench, AlertTriangle } from 'lucide-react';
+import { Loader2, User, CheckCircle, Wrench, AlertTriangle, UserSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,11 +36,9 @@ export default function AdminManualVerificationPage() {
 
     useEffect(() => {
         setLoading(true);
+        // This query now fetches ALL users, so the admin can search for and manage anyone.
         const usersCollection = collection(db, 'users');
-        const q = query(
-            usersCollection, 
-            where('paymentRequest', '==', null) // Fetch users with no payment request object
-        );
+        const q = query(usersCollection);
         
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const usersList = snapshot.docs.map(doc => doc.data() as AppUser);
@@ -75,8 +73,10 @@ export default function AdminManualVerificationPage() {
     };
     
     const filteredUsers = users.filter(user => 
-        user.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+        searchQuery.trim() === '' || (
+            (user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
     );
 
     return (
@@ -88,13 +88,13 @@ export default function AdminManualVerificationPage() {
                         Manual Verification Failsafe
                     </CardTitle>
                     <CardDescription>
-                        This page lists users who have NOT made a verification request through the app. Use this as a backup if a user emails you directly for approval but doesn't appear in the main "Verifications" tab.
+                        This page is your master control for user access. You can see all registered users here. If a user's payment confirmation email arrives but their request doesn't appear in the main "Verifications" tab, search for them here by name or email and manually grant them access.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="mb-4">
                         <Input 
-                            placeholder="Search by name or email to find a user..."
+                            placeholder="Search by name or email to filter the list..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -102,7 +102,7 @@ export default function AdminManualVerificationPage() {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-48">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p className="mt-4 text-muted-foreground">Loading users...</p>
+                            <p className="mt-4 text-muted-foreground">Loading user database...</p>
                         </div>
                     ) : filteredUsers.length > 0 ? (
                         <Table>
@@ -110,6 +110,7 @@ export default function AdminManualVerificationPage() {
                                 <TableRow>
                                     <TableHead>User</TableHead>
                                     <TableHead>Email</TableHead>
+                                    <TableHead>Payment Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -124,12 +125,21 @@ export default function AdminManualVerificationPage() {
                                             {user.displayName || 'N/A'}
                                         </TableCell>
                                         <TableCell>{user.email}</TableCell>
+                                        <TableCell>
+                                            {user.paymentRequest?.status === 'verified' ? (
+                                                <span className="text-green-600 font-semibold">Verified</span>
+                                            ) : user.paymentRequest?.status === 'pending' ? (
+                                                <span className="text-yellow-600 font-semibold">Pending</span>
+                                            ) : (
+                                                <span className="text-muted-foreground">Not Requested</span>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <Button variant="outline" size="sm">
+                                                    <Button variant="outline" size="sm" disabled={user.paymentRequest?.status === 'verified'}>
                                                         <CheckCircle className="mr-2 h-4 w-4" />
-                                                        Manually Approve
+                                                        {user.paymentRequest?.status === 'verified' ? 'Already Verified' : 'Manually Approve'}
                                                     </Button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
@@ -154,9 +164,9 @@ export default function AdminManualVerificationPage() {
                         </Table>
                     ) : (
                          <div className="flex flex-col items-center justify-center h-48 text-center">
-                            <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-                            <h3 className="text-xl font-semibold">No Unverified Users Found</h3>
-                            <p className="text-muted-foreground mt-2">All registered users have a payment status record.</p>
+                            <UserSearch className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                            <h3 className="text-xl font-semibold">No Users Found</h3>
+                            <p className="text-muted-foreground mt-2">Could not find any user matching your search query, or no users have registered yet.</p>
                         </div>
                     )}
                 </CardContent>
