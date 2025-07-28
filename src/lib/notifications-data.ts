@@ -4,7 +4,7 @@ export type Notification = {
   title: string;
   date: string;
   content: string;
-  category: "University Update" | "Exam Alert" | "Content Update" | "General";
+  category: "University Update" | "Exam Alert" | "Content Update" | "General" | "Job Alert";
   target: {
     course?: "B.Pharm" | "D.Pharm";
     year?: "1st Year" | "2nd Year" | "3rd Year" | "4th Year";
@@ -16,11 +16,11 @@ export type Notification = {
 export const notifications: Notification[] = [
   {
     id: 1,
-    title: "Official Schedule for B.Pharm 2nd Semester Theory Exams",
+    title: "Official Schedule for B.Pharm Final Year Theory Exams",
     date: "2024-07-22",
-    content: "The examination authority has released the final schedule for the upcoming B.Pharm 2nd Semester theory examinations. The exams are set to commence on August 20, 2024. Students are advised to download the official timetable from the university's portal. Refer to Circular No. EXM/2024/112.",
+    content: "The examination authority has released the final schedule for the upcoming B.Pharm 4th Year (8th Semester) theory examinations, commencing August 28, 2024. Refer to Circular No. EXM/2024/115.",
     category: "University Update",
-    target: { course: "B.Pharm", year: "1st Year" } 
+    target: { course: "B.Pharm", year: "4th Year" } 
   },
   {
     id: 2,
@@ -33,20 +33,21 @@ export const notifications: Notification[] = [
   },
   {
     id: 3,
-    title: "Content Update: New Premium Notes for Medicinal Chemistry",
+    title: "New Premium Notes: Pharmacology IV",
     date: "2024-07-20",
-    content: "Our academic team has just published a new set of comprehensive premium notes for Medicinal Chemistry III (B.Pharm 3rd Year), covering SAR of antibiotics and anticancer agents.",
+    content: "Our academic team has just published a new set of comprehensive premium notes for Pharmacology IV (B.Pharm 4th Year), focusing on chemotherapy and bioinformatics.",
     category: "Content Update",
-    target: { course: "B.Pharm", year: "3rd Year" },
+    target: { course: "B.Pharm", year: "4th Year" },
     link: "/notes"
   },
   {
     id: 4,
-    title: "D.Pharm 1st Year: Sessional Examination Timetable",
+    title: "Job Alert: Pharmacist at Apollo Hospitals (5 Vacancies)",
     date: "2024-07-19",
-    content: "This is to inform all D.Pharm 1st year students that the sessional examinations will be conducted from August 5th to August 10th. Please contact your respective department heads for the detailed internal schedule.",
-    category: "University Update",
-    target: { course: "D.Pharm", year: "1st Year" }
+    content: "Apollo Hospitals has posted openings for the position of Pharmacist. Candidates with a B.Pharm or D.Pharm are eligible to apply. See the link for more details.",
+    category: "Job Alert",
+    target: {},
+    link: "https://www.apollopharmacy.in/careers"
   },
   {
     id: 5,
@@ -60,17 +61,17 @@ export const notifications: Notification[] = [
     id: 6,
     title: "Alert: State Govt. Pharmacist Recruitment (250 Posts)",
     date: "2024-07-17",
-    content: "The State Health Department has issued a notification for the recruitment of 250 Pharmacists. The official application portal will be open from July 25th to August 25th, 2024. Eligibility criteria and syllabus are available on the department's official website.",
+    content: "The State Health Department has issued a notification for the recruitment of 250 Pharmacists. The official application portal will be open from July 25th to August 25th, 2024.",
     category: "Exam Alert",
     target: {}
   },
   {
     id: 7,
-    title: "Platform Update: Enhanced User Dashboard",
+    title: "Platform Update: My Progress Tracking Now Live!",
     date: "2024-07-15",
-    content: "We have rolled out a new and improved user dashboard. Track your progress, get AI-powered suggestions, and view your performance analytics all in one place. We welcome your feedback on this new feature.",
-    category: "General",
+    content: "We have rolled out a new and improved user dashboard. Track your progress, get AI-powered suggestions, and view your performance analytics all in one place.",
+    category: "Content Update",
     target: {},
-    link: "/dashboard"
+    link: "/my-progress"
   }
 ];
