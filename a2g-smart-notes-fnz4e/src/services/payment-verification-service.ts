@@ -19,7 +19,6 @@ export type CreateVerificationRequestInput = z.infer<typeof CreateVerificationRe
 /**
  * Creates a new payment verification request document in the 'payment_verifications' collection.
  * This is triggered when a user clicks "I Have Paid" in the payment dialog.
- * This service is simplified to only store the essential data to avoid permission issues.
  * @param data The details of the purchase to be verified.
  */
 export async function createVerificationRequest(data: CreateVerificationRequestInput): Promise<void> {
