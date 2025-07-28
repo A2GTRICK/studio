@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { leadMagnetPath } from '@/config/marketing';
+import { getLeadMagnetPath, updateLeadMagnetPath } from '@/services/marketing-service';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 
@@ -26,21 +26,41 @@ interface Subscriber {
 
 const LeadMagnetManager = () => {
     const { toast } = useToast();
-    const [currentPath, setCurrentPath] = useState(leadMagnetPath);
+    const [currentPath, setCurrentPath] = useState('');
+    const [isLoadingPath, setIsLoadingPath] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleUpdatePath = (e: React.FormEvent) => {
+    useEffect(() => {
+        const fetchPath = async () => {
+            setIsLoadingPath(true);
+            try {
+                const path = await getLeadMagnetPath();
+                setCurrentPath(path);
+            } catch (error) {
+                console.error("Failed to fetch lead magnet path:", error);
+                toast({ title: "Error", description: "Could not load the current lead magnet path.", variant: "destructive" });
+            } finally {
+                setIsLoadingPath(false);
+            }
+        };
+        fetchPath();
+    }, [toast]);
+
+    const handleUpdatePath = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // This is a simulation. In a real app, this would trigger a backend process
-        // to update the `src/config/marketing.ts` file.
-        // For Studio, we will prompt the user (the AI) to make the change.
-        toast({
-            title: "Action Required!",
-            description: `To finalize the change, please update the 'leadMagnetPath' in 'src/config/marketing.ts' to: "${currentPath}"`,
-            duration: 10000,
-        });
-        setIsSubmitting(false);
+        try {
+            await updateLeadMagnetPath(currentPath);
+            toast({
+                title: "Success!",
+                description: "The lead magnet path has been updated.",
+            });
+        } catch (error) {
+             console.error("Failed to update lead magnet path:", error);
+             toast({ title: "Error", description: "Could not save the new path.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
     
     return (
@@ -52,53 +72,61 @@ const LeadMagnetManager = () => {
                 </CardDescription>
             </CardHeader>
             <form onSubmit={handleUpdatePath}>
-                <Tabs defaultValue="local-file" className="w-full">
+                <Tabs defaultValue="web-link" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="local-file"><FolderArchive className="mr-2 h-4 w-4"/> Local File</TabsTrigger>
                         <TabsTrigger value="web-link"><LinkIcon className="mr-2 h-4 w-4"/> Web Link</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="local-file">
-                        <CardContent className="pt-6 space-y-2">
-                            <Label htmlFor="local-path">Local File Path</Label>
-                             <div className="flex gap-2 items-center">
-                                <Input 
-                                    id="local-path" 
-                                    value={currentPath.startsWith('/assets/') ? currentPath : '/assets/your-file.pdf'}
-                                    onChange={(e) => setCurrentPath(e.target.value)} 
-                                    placeholder="/assets/your-file.pdf"
-                                />
-                                <Button variant="secondary" asChild>
-                                    <a href={currentPath} target="_blank" rel="noopener noreferrer" >
-                                        <Download className="h-4 w-4" />
-                                    </a>
-                                </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground pt-2">
-                                <strong>How to use:</strong>
-                                <br /> 1. Upload a file to the `public/assets` folder.
-                                <br /> 2. Enter the path here (e.g., `/assets/your-file.pdf`).
-                            </p>
-                        </CardContent>
-                    </TabsContent>
-                    <TabsContent value="web-link">
-                        <CardContent className="pt-6 space-y-2">
-                             <Label htmlFor="web-link">External File URL</Label>
-                             <Input 
-                                id="web-link" 
-                                value={currentPath.startsWith('http') ? currentPath : 'https://'}
-                                onChange={(e) => setCurrentPath(e.target.value)}
-                                placeholder="https://example.com/your-file.pdf"
-                            />
-                             <p className="text-xs text-muted-foreground pt-2">
-                                <strong>How to use:</strong>
-                                <br /> 1. Upload your file to any web service (like Google Drive or a file host).
-                                <br /> 2. Paste the direct, public download link here.
-                             </p>
-                        </CardContent>
-                    </TabsContent>
+                     {isLoadingPath ? (
+                        <div className="flex items-center justify-center p-6 h-48">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                     ) : (
+                        <>
+                            <TabsContent value="local-file">
+                                <CardContent className="pt-6 space-y-2">
+                                    <Label htmlFor="local-path">Local File Path</Label>
+                                     <div className="flex gap-2 items-center">
+                                        <Input 
+                                            id="local-path" 
+                                            value={currentPath.startsWith('/assets/') ? currentPath : '/assets/your-file.pdf'}
+                                            onChange={(e) => setCurrentPath(e.target.value)} 
+                                            placeholder="/assets/your-file.pdf"
+                                        />
+                                        <Button variant="secondary" asChild>
+                                            <a href={currentPath} target="_blank" rel="noopener noreferrer" >
+                                                <Download className="h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground pt-2">
+                                        <strong>How to use:</strong>
+                                        <br /> 1. Upload a file to the `public/assets` folder.
+                                        <br /> 2. Enter the path here (e.g., `/assets/your-file.pdf`).
+                                    </p>
+                                </CardContent>
+                            </TabsContent>
+                            <TabsContent value="web-link">
+                                <CardContent className="pt-6 space-y-2">
+                                     <Label htmlFor="web-link">External File URL</Label>
+                                     <Input 
+                                        id="web-link" 
+                                        value={currentPath.startsWith('http') ? currentPath : 'https://'}
+                                        onChange={(e) => setCurrentPath(e.target.value)}
+                                        placeholder="https://example.com/your-file.pdf"
+                                    />
+                                     <p className="text-xs text-muted-foreground pt-2">
+                                        <strong>How to use:</strong>
+                                        <br /> 1. Upload your file to any web service (like Google Drive or a file host).
+                                        <br /> 2. Paste the direct, public download link here.
+                                     </p>
+                                </CardContent>
+                            </TabsContent>
+                        </>
+                     )}
                 </Tabs>
                 <CardFooter>
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    <Button type="submit" className="w-full" disabled={isSubmitting || isLoadingPath}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         <Save className="mr-2 h-4 w-4" /> Save New Path
                     </Button>
