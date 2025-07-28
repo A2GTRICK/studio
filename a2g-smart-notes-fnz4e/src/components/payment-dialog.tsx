@@ -21,7 +21,6 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
     const { toast } = useToast();
     const { user } = useAuth();
     
-    // Use the centrally managed, secure payment config
     const UPI_ID = paymentConfig.upiId;
     const ADMIN_EMAIL = paymentConfig.adminEmail;
     const QR_CODE_PATH = paymentConfig.qrCodePath;
@@ -44,7 +43,6 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
             return;
         }
 
-        // Always prepare the email, as this is the primary confirmation method for the user.
         const subject = `Payment Made: ${title}`;
         const body = `
 Hello A2G Smart Notes Team,
@@ -65,7 +63,8 @@ ${user.displayName || 'A2G Smart Notes User'}
         `;
         const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-        // Attempt to log the verification request in the database, but don't let it block the email.
+        // Attempt to log the verification request in the database, but fail silently.
+        // The user's primary action is sending the email.
         try {
             await createVerificationRequest({
                 uid: user.uid,
@@ -73,12 +72,11 @@ ${user.displayName || 'A2G Smart Notes User'}
                 price: price,
             });
         } catch (error) {
-            // Log the error for debugging but don't show a failing toast to the user.
-            // The email is the more critical part of the user flow.
-            console.error("Payment confirmation database logging failed:", error);
+            console.error("Silent Error: Could not log payment verification request to DB:", error);
+            // Do not show an error to the user. The email is the critical part.
         }
 
-        // Open the user's default email client. This should now always be reached.
+        // Always proceed to open the email client.
         window.location.href = mailtoLink;
 
         setIsOpen(false);
@@ -121,7 +119,7 @@ ${user.displayName || 'A2G Smart Notes User'}
                     </Button>
                     <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
                      <p className="text-center text-xs text-muted-foreground pt-2">
-                        Clicking "I Have Paid" will log your request for our team to verify and open your email client to send a confirmation. Your purchase will be activated after manual approval.
+                        Clicking "I Have Paid" will open your email client to send a confirmation. Your purchase will be activated after our team approves the request.
                     </p>
                 </DialogFooter>
             </DialogContent>
