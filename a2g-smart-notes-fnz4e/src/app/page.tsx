@@ -12,7 +12,6 @@ import { subscribeToNewsletter } from '@/services/newsletter-service';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AiImage } from '@/components/ai-image';
 
 const socialLinks = [
     { name: 'Website', href: 'https://a2gtricks.wordpress.com', icon: Globe },
@@ -44,6 +43,12 @@ export default function LandingPage() {
         title: "Success!",
         description: result.message,
       });
+
+      // Trigger the download
+      if (result.downloadLink) {
+        window.open(result.downloadLink, '_blank');
+      }
+
       setEmail('');
 
     } catch (error: any) {
@@ -155,7 +160,9 @@ export default function LandingPage() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center items-center">
-                        <AiImage data-ai-hint="friendly pharmacist professor mascot ghibli style" alt="A friendly pharmacist professor mascot" width={300} height={300} className="rounded-full shadow-lg object-cover" />
+                        <div className="relative w-[300px] h-[300px] flex items-center justify-center rounded-full bg-slate-200 shadow-[8px_8px_16px_#d1d1d1,-8px_-8px_16px_#ffffff] transition-transform duration-300 hover:scale-105">
+                            <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Logo" width={220} height={220} className="p-4"/>
+                        </div>
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-12 mt-16">
@@ -277,7 +284,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"The AI question generator is a lifesaver! It helped me focus on the most important topics for my exams."</p>
                             <div className="flex items-center gap-4 mt-4">
-                                <AiImage data-ai-hint="indian female student" alt="User avatar" width={40} height={40} className="rounded-full object-cover" />
+                                <Image src="https://i.postimg.cc/8z0L3bY1/female-student-1.jpg" alt="User avatar for Priya S." width={40} height={40} className="rounded-full object-cover" />
                                 <div>
                                     <p className="font-semibold">Priya S.</p>
                                     <p className="text-sm text-muted-foreground">B.Pharm, 2nd Year</p>
@@ -289,7 +296,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"Finally, all my notes in one place. The library is incredibly well-organized. A must-have for any pharmacy student."</p>
                             <div className="flex items-center gap-4 mt-4">
-                                <AiImage data-ai-hint="indian male student" alt="User avatar" width={40} height={40} className="rounded-full object-cover" />
+                                <Image src="https://i.postimg.cc/5fN1Y3W9/male-student-1.jpg" alt="User avatar for Rahul K." width={40} height={40} className="rounded-full object-cover" />
                                 <div>
                                     <p className="font-semibold">Rahul K.</p>
                                     <p className="text-sm text-muted-foreground">D.Pharm, 1st Year</p>
@@ -301,7 +308,7 @@ export default function LandingPage() {
                         <CardContent className="p-6">
                             <p className="text-muted-foreground italic">"The premium subscription is worth every rupee. The detailed notes and follow-up question feature gave me the confidence I needed."</p>
                              <div className="flex items-center gap-4 mt-4">
-                                <AiImage data-ai-hint="smiling indian woman" alt="User avatar" width={40} height={40} className="rounded-full object-cover" />
+                                <Image src="https://i.postimg.cc/J47fYC8p/female-student-2.jpg" alt="User avatar for Anjali M." width={40} height={40} className="rounded-full object-cover" />
                                 <div>
                                     <p className="font-semibold">Anjali M.</p>
                                     <p className="text-sm text-muted-foreground">B.Pharm, 3rd Year</p>
@@ -365,5 +372,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
