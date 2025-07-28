@@ -38,6 +38,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { generateNotesFromTopic } from '@/ai/flows/generate-notes-from-topic';
 import { useNotes } from '@/context/notes-context';
 import type { Note } from '@/context/notes-context';
 
@@ -45,6 +47,12 @@ const submissionMessages = [
     "Details ko verify kar rahe hain...",
     "Note ko library mein save kar rahe hain...",
     "Ek second, bas ho gaya...",
+];
+
+const aiSubmissionMessages = [
+    "AI ko topic samjha rahe hain...",
+    "AI notes likh raha hai...",
+    "Notes ko final touch de rahe hain...",
 ];
 
 const yearOptions: { [key: string]: string[] } = {
@@ -76,6 +84,7 @@ export default function AdminNotesPage() {
     const { toast } = useToast();
     const [currentSubmissionMessage, setCurrentSubmissionMessage] = useState(submissionMessages[0]);
     const [selectedCourse, setSelectedCourse] = useState<"B.Pharm" | "D.Pharm" | "">("");
+    const [activeTab, setActiveTab] = useState('ai-generate');
     const [isPremium, setIsPremium] = useState(false);
     
     // For Edit Dialog
@@ -88,7 +97,7 @@ export default function AdminNotesPage() {
      useEffect(() => {
         let interval: NodeJS.Timeout;
         if (isSubmitting) {
-          const messageArray = submissionMessages;
+          const messageArray = activeTab === 'ai-generate' ? aiSubmissionMessages : submissionMessages;
           interval = setInterval(() => {
             setCurrentSubmissionMessage(prev => {
                 const nextIndex = (messageArray.indexOf(prev) + 1) % messageArray.length;
@@ -97,7 +106,7 @@ export default function AdminNotesPage() {
           }, 2500);
         }
         return () => clearInterval(interval);
-    }, [isSubmitting]);
+    }, [isSubmitting, activeTab]);
     
     // Set states when an edit dialog is opened
     useEffect(() => {
@@ -113,7 +122,6 @@ export default function AdminNotesPage() {
     const handleAddNote = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setCurrentSubmissionMessage(submissionMessages[0]);
         const form = e.currentTarget;
         const formData = new FormData(form);
         
@@ -142,15 +150,35 @@ export default function AdminNotesPage() {
         }
 
         try {
-            const file = formData.get('fileUpload') as File;
             let noteContent = '';
 
-            if (file && file.size > 0) {
-                 noteContent = await readFileAsText(file);
-            } else {
-                 toast({ title: "File Required", description: "Please select a .txt or .md file to upload.", variant: "destructive" });
-                 setIsSubmitting(false);
-                 return;
+            if (activeTab === 'ai-generate') {
+                setCurrentSubmissionMessage(aiSubmissionMessages[0]);
+                const result = await generateNotesFromTopic({
+                    course: baseNoteDetails.course,
+                    year: baseNoteDetails.year,
+                    subject: baseNoteDetails.subject,
+                    topic: baseNoteDetails.title,
+                });
+                noteContent = result.notes;
+            } else if (activeTab === 'upload-file') {
+                setCurrentSubmissionMessage(submissionMessages[0]);
+                const file = formData.get('fileUpload') as File;
+                if (!file || file.size === 0) {
+                    toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
+                    setIsSubmitting(false);
+                    return;
+                }
+                noteContent = await readFileAsText(file);
+            } else { // g-drive-link
+                setCurrentSubmissionMessage(submissionMessages[0]);
+                const driveLink = formData.get('driveLink') as string;
+                 if (!driveLink) {
+                    toast({ title: "Link Required", description: "Please enter a Google Drive link.", variant: "destructive" });
+                    setIsSubmitting(false);
+                    return;
+                }
+                noteContent = driveLink;
             }
 
             const noteToAdd: Omit<Note, 'id' | 'createdAt'> = {
@@ -246,7 +274,7 @@ export default function AdminNotesPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="font-headline flex items-center gap-2"><PlusCircle /> Add New Note</CardTitle>
-                            <CardDescription>Fill in the details and upload the note file.</CardDescription>
+                            <CardDescription>Choose a method to add a new note to the library.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
@@ -306,21 +334,58 @@ export default function AdminNotesPage() {
                                     </div>
                                 )}
                             </div>
-                            <div className="space-y-2 pt-2">
-                                <Label htmlFor="fileUpload">Note Content File</Label>
-                                <div className="relative">
-                                    <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input id="fileUpload" name="fileUpload" type="file" accept=".txt,.md" className="pl-10" disabled={isSubmitting} required/>
-                                </div>
-                                <p className="text-xs text-muted-foreground">Upload a .txt or .md file containing the note content.</p>
-                            </div>
                         </CardContent>
-                        <CardFooter>
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                {isSubmitting ? currentSubmissionMessage : 'Add Note'}
-                            </Button>
-                        </CardFooter>
+                        <Tabs defaultValue="ai-generate" className="w-full" onValueChange={setActiveTab}>
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="ai-generate">AI Generate</TabsTrigger>
+                                <TabsTrigger value="upload-file">Upload File</TabsTrigger>
+                                <TabsTrigger value="g-drive-link">G-Drive Link</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="ai-generate">
+                                <CardContent className="space-y-2 pt-4">
+                                    <div className="p-4 text-center bg-primary/5 rounded-lg border border-primary/20">
+                                        <BrainCircuit className="mx-auto h-8 w-8 text-primary mb-2"/>
+                                        <p className="text-sm text-muted-foreground">The AI will generate notes based on the <strong>Title/Topic</strong> and <strong>Subject</strong> entered above.</p>
+                                    </div>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                        {isSubmitting ? currentSubmissionMessage : 'Generate & Add Note'}
+                                    </Button>
+                                </CardFooter>
+                            </TabsContent>
+                            <TabsContent value="upload-file">
+                                 <CardContent className="space-y-2 pt-4">
+                                    <Label htmlFor="fileUpload">Upload .txt or .md file</Label>
+                                     <div className="relative">
+                                        <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input id="fileUpload" name="fileUpload" type="file" accept=".txt,.md" className="pl-10" disabled={isSubmitting}/>
+                                     </div>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                        {isSubmitting ? currentSubmissionMessage : 'Upload & Add Note'}
+                                    </Button>
+                                </CardFooter>
+                            </TabsContent>
+                            <TabsContent value="g-drive-link">
+                                 <CardContent className="space-y-2 pt-4">
+                                    <Label htmlFor="driveLink">Note Google Drive Link</Label>
+                                    <div className="relative">
+                                        <LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input id="driveLink" name="driveLink" placeholder="https://docs.google.com/..." className="pl-10" disabled={isSubmitting} />
+                                    </div>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                        {isSubmitting ? currentSubmissionMessage : 'Add Note from Link'}
+                                    </Button>
+                                </CardFooter>
+                            </TabsContent>
+                        </Tabs>
                     </Card>
                 </form>
             </div>
@@ -495,3 +560,4 @@ export default function AdminNotesPage() {
     );
 
     
+
