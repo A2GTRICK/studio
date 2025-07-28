@@ -6,14 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
-import { AiImage } from '@/components/ai-image';
 import { useAuth } from "@/hooks/use-auth";
 import { createVerificationRequest } from "@/services/payment-verification-service";
-
-// --- PAYMENT DETAILS: EDIT HERE ---
-const UPI_ID = "a2gtrickacademy@upi";
-const ADMIN_EMAIL = "a2gtrickacademy@gmail.com";
-// ------------------------------------
+import { paymentConfig } from "@/lib/payment-config";
 
 interface PaymentDialogProps {
     isOpen: boolean;
@@ -25,6 +20,11 @@ interface PaymentDialogProps {
 export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialogProps) {
     const { toast } = useToast();
     const { user } = useAuth();
+    
+    // Use the centrally managed, secure payment config
+    const UPI_ID = paymentConfig.upiId;
+    const ADMIN_EMAIL = paymentConfig.adminEmail;
+    const QR_CODE_PATH = paymentConfig.qrCodePath;
 
     const handleCopyUpiId = () => {
         navigator.clipboard.writeText(UPI_ID);
@@ -104,7 +104,7 @@ ${user.displayName || 'A2G Smart Notes User'}
                 <div className="py-4 space-y-4">
                     <p className="text-center text-muted-foreground text-sm">Scan the QR code below with any UPI app or copy the UPI ID.</p>
                     <div className="flex justify-center">
-                        <AiImage data-ai-hint="upi qr code payment" alt="UPI QR Code" width={250} height={250} />
+                        <Image src={QR_CODE_PATH} alt="UPI QR Code" width={250} height={250} />
                     </div>
                     <Card>
                         <CardContent className="p-3 flex items-center justify-between">
