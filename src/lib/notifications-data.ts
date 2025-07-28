@@ -16,32 +16,32 @@ export type Notification = {
 const getRecentDate = (daysAgo: number): string => {
     const date = new Date();
     date.setDate(date.getDate() - daysAgo);
-    return date.toISOString().split('T')[0];
+    return date.toISOString();
 };
 
 // Updated, more official-sounding notifications with recent dates
 export const notifications: Notification[] = [
   {
     id: 1,
-    title: "Official Schedule for B.Pharm Final Year Theory Exams",
-    date: getRecentDate(0), // Today
-    content: "The examination authority has released the final schedule for the upcoming B.Pharm 4th Year (8th Semester) theory examinations, commencing August 28, 2024. Refer to Circular No. EXM/2024/115.",
+    title: "Official Schedule for B.Pharm Final Year Theory Exams Released",
+    date: getRecentDate(1), // Yesterday
+    content: "The examination authority has released the final schedule for the upcoming B.Pharm 4th Year (8th Semester) theory examinations. Refer to Circular No. EXM/2024/115 for details.",
     category: "University Update",
     target: { course: "B.Pharm", year: "4th Year" } 
   },
   {
     id: 2,
-    title: "GPAT 2025: Application Portal Now Live",
-    date: getRecentDate(1), // Yesterday
-    content: "The National Testing Agency (NTA) has started accepting applications for the Graduate Pharmacy Aptitude Test (GPAT) 2025. The deadline for online submission is August 31, 2024. No extensions will be granted.",
+    title: "GPAT 2025: Application Portal Expected to Open in August",
+    date: getRecentDate(2), // 2 days ago
+    content: "The National Testing Agency (NTA) is expected to open the application window for the Graduate Pharmacy Aptitude Test (GPAT) 2025 next month. Candidates are advised to prepare their documents.",
     category: "Exam Alert",
     target: {},
     link: "/mcq-practice"
   },
   {
     id: 3,
-    title: "New Premium Notes: Pharmacology IV",
-    date: getRecentDate(2), // 2 days ago
+    title: "New Premium Notes Added: Pharmacology IV",
+    date: getRecentDate(3), // 3 days ago
     content: "Our academic team has just published a new set of comprehensive premium notes for Pharmacology IV (B.Pharm 4th Year), focusing on chemotherapy and bioinformatics.",
     category: "Content Update",
     target: { course: "B.Pharm", year: "4th Year" },
@@ -49,34 +49,34 @@ export const notifications: Notification[] = [
   },
   {
     id: 4,
-    title: "Job Alert: Pharmacist at Apollo Hospitals (5 Vacancies)",
-    date: getRecentDate(3), // 3 days ago
-    content: "Apollo Hospitals has posted openings for the position of Pharmacist. Candidates with a B.Pharm or D.Pharm are eligible to apply. See the link for more details.",
+    title: "Job Alert: Pharmacist at Apollo Hospitals (Multiple Vacancies)",
+    date: getRecentDate(4), // 4 days ago
+    content: "Apollo Hospitals has posted openings for the position of Pharmacist across various locations. B.Pharm or D.Pharm candidates are eligible to apply. See the link for more details.",
     category: "Job Alert",
     target: {},
     link: "https://www.apollopharmacy.in/careers"
   },
   {
     id: 5,
-    title: "Scheduled Maintenance for AI Services",
-    date: getRecentDate(4), // 4 days ago
-    content: "Please be advised that our AI-powered tools (Notes & Exam Question Generators) will undergo scheduled maintenance on Sunday, July 28th, from 2:00 AM to 4:00 AM IST to enhance performance and accuracy.",
+    title: "Platform Maintenance: AI Services",
+    date: getRecentDate(5), // 5 days ago
+    content: "Please be advised that our AI-powered tools will undergo scheduled maintenance this Sunday from 2:00 AM to 4:00 AM IST to enhance performance and accuracy.",
     category: "General",
     target: {}
   },
   {
     id: 6,
-    title: "Alert: State Govt. Pharmacist Recruitment (250 Posts)",
-    date: getRecentDate(5), // 5 days ago
-    content: "The State Health Department has issued a notification for the recruitment of 250 Pharmacists. The official application portal will be open from July 25th to August 25th, 2024.",
+    title: "Alert: State Govt. Pharmacist Recruitment Examination",
+    date: getRecentDate(6), // 6 days ago
+    content: "The State Health Department has issued a notification for the recruitment of 250 Pharmacists. The official application portal will be open from August 1st to August 31st, 2024.",
     category: "Exam Alert",
     target: {}
   },
   {
     id: 7,
-    title: "Platform Update: My Progress Tracking Now Live!",
-    date: getRecentDate(6), // 6 days ago
-    content: "We have rolled out a new and improved user dashboard. Track your progress, get AI-powered suggestions, and view your performance analytics all in one place.",
+    title: "Platform Update: 'My Progress' Tracking Now Live!",
+    date: getRecentDate(7), // 7 days ago
+    content: "We have rolled out a new and improved user dashboard. Track your quiz performance, get AI-powered suggestions, and view your analytics all in one place.",
     category: "Content Update",
     target: {},
     link: "/my-progress"
