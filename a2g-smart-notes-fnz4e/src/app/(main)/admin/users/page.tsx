@@ -3,10 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, User, Shield, MoreHorizontal, Edit } from 'lucide-react';
+import { Loader2, User, Shield, MoreHorizontal, Edit, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -15,17 +15,26 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
 
 
 // --- Hardcoded Admin User ID ---
 const ADMIN_UID = 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
 // -----------------------------
 
+interface PaymentRequest {
+    productName: string;
+    price: string;
+    status: 'pending' | 'verified' | 'rejected';
+    requestedAt: Timestamp;
+}
+
 interface AppUser {
     uid: string;
     email: string | null;
     displayName: string | null;
     photoURL: string | null;
+    paymentRequest?: PaymentRequest;
 }
 
 export default function AdminUsersPage() {
@@ -82,7 +91,7 @@ export default function AdminUsersPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">User Management</CardTitle>
-                    <CardDescription>View and manage all registered users.</CardDescription>
+                    <CardDescription>View and manage all registered users. To approve payments, please go to the <Link href="/admin/verifications" className="underline text-primary">Verifications tab</Link>.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {loading ? (
@@ -97,6 +106,7 @@ export default function AdminUsersPage() {
                                     <TableHead>User</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Role</TableHead>
+                                    <TableHead>Payment Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -116,6 +126,20 @@ export default function AdminUsersPage() {
                                                 <Badge variant="destructive"><Shield className="mr-2 h-3 w-3" />Admin</Badge>
                                             ) : (
                                                 <Badge variant="secondary"><User className="mr-2 h-3 w-3" />User</Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.paymentRequest?.status === 'pending' && (
+                                                <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+                                                    <AlertTriangle className="mr-2 h-3 w-3" />
+                                                    Pending Verification
+                                                </Badge>
+                                            )}
+                                             {user.paymentRequest?.status === 'verified' && (
+                                                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                                    <CheckCircle className="mr-2 h-3 w-3" />
+                                                    Verified
+                                                </Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
