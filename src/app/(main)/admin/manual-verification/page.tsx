@@ -10,8 +10,9 @@ import { Loader2, User, CheckCircle, Wrench, AlertTriangle, UserSearch } from 'l
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface PaymentRequest {
     productName: string;
@@ -33,6 +34,11 @@ export default function AdminManualVerificationPage() {
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [productName, setProductName] = useState('');
+    const [price, setPrice] = useState('');
+
 
     useEffect(() => {
         setLoading(true);
@@ -53,33 +59,43 @@ export default function AdminManualVerificationPage() {
         return () => unsubscribe();
     }, [toast]);
 
-    const handleManualApprove = async (user: AppUser) => {
+    const handleManualApprove = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedUser) return;
+        
+        setIsSubmitting(true);
         try {
-             const userRef = doc(db, 'users', user.uid);
+             const userRef = doc(db, 'users', selectedUser.uid);
              await updateDoc(userRef, {
                  paymentRequest: {
-                    productName: "Manually Verified Purchase",
-                    price: "N/A",
+                    productName: productName || "Manually Verified Purchase",
+                    price: price || "N/A",
                     status: "verified",
                     requestedAt: serverTimestamp(),
                     verifiedAt: serverTimestamp()
                  }
              });
-             toast({ title: 'User Approved!', description: `${user.displayName} has been manually verified and granted access.`});
+             toast({ title: 'User Approved!', description: `${selectedUser.displayName} has been manually verified and granted access.`});
+             setSelectedUser(null); // Close the dialog
+             setProductName('');
+             setPrice('');
         } catch(error) {
              console.error("Error manually approving user:", error);
             toast({ title: "Update Failed", description: "Could not manually approve user.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
         }
     };
     
     const filteredUsers = users.filter(user => 
         searchQuery.trim() === '' || (
-            (user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase()))
+            user.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchQuery.toLowerCase())
         )
     );
 
     return (
+        <>
         <div className="pt-6">
             <Card>
                 <CardHeader>
@@ -135,28 +151,17 @@ export default function AdminManualVerificationPage() {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="outline" size="sm" disabled={user.paymentRequest?.status === 'verified'}>
-                                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                                        {user.paymentRequest?.status === 'verified' ? 'Already Verified' : 'Manually Approve'}
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Are you absolutely sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            This will manually grant full access to "{user.displayName}" for a purchased item. This action should only be taken after you have independently verified their payment via email. This cannot be easily undone.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleManualApprove(user)}>
-                                                            Yes, grant access
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            <DialogTrigger asChild>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    disabled={user.paymentRequest?.status === 'verified'}
+                                                    onClick={() => setSelectedUser(user)}
+                                                >
+                                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                                    {user.paymentRequest?.status === 'verified' ? 'Already Verified' : 'Manually Approve'}
+                                                </Button>
+                                            </DialogTrigger>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -172,5 +177,48 @@ export default function AdminManualVerificationPage() {
                 </CardContent>
             </Card>
         </div>
+        
+        <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Manual Approval for {selectedUser?.displayName}</DialogTitle>
+                    <DialogDescription>
+                        Grant access for a verified purchase. Specify what the user purchased below. This action should only be taken after you have independently verified their payment via email.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleManualApprove}>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="productName">Product / Plan Name</Label>
+                            <Input 
+                                id="productName" 
+                                value={productName} 
+                                onChange={(e) => setProductName(e.target.value)}
+                                placeholder="e.g., AI Notes Day Pass"
+                                required
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="price">Price (INR)</Label>
+                            <Input 
+                                id="price"
+                                type="text"
+                                value={price} 
+                                onChange={(e) => setPrice(e.target.value)}
+                                placeholder="e.g., 29"
+                                required
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={() => setSelectedUser(null)}>Cancel</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Yes, grant access"}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+        </>
     );
 }
