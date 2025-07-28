@@ -214,8 +214,6 @@ export default function DashboardClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(loadingMessages[0]);
-  const [hasFetched, setHasFetched] = useState(false);
-
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -234,7 +232,6 @@ export default function DashboardClient() {
     if (!user) return;
     setIsLoading(true);
     setError(null);
-    setHasFetched(true);
 
     try {
         const userProgress = await getSubjectsProgress(user.uid);
@@ -266,6 +263,8 @@ export default function DashboardClient() {
       classAverage: { label: 'Class Average', color: 'hsl(var(--muted-foreground))' },
   };
 
+  const showInitialCard = !isLoading && !insights && !error;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -283,7 +282,7 @@ export default function DashboardClient() {
 
       <QuickActionsPanel />
       
-      {!hasFetched && !isLoading && (
+      {showInitialCard && (
         <Card className="mt-6">
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2"><BrainCircuit className="text-primary"/> Your Smart Dashboard</CardTitle>
@@ -301,7 +300,7 @@ export default function DashboardClient() {
 
       {isLoading && <DashboardSkeleton message={currentLoadingMessage} />}
       
-      {hasFetched && !isLoading && error && (
+      {!isLoading && error && (
          <Card className="border-destructive bg-destructive/10">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle /> Error Loading Dashboard</CardTitle>
@@ -316,20 +315,7 @@ export default function DashboardClient() {
         </Card>
       )}
 
-      {hasFetched && !isLoading && !insights && !error && (
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Your Smart Dashboard is Ready!</CardTitle>
-                <CardDescription>Your personalized insights will appear here once we have some progress data to analyze.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground mb-4">Start by completing a few MCQs or exploring the notes library.</p>
-                <Button asChild><Link href="/mcq-practice">Start a Quiz</Link></Button>
-            </CardContent>
-        </Card>
-      )}
-
-      {hasFetched && !isLoading && insights && (
+      {!isLoading && insights && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
             <div className="lg:col-span-1 flex flex-col gap-6">
