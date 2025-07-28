@@ -161,8 +161,8 @@ export default function LandingPage() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center items-center">
-                        <div className="relative w-[300px] h-[300px] flex items-center justify-center rounded-full shadow-lg bg-gradient-to-br from-background to-primary/10">
-                            <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Logo" width={200} height={200} className="p-4" />
+                        <div className="relative w-[300px] h-[300px] flex items-center justify-center rounded-full shadow-lg bg-background" style={{ backgroundColor: '#E6E6FA' }}>
+                            <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Logo" width={220} height={220} className="p-4"/>
                         </div>
                     </div>
                 </div>
