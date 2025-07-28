@@ -59,6 +59,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
                 description: "We have received your request. Your purchase will be activated shortly after our team confirms your payment." 
             });
         } catch (error: any) {
+            console.error("Payment submission failed:", error);
             toast({
                 title: "Submission Failed",
                 description: error.message || "Could not log your payment for verification. Please contact support.",

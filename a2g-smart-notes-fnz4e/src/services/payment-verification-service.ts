@@ -1,7 +1,8 @@
 
-'use server';
+'use client';
 /**
- * @fileOverview A service to manage payment verification requests by creating a new document in a dedicated collection.
+ * @fileOverview A CLIENT-SIDE service to manage payment verification requests.
+ * This function runs in the user's browser.
  */
 
 import { db } from '@/lib/firebase';
@@ -19,6 +20,7 @@ export type CreateVerificationRequestInput = z.infer<typeof CreateVerificationRe
 /**
  * Creates a new payment verification request document in the 'payment_verifications' collection.
  * This is triggered when a user clicks "I Have Paid" in the payment dialog.
+ * This function is now designed to be called directly from the client.
  * @param data The details of the purchase to be verified.
  */
 export async function createVerificationRequest(data: CreateVerificationRequestInput): Promise<void> {
