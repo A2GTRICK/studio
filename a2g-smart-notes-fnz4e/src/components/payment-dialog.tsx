@@ -44,53 +44,49 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
             return;
         }
 
+        // Always prepare the email, as this is the primary confirmation method for the user.
+        const subject = `Payment Made: ${title}`;
+        const body = `
+Hello A2G Smart Notes Team,
+
+I have just completed the payment for the item listed below. Please verify and activate my purchase.
+
+---
+Item: ${title}
+Price: ${price}
+---
+My User ID: ${user.uid}
+My Email: ${user.email}
+My Name: ${user.displayName || 'N/A'}
+---
+
+Thank you,
+${user.displayName || 'A2G Smart Notes User'}
+        `;
+        const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+        // Attempt to log the verification request in the database, but don't let it block the email.
         try {
-            // Step 1: Attempt to log the verification request in the database first.
             await createVerificationRequest({
                 uid: user.uid,
                 productName: title,
                 price: price,
             });
-
-            // Step 2: If the database log is successful, then prepare and trigger the email.
-            const subject = `Payment Made: ${title}`;
-            const body = `
-    Hello A2G Smart Notes Team,
-
-    I have just completed the payment for the item listed below. Please verify and activate my purchase.
-
-    ---
-    Item: ${title}
-    Price: ${price}
-    ---
-    My User ID: ${user.uid}
-    My Email: ${user.email}
-    My Name: ${user.displayName || 'N/A'}
-    ---
-
-    Thank you,
-    ${user.displayName || 'A2G Smart Notes User'}
-            `;
-            const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-            // Step 3: Open the user's default email client.
-            window.location.href = mailtoLink;
-
-            setIsOpen(false);
-            toast({
-                title: "Request Sent & Email Ready",
-                description: "Your verification request was logged! Please send the pre-filled email from your email app to complete the process.",
-                duration: 8000,
-            });
-
         } catch (error) {
-            console.error("Payment confirmation failed:", error);
-            toast({
-                title: "Request Failed",
-                description: "Could not log your payment request. Please try again or contact support.",
-                variant: "destructive",
-            });
+            // Log the error for debugging but don't show a failing toast to the user.
+            // The email is the more critical part of the user flow.
+            console.error("Payment confirmation database logging failed:", error);
         }
+
+        // Open the user's default email client. This should now always be reached.
+        window.location.href = mailtoLink;
+
+        setIsOpen(false);
+        toast({
+            title: "Check Your Email App",
+            description: "Your email app should now be open with a pre-filled message. Please send the email to complete your verification request.",
+            duration: 8000,
+        });
     }
 
     return (
@@ -125,7 +121,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
                     </Button>
                     <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
                      <p className="text-center text-xs text-muted-foreground pt-2">
-                        Clicking "I Have Paid" will log your request and open your email client to send a confirmation. Your purchase is activated after manual approval.
+                        Clicking "I Have Paid" will log your request for our team to verify and open your email client to send a confirmation. Your purchase will be activated after manual approval.
                     </p>
                 </DialogFooter>
             </DialogContent>
