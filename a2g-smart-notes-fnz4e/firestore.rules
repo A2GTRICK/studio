@@ -1,68 +1,48 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
+    // Default to locked down
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    // Helper function to check if the user is the owner of the document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    // Helper function to check if the user is an admin
+    // Function to check if the user is an admin
     function isAdmin() {
-      // In a production app, this should be based on a custom claim or a role field in the user's document.
-      // For this prototype, we will hardcode the admin UID.
-      return request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+        return request.auth != null && request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
 
-    // Rules for the 'users' collection
+    // Allow users to read and update their own document.
     match /users/{userId} {
-      // Any authenticated user can read their own document.
-      allow read: if isAuthenticated() && isOwner(userId);
-      
-      // An authenticated user can create their own document (e.g., on signup).
-      allow create: if isAuthenticated() && isOwner(userId);
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      // Allow users to create their own document when signing up.
+      allow create: if request.auth != null;
 
-      // An authenticated user can update their own document.
-      // This is critical for the payment verification flow to work.
-      allow update: if isAuthenticated() && isOwner(userId);
-      
-      // An admin can read any user document.
-      allow read: if isAdmin();
-      
-      // Nobody can delete user documents from the client.
-      allow delete: if false;
+       // Allow admins to read/write to any user document (for management)
+      allow read, write: if isAdmin();
 
-      // Rules for user sub-collections like 'progress'
+      // Allow any authenticated user to create their own progress documents
       match /progress/{progressId} {
-        allow read, write: if isAuthenticated() && isOwner(userId);
+        allow create, write: if request.auth != null && request.auth.uid == userId;
       }
     }
 
-    // Rules for the 'notes' collection
+    // Allow anyone to read notes
     match /notes/{noteId} {
-      // Any authenticated user can read all notes.
-      allow read: if isAuthenticated();
-      
-      // Only an admin can create, update, or delete notes.
-      allow write: if isAdmin();
+        allow read: if true;
+    }
+
+    // Only admins can create, update, or delete notes
+    match /notes/{noteId} {
+        allow create, update, delete: if isAdmin();
     }
     
-    // Rules for the 'newsletter_subscriptions' collection
-    match /newsletter_subscriptions/{subscriptionId} {
-        // Anyone can create a subscription (public form).
+    // Allow anyone to create a newsletter subscription.
+    // Only the admin can read or delete them.
+    match /newsletter_subscriptions/{subId} {
         allow create: if true;
-        
-        // Only an admin can read or delete subscriptions.
         allow read, delete: if isAdmin();
-        
-        // Nobody can update a subscription document.
-        allow update: if false;
     }
   }
 }
