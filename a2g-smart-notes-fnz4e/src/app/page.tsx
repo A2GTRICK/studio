@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, Download, CheckCircle2, LogIn, LineChart, NotebookPen, Youtube, Send, Globe, MessageSquare, Loader2, FileText, BookCopy, User } from 'lucide-react';
+import { BookOpen, BrainCircuit, GraduationCap, ArrowRight, CheckCircle2, LogIn, LineChart, NotebookPen, Youtube, Send, Globe, MessageSquare, Loader2, FileText, BookCopy, User } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -44,14 +44,6 @@ export default function LandingPage() {
         title: "Success!",
         description: result.message,
       });
-
-      // Trigger download
-      const link = document.createElement('a');
-      link.href = result.downloadLink;
-      link.setAttribute('download', 'Top-20-Pharmacology-Questions.pdf');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
       setEmail('');
 
     } catch (error: any) {
@@ -324,8 +316,8 @@ export default function LandingPage() {
         <section className="bg-primary/10 py-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1 text-center md:text-left">
-              <h2 className="text-3xl font-headline font-bold text-primary">Get a Head Start!</h2>
-              <p className="mt-2 text-muted-foreground text-lg">Download our free "Top 20 Most Asked Pharmacology Questions" PDF and see the quality for yourself.</p>
+              <h2 className="text-3xl font-headline font-bold text-primary">Join Our Newsletter</h2>
+              <p className="mt-2 text-muted-foreground text-lg">Subscribe to get the latest updates on jobs, exams, and new notes.</p>
             </div>
             <div className="flex-1 w-full">
                 <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto md:mx-0">
@@ -341,9 +333,9 @@ export default function LandingPage() {
                       {isSubscribing ? (
                           <Loader2 className="mr-2 h-5 w-5 animate-spin"/>
                       ) : (
-                          <Download className="mr-2 h-5 w-5"/>
+                          <Send className="mr-2 h-5 w-5"/>
                       )}
-                      {isSubscribing ? 'Subscribing...' : 'Download Now'}
+                      {isSubscribing ? 'Subscribing...' : 'Subscribe'}
                     </Button>
                 </form>
                <p className="text-sm text-muted-foreground mt-2 text-center md:text-left">We respect your privacy. No spam.</p>
@@ -373,3 +365,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
