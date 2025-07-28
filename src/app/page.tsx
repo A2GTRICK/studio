@@ -161,7 +161,9 @@ export default function LandingPage() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center items-center">
-                        <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Logo" width={300} height={300} className="rounded-full shadow-lg p-8 bg-background" />
+                        <div className="relative w-[300px] h-[300px] flex items-center justify-center rounded-full shadow-lg bg-gradient-to-br from-background to-primary/10">
+                            <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Logo" width={200} height={200} className="p-4" />
+                        </div>
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-12 mt-16">
@@ -371,3 +373,4 @@ export default function LandingPage() {
     </div>
   );
 }
+
