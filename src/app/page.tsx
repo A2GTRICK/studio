@@ -44,6 +44,12 @@ export default function LandingPage() {
         title: "Success!",
         description: result.message,
       });
+
+      // Trigger the download
+      if (result.downloadLink) {
+        window.open(result.downloadLink, '_blank');
+      }
+
       setEmail('');
 
     } catch (error: any) {
@@ -155,7 +161,7 @@ export default function LandingPage() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center items-center">
-                        <AiImage data-ai-hint="friendly pharmacist professor mascot ghibli style" alt="A friendly pharmacist professor mascot" width={300} height={300} className="rounded-full shadow-lg object-cover" />
+                        <Image src="/assets/a2g-logo.svg" alt="A2G Smart Notes Logo" width={300} height={300} className="rounded-full shadow-lg p-8 bg-background" />
                     </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-12 mt-16">

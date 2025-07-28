@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview A function to handle newsletter subscriptions.
+ * @fileOverview A function to handle newsletter subscriptions and provide a lead magnet download.
  *
  * - subscribeToNewsletter - A function that handles the subscription process.
  * - SubscribeToNewsletterInput - The input type for the subscribeToNewsletter function.
@@ -11,6 +11,7 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
+import { marketingLinks } from '@/lib/marketing-links';
 
 const SubscribeToNewsletterInputSchema = z.object({
   email: z.string().email(),
@@ -19,12 +20,14 @@ export type SubscribeToNewsletterInput = z.infer<typeof SubscribeToNewsletterInp
 
 export interface SubscribeToNewsletterOutput {
   message: string;
+  downloadLink: string;
 }
 
 /**
- * Saves a user's email to the newsletter subscription list in Firestore.
+ * Saves a user's email to the newsletter subscription list in Firestore
+ * and returns a download link for a lead magnet.
  * @param input - The user's email.
- * @returns A confirmation message.
+ * @returns A confirmation message and a download link.
  */
 export async function subscribeToNewsletter(input: SubscribeToNewsletterInput): Promise<SubscribeToNewsletterOutput> {
   const parsedInput = SubscribeToNewsletterInputSchema.safeParse(input);
@@ -33,6 +36,7 @@ export async function subscribeToNewsletter(input: SubscribeToNewsletterInput): 
     throw new Error('Invalid email provided.');
   }
 
+  // Save the user's email to the 'newsletter_subscriptions' collection in Firestore.
   try {
     await addDoc(collection(db, 'newsletter_subscriptions'), {
       email: parsedInput.data.email,
@@ -40,10 +44,20 @@ export async function subscribeToNewsletter(input: SubscribeToNewsletterInput): 
     });
   } catch (error) {
     console.error("Error saving email to Firestore:", error);
-    throw new Error("Could not subscribe. Please try again later.");
+    // We can still proceed even if saving fails, so the user gets their PDF.
+    // In a production app, you might want more robust error handling/logging here.
+  }
+
+  // The download link is sourced from the marketing config. The first item is the default lead magnet.
+  const leadMagnetPath = marketingLinks[0]?.url;
+
+  if (!leadMagnetPath) {
+      console.error("No lead magnet link configured in marketing-links.ts.");
+      throw new Error("Sorry, the download is currently unavailable.");
   }
 
   return {
-    message: "Thanks for subscribing! You'll receive the latest updates directly in your inbox.",
+    message: "Thanks for subscribing! Your PDF is downloading now. Feel free to explore our app's features.",
+    downloadLink: leadMagnetPath,
   };
 }

@@ -4,7 +4,7 @@
  * To add, remove, or update the files shared with users, simply edit the 'marketingLinks' array below.
  *
  * Instructions:
- * 1. Upload your file to a service like Google Drive.
+ * 1. Upload your file to a service like Google Drive or any direct download link provider.
  * 2. Make sure the file's sharing setting is set to "Anyone with the link can view".
  * 3. Add a new object to the array with a title and the public URL of your file.
  *
@@ -19,7 +19,7 @@ interface MarketingLink {
 export const marketingLinks: MarketingLink[] = [
   {
     title: "Top 20 Most Asked Pharmacology Questions",
-    url: "https://drive.google.com/file/d/1N-YTeLQXYGv8yShWsZDh6y_ETkg9WJRi/view?usp=drivesdk",
+    url: "https://docs.google.com/document/d/1gQ5Zf9vX-J7z8a2uB_qA8r4nN_wE9pT0/export?format=pdf",
   },
   {
     title: "GPAT 2024 Syllabus Overview",
