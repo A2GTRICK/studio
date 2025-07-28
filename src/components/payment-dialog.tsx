@@ -64,8 +64,8 @@ ${user.displayName || 'A2G Smart Notes User'}
 
         const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         
-        // Open the user's default email client
-        window.location.href = mailtoLink;
+        // Open the user's default email client reliably
+        window.open(mailtoLink);
 
         setIsOpen(false);
         toast({ 
