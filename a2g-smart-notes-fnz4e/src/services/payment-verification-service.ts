@@ -5,7 +5,7 @@
  */
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, getDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 
 const CreateVerificationRequestInputSchema = z.object({
@@ -19,6 +19,7 @@ export type CreateVerificationRequestInput = z.infer<typeof CreateVerificationRe
 /**
  * Creates a new payment verification request document in the 'payment_verifications' collection.
  * This is triggered when a user clicks "I Have Paid" in the payment dialog.
+ * This service is simplified to only store the essential data to avoid permission issues.
  * @param data The details of the purchase to be verified.
  */
 export async function createVerificationRequest(data: CreateVerificationRequestInput): Promise<void> {
@@ -28,20 +29,8 @@ export async function createVerificationRequest(data: CreateVerificationRequestI
     }
 
     try {
-        // Fetch user details on the server-side to ensure data integrity
-        const userRef = doc(db, 'users', parsedData.data.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (!userSnap.exists()) {
-            throw new Error("User submitting payment not found in database.");
-        }
-        
-        const userData = userSnap.data();
-
         await addDoc(collection(db, 'payment_verifications'), {
             uid: parsedData.data.uid,
-            email: userData.email || 'No email on record',
-            displayName: userData.displayName || 'No name on record',
             productName: parsedData.data.productName,
             price: parsedData.data.price,
             status: 'pending', // Default status is always pending

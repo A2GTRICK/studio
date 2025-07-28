@@ -1,23 +1,29 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, getDoc } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, MoreHorizontal, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Loader2, MoreHorizontal, CheckCircle, XCircle, AlertCircle, User } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+interface UserInfo {
+    displayName: string | null;
+    email: string | null;
+    photoURL: string | null;
+}
 
 interface VerificationRequest {
     id: string;
     uid: string;
-    email: string;
-    displayName: string | null;
+    userInfo?: UserInfo;
     productName: string;
     price: string;
     status: 'pending' | 'verified' | 'rejected';
@@ -42,6 +48,29 @@ const getStatusIcon = (status: VerificationRequest['status']) => {
     }
 }
 
+// A simple cache for user data to avoid re-fetching on every render
+const userCache = new Map<string, UserInfo>();
+
+const fetchUserInfo = async (uid: string): Promise<UserInfo | null> => {
+    if (userCache.has(uid)) {
+        return userCache.get(uid)!;
+    }
+    try {
+        const userRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const userData = userSnap.data() as UserInfo;
+            userCache.set(uid, userData);
+            return userData;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching user info:", error);
+        return null;
+    }
+};
+
+
 export default function AdminVerificationsPage() {
     const [requests, setRequests] = useState<VerificationRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,16 +80,22 @@ export default function AdminVerificationsPage() {
         const verificationsCollection = collection(db, 'payment_verifications');
         const q = query(verificationsCollection, orderBy('createdAt', 'desc'));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const requestsList = snapshot.docs.map(doc => {
-                const data = doc.data();
+        const unsubscribe = onSnapshot(q, async (snapshot) => {
+            const requestsListPromises = snapshot.docs.map(async (docSnapshot) => {
+                const data = docSnapshot.data();
                 const timestamp = data.createdAt as Timestamp;
+                const userInfo = await fetchUserInfo(data.uid);
+                
                 return {
-                    id: doc.id,
+                    id: docSnapshot.id,
                     createdAt: timestamp ? timestamp.toDate() : new Date(),
+                    uid: data.uid,
+                    userInfo: userInfo || undefined,
                     ...data
                 } as VerificationRequest;
             });
+
+            const requestsList = await Promise.all(requestsListPromises);
             setRequests(requestsList);
             setLoading(false);
         }, (error) => {
@@ -117,8 +152,16 @@ export default function AdminVerificationsPage() {
                                 {requests.map(request => (
                                     <TableRow key={request.id}>
                                         <TableCell>
-                                            <div className="font-medium">{request.displayName || 'N/A'}</div>
-                                            <div className="text-xs text-muted-foreground">{request.email}</div>
+                                             <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={request.userInfo?.photoURL || undefined} alt={request.userInfo?.displayName || 'User'} />
+                                                    <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <div className="font-medium">{request.userInfo?.displayName || 'N/A'}</div>
+                                                    <div className="text-xs text-muted-foreground">{request.userInfo?.email || 'No email on record'}</div>
+                                                </div>
+                                            </div>
                                         </TableCell>
                                         <TableCell>{request.productName}</TableCell>
                                         <TableCell className="font-semibold">{request.price}</TableCell>
