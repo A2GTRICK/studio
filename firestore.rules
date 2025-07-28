@@ -3,55 +3,57 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check for admin
+    
+    // PUBLIC ACCESS: Allow anyone to read notes and services data.
+    match /notes/{noteId} {
+      allow read: if true;
+      allow write: if false; // Only admin can write (handled below).
+    }
+    
+    // USER-SPECIFIC ACCESS
+    // Allow users to read and write to their own documents (e.g., progress, payment requests).
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // NEWSLETTER: Allow anyone to create a new newsletter subscription.
+    match /newsletter_subscriptions/{subscriptionId} {
+        allow create: if true;
+        allow read, update, delete: if false; // Only admin can manage.
+    }
+    
+    // ADMIN-ONLY ACCESS
+    // The admin has special privileges defined below.
+    // The admin UID must be hardcoded here for security.
     function isAdmin() {
-      // The admin UID is hardcoded for this prototype.
-      // In a production app, this would likely check a custom claim.
       return request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
 
-    // Default deny all reads/writes
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Rules for User documents
+    // Allow admin to read/write all user documents for management.
     match /users/{userId} {
-      // A user can read/write their own document
-      allow read, write: if request.auth.uid == userId;
-      // An admin can read any user document
-      allow read: if isAdmin();
-
-      // Rules for user's progress subcollection
-      match /progress/{progressId} {
-        // A user can read/write their own progress
-        allow read, write: if request.auth.uid == userId;
-      }
-    }
-
-    // Rules for Notes
-    match /notes/{noteId} {
-      // Any authenticated user can read notes
-      allow read: if request.auth != null;
-      // Only admins can create, update, or delete notes
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
     
-    // Rules for Newsletter Subscriptions
+    // Allow admin to manage the newsletter list.
     match /newsletter_subscriptions/{subscriptionId} {
-        // Anyone can create (subscribe)
-        allow create: if true;
-        // Only admins can read or delete subscriptions
-        allow read, delete: if isAdmin();
+      allow read, delete: if isAdmin();
+    }
+
+    // Allow admin to manage all notes.
+    match /notes/{noteId} {
+        allow write: if isAdmin();
     }
     
-    // Rules for Marketing Configuration
-    match /marketing_config/{docId} {
-        // Anyone can read the config (to get the download link)
-        allow read: if true;
-        // Only admins can write to the config
-        allow write: if isAdmin();
+    // MARKETING CONFIG: Allow admin to manage the lead magnet link.
+    // This is the specific rule that fixes the error.
+    match /marketing_config/lead_magnet {
+      allow read: if true; // Anyone can read the config.
+      allow write: if isAdmin(); // ONLY the admin can write to it.
+    }
+
+    // By default, deny all other access to all collections.
+    match /{path=**}/ {
+      allow read, write: if false;
     }
   }
 }
