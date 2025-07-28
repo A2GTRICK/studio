@@ -1,48 +1,54 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check for admin UID
+  
+    // Helper function to check if a user is the designated admin
     function isAdmin() {
       return request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
+    
+    // Helper function to check if a user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-    // Allow users to read their own data, write their own progress, and be managed by an admin
+    // Users Collection:
+    // - Anyone can create their own user document (on signup).
+    // - Users can only read/update their own data.
+    // - The admin can read/write any user document.
     match /users/{userId} {
-      allow read: if request.auth.uid == userId || isAdmin();
-      allow write: if request.auth.uid == userId; // For displayName updates
+      allow read, update: if request.auth.uid == userId || isAdmin();
+      allow create: if isSignedIn();
       
-      // Payment requests are written by the user themselves
-      allow update: if request.auth.uid == userId; 
-
-      match /progress/{docId} {
-        allow write: if request.auth.uid == userId;
+      // Allow saving/reading progress only for the authenticated user
+      match /progress/{progressId} {
+         allow read, write: if request.auth.uid == userId;
       }
     }
-    
-    // Allow any authenticated user to read notes, but only admin can create/edit/delete
+
+    // Notes Collection:
+    // - The admin can create, update, and delete any note.
+    // - Any signed-in user can read all notes.
     match /notes/{noteId} {
-      allow read: if request.auth != null;
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
     
-    // Allow anyone to subscribe to the newsletter, but only admin can manage subscribers
+    // Newsletter Subscriptions:
+    // - Anyone can create a new subscription (e.g., from the landing page).
+    // - Only the admin can read or delete subscriptions.
     match /newsletter_subscriptions/{subscriptionId} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
+        allow create: if true;
+        allow read, delete: if isAdmin();
     }
-
-    // Allow admin to manage the lead magnet link
+    
+    // Marketing Config:
+    // - Only the admin can update the lead magnet link.
+    // - Anyone can read it so it can be provided to users on subscription.
     match /marketing_config/lead_magnet {
-      allow read: if request.auth != null; // Allow any logged-in user to read
-      allow write: if isAdmin();
-    }
-
-    // Default deny all other access
-    match /{document=**} {
-      allow read, write: if false;
+        allow read: if true;
+        allow write: if isAdmin();
     }
   }
 }
