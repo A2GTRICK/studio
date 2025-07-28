@@ -3,39 +3,59 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow public read access ONLY to the lead magnet configuration
-    match /marketing_config/lead_magnet {
-      allow get: if true; // Allow single document reads by anyone
-      allow list: if request.auth != null && request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2'; // Only admin can list
-      allow write: if request.auth != null && request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
-    }
-    
-    // Allow anyone to subscribe to the newsletter
-    match /newsletter_subscriptions/{subId} {
-        allow create: if true;
-        allow read, delete: if request.auth != null && request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    // Helper function to check if the user is the designated admin
+    function isAdmin() {
+      // The admin UID is hardcoded for this application.
+      return request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
     }
 
-    // Allow users to read notes, but only admin can write them.
-    match /notes/{noteId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
-    }
-
-    // Users can create their own document, and can only read/update their own.
-    // Admin can read/write/delete any user document.
+    // Rules for user-specific documents
     match /users/{userId} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null && (request.auth.uid == userId || request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2');
-      
-      // Admin can manage user subcollections like progress and payments.
-      // Users can write to their own progress subcollection.
-      match /progress/{docId} {
-        allow read, write: if request.auth != null && (request.auth.uid == userId || request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2');
+      // Users can read their own document
+      allow read: if request.auth.uid == userId;
+      // Users can create their own document and update their own display name
+      allow write: if request.auth.uid == userId;
+
+      // Rules for user subcollections
+      match /progress/{progressId} {
+        allow read, write: if request.auth.uid == userId;
       }
     }
 
-    // Fallback: Deny any other access
+    // Rules for the 'notes' collection
+    match /notes/{noteId} {
+      // Any authenticated user can read notes
+      allow read: if request.auth != null;
+      // Only the admin can create, update, or delete notes
+      allow write: if isAdmin();
+    }
+    
+    // Rules for the 'marketing_materials' collection
+    match /marketing_materials/{materialId} {
+        // Any authenticated user can read the materials
+        allow read: if request.auth != null;
+        // Only the admin can write to the materials
+        allow write: if isAdmin();
+    }
+
+    // Rules for the 'newsletter_subscriptions' collection
+    match /newsletter_subscriptions/{subscriptionId} {
+      // Anyone can create (subscribe)
+      allow create;
+      // Only the admin can read or delete subscribers
+      allow read, delete: if isAdmin();
+    }
+    
+    // --- THIS IS THE FIX ---
+    // Rules for the marketing configuration document
+    match /marketing_config/lead_magnet {
+        // Anyone can read this document to get the link for the newsletter
+        allow get: if true;
+        // Only the admin can update this document
+        allow write: if isAdmin();
+    }
+    
+    // Default deny for any other path not specified above
     match /{document=**} {
       allow read, write: if false;
     }
