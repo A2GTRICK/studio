@@ -1,6 +1,6 @@
 
 'use client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Copy } from "lucide-react";
@@ -69,7 +69,8 @@ ${user.displayName || 'A2G Smart Notes User'}
         setIsOpen(false);
         toast({ 
             title: "Check Your Email App", 
-            description: "Your email app has been opened with a pre-filled message. Please send the email to complete your verification request." 
+            description: "Your email app has been opened with a pre-filled message. Please send the email to complete your verification request.",
+            duration: 8000,
         });
     }
 
@@ -99,15 +100,15 @@ ${user.displayName || 'A2G Smart Notes User'}
                         </CardContent>
                     </Card>
                 </div>
-                <div className="flex flex-col gap-2">
+                <DialogFooter className="flex-col gap-2">
                     <Button size="lg" onClick={handlePaymentConfirmation}>
                         I Have Paid
                     </Button>
                     <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-                </div>
-                 <DialogDescription className="text-center text-xs text-muted-foreground pt-2">
-                    Clicking "I Have Paid" will open your email client to send a verification email to our team.
-                </DialogDescription>
+                     <p className="text-center text-xs text-muted-foreground pt-2">
+                        Clicking "I Have Paid" will open your email client to send a verification email to our team.
+                    </p>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
