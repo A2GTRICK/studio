@@ -9,11 +9,18 @@
 
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import type { GenerateDashboardInsightsInput } from '@/ai/flows/generate-dashboard-insights';
 import { z } from 'zod';
 
-type SubjectProgress = GenerateDashboardInsightsInput['subjectsProgress'][0];
-type TopicProgress = SubjectProgress['topics'][0];
+// Simplified local types, no longer dependent on the deleted AI flow.
+type TopicProgress = {
+    title: string;
+    status: 'completed' | 'pending';
+};
+type SubjectProgress = {
+    subject: string;
+    topics: TopicProgress[];
+};
+
 
 const SaveMcqResultInputSchema = z.object({
   uid: z.string().min(1, 'User ID is required.'),
@@ -96,8 +103,6 @@ export async function getSubjectsProgress(uid: string): Promise<SubjectProgress[
     progressBySubject[subjectName].push({
       title: progressData.topic,
       status: isCompleted ? 'completed' : 'pending',
-      lastAccessed: 'Attempted',
-      estTime: isCompleted ? 'N/A' : `${Math.floor(Math.random() * 30) + 30} mins`,
     });
   });
 
