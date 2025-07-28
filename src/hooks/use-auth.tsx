@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
@@ -11,11 +12,19 @@ import { Loader2 } from 'lucide-react';
 const ADMIN_UID = 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
 // -----------------------------
 
+interface PaymentRequest {
+    productName: string;
+    price: string;
+    status: 'pending' | 'verified' | 'rejected';
+    requestedAt: Timestamp;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
   hasPremiumAccess: boolean;
+  paymentInfo: PaymentRequest | null;
   logout: () => Promise<void>;
 }
 
@@ -55,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [hasPremiumAccess, setHasPremiumAccess] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState<PaymentRequest | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -69,16 +79,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Check for premium access
           const userDocRef = doc(db, 'users', currentUser.uid);
           const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists() && userDoc.data()?.paymentRequest?.status === 'verified') {
-              setHasPremiumAccess(true);
+          if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const paymentData = userData?.paymentRequest;
+              if (paymentData?.status === 'verified') {
+                 setHasPremiumAccess(true);
+                 setPaymentInfo(paymentData as PaymentRequest);
+              } else {
+                 setHasPremiumAccess(isAdminUser);
+                 setPaymentInfo(null);
+              }
           } else {
               // Also consider admin as having premium access
               setHasPremiumAccess(isAdminUser);
+              setPaymentInfo(null);
           }
       } else {
           setUser(null);
           setIsAdmin(false);
           setHasPremiumAccess(false);
+          setPaymentInfo(null);
       }
       setLoading(false);
     }, (error) => {
@@ -86,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setIsAdmin(false);
       setHasPremiumAccess(false);
+      setPaymentInfo(null);
       setLoading(false);
     });
 
@@ -119,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push('/login');
   }
 
-  const value = { user, loading, isAdmin, hasPremiumAccess, logout };
+  const value = { user, loading, isAdmin, hasPremiumAccess, paymentInfo, logout };
 
   const isPublicPage = pathname === '/' || pathname === '/login';
   

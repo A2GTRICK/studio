@@ -7,15 +7,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { updateProfile } from 'firebase/auth';
-import { Loader2, User, Mail, Shield, ArrowLeft } from 'lucide-react';
+import { Loader2, User, Mail, Shield, ArrowLeft, Gem } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -24,7 +25,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, hasPremiumAccess, paymentInfo } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -132,6 +133,26 @@ export default function ProfilePage() {
               </Button>
             </form>
           </Form>
+
+          {hasPremiumAccess && (
+             <Card className="bg-accent/10 border-accent/30">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2 text-accent-foreground">
+                        <Gem /> Premium Access Active
+                    </CardTitle>
+                     <CardDescription className="text-accent-foreground/80">
+                        {paymentInfo ? `Your '${paymentInfo.productName}' is active.` : 'You have full access to all premium features.'}
+                    </CardDescription>
+                </CardHeader>
+                <CardFooter>
+                    <Button asChild variant="link" className="text-accent-foreground">
+                        <Link href="/premium">
+                            Manage Your Plan
+                        </Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+          )}
 
           {isAdmin && (
             <Card className="bg-primary/5 border-primary/20">

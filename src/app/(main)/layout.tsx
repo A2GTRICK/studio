@@ -2,7 +2,7 @@
 'use client';
 
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarMenuBadge } from "@/components/ui/sidebar";
-import { BookOpen, BrainCircuit, GraduationCap, ShoppingCart, Gem, Bell, NotebookPen, Home, CheckSquare, Shield, LogOut, BarChart3, User, Settings } from "lucide-react";
+import { BookOpen, BrainCircuit, GraduationCap, Gem, Bell, NotebookPen, Home, CheckSquare, Shield, LogOut, BarChart3, User, Settings } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -94,7 +94,7 @@ function NotificationPopover() {
     )
 }
 
-function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: boolean, logout: () => Promise<void> }) {
+function UserProfile({ user, isAdmin, hasPremiumAccess, logout }: { user: FirebaseUser, isAdmin: boolean, hasPremiumAccess: boolean, logout: () => Promise<void> }) {
     const router = useRouter();
 
     const handleLogout = async () => {
@@ -125,7 +125,7 @@ function UserProfile({ user, isAdmin, logout }: { user: FirebaseUser, isAdmin: b
                         <p className="font-bold text-sm">{user.displayName}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
-                      {isAdmin ? <Badge variant="destructive">Admin</Badge> : <Badge variant="secondary">User</Badge>}
+                      {isAdmin ? <Badge variant="destructive">Admin</Badge> : hasPremiumAccess ? <Badge variant="default" className="bg-accent text-accent-foreground">Premium</Badge> : <Badge variant="secondary">User</Badge>}
                     </div>
                 </div>
                 <Separator />
@@ -172,7 +172,7 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, isAdmin, logout } = useAuth();
+  const { user, loading, isAdmin, hasPremiumAccess, logout } = useAuth();
   const unreadNotificationCount = notifications.length;
 
   return (
@@ -191,7 +191,7 @@ export default function MainLayout({
               <h1 className="text-xl font-headline font-bold text-primary">A2G Smart Notes</h1>
             </div>
             <Separator />
-            {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} isAdmin={isAdmin} logout={logout} /> : null}
+            {loading ? <UserProfileSkeleton /> : user ? <UserProfile user={user} isAdmin={isAdmin} hasPremiumAccess={hasPremiumAccess} logout={logout} /> : null}
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
@@ -258,15 +258,6 @@ export default function MainLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Store">
-                  <Link href="/store">
-                    <ShoppingCart />
-                    <span>Store</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Premium Plans">
                   <Link href="/premium">
