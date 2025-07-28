@@ -196,9 +196,10 @@ export default function ExamQuestionsPage() {
                  </Alert>
               )}
               {!questions && !isLoading && !error && (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                      <NotebookPen className="h-16 w-16 text-muted-foreground/30" />
-                      <p className="mt-4 text-muted-foreground">Your generated questions will appear here.</p>
+                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground/50 border-2 border-dashed rounded-lg p-8">
+                      <NotebookPen className="h-16 w-16 mb-4" />
+                      <h3 className="text-xl font-semibold">Ready to Predict Your Exam?</h3>
+                      <p className="mt-2 max-w-sm">Fill out the form on the left to generate a set of probable questions for your upcoming exams.</p>
                   </div>
               )}
               {questions && (

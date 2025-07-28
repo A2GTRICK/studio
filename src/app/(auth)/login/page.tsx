@@ -74,6 +74,8 @@ export default function LoginPage() {
             case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
             case 'auth/invalid-api-key':
                 return 'Configuration error: The Firebase API key is invalid. Please check your setup.';
+            case 'auth/network-request-failed':
+                return 'Network error. Please check your internet connection and try again.';
             default:
                 console.error('Unhandled Auth Error:', err.code, err.message);
                 return 'An unexpected error occurred. Please try again later.';
@@ -318,5 +320,3 @@ export default function LoginPage() {
         </div>
     );
 }
-
-    

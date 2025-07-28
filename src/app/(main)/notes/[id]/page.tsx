@@ -27,7 +27,8 @@ export default function NoteDetailPage() {
         try {
             const noteDoc = await getDoc(doc(db, 'notes', id));
             if (noteDoc.exists()) {
-                setNote({ ...noteDoc.data(), id: noteDoc.id } as Note);
+                const data = noteDoc.data();
+                setNote({ ...data, id: noteDoc.id } as Note);
             } else {
                 notFound();
             }

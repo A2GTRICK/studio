@@ -47,6 +47,10 @@ export default function AdminLayout({
             <Users className="mr-2 h-4 w-4" />
             Users
           </TabsTrigger>
+          <TabsTrigger value="verifications">
+            <BadgeCheck className="mr-2 h-4 w-4" />
+            Verifications
+          </TabsTrigger>
           <TabsTrigger value="services">
             <GraduationCap className="mr-2 h-4 w-4" />
             Services

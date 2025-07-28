@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import Image from 'next/image';
 import { AiImage } from '@/components/ai-image';
 import { useAuth } from "@/hooks/use-auth";
+import { createVerificationRequest } from "@/services/payment-verification-service";
 
 // --- PAYMENT DETAILS: EDIT HERE ---
 const UPI_ID = "a2gtrickacademy@upi";
@@ -33,7 +34,7 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
         });
     };
 
-    const handlePaymentConfirmation = () => {
+    const handlePaymentConfirmation = async () => {
         if (!user) {
             toast({
                 title: "Not Logged In",
@@ -43,11 +44,18 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
             return;
         }
 
-        const subject = `Payment Verification Request: ${title}`;
-        const body = `
+        try {
+            await createVerificationRequest({
+                uid: user.uid,
+                productName: title,
+                price: price,
+            });
+
+            const subject = `Payment Made: ${title}`;
+            const body = `
 Hello A2G Smart Notes Team,
 
-I have completed the payment for the following item. Please verify and activate my purchase.
+I have just completed the payment for the item listed below and have initiated a verification request through the app. Please verify and activate my purchase.
 
 ---
 Item: ${title}
@@ -60,19 +68,27 @@ My Name: ${user.displayName || 'N/A'}
 
 Thank you,
 ${user.displayName || 'A2G Smart Notes User'}
-        `;
+            `;
 
-        const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        
-        // Open the user's default email client reliably
-        window.open(mailtoLink);
+            const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            // Open the user's default email client reliably
+            window.open(mailtoLink, '_blank');
 
-        setIsOpen(false);
-        toast({ 
-            title: "Check Your Email App", 
-            description: "Your email app has been opened with a pre-filled message. Please send the email to complete your verification request.",
-            duration: 8000,
-        });
+            setIsOpen(false);
+            toast({ 
+                title: "Verification Request Sent!", 
+                description: "Your request has been sent to our team. Please also send the pre-filled email from your mail app to speed up the process.",
+                duration: 8000,
+            });
+        } catch (error) {
+            console.error("Payment confirmation failed:", error);
+            toast({
+                title: "Request Failed",
+                description: "Could not send verification request. Please try again or contact support.",
+                variant: "destructive",
+            });
+        }
     }
 
     return (
@@ -103,11 +119,11 @@ ${user.displayName || 'A2G Smart Notes User'}
                 </div>
                 <DialogFooter className="flex-col gap-2">
                     <Button size="lg" onClick={handlePaymentConfirmation}>
-                        I Have Paid
+                        I Have Paid, Verify My Purchase
                     </Button>
                     <Button size="lg" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
                      <p className="text-center text-xs text-muted-foreground pt-2">
-                        Clicking "I Have Paid" will open your email client to send a verification email to our team. Your purchase will be activated after manual confirmation.
+                        Clicking "I Have Paid" will log your request for our team to verify and open your email client to send a confirmation. Your purchase will be activated after manual approval.
                     </p>
                 </DialogFooter>
             </DialogContent>
