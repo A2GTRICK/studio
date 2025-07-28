@@ -16,7 +16,7 @@ export interface Note {
   isPremium: boolean;
   price?: string;
   thumbnail?: string;
-  createdAt: Timestamp | Date;
+  createdAt: Date;
 }
 
 interface NotesContextType {
@@ -59,7 +59,16 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     const q = query(notesCollection, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const notesList = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Note));
+        const notesList = snapshot.docs.map(doc => {
+            const data = doc.data();
+            const timestamp = data.createdAt as Timestamp;
+            return { 
+                ...data, 
+                id: doc.id,
+                // Convert Firestore Timestamp to a serializable Date object
+                createdAt: timestamp ? timestamp.toDate() : new Date() 
+            } as Note;
+        });
         setNotes(notesList);
         setLoading(false);
     }, (err) => {
@@ -98,8 +107,14 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       const docRef = await addDoc(collection(db, 'notes'), noteToSave);
       const newDocSnapshot = await getDoc(docRef);
       if (newDocSnapshot.exists()) {
-        // Return the newly created note object. The onSnapshot listener will handle updating the state.
-        return { id: newDocSnapshot.id, ...newDocSnapshot.data() } as Note;
+        const data = newDocSnapshot.data();
+        const timestamp = data.createdAt as Timestamp;
+        // Return the newly created note object with a converted Date.
+        return { 
+            id: newDocSnapshot.id, 
+            ...data,
+            createdAt: timestamp ? timestamp.toDate() : new Date()
+        } as Note;
       } else {
         throw new Error("Could not retrieve saved note from database.");
       }
