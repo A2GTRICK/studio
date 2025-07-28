@@ -6,15 +6,16 @@ import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, User, Shield, MoreHorizontal, Edit, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, User, Shield, MoreHorizontal, Edit, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
 
 
 // --- Hardcoded Admin User ID ---
@@ -83,22 +84,6 @@ export default function AdminUsersPage() {
             setIsSubmitting(false);
         }
     };
-    
-    const handlePaymentAction = async (user: AppUser, status: 'verified' | 'rejected') => {
-        if (!user.paymentRequest) return;
-        
-        try {
-             const userRef = doc(db, 'users', user.uid);
-             await updateDoc(userRef, {
-                 'paymentRequest.status': status
-             });
-             toast({ title: 'Payment Status Updated', description: `Request for ${user.displayName} marked as ${status}.`});
-        } catch(error) {
-             console.error("Error updating payment status:", error);
-            toast({ title: "Update Failed", description: "Could not update payment status.", variant: "destructive" });
-        }
-    }
-
 
     return (
         <>
@@ -106,7 +91,7 @@ export default function AdminUsersPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">User Management</CardTitle>
-                    <CardDescription>View and manage all registered users and their payment statuses.</CardDescription>
+                    <CardDescription>View and manage all registered users. To approve payments, please go to the <Link href="/admin/verifications" className="underline text-primary">Verifications tab</Link>.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {loading ? (
@@ -147,7 +132,7 @@ export default function AdminUsersPage() {
                                             {user.paymentRequest?.status === 'pending' && (
                                                 <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
                                                     <AlertTriangle className="mr-2 h-3 w-3" />
-                                                    Pending: {user.paymentRequest.productName} ({user.paymentRequest.price})
+                                                    Pending Verification
                                                 </Badge>
                                             )}
                                              {user.paymentRequest?.status === 'verified' && (
@@ -174,20 +159,6 @@ export default function AdminUsersPage() {
                                                                 Edit User
                                                             </DropdownMenuItem>
                                                         </DialogTrigger>
-                                                        {user.paymentRequest?.status === 'pending' && (
-                                                            <>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuLabel>Payment Verification</DropdownMenuLabel>
-                                                                <DropdownMenuItem className="text-green-600 focus:text-green-700" onClick={() => handlePaymentAction(user, 'verified')}>
-                                                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                                                    Approve Payment
-                                                                </DropdownMenuItem>
-                                                                 <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handlePaymentAction(user, 'rejected')}>
-                                                                    <XCircle className="mr-2 h-4 w-4" />
-                                                                    Reject Payment
-                                                                </DropdownMenuItem>
-                                                            </>
-                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                              </Dialog>
