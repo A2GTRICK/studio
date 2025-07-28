@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, onSnapshot, updateDoc, doc, where, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, User, CheckCircle, Wrench, AlertTriangle, UserSearch } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function AdminManualVerificationPage() {
 
     useEffect(() => {
         setLoading(true);
-        // This query now fetches ALL users, so the admin can search for anyone.
+        // This query now fetches ALL users, so the admin can search for and manage anyone.
         const usersCollection = collection(db, 'users');
         const q = query(usersCollection);
         
@@ -94,7 +94,7 @@ export default function AdminManualVerificationPage() {
                 <CardContent>
                     <div className="mb-4">
                         <Input 
-                            placeholder="Search by name or email to filter users..."
+                            placeholder="Search by name or email to filter the list..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -174,4 +174,3 @@ export default function AdminManualVerificationPage() {
         </div>
     );
 }
-
