@@ -283,7 +283,7 @@ export default function DashboardClient() {
 
       <QuickActionsPanel />
       
-      {!hasFetched && (
+      {!hasFetched && !isLoading && (
         <Card className="mt-6">
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2"><BrainCircuit className="text-primary"/> Your Smart Dashboard</CardTitle>
@@ -340,7 +340,7 @@ export default function DashboardClient() {
                          <CardTitle className="font-headline">AI-Powered Suggestions</CardTitle>
                          <CardDescription>Personalized tips to guide your study.</CardDescription>
                        </div>
-                        <Button onClick={fetchInsights} variant="ghost" size="icon" disabled={isLoading}>
+                        <Button onClick={() => fetchInsights()} variant="ghost" size="icon" disabled={isLoading}>
                           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                        </Button>
                     </CardHeader>
