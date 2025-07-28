@@ -44,18 +44,12 @@ export function PaymentDialog({ isOpen, setIsOpen, title, price }: PaymentDialog
             return;
         }
 
-        try {
-            await createVerificationRequest({
-                uid: user.uid,
-                productName: title,
-                price: price,
-            });
-
-            const subject = `Payment Made: ${title}`;
-            const body = `
+        // Always prepare the email, as this is the primary confirmation method for the user.
+        const subject = `Payment Made: ${title}`;
+        const body = `
 Hello A2G Smart Notes Team,
 
-I have just completed the payment for the item listed below and have initiated a verification request through the app. Please verify and activate my purchase.
+I have just completed the payment for the item listed below. Please verify and activate my purchase.
 
 ---
 Item: ${title}
@@ -68,27 +62,31 @@ My Name: ${user.displayName || 'N/A'}
 
 Thank you,
 ${user.displayName || 'A2G Smart Notes User'}
-            `;
+        `;
+        const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-            const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            
-            // Open the user's default email client reliably
-            window.open(mailtoLink, '_blank');
-
-            setIsOpen(false);
-            toast({ 
-                title: "Verification Request Sent!", 
-                description: "Your request has been sent to our team. Please also send the pre-filled email from your mail app to speed up the process.",
-                duration: 8000,
+        // Attempt to log the verification request in the database, but don't let it block the email.
+        try {
+            await createVerificationRequest({
+                uid: user.uid,
+                productName: title,
+                price: price,
             });
         } catch (error) {
-            console.error("Payment confirmation failed:", error);
-            toast({
-                title: "Request Failed",
-                description: "Could not send verification request. Please try again or contact support.",
-                variant: "destructive",
-            });
+            // Log the error for debugging but don't show a failing toast to the user.
+            // The email is the more critical part of the user flow.
+            console.error("Payment confirmation database logging failed:", error);
         }
+
+        // Open the user's default email client. This should now always be reached.
+        window.location.href = mailtoLink;
+
+        setIsOpen(false);
+        toast({
+            title: "Check Your Email App",
+            description: "Your email app should now be open with a pre-filled message. Please send the email to complete your verification request.",
+            duration: 8000,
+        });
     }
 
     return (
