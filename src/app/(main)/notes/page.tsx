@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, Gem, Lock, ArrowRight, Check, ShoppingCart, Loader2, Download } from "lucide-react";
+import { Search, BookOpen, Gem, Lock, ArrowRight, Check, ShoppingCart, Loader2, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -63,8 +63,8 @@ const NoteCard = ({ note, onUnlockClick }: { note: Note; onUnlockClick: () => vo
     } else if (isExternalLink) {
         actionButton = (
             <Button asChild className="w-full">
-                <a href={content} target="_blank" rel="noopener noreferrer" download>
-                    Download Note <Download className="ml-2 h-4 w-4"/>
+                <a href={content} target="_blank" rel="noopener noreferrer">
+                    View File <ExternalLink className="ml-2 h-4 w-4"/>
                 </a>
             </Button>
         );

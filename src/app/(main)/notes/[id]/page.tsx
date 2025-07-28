@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback }from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Loader2, ArrowLeft, Download } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -69,12 +69,12 @@ export default function NoteDetailPage() {
         if (isExternalLink) {
              return (
                 <div className="text-center p-8 bg-muted/50 rounded-lg">
-                    <Download className="h-12 w-12 mx-auto text-primary mb-4"/>
-                    <h3 className="text-xl font-semibold mb-2">Download Note</h3>
-                    <p className="text-muted-foreground mb-6">This note is an external document. Click the button below to download it.</p>
+                    <ExternalLink className="h-12 w-12 mx-auto text-primary mb-4"/>
+                    <h3 className="text-xl font-semibold mb-2">External Note</h3>
+                    <p className="text-muted-foreground mb-6">This note is stored in an external location. Click the button below to open it in a new tab.</p>
                     <Button asChild>
-                        <a href={note.content} target="_blank" rel="noopener noreferrer" download>
-                            Download Note <Download className="ml-2 h-4 w-4"/>
+                        <a href={note.content} target="_blank" rel="noopener noreferrer">
+                            View External File <ExternalLink className="ml-2 h-4 w-4"/>
                         </a>
                     </Button>
                 </div>
