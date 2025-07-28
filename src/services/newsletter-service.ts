@@ -11,7 +11,7 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { leadMagnetPath } from '@/services/marketing-config';
+import { marketingLinks } from '@/lib/marketing-links';
 
 const SubscribeToNewsletterInputSchema = z.object({
   email: z.string().email(),
@@ -49,7 +49,13 @@ export async function subscribeToNewsletter(input: SubscribeToNewsletterInput): 
   }
 
   // The download link is now sourced from a central, easily-editable config file.
-  const downloadLink = leadMagnetPath;
+  // We'll use the first link in the array as the default lead magnet.
+  const downloadLink = marketingLinks.length > 0 ? marketingLinks[0].url : '';
+
+  if (!downloadLink) {
+      console.error("No lead magnet link configured in marketing-links.ts");
+      throw new Error("Sorry, the download is currently unavailable.");
+  }
 
   return {
     message: "Thanks for subscribing! Your PDF is downloading now. Feel free to explore our app's features.",
