@@ -2,35 +2,34 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Notes can be read by any authenticated user.
-    // Only admins can create, update, or delete notes.
-    match /notes/{noteId} {
-      allow read: if request.auth != null;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    // Users can only read and write to their own document.
-    // Admins can read any user document for management purposes.
-    match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      allow create: if request.auth.uid != null;
-      
-      // Allow admin to read user data
-      allow get: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
 
-      // Users can write to their own progress subcollection
-      match /progress/{progressId} {
-        allow read, write: if request.auth.uid == userId;
+    // Users Collection
+    // - Allow users to read and update their own document.
+    // - Deny creating or deleting their own document via the client.
+    // - Deny reading/writing to other users' documents.
+    match /users/{userId} {
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+
+      // Allow authenticated users to read and write to their own progress subcollection.
+      match /progress/{topicId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
-    
-    // Anyone can subscribe to the newsletter.
-    // Only admins can read the list of subscribers.
-    match /newsletter_subscriptions/{subscriptionId} {
-        allow create: if true;
-        allow read, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+
+    // Notes Collection
+    // - Allow any authenticated user to read all notes.
+    // - Deny write access to everyone (creation, updates, deletion should only be done by an admin via a backend process, which is handled by the app's current structure).
+    match /notes/{noteId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Secure by default
     }
 
+    // Newsletter Subscriptions
+    // - Allow anyone to create (subscribe).
+    // - Deny read/update/delete access from the client for privacy.
+    match /newsletter_subscriptions/{subscriptionId} {
+        allow create: if true;
+        allow read, update, delete: if false;
+    }
   }
 }
