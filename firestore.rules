@@ -1,53 +1,52 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default: Disallow all reads/writes unless explicitly allowed.
+    // Helper function to check for admin role
+    function isAdmin() {
+      // UID for the admin user 'a2gtrickacademy@gmail.com'
+      return request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    }
+
+    // Default Deny: Secure all collections by default
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Users collection:
-    // - Allow anyone to create a user document (on signup).
-    // - Allow users to read their own data.
-    // - Allow admin to read/write any user document.
+    // Allow authenticated users to read their own user document
+    // Allow admin to read/write any user document
     match /users/{userId} {
-      allow create: if request.auth != null;
-      allow read: if request.auth.uid == userId;
-      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+      allow read, update: if request.auth.uid == userId || isAdmin();
+      allow create: if request.auth.uid != null;
+
+      // Allow authenticated users to write to their own progress subcollection
+      // Allow admin to read any user's progress
+      match /progress/{progressId} {
+         allow read: if request.auth.uid == userId || isAdmin();
+         allow write: if request.auth.uid == userId;
+      }
     }
 
-    // Progress sub-collection for users:
-    // - Allow a user to write to their own progress data.
-    // - Allow admin to read any progress data.
-    match /users/{userId}/progress/{docId} {
-      allow read, write: if request.auth.uid == userId || request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
-    }
-
-    // Notes collection:
-    // - Allow any authenticated user to read notes.
-    // - Allow only the admin to write/delete notes.
+    // Allow authenticated users to read notes
+    // Allow admin to create, update, and delete notes
     match /notes/{noteId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+        allow read: if request.auth != null;
+        allow create, update, delete: if isAdmin();
     }
-
-    // Marketing config:
-    // - Allow any authenticated user to read the config.
-    // - Allow only the admin to write to the config.
+    
+    // Allow admin to read/write marketing configuration
+    // Allow any authenticated user to read the configuration
     match /marketing_config/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+        allow read: if request.auth != null;
+        allow write: if isAdmin();
     }
 
-    // Newsletter subscriptions:
-    // - Allow anyone to create a subscription.
-    // - Allow only the admin to read/delete subscriptions.
-    match /newsletter_subscriptions/{subscriptionId} {
-      allow create: if true;
-      allow read, delete: if request.auth.uid == 'sRiwSuQlxgbGRUcO7CevaJxQBEq2';
+    // Allow anyone to submit a newsletter subscription
+    match /newsletter_subscriptions/{docId} {
+        allow create: if true;
+        // Only admin can read or delete subscribers
+        allow read, delete: if isAdmin();
     }
   }
 }
