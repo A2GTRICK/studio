@@ -2,20 +2,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
 import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, Timestamp, deleteDoc, doc } from 'firebase/firestore';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Trash2, MoreHorizontal, FileText, Upload, PlusCircle, ExternalLink } from 'lucide-react';
+import { Loader2, Trash2, MoreHorizontal, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useMarketing, type MarketingMaterial } from '@/context/marketing-context';
+import { leadMagnetPath } from '@/services/marketing-config';
 
 interface Subscriber {
     id: string;
@@ -23,31 +20,27 @@ interface Subscriber {
     subscribedAt: Date;
 }
 
-const readFileAsDataURL = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            if (event.target && typeof event.target.result === 'string') {
-                resolve(event.target.result);
-            } else {
-                reject(new Error("Failed to read file."));
-            }
-        };
-        reader.onerror = (error) => {
-            reject(error);
-        };
-        reader.readAsDataURL(file);
-    });
-};
+const LeadMagnetDisplay = () => (
+    <Card className="bg-primary/5 border-primary/20">
+        <CardHeader>
+            <CardTitle className="font-headline">Current Lead Magnet</CardTitle>
+            <CardDescription>
+                This is the file new subscribers receive. To change it, you must edit the link in the `src/services/marketing-config.ts` file and republish the app.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <a href={leadMagnetPath} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline break-all">
+                {leadMagnetPath}
+            </a>
+        </CardContent>
+    </Card>
+);
+
 
 export default function AdminMarketingPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-    const [loadingSubscribers, setLoadingSubscribers] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
     const { toast } = useToast();
-    const { materials, loading: loadingMaterials, addMaterial, deleteMaterial } = useMarketing();
-    
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<{ title: string; file: FileList }>();
 
     useEffect(() => {
         const subscribersCollection = collection(db, 'newsletter_subscriptions');
@@ -64,11 +57,11 @@ export default function AdminMarketingPage() {
                 } as Subscriber;
             });
             setSubscribers(subscribersList);
-            setLoadingSubscribers(false);
+            setLoading(false);
         }, (error) => {
             console.error("Error fetching subscribers:", error);
             toast({ title: "Error", description: "Could not fetch subscribers.", variant: "destructive" });
-            setLoadingSubscribers(false);
+            setLoading(false);
         });
 
         return () => unsubscribe();
@@ -84,136 +77,9 @@ export default function AdminMarketingPage() {
         }
     };
 
-    const handleAddMaterial = async (data: { title: string; file: FileList }) => {
-        setIsSubmitting(true);
-        const file = data.file[0];
-        if (!file) {
-            toast({ title: "File Required", description: "Please select a file to upload.", variant: "destructive" });
-            setIsSubmitting(false);
-            return;
-        }
-
-        try {
-            const content = await readFileAsDataURL(file);
-            await addMaterial({
-                title: data.title,
-                fileName: file.name,
-                content: content,
-            });
-            toast({ title: "Success!", description: "New marketing material has been added." });
-            reset();
-        } catch (error: any) {
-            toast({ title: "Error Uploading", description: error.message, variant: "destructive" });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    
-    const handleDeleteMaterial = async (materialId: string) => {
-        try {
-            await deleteMaterial(materialId);
-            toast({ title: "Material Deleted", variant: "destructive" });
-        } catch(error: any) {
-            toast({ title: "Error Deleting", description: error.message, variant: "destructive" });
-        }
-    }
-
-
     return (
-        <div className="pt-6 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-1">
-                <Card>
-                    <form onSubmit={handleSubmit(handleAddMaterial)}>
-                        <CardHeader>
-                            <CardTitle className="font-headline flex items-center gap-2"><PlusCircle /> Add Lead Magnet</CardTitle>
-                            <CardDescription>Upload a new file to be used as a lead magnet for subscribers.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="title">File Title</Label>
-                                <Input id="title" {...register("title", { required: "Title is required" })} placeholder="e.g., Top 20 Questions PDF" disabled={isSubmitting} />
-                                {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="fileUpload">File</Label>
-                                <div className="relative">
-                                    <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input id="fileUpload" type="file" {...register("file", { required: "File is required" })} className="pl-10" disabled={isSubmitting}/>
-                                </div>
-                                {errors.file && <p className="text-sm text-destructive">{errors.file.message}</p>}
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                {isSubmitting ? "Uploading..." : "Add Material"}
-                            </Button>
-                        </CardFooter>
-                    </form>
-                </Card>
-            </div>
-            <div className="lg:col-span-2 space-y-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="font-headline">Manage Lead Magnets</CardTitle>
-                        <CardDescription>
-                           Manage files available to subscribers. The most recently added file is sent by default.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       {loadingMaterials ? (
-                           <div className="flex items-center justify-center h-24"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>
-                       ) : materials.length > 0 ? (
-                           <Table>
-                               <TableHeader>
-                                   <TableRow>
-                                       <TableHead>Title</TableHead>
-                                       <TableHead>Filename</TableHead>
-                                       <TableHead>Actions</TableHead>
-                                   </TableRow>
-                               </TableHeader>
-                               <TableBody>
-                                   {materials.map((material) => (
-                                       <TableRow key={material.id}>
-                                           <TableCell className="font-medium">{material.title}</TableCell>
-                                           <TableCell>{material.fileName}</TableCell>
-                                           <TableCell className="text-right">
-                                               <Button variant="ghost" size="icon" asChild>
-                                                   <a href={material.content} download={material.fileName} target="_blank" rel="noopener noreferrer">
-                                                       <ExternalLink className="h-4 w-4" />
-                                                   </a>
-                                               </Button>
-                                               <AlertDialog>
-                                                   <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                                           <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                   </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This action cannot be undone. This will permanently delete the material "{material.title}".
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteMaterial(material.id)} className="bg-destructive hover:bg-destructive/90">
-                                                                Yes, delete
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                           </TableCell>
-                                       </TableRow>
-                                   ))}
-                               </TableBody>
-                           </Table>
-                       ) : (
-                           <p className="text-center text-muted-foreground py-10">No lead magnets uploaded yet.</p>
-                       )}
-                    </CardContent>
-                </Card>
+        <div className="pt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
                 <Card>
                     <CardHeader>
                         <CardTitle className="font-headline">Newsletter Subscribers</CardTitle>
@@ -222,7 +88,7 @@ export default function AdminMarketingPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {loadingSubscribers ? (
+                        {loading ? (
                             <div className="flex flex-col items-center justify-center h-48">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                 <p className="mt-4 text-muted-foreground">Loading subscribers...</p>
@@ -285,6 +151,9 @@ export default function AdminMarketingPage() {
                         )}
                     </CardContent>
                 </Card>
+            </div>
+            <div className="lg:col-span-1">
+                <LeadMagnetDisplay />
             </div>
         </div>
     );

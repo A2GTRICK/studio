@@ -45,10 +45,10 @@ export default function LandingPage() {
         description: result.message,
       });
 
-      // Trigger download using the data URL
+      // Trigger download
       const link = document.createElement('a');
       link.href = result.downloadLink;
-      link.setAttribute('download', result.fileName);
+      link.setAttribute('download', 'Top-20-Pharmacology-Questions.pdf');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -325,7 +325,7 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-3xl font-headline font-bold text-primary">Get a Head Start!</h2>
-              <p className="mt-2 text-muted-foreground text-lg">Download our free lead magnet and see the quality for yourself.</p>
+              <p className="mt-2 text-muted-foreground text-lg">Download our free "Top 20 Most Asked Pharmacology Questions" PDF and see the quality for yourself.</p>
             </div>
             <div className="flex-1 w-full">
                 <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto md:mx-0">
