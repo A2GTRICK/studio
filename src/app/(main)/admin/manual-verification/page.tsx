@@ -74,7 +74,7 @@ export default function AdminManualVerificationPage() {
                     requestedAt: serverTimestamp(),
                     verifiedAt: serverTimestamp()
                  }
-             });
+             }, { merge: true });
              toast({ title: 'User Approved!', description: `${selectedUser.displayName} has been manually verified and granted access.`});
              setSelectedUser(null); // Close the dialog
              setProductName('');
@@ -151,17 +151,19 @@ export default function AdminManualVerificationPage() {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <DialogTrigger asChild>
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="sm" 
-                                                    disabled={user.paymentRequest?.status === 'verified'}
-                                                    onClick={() => setSelectedUser(user)}
-                                                >
-                                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                                    {user.paymentRequest?.status === 'verified' ? 'Already Verified' : 'Manually Approve'}
-                                                </Button>
-                                            </DialogTrigger>
+                                            <Dialog onOpenChange={(open) => { if (!open) setSelectedUser(null); }}>
+                                                <DialogTrigger asChild>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        disabled={user.paymentRequest?.status === 'verified'}
+                                                        onClick={() => setSelectedUser(user)}
+                                                    >
+                                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                                        {user.paymentRequest?.status === 'verified' ? 'Already Verified' : 'Manually Approve'}
+                                                    </Button>
+                                                </DialogTrigger>
+                                            </Dialog>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -178,7 +180,7 @@ export default function AdminManualVerificationPage() {
             </Card>
         </div>
         
-        <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <Dialog open={!!selectedUser} onOpenChange={(open) => { if (!open) setSelectedUser(null); }}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Manual Approval for {selectedUser?.displayName}</DialogTitle>

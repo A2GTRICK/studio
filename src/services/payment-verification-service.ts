@@ -5,7 +5,7 @@
  */
 
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 
 const CreateVerificationRequestInputSchema = z.object({
@@ -17,8 +17,10 @@ const CreateVerificationRequestInputSchema = z.object({
 export type CreateVerificationRequestInput = z.infer<typeof CreateVerificationRequestInputSchema>;
 
 /**
- * Updates a user's document in Firestore with a payment verification request.
+ * Creates or updates a user's document in Firestore with a payment verification request.
  * This is triggered when a user clicks "I Have Paid" in the payment dialog.
+ * It now uses setDoc with merge to avoid overwriting the user document if it doesn't exist,
+ * though in this flow, it always should. This prevents errors if the user doc is missing.
  * @param data The details of the purchase to be verified.
  */
 export async function createVerificationRequest(data: CreateVerificationRequestInput): Promise<void> {
@@ -29,16 +31,19 @@ export async function createVerificationRequest(data: CreateVerificationRequestI
 
     try {
         const userRef = doc(db, 'users', parsedData.data.uid);
-        await updateDoc(userRef, {
+        // Use setDoc with merge:true to safely create or update the payment request
+        // without overwriting the entire user document. This is more robust than updateDoc.
+        await setDoc(userRef, {
             paymentRequest: {
                 productName: parsedData.data.productName,
                 price: parsedData.data.price,
                 status: 'pending',
                 requestedAt: serverTimestamp(),
             }
-        });
+        }, { merge: true });
     } catch (error) {
         console.error("Error creating payment verification request in user doc:", error);
+        // This error is now handled silently in the payment dialog component.
         throw new Error("Could not log your payment for verification. Please contact support.");
     }
 }
