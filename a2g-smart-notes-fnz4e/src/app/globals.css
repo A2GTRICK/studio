@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 67% 94%;
+    --foreground: 240 10% 3.9%;
+    --card: 240 60% 98%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 240 60% 98%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 283 100% 42%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 20% 92%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 15% 90%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 276 100% 25%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 10% 85%;
+    --input: 240 10% 85%;
+    --ring: 283 100% 42%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 240 60% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 283 100% 42%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 20% 92%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 240 10% 85%;
+    --sidebar-ring: 283 100% 42%;
+  }
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 283 90% 65%;
+    --primary-foreground: 283 10% 5%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 276 90% 55%;
+    --accent-foreground: 276 10% 5%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 283 90% 65%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 283 90% 65%;
+    --sidebar-primary-foreground: 283 10% 5%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 283 90% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+  /* Style for bold text within prose to be the primary color */
+  .prose strong {
+    color: hsl(var(--primary));
+  }
+  .dark .prose strong {
+    color: hsl(var(--primary));
+  }
+
+  /* Apply headline font to all headings */
+  h1, h2, h3, h4, h5, h6 {
+      @apply font-headline;
+  }
+}
+
+@layer utilities {
+    .animate-wobble {
+        animation: wobble 1s ease-in-out;
+    }
+
+    @keyframes wobble {
+        0%, 100% {
+            transform: rotate(0deg) scale(1);
+        }
+        25% {
+            transform: rotate(-5deg) scale(1.1);
+        }
+        50% {
+            transform: rotate(5deg) scale(1.1);
+        }
+        75% {
+            transform: rotate(-2.5deg) scale(1.1);
+        }
+    }
+
+    /* Watermark for view mode */
+    .watermarked-content {
+      position: relative;
+    }
+    .watermarked-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100"><text x="50%" y="50%" font-size="14" fill="hsl(240 10% 3.9% / 0.06)" text-anchor="middle" dominant-baseline="middle" transform="rotate(-30, 70, 50)">A2G Smart Notes</text></svg>');
+      background-repeat: repeat;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .dark .watermarked-content::before {
+       background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100"><text x="50%" y="50%" font-size="14" fill="hsl(0 0% 98% / 0.05)" text-anchor="middle" dominant-baseline="middle" transform="rotate(-30, 70, 50)">A2G Smart Notes</text></svg>');
+    }
+}
