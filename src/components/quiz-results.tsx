@@ -24,24 +24,24 @@ interface QuizResultsProps {
 
 const feedbackMessages = {
     perfect: [
-        "🏆 Mogambo khush hua! Perfect score! You're a legend!",
-        "💯 Flawless Victory! Are you even human?",
-        "Don't call it a comeback, you've been here for years! Outstanding!",
+        "🏆 Flawless Victory! Are you even real? 👽",
+        "💯 Perfect score! The Sharma ji's kid of our app.",
+        "😎 Genius level unlocked. Even Google asks you for answers.",
     ],
     great: [
-        "🎉 Excellent work! 'Picture abhi baaki hai mere dost!' You're so close!",
-        "That's the way! You're on the right track to becoming a 'Don'.",
-        "Brilliant! You've got the 'josh'!",
+        "🎉 Wow, so close! Are you cheating? Just kidding... unless? 😉",
+        "🔥 On fire! Your brain is working faster than 5G.",
+        "Nice one! You're basically the 'season finale' of awesome.",
     ],
     good: [
-        "👍 Good effort! 'Thoda aur improve karoge toh life set hai.'",
-        "Solid attempt! 'Abhi Dilli door hai,' but you're on the way!",
-        "Not bad at all! Remember, 'Haar kar jeetne wale ko hi Baazigar kehte hain.'",
+        "👍 Not bad, not bad. You're like a Wednesday... not the weekend, but getting there!",
+        "👏 Decent effort! You've officially graduated from 'noob' to 'might know something'.",
+        "Good job! You didn't fail, you just found ways that won't work. 🧠",
     ],
     bad: [
-        "🤔 'Pushpa, I hate tears...' but don't worry! Let's review and try again.",
-        "It's a start. 'Bade bade deshon mein aisi chhoti chhoti baatein hoti rehti hai.' Let's learn from it.",
-        "Okay, let's turn this around. 'Apna time aayega!'",
+        "🤔 Hmm... Did you let your pet hamster take the quiz for you? 🐹",
+        "😬 Yikes. My grandma scored better, and she thinks WiFi is a type of biscuit.",
+        "It's okay! Even 'Ctrl+Z' can't undo this, but you can always try again! 😂",
     ],
 };
 
@@ -64,12 +64,25 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
   const scorePercentage = Math.round((score / quizData.questions.length) * 100);
 
   const [resultMessage, setResultMessage] = useState('');
+  const [messageColor, setMessageColor] = useState('');
 
   useEffect(() => {
-    if (scorePercentage === 100) setResultMessage(getRandomMessage('perfect'));
-    else if (scorePercentage >= 80) setResultMessage(getRandomMessage('great'));
-    else if (scorePercentage >= 50) setResultMessage(getRandomMessage('good'));
-    else setResultMessage(getRandomMessage('bad'));
+    if (scorePercentage === 100) {
+        setResultMessage(getRandomMessage('perfect'));
+        setMessageColor('text-green-500');
+    }
+    else if (scorePercentage >= 80) {
+        setResultMessage(getRandomMessage('great'));
+        setMessageColor('text-blue-500');
+    }
+    else if (scorePercentage >= 50) {
+        setResultMessage(getRandomMessage('good'));
+        setMessageColor('text-amber-600');
+    }
+    else {
+        setResultMessage(getRandomMessage('bad'));
+        setMessageColor('text-red-500');
+    }
   }, [scorePercentage]);
 
   const handleGetFeedback = async () => {
@@ -137,7 +150,7 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
       <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="font-headline">Your Score</CardTitle>
-          <CardDescription>{resultMessage}</CardDescription>
+          <CardDescription className={cn("font-medium", messageColor)}>{resultMessage}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
