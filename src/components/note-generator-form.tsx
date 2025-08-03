@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -32,11 +33,40 @@ const loadingMessages = [
     "Finalizing the details...",
 ];
 
+const courseYearMapping: Record<string, string[]> = {
+    "B.Pharm": ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+    "D.Pharm": ["1st Year", "2nd Year"],
+    "MBBS": ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"],
+    "BDS": ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+    "Other": ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"],
+};
+
 export function NoteGeneratorForm() {
   const [generatedContent, setGeneratedContent] = useState<GenerateNotesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
   const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      subject: '',
+      topic: '',
+      universitySyllabus: '',
+    },
+  });
+  
+  const selectedCourse = form.watch("course");
+
+  useEffect(() => {
+    if (selectedCourse) {
+      setAvailableYears(courseYearMapping[selectedCourse] || []);
+      form.resetField('year', { defaultValue: '' });
+    } else {
+      setAvailableYears([]);
+    }
+  }, [selectedCourse, form]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -50,15 +80,6 @@ export function NoteGeneratorForm() {
     }
     return () => clearInterval(interval);
   }, [isLoading]);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      subject: '',
-      topic: '',
-      universitySyllabus: '',
-    },
-  });
 
   async function onNoteSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -104,6 +125,9 @@ export function NoteGeneratorForm() {
                       <SelectContent>
                         <SelectItem value="B.Pharm">B.Pharm</SelectItem>
                         <SelectItem value="D.Pharm">D.Pharm</SelectItem>
+                        <SelectItem value="MBBS">MBBS</SelectItem>
+                        <SelectItem value="BDS">BDS</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -116,17 +140,16 @@ export function NoteGeneratorForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Year</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCourse}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a year" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="1st Year">1st Year</SelectItem>
-                        <SelectItem value="2nd Year">2nd Year</SelectItem>
-                        <SelectItem value="3rd Year">3rd Year</SelectItem>
-                        <SelectItem value="4th Year">4th Year</SelectItem>
+                        {availableYears.map(year => (
+                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
