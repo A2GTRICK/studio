@@ -1,50 +1,59 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
-import { generateQuiz, type GenerateQuizOutput } from '@/ai/flows/generate-quiz';
+import { generateQuiz, type GenerateQuizOutput, GenerateQuizInputSchema, type GenerateQuizInput } from '@/ai/flows/generate-quiz';
 import { FileQuestion, Loader2 } from 'lucide-react';
 
-const formSchema = z.object({
-  subject: z.string().min(2, { message: 'Subject must be at least 2 characters.' }),
-  topic: z.string().min(2, { message: 'Topic must be at least 2 characters.' }),
-  notes: z.string().min(50, { message: 'Notes must be at least 50 characters long.' }),
-});
+interface QuizGeneratorSetupProps {
+  onQuizGenerated: (data: GenerateQuizOutput, config: GenerateQuizInput) => void;
+}
 
-export function QuizGeneratorForm() {
-  const [result, setResult] = useState<GenerateQuizOutput | null>(null);
+export function QuizGeneratorSetup({ onQuizGenerated }: QuizGeneratorSetupProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<GenerateQuizInput>({
+    resolver: zodResolver(GenerateQuizInputSchema),
     defaultValues: {
+      targetExam: 'GPAT',
       subject: '',
       topic: '',
-      notes: '',
+      numQuestions: 10,
+      difficulty: 'Medium',
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const numQuestions = form.watch('numQuestions');
+
+  async function onSubmit(values: GenerateQuizInput) {
     setIsLoading(true);
-    setResult(null);
     try {
       const response = await generateQuiz(values);
-      setResult(response);
+      if (response && response.questions.length > 0) {
+        onQuizGenerated(response, values);
+      } else {
+         toast({
+          variant: 'destructive',
+          title: 'Quiz Generation Failed',
+          description: 'The AI could not generate a quiz for the given inputs. Please try a different topic.',
+        });
+      }
     } catch (error) {
       console.error(error);
       toast({
-        variant: "destructive",
-        title: "Error Generating Quiz",
-        description: "An unexpected error occurred. Please try again later.",
+        variant: 'destructive',
+        title: 'Error Generating Quiz',
+        description: 'An unexpected error occurred. Please try again later.',
       });
     } finally {
       setIsLoading(false);
@@ -55,12 +64,34 @@ export function QuizGeneratorForm() {
     <div className="grid gap-8 lg:grid-cols-2">
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="font-headline">Quiz Details</CardTitle>
-          <CardDescription>Provide the notes and context for your quiz.</CardDescription>
+          <CardTitle className="font-headline">Quiz Configuration</CardTitle>
+          <CardDescription>Set up your practice quiz session.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="targetExam"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target Exam</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select an exam" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="GPAT">GPAT</SelectItem>
+                        <SelectItem value="NIPER">NIPER</SelectItem>
+                        <SelectItem value="Drug Inspector">Drug Inspector</SelectItem>
+                        <SelectItem value="Pharmacist Exam">Pharmacist Exam</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="subject"
@@ -68,7 +99,7 @@ export function QuizGeneratorForm() {
                   <FormItem>
                     <FormLabel>Subject</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Physics" {...field} />
+                      <Input placeholder="e.g., Pharmacology" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -79,38 +110,58 @@ export function QuizGeneratorForm() {
                 name="topic"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Topic</FormLabel>
+                    <FormLabel>Topic (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Quantum Mechanics" {...field} />
+                      <Input placeholder="e.g., Diuretics" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="difficulty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Difficulty</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Select difficulty" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Easy">Easy</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name="notes"
+                name="numQuestions"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Notes</FormLabel>
+                    <FormLabel>Number of Questions: {numQuestions}</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Paste your notes here..." className="min-h-[150px] resize-y" {...field} />
+                      <Slider
+                        min={5}
+                        max={20}
+                        step={1}
+                        value={[field.value]}
+                        onValueChange={(vals) => field.onChange(vals[0])}
+                      />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
+              <p className="text-sm text-center text-muted-foreground">🟢 20/20 free questions remaining today.</p>
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Quiz...
-                  </>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating Quiz...</>
                 ) : (
-                  <>
-                    <FileQuestion className="mr-2 h-4 w-4" />
-                    Generate Quiz
-                  </>
+                  <><FileQuestion className="mr-2 h-4 w-4" />Generate Quiz</>
                 )}
               </Button>
             </form>
@@ -118,31 +169,12 @@ export function QuizGeneratorForm() {
         </CardContent>
       </Card>
       
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="font-headline">Generated Quiz</CardTitle>
-          <CardDescription>Your AI-generated quiz will appear here.</CardDescription>
-        </CardHeader>
-        <CardContent className="h-[520px] overflow-y-auto rounded-md border bg-secondary/30 p-4">
-           {isLoading && (
-             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p className="font-medium">Generating your quiz...</p>
-              <p className="text-sm">This may take a few moments.</p>
-            </div>
-          )}
-          {result && (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <pre className="whitespace-pre-wrap font-body text-sm">{result.quiz}</pre>
-            </div>
-          )}
-           {!isLoading && !result && (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <FileQuestion className="h-10 w-10 mb-4" />
-              <p>Your quiz is waiting to be created.</p>
-            </div>
-          )}
-        </CardContent>
+      <Card className="shadow-md hidden lg:flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+            <FileQuestion className="h-16 w-16 mb-4" />
+            <h3 className="font-headline text-lg font-semibold">Your Quiz Awaits</h3>
+            <p className="text-sm">Configure your quiz settings in the panel to the left and start practicing for your exams.</p>
+        </div>
       </Card>
     </div>
   );

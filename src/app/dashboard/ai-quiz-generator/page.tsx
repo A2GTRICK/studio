@@ -1,22 +1,90 @@
-import { QuizGeneratorForm } from "@/components/quiz-generator-form";
-import { FileQuestion } from "lucide-react";
+
+'use client';
+
+import { useState } from 'react';
+import { QuizGeneratorSetup } from '@/components/quiz-generator-form';
+import { QuizTaker } from '@/components/quiz-taker';
+import { QuizResults } from '@/components/quiz-results';
+import type { GenerateQuizOutput, GenerateQuizInput } from '@/ai/flows/generate-quiz';
+import { FileQuestion, Bot, BarChart } from 'lucide-react';
+
+export type QuizPhase = 'setup' | 'quiz' | 'results';
+export type UserAnswers = Record<number, string>;
 
 export default function AiQuizGeneratorPage() {
-  return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <div className="flex items-center gap-2">
-          <FileQuestion className="h-8 w-8 text-primary" />
-          <h1 className="font-headline text-3xl font-bold tracking-tight">
-            AI Quiz Generator
-          </h1>
-        </div>
-        <p className="text-muted-foreground">
-          Paste your notes below to generate a quiz and test your knowledge.
-        </p>
-      </div>
+  const [quizPhase, setQuizPhase] = useState<QuizPhase>('setup');
+  const [quizData, setQuizData] = useState<GenerateQuizOutput | null>(null);
+  const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
+  const [quizConfig, setQuizConfig] = useState<GenerateQuizInput | null>(null);
 
-      <QuizGeneratorForm />
-    </div>
-  );
+
+  const handleQuizGenerated = (data: GenerateQuizOutput, config: GenerateQuizInput) => {
+    setQuizData(data);
+    setQuizConfig(config);
+    setQuizPhase('quiz');
+  };
+
+  const handleQuizSubmit = (answers: UserAnswers) => {
+    setUserAnswers(answers);
+    setQuizPhase('results');
+  };
+
+  const handleRestart = () => {
+    setQuizData(null);
+    setUserAnswers({});
+    setQuizConfig(null);
+    setQuizPhase('setup');
+  };
+
+  const renderPhase = () => {
+    switch (quizPhase) {
+      case 'setup':
+        return (
+          <div>
+            <div className="flex items-center gap-2">
+              <FileQuestion className="h-8 w-8 text-primary" />
+              <h1 className="font-headline text-3xl font-bold tracking-tight">AI Quiz Generator</h1>
+            </div>
+            <p className="text-muted-foreground">Configure your exam practice session below.</p>
+            <div className="mt-8">
+              <QuizGeneratorSetup onQuizGenerated={handleQuizGenerated} />
+            </div>
+          </div>
+        );
+      case 'quiz':
+        return quizData && quizConfig && (
+          <div>
+            <div className="flex items-center gap-2">
+                <Bot className="h-8 w-8 text-primary" />
+                <h1 className="font-headline text-3xl font-bold tracking-tight">Quiz in Progress</h1>
+            </div>
+            <p className="text-muted-foreground">
+              Exam: {quizConfig.targetExam} | Subject: {quizConfig.subject}
+              {quizConfig.topic && ` | Topic: ${quizConfig.topic}`}
+            </p>
+            <div className="mt-8">
+              <QuizTaker quizData={quizData} onQuizSubmit={handleQuizSubmit} />
+            </div>
+          </div>
+        );
+      case 'results':
+        return quizData && (
+          <div>
+            <div className="flex items-center gap-2">
+                <BarChart className="h-8 w-8 text-primary" />
+                <h1 className="font-headline text-3xl font-bold tracking-tight">Quiz Results</h1>
+            </div>
+            <p className="text-muted-foreground">Check your performance and review the explanations.</p>
+            <div className="mt-8">
+              <QuizResults quizData={quizData} userAnswers={userAnswers} onRestart={handleRestart} />
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return <div className="w-full">{renderPhase()}</div>;
 }
+
