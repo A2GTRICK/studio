@@ -42,10 +42,10 @@ export function QuizTaker({ quizData, onQuizSubmit }: QuizTakerProps) {
   const answersCount = Object.keys(answers).length;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
       <Card className="shadow-md">
         <CardHeader>
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start flex-wrap gap-2">
             <div>
               <CardTitle className="font-headline text-xl">Question {currentQuestionIndex + 1}/{totalQuestions}</CardTitle>
               {currentQuestion.previousYearTag && (
@@ -56,13 +56,13 @@ export function QuizTaker({ quizData, onQuizSubmit }: QuizTakerProps) {
               )}
             </div>
           </div>
-          <CardDescription className="pt-2 text-base text-foreground">{currentQuestion.question}</CardDescription>
+          <CardDescription className="pt-4 text-base text-foreground leading-relaxed">{currentQuestion.question}</CardDescription>
         </CardHeader>
         <CardContent>
           <RadioGroup value={answers[currentQuestionIndex]} onValueChange={handleAnswerChange}>
             <div className="space-y-3">
               {currentQuestion.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 rounded-md border has-[[data-state=checked]]:bg-secondary has-[[data-state=checked]]:border-primary transition-colors">
+                <div key={index} className="flex items-center space-x-3 p-3 rounded-md border has-[[data-state=checked]]:bg-secondary has-[[data-state=checked]]:border-primary transition-colors cursor-pointer">
                   <RadioGroupItem value={option} id={`option-${index}`} />
                   <Label htmlFor={`option-${index}`} className="font-normal text-base cursor-pointer flex-1">
                     {option}
@@ -76,19 +76,19 @@ export function QuizTaker({ quizData, onQuizSubmit }: QuizTakerProps) {
 
       <div className="flex justify-between items-center">
         <Button variant="outline" onClick={handlePrev} disabled={currentQuestionIndex === 0}>
-            <ArrowLeft className="mr-2"/>
+            <ArrowLeft className="mr-2 h-4 w-4"/>
             Previous
         </Button>
-        <p className="text-sm text-muted-foreground">{answersCount} of {totalQuestions} questions answered</p>
+        <p className="text-sm text-muted-foreground text-center">{answersCount} of {totalQuestions} answered</p>
         {currentQuestionIndex === totalQuestions - 1 ? (
           <Button onClick={() => onQuizSubmit(answers)} disabled={answersCount === 0} className="bg-green-600 hover:bg-green-700">
-            <CheckCheck className="mr-2"/>
+            <CheckCheck className="mr-2 h-4 w-4"/>
             Submit Quiz
           </Button>
         ) : (
           <Button onClick={handleNext}>
             Next
-            <ArrowRight className="ml-2"/>
+            <ArrowRight className="ml-2 h-4 w-4"/>
           </Button>
         )}
       </div>

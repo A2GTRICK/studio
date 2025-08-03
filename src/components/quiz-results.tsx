@@ -7,9 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle, XCircle, Target, BookOpen, RefreshCw, Bot, Sparkles, Loader2, Award, Repeat, ArrowUp } from 'lucide-react';
+import { CheckCircle, XCircle, Target, BookOpen, RefreshCw, Bot, Sparkles, Loader2, Award, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { generateFeedback, type GenerateFeedbackOutput } from '@/ai/flows/generate-feedback';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
@@ -21,6 +21,13 @@ interface QuizResultsProps {
   quizConfig: GenerateQuizInput;
   onRestart: (newConfig?: Partial<GenerateQuizInput>) => void;
 }
+
+const feedbackMessages = {
+    perfect: "🏆 Perfect Score! Mogambo is very pleased! Keep up the amazing work!",
+    great: "🎉 Excellent work! You're on the right track. A little more push and you're golden.",
+    good: "👍 Good effort! You've got a solid foundation. Let's work on the tricky ones.",
+    bad: "🤔 Okay, a decent start. Let's review the mistakes and turn them into learning opportunities.",
+};
 
 export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: QuizResultsProps) {
   const [feedback, setFeedback] = useState<GenerateFeedbackOutput | null>(null);
@@ -35,21 +42,28 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
 
   const scorePercentage = Math.round((score / quizData.questions.length) * 100);
 
+  const [resultMessage, setResultMessage] = useState('');
+
+  useEffect(() => {
+    if (scorePercentage === 100) setResultMessage(feedbackMessages.perfect);
+    else if (scorePercentage >= 80) setResultMessage(feedbackMessages.great);
+    else if (scorePercentage >= 50) setResultMessage(feedbackMessages.good);
+    else setResultMessage(feedbackMessages.bad);
+  }, [scorePercentage]);
+
   const handleGetFeedback = async () => {
     setIsFeedbackLoading(true);
     setFeedback(null);
     try {
       const incorrectQuestions = quizData.questions
-        .filter((q, index) => userAnswers[index] !== q.correctAnswer)
-        .map((q, index) => {
-           const originalIndex = quizData.questions.findIndex(origQ => origQ.question === q.question);
-           return {
-                question: q.question,
-                userAnswer: userAnswers[originalIndex] || "Not Answered",
-                correctAnswer: q.correctAnswer,
-                explanation: q.explanation,
-            }
-        });
+        .map((q, index) => ({ ...q, userAnswer: userAnswers[index] }))
+        .filter(q => q.userAnswer !== q.correctAnswer)
+        .map(q => ({
+          question: q.question,
+          userAnswer: q.userAnswer || "Not Answered",
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+        }));
 
       if (incorrectQuestions.length === 0) {
         toast({
@@ -83,14 +97,14 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
 
       return (
         <Button onClick={() => onRestart({ ...quizConfig, difficulty: nextDifficulty })}>
-          <Award className="mr-2"/>
+          <Award className="mr-2 h-4 w-4"/>
           Excellent! Try '{nextDifficulty}' difficulty next
         </Button>
       );
     } else {
       return (
         <Button onClick={() => onRestart(quizConfig)}>
-          <Repeat className="mr-2"/>
+          <Repeat className="mr-2 h-4 w-4"/>
           Practice this topic again
         </Button>
       );
@@ -98,22 +112,22 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 max-w-4xl mx-auto">
       <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="font-headline">Your Score</CardTitle>
-          <CardDescription>You answered {score} out of {quizData.questions.length} questions correctly.</CardDescription>
+          <CardDescription>{resultMessage}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <span className="font-bold text-xl text-primary">{scorePercentage}%</span>
+            <span className="font-bold text-2xl text-primary">{scorePercentage}%</span>
             <Progress value={scorePercentage} className="w-full h-4" />
           </div>
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
             {getNextStep()}
             <Button onClick={() => onRestart()} variant="outline">
-                <RefreshCw className="mr-2"/>
+                <RefreshCw className="mr-2 h-4 w-4"/>
                 Start a New Quiz
             </Button>
         </CardFooter>
@@ -141,8 +155,8 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
           )}
           {!feedback && !isFeedbackLoading && (
              <Button onClick={handleGetFeedback} disabled={isFeedbackLoading || scorePercentage === 100}>
-                <Sparkles className="mr-2"/>
-                {scorePercentage === 100 ? "Perfect Score!" : "Get AI Feedback"}
+                <Sparkles className="mr-2 h-4 w-4"/>
+                {scorePercentage === 100 ? "Perfect Score! No feedback needed." : "Get AI Feedback"}
             </Button>
           )}
         </CardContent>
@@ -160,14 +174,14 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
               const isCorrect = userAnswer === q.correctAnswer;
               return (
                 <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-4 w-full">
-                      {isCorrect ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <XCircle className="h-5 w-5 text-destructive flex-shrink-0" />}
-                      <span className="text-left flex-1">Question {index + 1}: {q.question}</span>
+                  <AccordionTrigger className="hover:no-underline p-4">
+                    <div className="flex items-start gap-4 w-full">
+                      {isCorrect ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-1" /> : <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-1" />}
+                      <span className="text-left flex-1 font-medium text-base">Question {index + 1}: {q.question}</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-4 px-2">
+                    <div className="space-y-4 px-4 pb-4">
                         <div className="space-y-2">
                             {q.options.map(option => {
                                 const isUserAnswer = userAnswer === option;
@@ -175,15 +189,15 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
                                 
                                 return (
                                     <div key={option} className={cn(
-                                        "flex items-center gap-2 p-2 rounded-md text-sm",
-                                        isCorrectAnswer && "bg-green-100 dark:bg-green-900/30",
-                                        isUserAnswer && !isCorrectAnswer && "bg-red-100 dark:bg-red-900/30"
+                                        "flex items-center gap-3 p-3 rounded-md text-sm border",
+                                        isCorrectAnswer ? "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700" : "border-transparent",
+                                        isUserAnswer && !isCorrectAnswer && "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700"
                                     )}>
-                                       {isCorrectAnswer && <Target className="h-4 w-4 text-green-600"/>}
-                                       {isUserAnswer && !isCorrectAnswer && <XCircle className="h-4 w-4 text-destructive"/>}
-                                       {!isUserAnswer && !isCorrectAnswer && <div className="w-4 h-4"/>}
-                                        <span>{option}</span>
-                                        {isCorrectAnswer && <span className="text-xs font-semibold text-green-700 dark:text-green-400 ml-auto">(Correct Answer)</span>}
+                                       {isCorrectAnswer && <Target className="h-4 w-4 text-green-600 flex-shrink-0"/>}
+                                       {isUserAnswer && !isCorrectAnswer && <XCircle className="h-4 w-4 text-destructive flex-shrink-0"/>}
+                                       {!isUserAnswer && !isCorrectAnswer && <div className="w-4 h-4 flex-shrink-0"/>}
+                                        <span className="flex-1">{option}</span>
+                                        {isCorrectAnswer && <span className="text-xs font-semibold text-green-700 dark:text-green-400 ml-auto">(Correct)</span>}
                                         {isUserAnswer && !isCorrectAnswer && <span className="text-xs font-semibold text-destructive ml-auto">(Your Answer)</span>}
                                     </div>
                                 )
@@ -191,7 +205,7 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
                         </div>
                         <div className="p-4 bg-secondary/50 rounded-lg space-y-2">
                             <h4 className="font-semibold flex items-center gap-2"><BookOpen className="h-4 w-4"/>Explanation</h4>
-                            <p className="text-sm text-muted-foreground">{q.explanation}</p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{q.explanation}</p>
                         </div>
                     </div>
                   </AccordionContent>

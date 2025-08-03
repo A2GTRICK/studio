@@ -79,7 +79,7 @@ export function QuizGeneratorSetup({ onQuizGenerated, initialConfig }: QuizGener
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="grid gap-8 md:grid-cols-2">
       <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="font-headline">Quiz Configuration</CardTitle>
@@ -187,7 +187,7 @@ export function QuizGeneratorSetup({ onQuizGenerated, initialConfig }: QuizGener
         </CardContent>
       </Card>
       
-      <Card className="shadow-md hidden lg:flex items-center justify-center">
+      <Card className="shadow-md hidden md:flex items-center justify-center">
         <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
             <FileQuestion className="h-16 w-16 mb-4" />
             <h3 className="font-headline text-lg font-semibold">Your Quiz Awaits</h3>

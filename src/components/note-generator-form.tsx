@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,10 +23,32 @@ const formSchema = z.object({
   topic: z.string().min(2, { message: 'Topic must be at least 2 characters.' }),
 });
 
+const loadingMessages = [
+    "Analyzing your topic...",
+    "Consulting expert sources...",
+    "Structuring the content...",
+    "Formatting the notes...",
+    "Finalizing the details...",
+];
+
 export function NoteGeneratorForm() {
   const [generatedContent, setGeneratedContent] = useState<GenerateNotesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setLoadingMessage(prev => {
+          const currentIndex = loadingMessages.indexOf(prev);
+          return loadingMessages[(currentIndex + 1) % loadingMessages.length];
+        });
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,6 +61,7 @@ export function NoteGeneratorForm() {
   async function onNoteSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setGeneratedContent(null);
+    setLoadingMessage(loadingMessages[0]);
     try {
       const response = await generateNotes(values);
       setGeneratedContent(response);
@@ -162,8 +185,7 @@ export function NoteGeneratorForm() {
              {isLoading && (
                <div className="absolute inset-0 flex flex-col items-center justify-center h-full text-muted-foreground bg-background/80 z-10">
                 <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                <p className="font-medium">Formulating notes...</p>
-                <p className="text-sm">Extracting references...</p>
+                <p className="font-medium">{loadingMessage}</p>
               </div>
             )}
             
