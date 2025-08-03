@@ -21,6 +21,7 @@ const formSchema = z.object({
   year: z.string({ required_error: 'Please select a year.' }),
   subject: z.string().min(2, { message: 'Subject must be at least 2 characters.' }),
   topic: z.string().min(2, { message: 'Topic must be at least 2 characters.' }),
+  universitySyllabus: z.string().optional(),
 });
 
 const loadingMessages = [
@@ -55,6 +56,7 @@ export function NoteGeneratorForm() {
     defaultValues: {
       subject: '',
       topic: '',
+      universitySyllabus: '',
     },
   });
 
@@ -152,6 +154,19 @@ export function NoteGeneratorForm() {
                     <FormLabel>Topic</FormLabel>
                     <FormControl>
                       <Textarea placeholder="e.g., Mechanism of action of diuretics" {...field} className="min-h-[100px] resize-y" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="universitySyllabus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>University / Syllabus / Exam (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., GPAT, PCI Syllabus" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

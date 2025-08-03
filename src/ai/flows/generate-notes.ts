@@ -17,6 +17,7 @@ const GenerateNotesInputSchema = z.object({
   year: z.string().describe('The academic year of the course.'),
   subject: z.string().describe('The subject of the notes.'),
   topic: z.string().describe('The specific topic for the notes.'),
+  universitySyllabus: z.string().optional().describe('The specific university, syllabus, or competitive exam the notes should be tailored for (e.g., "Gujarat Technological University", "GPAT Exam").'),
 });
 export type GenerateNotesInput = z.infer<typeof GenerateNotesInputSchema>;
 
@@ -33,7 +34,7 @@ const prompt = ai.definePrompt({
   name: 'generateNotesPrompt',
   input: {schema: GenerateNotesInputSchema},
   output: {schema: GenerateNotesOutputSchema},
-  prompt: `You are a highly experienced academic assistant specializing in Pharmacy.
+  prompt: `You are a highly experienced academic assistant and expert tutor specializing in Pharmacy.
 
 Your job is to generate top-quality, well-organized, and deeply informative study notes based on the user's topic. These notes will be shown on the “phamA2G” platform and should resemble a mini textbook chapter for pharmacy students.
 
@@ -51,12 +52,14 @@ Your job is to generate top-quality, well-organized, and deeply informative stud
   - D.Pharm → simpler, student-friendly
   - B.Pharm → deeper, academic tone with references if needed
 - Avoid copy-paste tone, instead synthesize content
+- **Crucially, if the user provides a University/Syllabus/Exam, you MUST tailor the content to that specific context. Prioritize the topics and depth relevant to that curriculum or exam pattern.**
 
 User Input:
 - **Course**: {{ course }}
 - **Year**: {{ year }}
 - **Subject**: {{ subject }}
 - **Topic**: {{ topic }}
+{{#if universitySyllabus}}- **Syllabus/Exam Focus**: {{ universitySyllabus }}{{/if}}
 
 Output only the Markdown notes with title, headings, and content – styled like a professional textbook chapter.
 
