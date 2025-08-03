@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -19,7 +20,7 @@ const GenerateQuizInputSchema = z.object({
 export type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
 
 const GenerateQuizOutputSchema = z.object({
-  quiz: z.string().describe('The generated quiz in a suitable format.'),
+  quiz: z.string().describe('The generated quiz in Markdown format.'),
 });
 export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
 
@@ -31,13 +32,24 @@ const prompt = ai.definePrompt({
   name: 'generateQuizPrompt',
   input: {schema: GenerateQuizInputSchema},
   output: {schema: GenerateQuizOutputSchema},
-  prompt: `You are a quiz generator. You will generate a quiz based on the notes provided.
+  prompt: `You are an expert quiz creator for pharmacy students. Your task is to generate a challenging multiple-choice quiz based on the provided study notes.
 
-Subject: {{{subject}}}
-Topic: {{{topic}}}
-Notes: {{{notes}}}
+The user is studying the following:
+- Subject: {{{subject}}}
+- Topic: {{{topic}}}
 
-Generate a quiz with multiple choice questions based on the content above. Return the quiz in markdown format.
+Here are the notes to base the quiz on:
+---
+{{{notes}}}
+---
+
+Please generate a quiz with 10 multiple-choice questions. Each question must have four options (A, B, C, D).
+
+The output must be in Markdown format. Structure it as follows:
+1.  Start with a clear heading for the quiz.
+2.  For each question, provide the question text followed by the four options.
+3.  After all the questions, create a separate "Answer Key" section.
+4.  In the answer key, list the question number and the correct option (e.g., "1. B").
 `,
 });
 
