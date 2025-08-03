@@ -85,4 +85,38 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  .prose {
+      --tw-prose-body: hsl(var(--foreground) / 0.9);
+      --tw-prose-headings: hsl(var(--primary));
+      --tw-prose-lead: hsl(var(--foreground));
+      --tw-prose-links: hsl(var(--accent));
+      --tw-prose-bold: hsl(var(--foreground));
+      --tw-prose-counters: hsl(var(--muted-foreground));
+      --tw-prose-bullets: hsl(var(--primary));
+      --tw-prose-hr: hsl(var(--border));
+      --tw-prose-quotes: hsl(var(--foreground));
+      --tw-prose-quote-borders: hsl(var(--primary));
+      --tw-prose-captions: hsl(var(--muted-foreground));
+      --tw-prose-code: hsl(var(--accent-foreground));
+      --tw-prose-pre-code: hsl(var(--accent-foreground));
+      --tw-prose-pre-bg: hsl(var(--accent) / 0.1);
+      --tw-prose-th-borders: hsl(var(--border));
+      --tw-prose-td-borders: hsl(var(--border));
+      --tw-prose-invert-body: hsl(var(--foreground));
+      --tw-prose-invert-headings: hsl(var(--primary));
+      --tw-prose-invert-lead: hsl(var(--foreground));
+      --tw-prose-invert-links: hsl(var(--accent));
+      --tw-prose-invert-bold: hsl(var(--foreground));
+      --tw-prose-invert-counters: hsl(var(--muted-foreground));
+      --tw-prose-invert-bullets: hsl(var(--primary));
+      --tw-prose-invert-hr: hsl(var(--border));
+      --tw-prose-invert-quotes: hsl(var(--foreground));
+      --tw-prose-invert-quote-borders: hsl(var(--primary));
+      --tw-prose-invert-captions: hsl(var(--muted-foreground));
+      --tw-prose-invert-code: hsl(var(--accent-foreground));
+      --tw-prose-invert-pre-code: hsl(var(--foreground));
+      --tw-prose-invert-pre-bg: hsl(var(--accent) / 0.1);
+      --tw-prose-invert-th-borders: hsl(var(--border));
+      --tw-prose-invert-td-borders: hsl(var(--border));
+  }
 }
