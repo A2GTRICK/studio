@@ -12,7 +12,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GenerateQuizInputSchema = z.object({
+const GenerateQuizInputSchema = z.object({
   targetExam: z.string().describe('The target competitive exam (e.g., GPAT, NIPER).'),
   subject: z.string().describe('The subject of the quiz.'),
   topic: z.string().optional().describe('The specific topic or chapter within the subject.'),
@@ -21,7 +21,7 @@ export const GenerateQuizInputSchema = z.object({
 });
 export type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
 
-export const GenerateQuizOutputSchema = z.object({
+const GenerateQuizOutputSchema = z.object({
   questions: z.array(
     z.object({
       question: z.string().describe('The question text.'),

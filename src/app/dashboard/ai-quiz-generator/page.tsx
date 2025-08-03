@@ -5,8 +5,30 @@ import { useState } from 'react';
 import { QuizGeneratorSetup } from '@/components/quiz-generator-form';
 import { QuizTaker } from '@/components/quiz-taker';
 import { QuizResults } from '@/components/quiz-results';
-import type { GenerateQuizOutput, GenerateQuizInput } from '@/ai/flows/generate-quiz';
 import { FileQuestion, Bot, BarChart } from 'lucide-react';
+import { z } from 'zod';
+
+const GenerateQuizInputSchema = z.object({
+  targetExam: z.string().describe('The target competitive exam (e.g., GPAT, NIPER).'),
+  subject: z.string().describe('The subject of the quiz.'),
+  topic: z.string().optional().describe('The specific topic or chapter within the subject.'),
+  numQuestions: z.number().min(5).max(20).describe('The number of questions to generate.'),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe('The difficulty level of the questions.'),
+});
+export type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
+
+const GenerateQuizOutputSchema = z.object({
+  questions: z.array(
+    z.object({
+      question: z.string().describe('The question text.'),
+      options: z.array(z.string()).length(4).describe('An array of four possible answers.'),
+      correctAnswer: z.string().describe('The correct answer from the options array.'),
+      explanation: z.string().describe('A detailed explanation for why the answer is correct.'),
+    })
+  ).describe('An array of quiz questions.'),
+});
+export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
+
 
 export type QuizPhase = 'setup' | 'quiz' | 'results';
 export type UserAnswers = Record<number, string>;
