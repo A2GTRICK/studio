@@ -19,11 +19,21 @@ import remarkGfm from 'remark-gfm';
 
 const formSchema = z.object({
   course: z.string({ required_error: 'Please select a course.' }),
+  otherCourse: z.string().optional(),
   year: z.string({ required_error: 'Please select a year.' }),
   subject: z.string().min(2, { message: 'Subject must be at least 2 characters.' }),
   topic: z.string().min(2, { message: 'Topic must be at least 2 characters.' }),
   universitySyllabus: z.string().optional(),
+}).refine(data => {
+    if (data.course === 'Other') {
+        return !!data.otherCourse && data.otherCourse.length >= 2;
+    }
+    return true;
+}, {
+    message: 'Course name must be at least 2 characters.',
+    path: ['otherCourse'],
 });
+
 
 const loadingMessages = [
     "Analyzing your topic...",
@@ -54,6 +64,7 @@ export function NoteGeneratorForm() {
       subject: '',
       topic: '',
       universitySyllabus: '',
+      otherCourse: '',
     },
   });
   
@@ -85,8 +96,14 @@ export function NoteGeneratorForm() {
     setIsLoading(true);
     setGeneratedContent(null);
     setLoadingMessage(loadingMessages[0]);
+    
+    const submissionValues = {
+        ...values,
+        course: values.course === 'Other' ? values.otherCourse! : values.course,
+    };
+
     try {
-      const response = await generateNotes(values);
+      const response = await generateNotes(submissionValues);
       setGeneratedContent(response);
     } catch (error) {
       console.error(error);
@@ -134,6 +151,21 @@ export function NoteGeneratorForm() {
                   </FormItem>
                 )}
               />
+              {selectedCourse === 'Other' && (
+                 <FormField
+                    control={form.control}
+                    name="otherCourse"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Specify Course Name</FormLabel>
+                        <FormControl>
+                        <Input placeholder="e.g., B.Sc. Nursing" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="year"
@@ -228,7 +260,7 @@ export function NoteGeneratorForm() {
             )}
             
             {generatedContent && (
-              <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div className="prose dark:prose-invert max-w-none">
                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedContent.notes}</ReactMarkdown>
               </div>
             )}
