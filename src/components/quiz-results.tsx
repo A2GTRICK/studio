@@ -1,13 +1,13 @@
 
 'use client';
 
-import type { GenerateQuizOutput } from '@/app/dashboard/ai-quiz-generator/page';
+import type { GenerateQuizOutput, GenerateQuizInput } from '@/app/dashboard/ai-quiz-generator/page';
 import type { UserAnswers } from '@/app/dashboard/ai-quiz-generator/page';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle, XCircle, Target, BookOpen, RefreshCw, Bot, Sparkles, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Target, BookOpen, RefreshCw, Bot, Sparkles, Loader2, Award, Repeat, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
 import { generateFeedback, type GenerateFeedbackOutput } from '@/ai/flows/generate-feedback';
@@ -18,10 +18,11 @@ import remarkGfm from 'remark-gfm';
 interface QuizResultsProps {
   quizData: GenerateQuizOutput;
   userAnswers: UserAnswers;
-  onRestart: () => void;
+  quizConfig: GenerateQuizInput;
+  onRestart: (newConfig?: Partial<GenerateQuizInput>) => void;
 }
 
-export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsProps) {
+export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: QuizResultsProps) {
   const [feedback, setFeedback] = useState<GenerateFeedbackOutput | null>(null);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
   const { toast } = useToast();
@@ -73,6 +74,28 @@ export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsPro
         setIsFeedbackLoading(false);
     }
   };
+  
+  const getNextStep = () => {
+    if (scorePercentage >= 80) {
+      let nextDifficulty: GenerateQuizInput['difficulty'] = 'Hard';
+      if (quizConfig.difficulty === 'Easy') nextDifficulty = 'Medium';
+      if (quizConfig.difficulty === 'Medium') nextDifficulty = 'Hard';
+
+      return (
+        <Button onClick={() => onRestart({ ...quizConfig, difficulty: nextDifficulty })}>
+          <Award className="mr-2"/>
+          Excellent! Try '{nextDifficulty}' difficulty next
+        </Button>
+      );
+    } else {
+      return (
+        <Button onClick={() => onRestart(quizConfig)}>
+          <Repeat className="mr-2"/>
+          Practice this topic again
+        </Button>
+      );
+    }
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -87,10 +110,11 @@ export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsPro
             <Progress value={scorePercentage} className="w-full h-4" />
           </div>
         </CardContent>
-        <CardFooter className="flex-wrap gap-2">
-            <Button onClick={onRestart}>
+        <CardFooter className="flex flex-wrap gap-2">
+            {getNextStep()}
+            <Button onClick={() => onRestart()} variant="outline">
                 <RefreshCw className="mr-2"/>
-                Take Another Quiz
+                Start a New Quiz
             </Button>
         </CardFooter>
       </Card>
@@ -116,9 +140,9 @@ export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsPro
             </div>
           )}
           {!feedback && !isFeedbackLoading && (
-             <Button onClick={handleGetFeedback} disabled={isFeedbackLoading}>
+             <Button onClick={handleGetFeedback} disabled={isFeedbackLoading || scorePercentage === 100}>
                 <Sparkles className="mr-2"/>
-                Click for AI Performance Analysis
+                {scorePercentage === 100 ? "Perfect Score!" : "Get AI Feedback"}
             </Button>
           )}
         </CardContent>

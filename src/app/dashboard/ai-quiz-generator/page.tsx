@@ -39,6 +39,7 @@ export default function AiQuizGeneratorPage() {
   const [quizData, setQuizData] = useState<GenerateQuizOutput | null>(null);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [quizConfig, setQuizConfig] = useState<GenerateQuizInput | null>(null);
+  const [initialConfig, setInitialConfig] = useState<Partial<GenerateQuizInput> | undefined>(undefined);
 
 
   const handleQuizGenerated = (data: GenerateQuizOutput, config: GenerateQuizInput) => {
@@ -52,10 +53,11 @@ export default function AiQuizGeneratorPage() {
     setQuizPhase('results');
   };
 
-  const handleRestart = () => {
+  const handleRestart = (newConfig?: Partial<GenerateQuizInput>) => {
     setQuizData(null);
     setUserAnswers({});
     setQuizConfig(null);
+    setInitialConfig(newConfig);
     setQuizPhase('setup');
   };
 
@@ -70,7 +72,7 @@ export default function AiQuizGeneratorPage() {
             </div>
             <p className="text-muted-foreground">Configure your exam practice session below.</p>
             <div className="mt-8">
-              <QuizGeneratorSetup onQuizGenerated={handleQuizGenerated} />
+              <QuizGeneratorSetup onQuizGenerated={handleQuizGenerated} initialConfig={initialConfig} />
             </div>
           </div>
         );
@@ -91,7 +93,7 @@ export default function AiQuizGeneratorPage() {
           </div>
         );
       case 'results':
-        return quizData && (
+        return quizData && quizConfig && (
           <div>
             <div className="flex items-center gap-2">
                 <BarChart className="h-8 w-8 text-primary" />
@@ -99,7 +101,7 @@ export default function AiQuizGeneratorPage() {
             </div>
             <p className="text-muted-foreground">Check your performance and review the explanations.</p>
             <div className="mt-8">
-              <QuizResults quizData={quizData} userAnswers={userAnswers} onRestart={handleRestart} />
+              <QuizResults quizData={quizData} userAnswers={userAnswers} quizConfig={quizConfig} onRestart={handleRestart} />
             </div>
           </div>
         );

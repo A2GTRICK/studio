@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,10 @@ import { GenerateQuizInputSchema } from '@/app/dashboard/ai-quiz-generator/page'
 
 interface QuizGeneratorSetupProps {
   onQuizGenerated: (data: GenerateQuizOutput, config: GenerateQuizInput) => void;
+  initialConfig?: Partial<GenerateQuizInput>;
 }
 
-export function QuizGeneratorSetup({ onQuizGenerated }: QuizGeneratorSetupProps) {
+export function QuizGeneratorSetup({ onQuizGenerated, initialConfig }: QuizGeneratorSetupProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -33,8 +34,22 @@ export function QuizGeneratorSetup({ onQuizGenerated }: QuizGeneratorSetupProps)
       topic: '',
       numQuestions: 10,
       difficulty: 'Medium',
+      ...initialConfig,
     },
   });
+
+  useEffect(() => {
+    if (initialConfig) {
+      form.reset({
+        targetExam: 'GPAT',
+        subject: '',
+        topic: '',
+        numQuestions: 10,
+        difficulty: 'Medium',
+        ...initialConfig
+      });
+    }
+  }, [initialConfig, form]);
 
   const numQuestions = form.watch('numQuestions');
 
