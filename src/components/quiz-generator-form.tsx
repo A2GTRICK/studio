@@ -14,15 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { generateQuiz } from '@/ai/flows/generate-quiz';
 import type { GenerateQuizOutput, GenerateQuizInput } from '@/app/dashboard/ai-quiz-generator/page';
 import { FileQuestion, Loader2 } from 'lucide-react';
-import { z } from 'zod';
+import { GenerateQuizInputSchema } from '@/app/dashboard/ai-quiz-generator/page';
 
-const GenerateQuizInputSchema = z.object({
-  targetExam: z.string({ required_error: 'Please select an exam.' }),
-  subject: z.string().min(2, 'Subject must be at least 2 characters.'),
-  topic: z.string().optional(),
-  numQuestions: z.number().min(5).max(20),
-  difficulty: z.enum(['Easy', 'Medium', 'Hard']),
-});
 
 interface QuizGeneratorSetupProps {
   onQuizGenerated: (data: GenerateQuizOutput, config: GenerateQuizInput) => void;
