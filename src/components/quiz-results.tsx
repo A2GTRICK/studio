@@ -23,11 +23,32 @@ interface QuizResultsProps {
 }
 
 const feedbackMessages = {
-    perfect: "🏆 Perfect Score! Mogambo is very pleased! Keep up the amazing work!",
-    great: "🎉 Excellent work! You're on the right track. A little more push and you're golden.",
-    good: "👍 Good effort! You've got a solid foundation. Let's work on the tricky ones.",
-    bad: "🤔 Okay, a decent start. Let's review the mistakes and turn them into learning opportunities.",
+    perfect: [
+        "🏆 Mogambo khush hua! Perfect score! You're a legend!",
+        "💯 Flawless Victory! Are you even human?",
+        "Don't call it a comeback, you've been here for years! Outstanding!",
+    ],
+    great: [
+        "🎉 Excellent work! 'Picture abhi baaki hai mere dost!' You're so close!",
+        "That's the way! You're on the right track to becoming a 'Don'.",
+        "Brilliant! You've got the 'josh'!",
+    ],
+    good: [
+        "👍 Good effort! 'Thoda aur improve karoge toh life set hai.'",
+        "Solid attempt! 'Abhi Dilli door hai,' but you're on the way!",
+        "Not bad at all! Remember, 'Haar kar jeetne wale ko hi Baazigar kehte hain.'",
+    ],
+    bad: [
+        "🤔 'Pushpa, I hate tears...' but don't worry! Let's review and try again.",
+        "It's a start. 'Bade bade deshon mein aisi chhoti chhoti baatein hoti rehti hai.' Let's learn from it.",
+        "Okay, let's turn this around. 'Apna time aayega!'",
+    ],
 };
+
+function getRandomMessage(category: keyof typeof feedbackMessages) {
+    const messages = feedbackMessages[category];
+    return messages[Math.floor(Math.random() * messages.length)];
+}
 
 export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: QuizResultsProps) {
   const [feedback, setFeedback] = useState<GenerateFeedbackOutput | null>(null);
@@ -45,10 +66,10 @@ export function QuizResults({ quizData, userAnswers, quizConfig, onRestart }: Qu
   const [resultMessage, setResultMessage] = useState('');
 
   useEffect(() => {
-    if (scorePercentage === 100) setResultMessage(feedbackMessages.perfect);
-    else if (scorePercentage >= 80) setResultMessage(feedbackMessages.great);
-    else if (scorePercentage >= 50) setResultMessage(feedbackMessages.good);
-    else setResultMessage(feedbackMessages.bad);
+    if (scorePercentage === 100) setResultMessage(getRandomMessage('perfect'));
+    else if (scorePercentage >= 80) setResultMessage(getRandomMessage('great'));
+    else if (scorePercentage >= 50) setResultMessage(getRandomMessage('good'));
+    else setResultMessage(getRandomMessage('bad'));
   }, [scorePercentage]);
 
   const handleGetFeedback = async () => {
