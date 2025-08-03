@@ -82,7 +82,7 @@ export function NoteGeneratorForm() {
       });
       setFollowUpHistory(prev => [...prev, { user: values.userQuestion, ai: response.answer }]);
       followUpForm.reset();
-    } catch (error) {
+    } catch (error)      {
       console.error(error);
       toast({
         variant: "destructive",
