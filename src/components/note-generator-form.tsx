@@ -10,10 +10,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { generateNotes } from '@/ai/flows/generate-notes';
-import { answerFollowUpQuestion } from '@/ai/flows/answer-follow-up-question';
-import { Bot, Loader2, Send } from 'lucide-react';
+import { generateNotes, type GenerateNotesOutput } from '@/ai/flows/generate-notes';
+import { Bot, Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const formSchema = z.object({
   course: z.string({ required_error: 'Please select a course.' }),
@@ -22,16 +23,9 @@ const formSchema = z.object({
   topic: z.string().min(2, { message: 'Topic must be at least 2 characters.' }),
 });
 
-const followUpSchema = z.object({
-  userQuestion: z.string().min(5, { message: 'Question must be at least 5 characters.' }),
-});
-
 export function NoteGeneratorForm() {
-  const [generatedContent, setGeneratedContent] = useState<string>('');
-  const [followUpHistory, setFollowUpHistory] = useState<{ user: string, ai: string }[]>([]);
+  const [generatedContent, setGeneratedContent] = useState<GenerateNotesOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isFollowUpLoading, setIsFollowUpLoading] = useState(false);
-  const [currentTopic, setCurrentTopic] = useState('');
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -42,21 +36,12 @@ export function NoteGeneratorForm() {
     },
   });
 
-  const followUpForm = useForm<z.infer<typeof followUpSchema>>({
-    resolver: zodResolver(followUpSchema),
-    defaultValues: {
-      userQuestion: '',
-    },
-  });
-
   async function onNoteSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    setGeneratedContent('');
-    setFollowUpHistory([]);
-    setCurrentTopic(values.topic);
+    setGeneratedContent(null);
     try {
       const response = await generateNotes(values);
-      setGeneratedContent(response.notes);
+      setGeneratedContent(response);
     } catch (error) {
       console.error(error);
       toast({
@@ -66,30 +51,6 @@ export function NoteGeneratorForm() {
       });
     } finally {
       setIsLoading(false);
-    }
-  }
-
-  async function onFollowUpSubmit(values: z.infer<typeof followUpSchema>) {
-    setIsFollowUpLoading(true);
-    const fullHistory = generatedContent + followUpHistory.map(h => `\n\nUser: ${h.user}\nAI: ${h.ai}`).join('');
-    
-    try {
-      const response = await answerFollowUpQuestion({
-        topic: currentTopic,
-        previousNotes: fullHistory,
-        userQuestion: values.userQuestion,
-      });
-      setFollowUpHistory(prev => [...prev, { user: values.userQuestion, ai: response.answer }]);
-      followUpForm.reset();
-    } catch (error) {
-      console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Error Getting Answer",
-        description: "An unexpected error occurred. Please try again later.",
-      });
-    } finally {
-      setIsFollowUpLoading(false);
     }
   }
 
@@ -134,7 +95,7 @@ export function NoteGeneratorForm() {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a year" />
-                        </Trigger>
+                        </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="1st Year">1st Year</SelectItem>
@@ -194,10 +155,10 @@ export function NoteGeneratorForm() {
       <Card className="shadow-md lg:col-span-2 h-full">
         <CardHeader>
           <CardTitle className="font-headline">Content Area</CardTitle>
-          <CardDescription>Your AI-generated notes and answers will appear here.</CardDescription>
+          <CardDescription>Your AI-generated notes will appear here.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col h-[calc(100%-7rem)]">
-          <div className="flex-grow overflow-y-auto rounded-md border bg-secondary/30 p-4 relative">
+        <CardContent className="h-[calc(100%-7rem)]">
+          <div className="flex-grow overflow-y-auto rounded-md border bg-secondary/30 p-4 relative h-full">
              {isLoading && (
                <div className="absolute inset-0 flex flex-col items-center justify-center h-full text-muted-foreground bg-background/80 z-10">
                 <Loader2 className="h-8 w-8 animate-spin mb-4" />
@@ -206,26 +167,10 @@ export function NoteGeneratorForm() {
               </div>
             )}
             
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <pre className="whitespace-pre-wrap font-body text-sm">{generatedContent}</pre>
-              
-              {followUpHistory.map((item, index) => (
-                <div key={index} className="mt-4">
-                  <p className="font-bold text-primary">You:</p>
-                  <div className="whitespace-pre-wrap font-body text-sm bg-primary/10 p-2 rounded-md">
-                    <p>{item.user}</p>
-                  </div>
-                  <p className="font-bold text-accent-foreground mt-2">AI:</p>
-                   <pre className="whitespace-pre-wrap font-body text-sm">{item.ai}</pre>
-                </div>
-              ))}
-            </div>
-            
-            {isFollowUpLoading && (
-                 <div className="flex items-center gap-2 text-muted-foreground mt-4">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <p className="text-sm">Thinking...</p>
-                </div>
+            {generatedContent && (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{generatedContent.notes}</ReactMarkdown>
+              </div>
             )}
 
             {!isLoading && !generatedContent && (
@@ -236,26 +181,6 @@ export function NoteGeneratorForm() {
               </div>
             )}
           </div>
-          {generatedContent && !isLoading && (
-             <Form {...followUpForm}>
-                <form onSubmit={followUpForm.handleSubmit(onFollowUpSubmit)} className="mt-4 flex gap-2">
-                   <FormField
-                    control={followUpForm.control}
-                    name="userQuestion"
-                    render={({ field }) => (
-                      <FormItem className="flex-grow">
-                        <FormControl>
-                          <Input placeholder="Ask a follow-up question..." {...field} disabled={isFollowUpLoading} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={isFollowUpLoading}>
-                    {isFollowUpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </Button>
-                </form>
-             </Form>
-          )}
         </CardContent>
       </Card>
     </div>
