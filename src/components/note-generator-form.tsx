@@ -208,21 +208,16 @@ export function NoteGeneratorForm() {
             )}
             
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              <div
-                className="whitespace-pre-wrap font-body text-sm"
-                dangerouslySetInnerHTML={{ __html: generatedContent.replace(/\n/g, '<br />') }}
-              />
-
+              <pre className="whitespace-pre-wrap font-body text-sm">{generatedContent}</pre>
+              
               {followUpHistory.map((item, index) => (
                 <div key={index} className="mt-4">
                   <p className="font-bold text-primary">You:</p>
-                  <div className="whitespace-pre-wrap font-body text-sm bg-primary/10 p-2 rounded-md"
-                    dangerouslySetInnerHTML={{ __html: item.user.replace(/\n/g, '<br />') }}
-                  />
+                  <div className="whitespace-pre-wrap font-body text-sm bg-primary/10 p-2 rounded-md">
+                    <p>{item.user}</p>
+                  </div>
                   <p className="font-bold text-accent-foreground mt-2">AI:</p>
-                  <div className="whitespace-pre-wrap font-body text-sm"
-                    dangerouslySetInnerHTML={{ __html: item.ai.replace(/\n/g, '<br />') }}
-                  />
+                   <pre className="whitespace-pre-wrap font-body text-sm">{item.ai}</pre>
                 </div>
               ))}
             </div>
