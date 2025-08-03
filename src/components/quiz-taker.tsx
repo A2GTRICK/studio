@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, CheckCheck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, ArrowRight, CheckCheck, History } from 'lucide-react';
 
 interface QuizTakerProps {
   quizData: GenerateQuizOutput;
@@ -44,7 +45,17 @@ export function QuizTaker({ quizData, onQuizSubmit }: QuizTakerProps) {
     <div className="flex flex-col gap-6">
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="font-headline text-xl">Question {currentQuestionIndex + 1}/{totalQuestions}</CardTitle>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="font-headline text-xl">Question {currentQuestionIndex + 1}/{totalQuestions}</CardTitle>
+              {currentQuestion.previousYearTag && (
+                <Badge variant="secondary" className="mt-2">
+                  <History className="mr-1 h-3 w-3" />
+                  {currentQuestion.previousYearTag}
+                </Badge>
+              )}
+            </div>
+          </div>
           <CardDescription className="pt-2 text-base text-foreground">{currentQuestion.question}</CardDescription>
         </CardHeader>
         <CardContent>

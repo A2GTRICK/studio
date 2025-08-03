@@ -28,6 +28,7 @@ const GenerateQuizOutputSchema = z.object({
       options: z.array(z.string()).length(4).describe('An array of four possible answers.'),
       correctAnswer: z.string().describe('The correct answer from the options array.'),
       explanation: z.string().describe('A detailed explanation for why the answer is correct.'),
+      previousYearTag: z.string().optional().describe("If the question is based on a previous year's exam, provide the exam name and year (e.g., 'GPAT 2021')."),
     })
   ).describe('An array of quiz questions.'),
 });
@@ -58,13 +59,14 @@ const prompt = ai.definePrompt({
     - Four plausible **options**.
     - The **correctAnswer** (must be one of the four options).
     - A detailed **explanation** that clarifies why the correct answer is right and, if relevant, why the other options are wrong. The explanation is the most critical part for learning.
-3.  **Quality:**
+    - An optional **previousYearTag**: If you can identify that a question is from or closely based on a previous year's paper for the given exam, add a tag like 'GPAT 2021'. This is highly valuable.
+3.  **Quality & Research:**
     - **Difficulty:** Adhere strictly to the requested **{{ difficulty }}** level.
         - **Easy:** Foundational concepts, direct recall.
         - **Medium:** Application-based, requires linking concepts.
         - **Hard:** Complex scenarios, requires deep analysis, or involves multiple concepts.
     - **Plausibility:** Incorrect options (distractors) should be plausible and based on common misconceptions.
-    - **Accuracy:** All information must be accurate and based on standard pharmacy textbooks (e.g., Rang & Dale, Goodman & Gilman, Lachman, Kokate).
+    - **Accuracy:** All information must be accurate and based on standard pharmacy textbooks (e.g., Rang & Dale, Goodman & Gilman, Lachman, Kokate). Your primary goal is to simulate a real, high-stakes exam.
 
 Generate the output in the required JSON format.
 `,

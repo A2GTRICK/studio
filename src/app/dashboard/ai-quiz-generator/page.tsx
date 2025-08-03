@@ -24,6 +24,7 @@ export const GenerateQuizOutputSchema = z.object({
       options: z.array(z.string()).length(4).describe('An array of four possible answers.'),
       correctAnswer: z.string().describe('The correct answer from the options array.'),
       explanation: z.string().describe('A detailed explanation for why the answer is correct.'),
+      previousYearTag: z.string().optional().describe("If the question is based on a previous year's exam, provide the exam name and year (e.g., 'GPAT 2021')."),
     })
   ).describe('An array of quiz questions.'),
 });
