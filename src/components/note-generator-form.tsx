@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { generateNotes, type GenerateNotesOutput } from '@/ai/flows/generate-notes';
+import { answerFollowUpQuestion, type AnswerFollowUpQuestionOutput } from '@/ai/flows/answer-follow-up-question';
 import { Bot, Loader2, Send } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 
@@ -22,9 +23,16 @@ const formSchema = z.object({
   topic: z.string().min(2, { message: 'Topic must be at least 2 characters.' }),
 });
 
+const followUpSchema = z.object({
+  userQuestion: z.string().min(5, { message: 'Question must be at least 5 characters.' }),
+});
+
 export function NoteGeneratorForm() {
-  const [result, setResult] = useState<GenerateNotesOutput | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<string>('');
+  const [followUpHistory, setFollowUpHistory] = useState<{ user: string, ai: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFollowUpLoading, setIsFollowUpLoading] = useState(false);
+  const [currentTopic, setCurrentTopic] = useState('');
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -35,12 +43,21 @@ export function NoteGeneratorForm() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const followUpForm = useForm<z.infer<typeof followUpSchema>>({
+    resolver: zodResolver(followUpSchema),
+    defaultValues: {
+      userQuestion: '',
+    },
+  });
+
+  async function onNoteSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    setResult(null);
+    setGeneratedContent('');
+    setFollowUpHistory([]);
+    setCurrentTopic(values.topic);
     try {
       const response = await generateNotes(values);
-      setResult(response);
+      setGeneratedContent(response.notes);
     } catch (error) {
       console.error(error);
       toast({
@@ -53,6 +70,30 @@ export function NoteGeneratorForm() {
     }
   }
 
+  async function onFollowUpSubmit(values: z.infer<typeof followUpSchema>) {
+    setIsFollowUpLoading(true);
+    const fullHistory = generatedContent + followUpHistory.map(h => `\n\nUser: ${h.user}\nAI: ${h.ai}`).join('');
+    
+    try {
+      const response = await answerFollowUpQuestion({
+        topic: currentTopic,
+        previousNotes: fullHistory,
+        userQuestion: values.userQuestion,
+      });
+      setFollowUpHistory(prev => [...prev, { user: values.userQuestion, ai: response.answer }]);
+      followUpForm.reset();
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error Getting Answer",
+        description: "An unexpected error occurred. Please try again later.",
+      });
+    } finally {
+      setIsFollowUpLoading(false);
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       <Card className="shadow-md lg:col-span-1">
@@ -62,7 +103,7 @@ export function NoteGeneratorForm() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="course"
@@ -94,7 +135,7 @@ export function NoteGeneratorForm() {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a year" />
-                        </SelectTrigger>
+                        </Trigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="1st Year">1st Year</SelectItem>
@@ -154,23 +195,41 @@ export function NoteGeneratorForm() {
       <Card className="shadow-md lg:col-span-2 h-full">
         <CardHeader>
           <CardTitle className="font-headline">Content Area</CardTitle>
-          <CardDescription>Your AI-generated notes will appear here.</CardDescription>
+          <CardDescription>Your AI-generated notes and answers will appear here.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col h-[calc(100%-7rem)]">
           <div className="flex-grow overflow-y-auto rounded-md border bg-secondary/30 p-4 relative">
              {isLoading && (
                <div className="absolute inset-0 flex flex-col items-center justify-center h-full text-muted-foreground bg-background/80 z-10">
                 <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                <p className="font-medium">Synthesizing information...</p>
-                <p className="text-sm">Consulting digital textbooks...</p>
+                <p className="font-medium">Formulating notes...</p>
+                <p className="text-sm">Extracting references...</p>
               </div>
             )}
-            {result && (
+            
+            {generatedContent && (
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <pre className="whitespace-pre-wrap font-body text-sm">{result.notes}</pre>
+                  <pre className="whitespace-pre-wrap font-body text-sm">{generatedContent}</pre>
               </div>
             )}
-             {!isLoading && !result && (
+
+            {followUpHistory.map((item, index) => (
+              <div key={index} className="prose prose-sm dark:prose-invert max-w-none mt-4">
+                <p className="font-bold text-primary">You:</p>
+                <pre className="whitespace-pre-wrap font-body text-sm bg-primary/10 p-2 rounded-md">{item.user}</pre>
+                <p className="font-bold text-accent-foreground mt-2">AI:</p>
+                <pre className="whitespace-pre-wrap font-body text-sm">{item.ai}</pre>
+              </div>
+            ))}
+            
+            {isFollowUpLoading && (
+                 <div className="flex items-center gap-2 text-muted-foreground mt-4">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <p className="text-sm">Thinking...</p>
+                </div>
+            )}
+
+            {!isLoading && !generatedContent && (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                 <Bot className="h-10 w-10 mb-4" />
                 <p className="font-semibold">Welcome to the AI Notes Generator!</p>
@@ -178,11 +237,25 @@ export function NoteGeneratorForm() {
               </div>
             )}
           </div>
-          {result && !isLoading && (
-             <div className="mt-4 flex gap-2">
-                <Input placeholder="Ask a follow-up question..." />
-                <Button><Send className="h-4 w-4" /></Button>
-             </div>
+          {generatedContent && !isLoading && (
+             <Form {...followUpForm}>
+                <form onSubmit={followUpForm.handleSubmit(onFollowUpSubmit)} className="mt-4 flex gap-2">
+                   <FormField
+                    control={followUpForm.control}
+                    name="userQuestion"
+                    render={({ field }) => (
+                      <FormItem className="flex-grow">
+                        <FormControl>
+                          <Input placeholder="Ask a follow-up question..." {...field} disabled={isFollowUpLoading} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" disabled={isFollowUpLoading}>
+                    {isFollowUpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
+                </form>
+             </Form>
           )}
         </CardContent>
       </Card>
