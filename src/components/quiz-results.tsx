@@ -39,13 +39,16 @@ export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsPro
     setFeedback(null);
     try {
       const incorrectQuestions = quizData.questions
-        .map((q, index) => ({
-          question: q.question,
-          userAnswer: userAnswers[index],
-          correctAnswer: q.correctAnswer,
-          explanation: q.explanation,
-        }))
-        .filter((q, index) => userAnswers[index] !== q.correctAnswer);
+        .filter((q, index) => userAnswers[index] !== q.correctAnswer)
+        .map((q, index) => {
+           const originalIndex = quizData.questions.findIndex(origQ => origQ.question === q.question);
+           return {
+                question: q.question,
+                userAnswer: userAnswers[originalIndex] || "Not Answered",
+                correctAnswer: q.correctAnswer,
+                explanation: q.explanation,
+            }
+        });
 
       if (incorrectQuestions.length === 0) {
         toast({
@@ -154,7 +157,7 @@ export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsPro
                                     )}>
                                        {isCorrectAnswer && <Target className="h-4 w-4 text-green-600"/>}
                                        {isUserAnswer && !isCorrectAnswer && <XCircle className="h-4 w-4 text-destructive"/>}
-                                       {!isCorrectAnswer && !isUserAnswer && <div className="w-4 h-4"/>}
+                                       {!isUserAnswer && !isCorrectAnswer && <div className="w-4 h-4"/>}
                                         <span>{option}</span>
                                         {isCorrectAnswer && <span className="text-xs font-semibold text-green-700 dark:text-green-400 ml-auto">(Correct Answer)</span>}
                                         {isUserAnswer && !isCorrectAnswer && <span className="text-xs font-semibold text-destructive ml-auto">(Your Answer)</span>}
