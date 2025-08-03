@@ -11,8 +11,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { generateNotes, type GenerateNotesOutput } from '@/ai/flows/generate-notes';
-import { answerFollowUpQuestion, type AnswerFollowUpQuestionOutput } from '@/ai/flows/answer-follow-up-question';
+import { generateNotes } from '@/ai/flows/generate-notes';
+import { answerFollowUpQuestion } from '@/ai/flows/answer-follow-up-question';
 import { Bot, Loader2, Send } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 
@@ -207,20 +207,25 @@ export function NoteGeneratorForm() {
               </div>
             )}
             
-            {generatedContent && (
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <pre className="whitespace-pre-wrap font-body text-sm">{generatedContent}</pre>
-              </div>
-            )}
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div
+                className="whitespace-pre-wrap font-body text-sm"
+                dangerouslySetInnerHTML={{ __html: generatedContent.replace(/\n/g, '<br />') }}
+              />
 
-            {followUpHistory.map((item, index) => (
-              <div key={index} className="prose prose-sm dark:prose-invert max-w-none mt-4">
-                <p className="font-bold text-primary">You:</p>
-                <pre className="whitespace-pre-wrap font-body text-sm bg-primary/10 p-2 rounded-md">{item.user}</pre>
-                <p className="font-bold text-accent-foreground mt-2">AI:</p>
-                <pre className="whitespace-pre-wrap font-body text-sm">{item.ai}</pre>
-              </div>
-            ))}
+              {followUpHistory.map((item, index) => (
+                <div key={index} className="mt-4">
+                  <p className="font-bold text-primary">You:</p>
+                  <div className="whitespace-pre-wrap font-body text-sm bg-primary/10 p-2 rounded-md"
+                    dangerouslySetInnerHTML={{ __html: item.user.replace(/\n/g, '<br />') }}
+                  />
+                  <p className="font-bold text-accent-foreground mt-2">AI:</p>
+                  <div className="whitespace-pre-wrap font-body text-sm"
+                    dangerouslySetInnerHTML={{ __html: item.ai.replace(/\n/g, '<br />') }}
+                  />
+                </div>
+              ))}
+            </div>
             
             {isFollowUpLoading && (
                  <div className="flex items-center gap-2 text-muted-foreground mt-4">
