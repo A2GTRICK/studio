@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   PlusCircle,
   Settings,
+  BookText,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -76,6 +77,15 @@ export default function DashboardLayout({
                 >
                   <FileQuestion />
                   AI Quiz Generator
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  href="/dashboard/ai-document-summarizer"
+                  tooltip="AI Document Summarizer"
+                >
+                  <BookText />
+                  AI Document Summarizer
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

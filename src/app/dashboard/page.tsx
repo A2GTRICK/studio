@@ -7,7 +7,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bot, FileQuestion, BookOpen, ArrowRight } from "lucide-react";
+import { Bot, FileQuestion, BookOpen, ArrowRight, BookText } from "lucide-react";
 import Link from 'next/link';
 
 const features = [
@@ -32,6 +32,13 @@ const features = [
     link: "/dashboard/notes",
     cta: "View Notes",
   },
+  {
+    icon: <BookText className="h-8 w-8 text-primary" />,
+    title: "AI Document Summarizer",
+    description: "Summarize long documents into concise, easy-to-digest points, saving you time and effort.",
+    link: "/dashboard/ai-document-summarizer",
+    cta: "Summarize Document",
+  },
 ];
 
 export default function DashboardPage() {
@@ -46,7 +53,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {features.map((feature) => (
           <Card key={feature.title} className="flex flex-col shadow-md transition-transform hover:scale-[1.02]">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
