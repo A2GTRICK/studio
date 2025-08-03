@@ -7,9 +7,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle, XCircle, Target, BookOpen, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Target, BookOpen, RefreshCw, Bot, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React from 'react';
+import React, { useState } from 'react';
+import { generateFeedback, type GenerateFeedbackOutput } from '@/ai/flows/generate-feedback';
+import { useToast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface QuizResultsProps {
   quizData: GenerateQuizOutput;
@@ -18,6 +22,10 @@ interface QuizResultsProps {
 }
 
 export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsProps) {
+  const [feedback, setFeedback] = useState<GenerateFeedbackOutput | null>(null);
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+  const { toast } = useToast();
+
   const score = React.useMemo(() => {
     return quizData.questions.reduce((acc, question, index) => {
       return userAnswers[index] === question.correctAnswer ? acc + 1 : acc;
@@ -25,6 +33,43 @@ export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsPro
   }, [quizData, userAnswers]);
 
   const scorePercentage = Math.round((score / quizData.questions.length) * 100);
+
+  const handleGetFeedback = async () => {
+    setIsFeedbackLoading(true);
+    setFeedback(null);
+    try {
+      const incorrectQuestions = quizData.questions
+        .map((q, index) => ({
+          question: q.question,
+          userAnswer: userAnswers[index],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+        }))
+        .filter((q, index) => userAnswers[index] !== q.correctAnswer);
+
+      if (incorrectQuestions.length === 0) {
+        toast({
+          title: "Perfect Score!",
+          description: "No incorrect answers to analyze. Great job!",
+        });
+        setIsFeedbackLoading(false);
+        return;
+      }
+      
+      const response = await generateFeedback({ incorrectQuestions });
+      setFeedback(response);
+
+    } catch (error) {
+       console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error Generating Feedback',
+        description: 'An unexpected error occurred. Please try again later.',
+      });
+    } finally {
+        setIsFeedbackLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -35,16 +80,45 @@ export function QuizResults({ quizData, userAnswers, onRestart }: QuizResultsPro
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <Progress value={scorePercentage} className="w-full h-4" />
             <span className="font-bold text-xl text-primary">{scorePercentage}%</span>
+            <Progress value={scorePercentage} className="w-full h-4" />
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex-wrap gap-2">
             <Button onClick={onRestart}>
                 <RefreshCw className="mr-2"/>
                 Take Another Quiz
             </Button>
         </CardFooter>
+      </Card>
+
+      <Card className="shadow-md">
+        <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+                <Bot />
+                AI Performance Analysis
+            </CardTitle>
+            <CardDescription>Get personalized feedback on your incorrect answers to help you improve.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {feedback && !isFeedbackLoading && (
+            <div className="p-4 bg-secondary/50 rounded-lg prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{feedback.feedback}</ReactMarkdown>
+            </div>
+          )}
+          {isFeedbackLoading && (
+             <div className="flex items-center justify-center h-24 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <p>Analyzing your performance...</p>
+            </div>
+          )}
+          {!feedback && !isFeedbackLoading && (
+             <Button onClick={handleGetFeedback} disabled={isFeedbackLoading}>
+                <Sparkles className="mr-2"/>
+                Click for AI Performance Analysis
+            </Button>
+          )}
+        </CardContent>
       </Card>
 
       <Card className="shadow-md">
