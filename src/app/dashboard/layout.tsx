@@ -89,7 +89,7 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton href="#" tooltip="Settings">
+                <SidebarMenuButton href="/dashboard/settings" tooltip="Settings">
                   <Settings />
                   Settings
                 </SidebarMenuButton>
