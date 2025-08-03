@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,13 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { generateNotes, type GenerateNotesOutput } from '@/ai/flows/generate-notes';
-import { Bot, Loader2 } from 'lucide-react';
+import { Bot, Loader2, Send } from 'lucide-react';
+import { Textarea } from './ui/textarea';
 
 const formSchema = z.object({
-  course: z.string().min(2, { message: 'Course must be at least 2 characters.' }),
-  year: z.string().min(1, { message: 'Year is required.' }),
+  course: z.string({ required_error: 'Please select a course.' }),
+  year: z.string({ required_error: 'Please select a year.' }),
   subject: z.string().min(2, { message: 'Subject must be at least 2 characters.' }),
   topic: z.string().min(2, { message: 'Topic must be at least 2 characters.' }),
 });
@@ -27,8 +30,6 @@ export function NoteGeneratorForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      course: '',
-      year: '',
       subject: '',
       topic: '',
     },
@@ -53,10 +54,10 @@ export function NoteGeneratorForm() {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
-      <Card className="shadow-md">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <Card className="shadow-md lg:col-span-1">
         <CardHeader>
-          <CardTitle className="font-headline">Note Details</CardTitle>
+          <CardTitle className="font-headline">Control Panel</CardTitle>
           <CardDescription>Provide the context for your notes.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -68,9 +69,17 @@ export function NoteGeneratorForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Course</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Bachelor of Science" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a course" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="B.Pharm">B.Pharm</SelectItem>
+                        <SelectItem value="D.Pharm">D.Pharm</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -81,9 +90,19 @@ export function NoteGeneratorForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Year</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 2nd Year" {...field} />
-                    </FormControl>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a year" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1st Year">1st Year</SelectItem>
+                        <SelectItem value="2nd Year">2nd Year</SelectItem>
+                        <SelectItem value="3rd Year">3rd Year</SelectItem>
+                        <SelectItem value="4th Year">4th Year</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -95,7 +114,7 @@ export function NoteGeneratorForm() {
                   <FormItem>
                     <FormLabel>Subject</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., History" {...field} />
+                      <Input placeholder="e.g., Pharmacology" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -108,7 +127,7 @@ export function NoteGeneratorForm() {
                   <FormItem>
                     <FormLabel>Topic</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., The Cold War" {...field} />
+                      <Textarea placeholder="e.g., Mechanism of action of diuretics" {...field} className="min-h-[100px] resize-y" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -132,29 +151,38 @@ export function NoteGeneratorForm() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-md">
+      <Card className="shadow-md lg:col-span-2 h-full">
         <CardHeader>
-          <CardTitle className="font-headline">Generated Notes</CardTitle>
+          <CardTitle className="font-headline">Content Area</CardTitle>
           <CardDescription>Your AI-generated notes will appear here.</CardDescription>
         </CardHeader>
-        <CardContent className="h-[450px] overflow-y-auto rounded-md border bg-secondary/30 p-4">
-          {isLoading && (
-             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <Loader2 className="h-8 w-8 animate-spin mb-4" />
-              <p className="font-medium">Generating your notes...</p>
-              <p className="text-sm">This may take a few moments.</p>
-            </div>
-          )}
-          {result && (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-                <pre className="whitespace-pre-wrap font-body text-sm">{result.notes}</pre>
-            </div>
-          )}
-           {!isLoading && !result && (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <Bot className="h-10 w-10 mb-4" />
-              <p>Your notes are waiting to be created.</p>
-            </div>
+        <CardContent className="flex flex-col h-[calc(100%-7rem)]">
+          <div className="flex-grow overflow-y-auto rounded-md border bg-secondary/30 p-4 relative">
+             {isLoading && (
+               <div className="absolute inset-0 flex flex-col items-center justify-center h-full text-muted-foreground bg-background/80 z-10">
+                <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                <p className="font-medium">Synthesizing information...</p>
+                <p className="text-sm">Consulting digital textbooks...</p>
+              </div>
+            )}
+            {result && (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <pre className="whitespace-pre-wrap font-body text-sm">{result.notes}</pre>
+              </div>
+            )}
+             {!isLoading && !result && (
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <Bot className="h-10 w-10 mb-4" />
+                <p className="font-semibold">Welcome to the AI Notes Generator!</p>
+                <p className="text-sm">Fill out the form to get started.</p>
+              </div>
+            )}
+          </div>
+          {result && !isLoading && (
+             <div className="mt-4 flex gap-2">
+                <Input placeholder="Ask a follow-up question..." />
+                <Button><Send className="h-4 w-4" /></Button>
+             </div>
           )}
         </CardContent>
       </Card>

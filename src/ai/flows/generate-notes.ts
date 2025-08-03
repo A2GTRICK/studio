@@ -1,4 +1,3 @@
-// This file is machine-generated - edit with care!
 
 'use server';
 
@@ -14,8 +13,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateNotesInputSchema = z.object({
-  course: z.string().describe('The course for which notes are being generated.'),
-  year: z.string().describe('The year of the course.'),
+  course: z.string().describe('The course for which notes are being generated (e.g., B.Pharm, D.Pharm).'),
+  year: z.string().describe('The academic year of the course.'),
   subject: z.string().describe('The subject of the notes.'),
   topic: z.string().describe('The specific topic for the notes.'),
 });
@@ -34,16 +33,17 @@ const prompt = ai.definePrompt({
   name: 'generateNotesPrompt',
   input: {schema: GenerateNotesInputSchema},
   output: {schema: GenerateNotesOutputSchema},
-  prompt: `You are an AI assistant designed to generate notes for students.
+  prompt: `You are an expert pharmacy tutor and academic assistant. Your task is to generate comprehensive, well-structured study notes based on standard reference textbooks.
 
-  Please generate comprehensive and well-structured notes in Markdown format based on the following information:
+The user is a student in the following course:
+- Course: {{{course}}}
+- Year: {{{year}}}
+- Subject: {{{subject}}}
 
-  Course: {{{course}}}
-  Year: {{{year}}}
-  Subject: {{{subject}}}
-  Topic: {{{topic}}}
+Please generate detailed notes on the following topic:
+- Topic: {{{topic}}}
 
-  The notes should cover all essential aspects of the topic and be suitable for studying.
+The output must be in Markdown format. Use headings, subheadings, bullet points, and bolded keywords to create a clear and organized structure, similar to a chapter in a textbook. This will help the student understand the material effectively. Ensure the content is accurate, in-depth, and directly relevant to the provided subject and topic.
 `,
 });
 
