@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isAdmin() {
+      return request.auth != null &&
+             (request.auth.uid == "WXFMrKzg0eYHgFEspk8WoIIDc3j2" ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read, write: if (request.auth != null && request.auth.uid == userId) || isAdmin();
+    }
+
+    // Notes
+    match /notes/{noteId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Test Series & Tests
+    match /test_series/{testId} {
+      allow read: if request.auth != null;
+      // TEMPORARILY aLTERED FOR SEEDING
+      allow write: if true;
+    }
+    match /tests/{testId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // MCQs
+    match /mcqs/{mcqId} {
+        allow read: if true;
+    }
+
+    // Contact Queries
+    match /contact_queries/{queryId} {
+      allow create: if request.auth != null;
+      allow read, write, delete: if isAdmin();
+    }
+
+    // Test Results
+    match /test_results/{resultId} {
+         allow create: if request.auth != null;
+         allow read, write, delete: if isAdmin();
+    }
+    
+    // Custom Notifications
+    match /custom_notifications/{notificationId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Fallback/Default Rule
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
