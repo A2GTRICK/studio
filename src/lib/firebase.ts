@@ -13,7 +13,7 @@ const firebaseConfig = {
   authDomain: "a2g-smart-notes-1st.firebaseapp.com",
   databaseURL: "https://a2g-smart-notes-1st-default-rtdb.firebaseio.com",
   projectId: "a2g-smart-notes-1st",
-  storageBucket: "a2g-smart-notes-1st.firebasestorage.app",
+  storageBucket: "a2g-smart-notes-1st.appspot.com",
   messagingSenderId: "593098306784",
   appId: "1:593098306784:web:fe6e820d4e76bc700e4c85",
   measurementId: "G-82FG2L5V45"
