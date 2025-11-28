@@ -1,3 +1,4 @@
+
 // src/app/dashboard/notes/[id]/page.tsx
 "use client";
 
@@ -83,7 +84,7 @@ export default function NoteView({ params }: { params: { id: string } }) {
         <div className="text-sm text-gray-600 mt-2">
           <span>{note.course}</span>
           {note.year ? <> • <span>{note.year}</span></> : null}
-          {note.subject ? <> • <span>{subject}</span></> : null}
+          {note.subject ? <> • <span>{note.subject}</span></> : null}
           {createdAtStr ? <> • <span>{createdAtStr}</span></> : null}
         </div>
         {note.short ? <p className="mt-3 text-gray-700">{note.short}</p> : null}
