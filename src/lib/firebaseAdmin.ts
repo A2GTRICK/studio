@@ -1,4 +1,3 @@
-
 // src/lib/firebaseAdmin.ts
 import admin from "firebase-admin";
 
@@ -12,7 +11,6 @@ if (!admin.apps.length) {
     credential: saJson
       ? admin.credential.cert(saJson as admin.ServiceAccount)
       : admin.credential.applicationDefault(),
-    databaseURL: `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseio.com`
   });
 }
 
@@ -20,4 +18,3 @@ export const adminDb = admin.firestore();
 export const adminAuth = admin.auth();
 export const adminFieldValue = admin.firestore.FieldValue;
 export { admin };
-

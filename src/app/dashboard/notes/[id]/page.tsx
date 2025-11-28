@@ -1,81 +1,104 @@
-
 // src/app/dashboard/notes/[id]/page.tsx
-import { adminDb } from "@/lib/firebaseAdmin";
-import React from "react";
+"use client";
+
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 
-type Props = {
-  params: {
-    id: string;
-  };
+type NoteData = {
+  title: string;
+  short: string;
+  content: string;
+  course: string;
+  year: string;
+  subject: string;
+  createdAt: Date | null;
 };
 
-export const revalidate = 0; // don't cache for now (use ISR if you want caching)
-
-export default async function NoteView({ params }: Props) {
+export default function NoteView({ params }: { params: { id: string } }) {
   const { id } = params;
+  const [note, setNote] = useState<NoteData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // fetch note from Firestore using admin SDK (server-side)
-  try {
-    const docRef = adminDb.collection("notes").doc(id);
-    const snap = await docRef.get();
+  useEffect(() => {
+    if (!id) return;
 
-    if (!snap.exists) {
-      return (
-        <div className="p-6">
-          <h1 className="text-2xl font-bold">Note not found</h1>
-          <p className="text-gray-600 mt-2">The note you requested does not exist or was removed.</p>
-          <a href="/dashboard/notes" className="text-blue-600 mt-4 inline-block">← Back to Notes Library</a>
-        </div>
-      );
-    }
+    const fetchNote = async () => {
+      setLoading(true);
+      try {
+        const docRef = doc(db, "notes", id);
+        const snap = await getDoc(docRef);
 
-    const data = snap.data() as any;
+        if (!snap.exists()) {
+          setError("Note not found.");
+        } else {
+          const data = snap.data() as any;
+          setNote({
+            title: data.title || "Untitled",
+            short: data.short || data.description || "",
+            content: data.notes || data.content || data.body || "",
+            course: data.course || "General",
+            year: data.year || "",
+            subject: data.subject || "",
+            createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null,
+          });
+        }
+      } catch (err: any) {
+        console.error("Client fetch note error:", err);
+        setError("An error occurred while loading the note.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const title = data.title || "Untitled";
-    const short = data.short || data.description || "";
-    const content = data.notes || data.content || data.body || "";
-    const course = data.course || "General";
-    const year = data.year || "";
-    const subject = data.subject || "";
-    const createdAt = data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null;
-    const createdAtStr = createdAt ? format(createdAt, "d MMM yyyy, HH:mm") : "";
+    fetchNote();
+  }, [id]);
 
-    return (
-      <div className="space-y-6 p-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <div className="text-sm text-gray-600 mt-2">
-            <span>{course}</span>
-            {year ? <> • <span>{year}</span></> : null}
-            {subject ? <> • <span>{subject}</span></> : null}
-            {createdAtStr ? <> • <span>{createdAtStr}</span></> : null}
-          </div>
-          {short ? <p className="mt-3 text-gray-700">{short}</p> : null}
-        </div>
+  if (loading) {
+    return <div className="p-6">Loading note...</div>;
+  }
 
-        <article className="bg-white p-6 rounded-xl shadow-sm border leading-7">
-          <h2 className="text-xl font-semibold mb-4">Full Notes</h2>
-          {/* If content is HTML, render as HTML; otherwise show plain text */}
-          {/<[a-z][\s\S]*>/i.test(content) ? (
-            <div dangerouslySetInnerHTML={{ __html: content }} />
-          ) : (
-            <pre className="whitespace-pre-wrap text-gray-800">{content}</pre>
-          )}
-        </article>
-
-        <a href="/dashboard/notes" className="text-blue-600 font-semibold">← Back to Notes Library</a>
-      </div>
-    );
-  } catch (err: any) {
-    console.error("Server fetch note error:", err);
+  if (error) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold">Error</h1>
-        <p className="text-gray-600 mt-2">An error occurred while loading the note.</p>
-        <pre className="mt-4 text-sm text-red-600">{String(err.message || err)}</pre>
+        <h1 className="text-2xl font-bold text-destructive">{error}</h1>
+        <p className="text-gray-600 mt-2">The note you requested does not exist or was removed.</p>
         <a href="/dashboard/notes" className="text-blue-600 mt-4 inline-block">← Back to Notes Library</a>
       </div>
     );
   }
+
+  if (!note) {
+    return null; // Should be handled by loading/error states
+  }
+
+  const createdAtStr = note.createdAt ? format(note.createdAt, "d MMM yyyy, HH:mm") : "";
+
+  return (
+    <div className="space-y-6 p-6">
+      <div className="bg-white p-6 rounded-xl shadow-sm border">
+        <h1 className="text-2xl font-bold">{note.title}</h1>
+        <div className="text-sm text-gray-600 mt-2">
+          <span>{note.course}</span>
+          {note.year ? <> • <span>{note.year}</span></> : null}
+          {note.subject ? <> • <span>{note.subject}</span></> : null}
+          {createdAtStr ? <> • <span>{createdAtStr}</span></> : null}
+        </div>
+        {note.short ? <p className="mt-3 text-gray-700">{note.short}</p> : null}
+      </div>
+
+      <article className="bg-white p-6 rounded-xl shadow-sm border leading-7">
+        <h2 className="text-xl font-semibold mb-4">Full Notes</h2>
+        {/<[a-z][\s\S]*>/i.test(note.content) ? (
+          <div dangerouslySetInnerHTML={{ __html: note.content }} />
+        ) : (
+          <pre className="whitespace-pre-wrap text-gray-800">{note.content}</pre>
+        )}
+      </article>
+
+      <a href="/dashboard/notes" className="text-blue-600 font-semibold">← Back to Notes Library</a>
+    </div>
+  );
 }
