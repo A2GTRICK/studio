@@ -1,16 +1,21 @@
+
+// src/lib/firebaseAdmin.ts
 import admin from "firebase-admin";
 
-const serviceAccount = process.env.FIREBASE_ADMIN_KEY
+// We expect FIREBASE_ADMIN_KEY to contain the full JSON of your service account
+const saJson = process.env.FIREBASE_ADMIN_KEY
   ? JSON.parse(process.env.FIREBASE_ADMIN_KEY)
   : null;
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: serviceAccount
-      ? admin.credential.cert(serviceAccount)
+    credential: saJson
+      ? admin.credential.cert(saJson as admin.ServiceAccount)
       : admin.credential.applicationDefault(),
   });
 }
 
-export const adminAuth = admin.auth();
 export const adminDb = admin.firestore();
+export const adminAuth = admin.auth();
+export const adminFieldValue = admin.firestore.FieldValue;
+export { admin };
