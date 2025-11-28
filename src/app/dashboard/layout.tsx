@@ -1,26 +1,64 @@
 // src/app/dashboard/layout.tsx
+"use client";
+
 import Header from "@/components/Header";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  const menuItems = [
+    { href: "/dashboard", label: "🏠 Dashboard" },
+    { href: "/dashboard/notes", label: "📚 Notes Library" },
+    { href: "/dashboard/mcq-practice", label: "🧪 MCQ Practice" },
+    { href: "/dashboard/services", label: "🎓 Academic Services" },
+    { href: "/dashboard/notifications", label: "🔔 Notifications" },
+    { href: "/dashboard/profile", label: "👤 Profile" },
+  ];
+
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="flex min-h-[calc(100vh-64px)] bg-gray-50">
-        <aside className="w-64 bg-white shadow-sm p-6 hidden md:block">
-          <h3 className="text-lg font-bold mb-4">A2G Smart Notes</h3>
-          <nav className="space-y-2 text-sm">
-            <a href="/dashboard" className="block p-2 rounded hover:bg-gray-100">🏠 Dashboard</a>
-            <a href="/dashboard/notes" className="block p-2 rounded hover:bg-gray-100">📚 Notes Library</a>
-            <a href="/dashboard/mcq-practice" className="block p-2 rounded hover:bg-gray-100">🧪 MCQ Practice</a>
-            <a href="/dashboard/services" className="block p-2 rounded hover:bg-gray-100">🎓 Academic Services</a>
-            <a href="/dashboard/notifications" className="block p-2 rounded hover:bg-gray-100">🔔 Notifications</a>
-            <a href="/dashboard/profile" className="block p-2 rounded hover:bg-gray-100">👤 Profile</a>
+
+      {/* MOBILE MENU BUTTON */}
+      <button
+        className="md:hidden m-4 p-2 border rounded-lg"
+        onClick={() => setOpen(!open)}
+      >
+        ☰ Menu
+      </button>
+
+      <div className="flex">
+        
+        {/* SIDEBAR */}
+        <aside
+          className={`${
+            open ? "block" : "hidden"
+          } md:block w-64 bg-white shadow-lg p-6 space-y-4`}
+        >
+          <h2 className="text-xl font-bold mb-4">A2G Smart Notes</h2>
+
+          <nav className="space-y-2 text-gray-700">
+            {menuItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className={`block p-2 rounded-lg transition ${
+                  pathname === item.href
+                    ? "bg-blue-600 text-white"
+                    : "hover:bg-gray-100"
+                }`}
+              >
+                {item.label}
+              </a>
+            ))}
           </nav>
         </aside>
 
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+        {/* MAIN CONTENT */}
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );
