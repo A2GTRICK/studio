@@ -3,6 +3,11 @@
 
 import { useParams } from "next/navigation";
 import { useNotes } from "@/context/notes-context";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import React from 'react';
+
 
 /* ------------------------------------------------------------
    A2G PREMIUM PURPLE THEME
@@ -14,6 +19,83 @@ const theme = {
   accentBg: "bg-[#EAD8FF]",              // Light purple highlight
   iconBlue: "bg-[#4F46E5]"               // Indigo accent
 };
+
+/* ------------------------------------------------------------
+   CUSTOM FORMATTING ENGINE — MCQs, Bold, Lists, Links, Tables
+-------------------------------------------------------------*/
+function renderFormattedContent(content: string = "") {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
+      components={{
+        h1: ({ children }) => (
+          <h1 className="text-3xl font-bold mt-8 mb-4 text-purple-800">{children}</h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="text-2xl font-bold mt-8 mb-3 text-purple-700">{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="text-xl font-semibold mt-6 mb-2 text-purple-600">{children}</h3>
+        ),
+        h4: ({ children }) => (
+          <h4 className="text-lg font-semibold mt-4 mb-2 text-purple-600">{children}</h4>
+        ),
+        p: ({ children }) => (
+          <p className="text-gray-800 leading-7 my-2">{children}</p>
+        ),
+        strong: ({ children }) => (
+          <strong className="text-purple-700 font-semibold">{children}</strong>
+        ),
+        img: ({ src, alt }) => (
+          <img
+            src={src || ""}
+            alt={alt || ""}
+            className="rounded-xl border mx-auto my-4 shadow-md max-w-full"
+          />
+        ),
+        table: ({ children }) => (
+          <table className="w-full border-collapse bg-white my-6">{children}</table>
+        ),
+        th: ({ children }) => (
+          <th className="border bg-purple-100 p-2 text-left font-semibold">
+            {children}
+          </th>
+        ),
+        td: ({ children }) => (
+          <td className="border p-2">{children}</td>
+        ),
+        ul: ({ children }) => (
+          <ul className="list-disc ml-6 my-3 text-gray-800">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal ml-6 my-3 text-gray-800">{children}</ol>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-4 border-purple-400 pl-4 my-4 text-purple-700 italic">
+            {children}
+          </blockquote>
+        ),
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-700 underline font-medium"
+          >
+            {children}
+          </a>
+        ),
+        code: ({ children }) => (
+          <code className="bg-gray-200 px-2 py-1 rounded text-sm">{children}</code>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
+
 
 export default function NoteViewPage() {
   const { id } = useParams();
@@ -84,49 +166,5 @@ export default function NoteViewPage() {
         </a>
       </div>
     </div>
-  );
-}
-
-/* ------------------------------------------------------------
-   CUSTOM FORMATTING ENGINE — MCQs, Bold, Lists, Links, Tables
--------------------------------------------------------------*/
-function renderFormattedContent(content: string = "") {
-
-  // Bold text marked by **
-  content = content.replace(/\*\*(.*?)\*\*/g, "<strong class='text-purple-700'>$1</strong>");
-
-  // Replace Google Drive / links with purple buttons
-  content = content.replace(
-    /(https?:\/\/[^\s]+)/g,
-    `<a 
-       href="$1"
-       target="_blank"
-       class="px-4 py-2 inline-block mt-2 rounded-lg bg-purple-600 text-white font-medium hover:bg-purple-700 transition"
-     >
-       📎 Open Attachment
-     </a>`
-  );
-
-  // MCQ options (a), b), c), d))
-  content = content.replace(
-    /^[a-d]\)\s(.*)$/gm,
-    `<div class="ml-4 text-gray-800">• $1</div>`
-  );
-
-  // Section separators
-  content = content.replace(/---/g, `<hr class="my-6 border-purple-200">`);
-
-  // Headings (like "1. Something")
-  content = content.replace(
-    /^\d+\.\s(.*)$/gm,
-    `<h3 class="text-lg font-semibold text-purple-800 mt-6 mb-2">$1</h3>`
-  );
-
-  return (
-    <div
-      dangerouslySetInnerHTML={{
-        __html: content,
-      }}
-    />
   );
 }
