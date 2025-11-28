@@ -7,6 +7,7 @@ import { getStorage } from "firebase/storage";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAj5hjPVD5klr6galuSkk0gdZ8Wd7l66l8",
   authDomain: "a2g-smart-notes-1st.firebaseapp.com",
@@ -14,8 +15,10 @@ const firebaseConfig = {
   projectId: "a2g-smart-notes-1st",
   storageBucket: "a2g-smart-notes-1st.firebasestorage.app",
   messagingSenderId: "593098306784",
-  appId: "1:593098306784:web:bbf1511a890e423c0e4c85"
+  appId: "1:593098306784:web:fe6e820d4e76bc700e4c85",
+  measurementId: "G-82FG2L5V45"
 };
+
 
 // Initialize Firebase
 let app;
