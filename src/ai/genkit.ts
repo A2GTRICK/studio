@@ -1,3 +1,4 @@
+
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import { config } from 'dotenv';
@@ -11,5 +12,5 @@ export const ai = genkit({
       // GEMINI_API_KEY environment variable.
     }),
   ],
-  model: 'googleai/gemini-1.5-pro-latest',
+  model: 'gemini-1.5-pro',
 });
