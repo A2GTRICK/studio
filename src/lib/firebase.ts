@@ -1,29 +1,20 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp, getApp, getApps } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAj5hjPVD5klr6galuSkk0gdZ8Wd7l66l8",
-  authDomain: "a2g-smart-notes-1st.firebaseapp.com",
-  databaseURL: "https://a2g-smart-notes-1st-default-rtdb.firebaseio.com",
-  projectId: "a2g-smart-notes-1st",
-  storageBucket: "a2g-smart-notes-1st.appspot.com",
-  messagingSenderId: "593098306784",
-  appId: "1:593098306784:web:fe6e820d4e76bc700e4c85",
-  measurementId: "G-82FG2L5V45"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
-
 
 // Initialize Firebase
 let app;
-// Check if firebaseConfig.apiKey is not an empty string
-if (firebaseConfig && firebaseConfig.apiKey) {
+if (firebaseConfig.projectId) {
     if (!getApps().length) {
       try {
         app = initializeApp(firebaseConfig);
@@ -34,6 +25,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {
       app = getApp();
     }
 }
+
 
 const auth = getAuth(app);
 const db = getFirestore(app);
