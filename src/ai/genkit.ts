@@ -11,5 +11,5 @@ export const ai = genkit({
       // GEMINI_API_KEY environment variable.
     }),
   ],
-  model: 'gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-pro-latest',
 });
