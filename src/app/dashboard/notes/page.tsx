@@ -1,122 +1,65 @@
+"use client";
+import { useState } from "react";
 
-'use client';
+export default function NotesLibrary() {
+  const [search, setSearch] = useState("");
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Star, MoreVertical, Loader2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Note, getNotes, deleteNote } from '@/services/notes';
-import { useToast } from '@/hooks/use-toast';
+  // Temporary sample notes (later replaced with Firestore data)
+  const notes = [
+    {
+      title: "Pharmacognosy Unit 1",
+      description: "Introduction to Pharmacognosy, sources of drugs, classification.",
+    },
+    {
+      title: "Pharmacology – ANS",
+      description: "Study of sympathetic & parasympathetic systems with drugs.",
+    },
+    {
+      title: "Pharmaceutics – Dosage Forms",
+      description: "Types of dosage forms and formulation basics.",
+    },
+  ];
 
-export default function NotesPage() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    async function fetchNotes() {
-      try {
-        const fetchedNotes = await getNotes();
-        setNotes(fetchedNotes);
-      } catch (error) {
-        console.error("Error fetching notes:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to fetch your notes. Please try again later.',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchNotes();
-  }, [toast]);
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this note?')) {
-        return;
-    }
-
-    try {
-        await deleteNote(id);
-        setNotes(notes.filter(note => note.id !== id));
-        toast({
-            title: 'Note Deleted',
-            description: 'The note has been successfully deleted.',
-        });
-    } catch (error) {
-        console.error("Error deleting note:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Failed to delete the note. Please try again later.',
-        });
-    }
-  };
-  
-  const getSnippet = (content: string) => {
-    const strippedContent = content.replace(/(\#\#\#\# |\#\#\# |\#\# |\# )/g, "");
-    return strippedContent.slice(0, 150) + '...';
-  }
+  const filteredNotes = notes.filter((note) =>
+    note.title.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="font-headline text-3xl font-bold tracking-tight">My Notes</h1>
-        <p className="text-muted-foreground">
-          All your generated and saved notes in one place.
-        </p>
+    <div className="p-6 space-y-6">
+
+      <h1 className="text-2xl font-bold">Notes Library</h1>
+      <p className="text-gray-600">Your saved & generated notes.</p>
+
+      {/* Search Bar */}
+      <input
+        type="text"
+        placeholder="Search notes..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="p-3 border rounded w-full max-w-md"
+      />
+
+      {/* Notes Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        {filteredNotes.map((note, index) => (
+          <div key={index} className="p-4 bg-white border rounded shadow-sm">
+            <h2 className="text-xl font-semibold">{note.title}</h2>
+            <p className="text-gray-700 mt-2">{note.description}</p>
+            <a
+              href="#"
+              className="text-blue-600 font-semibold mt-3 inline-block"
+            >
+              View Note →
+            </a>
+          </div>
+        ))}
       </div>
-      {isLoading ? (
-         <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-         </div>
-      ) : notes.length === 0 ? (
-        <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-            <p className="font-semibold">No notes found.</p>
-            <p className="text-sm">Generate some notes with the AI Note Generator to see them here.</p>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {notes.map((note) => (
-            <Card key={note.id} className="flex flex-col shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader>
-                <div className="flex items-start justify-between">
-                    <CardTitle className="font-headline text-xl pr-2">{note.topic}</CardTitle>
-                    <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                        <MoreVertical className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View</DropdownMenuItem>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(note.id!)} className="text-destructive">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-                <CardDescription>{note.subject}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground">{getSnippet(note.notes)}</p>
-                </CardContent>
-                <CardFooter className="flex justify-between items-center">
-                <Button variant="outline" size="sm">Read More</Button>
-                {/* {note.isPremium && (
-                    <Badge variant="secondary" className="bg-accent/20 text-accent-foreground border-accent/30">
-                    <Star className="mr-1 h-3 w-3 text-accent" />
-                    Premium
-                    </Badge>
-                )} */}
-                </CardFooter>
-            </Card>
-            ))}
-        </div>
+
+      {/* If No Notes Found */}
+      {filteredNotes.length === 0 && (
+        <p className="text-gray-600 mt-6">No notes found for your search.</p>
       )}
+
     </div>
   );
 }
