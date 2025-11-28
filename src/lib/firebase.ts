@@ -6,13 +6,15 @@ import { getStorage } from "firebase/storage";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration will be injected automatically.
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  "projectId": "a2g-smart-notes-1st",
-  "appId": "1:593098306784:web:bbf1511a890e423c0e4c85",
-  "apiKey": "AIzaSyAj5hjPVD5klr6galuSkk0gdZ8Wd7l66l8",
-  "authDomain": "a2g-smart-notes-1st.firebaseapp.com",
-  "messagingSenderId": "593098306784"
+  apiKey: "AIzaSyAj5hjPVD5klr6galuSkk0gdZ8Wd7l66l8",
+  authDomain: "a2g-smart-notes-1st.firebaseapp.com",
+  projectId: "a2g-smart-notes-1st",
+  storageBucket: "a2g-smart-notes-1st.appspot.com",
+  messagingSenderId: "593098306784",
+  appId: "1:593098306784:web:fe6e820d4e76bc700e4c85",
+  measurementId: "G-82FG2L5V45"
 };
 
 // Initialize Firebase
