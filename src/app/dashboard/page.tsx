@@ -1,7 +1,19 @@
-export default function Dashboard() {
+"use client";
+import { useEffect } from "react";
+import { useUserProfile } from "@/lib/auth";
+
+export default function DashboardPage() {
+  const { user, role } = useUserProfile();
+
+  useEffect(() => {
+    // you can add analytics or fetch more data here
+  }, [user]);
+
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Welcome to A2G Smart Notes 👋</h1>
+      <h1 className="text-3xl font-bold">
+        {user ? `Welcome back, ${user.displayName || user.email}` : "Welcome to A2G Smart Notes 👋"}
+      </h1>
       <p className="text-gray-600">Your Pharmacy Learning Dashboard</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
