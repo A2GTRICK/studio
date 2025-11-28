@@ -10,11 +10,11 @@ import { getStorage } from "firebase/storage";
 const firebaseConfig = {
   apiKey: "AIzaSyAj5hjPVD5klr6galuSkk0gdZ8Wd7l66l8",
   authDomain: "a2g-smart-notes-1st.firebaseapp.com",
+  databaseURL: "https://a2g-smart-notes-1st-default-rtdb.firebaseio.com",
   projectId: "a2g-smart-notes-1st",
-  storageBucket: "a2g-smart-notes-1st.appspot.com",
+  storageBucket: "a2g-smart-notes-1st.firebasestorage.app",
   messagingSenderId: "593098306784",
-  appId: "1:593098306784:web:fe6e820d4e76bc700e4c85",
-  measurementId: "G-82FG2L5V45"
+  appId: "1:593098306784:web:bbf1511a890e423c0e4c85"
 };
 
 // Initialize Firebase
@@ -31,7 +31,6 @@ if (firebaseConfig && firebaseConfig.apiKey) {
       app = getApp();
     }
 }
-
 
 const auth = getAuth(app);
 const db = getFirestore(app);
