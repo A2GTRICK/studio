@@ -72,7 +72,7 @@ export default function NotesLibraryPage() {
               <p className="text-sm text-gray-600 mt-2">{note.short}</p>
               <div className="mt-4 flex items-center justify-between gap-2">
                 <div className="text-xs text-gray-500">{note.course} • {note.year || "—"}</div>
-                <Link href={`/dashboard/notes/view?title=${encodeURIComponent(note.title)}&short=${encodeURIComponent(note.short||"")}&content=${encodeURIComponent(note.content||"")}`} className="text-blue-600 font-semibold text-sm">
+                <Link href={`/dashboard/notes/${note.id}`} className="text-blue-600 font-semibold text-sm">
                   View →
                 </Link>
               </div>
