@@ -1,3 +1,4 @@
+
 // src/app/dashboard/notes/[id]/page.tsx
 import { adminDb } from "@/lib/firebaseAdmin";
 import React from "react";

@@ -1,12 +1,13 @@
+
 // src/lib/auth.ts
 "use client";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 export function useUserProfile() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export function useUserProfile() {
               setRole("student");
             }
           } catch (err) {
+            console.error("Role fetch error:", err);
             setRole("student");
           }
         } else {
@@ -31,7 +33,7 @@ export function useUserProfile() {
       });
       return () => unsub();
     }
-  }, []);
+  }, [auth, db]);
 
   return { user, role };
 }

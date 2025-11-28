@@ -12,7 +12,7 @@ if (!admin.apps.length) {
     credential: saJson
       ? admin.credential.cert(saJson as admin.ServiceAccount)
       : admin.credential.applicationDefault(),
-    databaseURL: `https://_PROJECT_ID_.firebaseio.com`.replace('_PROJECT_ID_', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!)
+    databaseURL: `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseio.com`
   });
 }
 
@@ -20,3 +20,4 @@ export const adminDb = admin.firestore();
 export const adminAuth = admin.auth();
 export const adminFieldValue = admin.firestore.FieldValue;
 export { admin };
+
