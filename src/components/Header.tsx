@@ -1,47 +1,55 @@
 // src/components/Header.tsx
 "use client";
 import { useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getAuth, onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider, type Auth } from "firebase/auth";
+import { getFirestore, doc, getDoc, type Firestore } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 
 export default function Header() {
-  const auth = getAuth(app);
-  const db = getFirestore(app);
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [auth, setAuth] = useState<Auth | null>(null);
+  const [db, setDb] = useState<Firestore | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (u) {
-        setUser(u);
-        // fetch role from Firestore users collection
-        try {
-          const d = await getDoc(doc(db, "users", u.uid));
-          if (d.exists()) {
-            const data = d.data();
-            setRole(data.role || null);
-          } else {
-            // if user doc doesn't exist, create minimal doc (client-side bootstrap)
-            await fetch("/api/users/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ uid: u.uid, displayName: u.displayName, email: u.email }),
-            });
-            setRole("student");
+    if (app) {
+      const authInstance = getAuth(app);
+      const dbInstance = getFirestore(app);
+      setAuth(authInstance);
+      setDb(dbInstance);
+
+      const unsub = onAuthStateChanged(authInstance, async (u) => {
+        if (u) {
+          setUser(u);
+          // fetch role from Firestore users collection
+          try {
+            const d = await getDoc(doc(dbInstance, "users", u.uid));
+            if (d.exists()) {
+              const data = d.data();
+              setRole(data.role || null);
+            } else {
+              // if user doc doesn't exist, create minimal doc (client-side bootstrap)
+              await fetch("/api/users/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ uid: u.uid, displayName: u.displayName, email: u.email }),
+              });
+              setRole("student");
+            }
+          } catch (err) {
+            console.error("role fetch error", err);
           }
-        } catch (err) {
-          console.error("role fetch error", err);
+        } else {
+          setUser(null);
+          setRole(null);
         }
-      } else {
-        setUser(null);
-        setRole(null);
-      }
-    });
-    return () => unsub();
-  }, [auth, db]);
+      });
+      return () => unsub();
+    }
+  }, []);
 
   async function handleSignIn() {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -52,6 +60,7 @@ export default function Header() {
   }
 
   async function handleSignOut() {
+    if (!auth) return;
     await signOut(auth);
   }
 

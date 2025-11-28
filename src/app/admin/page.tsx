@@ -10,6 +10,10 @@ export default function AdminPage() {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
+    if (!app) {
+        setLoading(false);
+        return;
+    }
     const auth = getAuth(app);
     const db = getFirestore(app);
 
