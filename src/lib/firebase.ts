@@ -1,8 +1,8 @@
 
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -14,22 +14,42 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app;
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
+
 if (firebaseConfig.projectId) {
-    if (!getApps().length) {
-      try {
-        app = initializeApp(firebaseConfig);
-      } catch (e) {
-        console.error("Failed to initialize Firebase", e);
-      }
-    } else {
-      app = getApp();
+  if (!getApps().length) {
+    try {
+      app = initializeApp(firebaseConfig);
+    } catch (e) {
+      console.error("Failed to initialize Firebase", e);
+      // @ts-ignore
+      app = undefined;
     }
+  } else {
+    app = getApp();
+  }
+} else {
+    console.warn("Firebase config not found. Firebase features will be disabled.");
+    // @ts-ignore
+    app = undefined;
 }
 
 
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+if (app) {
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+} else {
+    // @ts-ignore
+    auth = undefined;
+    // @ts-ignore
+    db = undefined;
+    // @ts-ignore
+    storage = undefined;
+}
+
 
 export { app, auth, db, storage };
