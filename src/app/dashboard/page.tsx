@@ -1,79 +1,149 @@
 "use client";
 
-import { BookOpen, Layers, GraduationCap, Megaphone } from "lucide-react";
 import Link from "next/link";
+import { BookOpen, Layers, GraduationCap, Megaphone, Sparkles } from "lucide-react";
+import clsx from "clsx";
+
+const features = [
+  {
+    title: "Notes Library",
+    desc: "Access organized notes from all subjects.",
+    href: "/dashboard/notes",
+    icon: <BookOpen size={28} />,
+    accent: "from-purple-300 to-purple-100",
+  },
+  {
+    title: "MCQ Practice",
+    desc: "Practice MCQs for GPAT, NIPER & D.Pharm.",
+    href: "/dashboard/mcq-practice",
+    icon: <Layers size={28} />,
+    accent: "from-blue-200 to-blue-50",
+  },
+  {
+    title: "Academic Services",
+    desc: "Project files, reports, dissertation help.",
+    href: "/dashboard/services",
+    icon: <GraduationCap size={28} />,
+    accent: "from-rose-200 to-rose-50",
+  },
+  {
+    title: "Latest Update",
+    desc: "New Pharmacognosy Unit 2 diagrams added.",
+    href: "/dashboard/updates",
+    icon: <Megaphone size={28} />,
+    accent: "from-green-200 to-green-50",
+  },
+];
+
+function FeatureCard({ item }: { item: typeof features[number] }) {
+  return (
+    <Link href={item.href} className="group">
+      <article
+        className={clsx(
+          "relative overflow-hidden rounded-2xl p-5 md:p-6 shadow-sm transition-transform transform hover:-translate-y-2 hover:shadow-xl",
+          "bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/40"
+        )}
+        aria-labelledby={`fc-${item.title}`}
+      >
+        <div className="flex items-start gap-4">
+          <div
+            className={clsx(
+              "shrink-0 p-3 rounded-xl flex items-center justify-center",
+              "bg-white/75 ring-1 ring-white/40"
+            )}
+            style={{ boxShadow: "0 6px 18px rgba(16,24,40,0.06)" }}
+          >
+            <div className="text-purple-600">{item.icon}</div>
+          </div>
+
+          <div className="flex-1">
+            <h3 id={`fc-${item.title}`} className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
+              {item.title}
+            </h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{item.desc}</p>
+          </div>
+
+          <div className="flex items-center">
+            <span
+              className={clsx(
+                "inline-block rounded-full px-3 py-1 text-sm font-medium",
+                "bg-gradient-to-br text-slate-900/90"
+              )}
+              style={{ backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.65), rgba(255,255,255,0.35))` }}
+            >
+              Open
+            </span>
+          </div>
+        </div>
+
+        {/* Accent block (subtle) */}
+        <div
+          aria-hidden
+          className={`absolute -right-10 -top-10 w-48 h-48 rounded-full opacity-30 blur-3xl ${item.accent}`}
+          style={{ mixBlendMode: "screen" }}
+        />
+      </article>
+    </Link>
+  );
+}
 
 export default function DashboardPage() {
-  const features = [
-    {
-      title: "Notes Library",
-      icon: <BookOpen size={32} className="text-purple-600" />,
-      desc: "Access organized notes from all subjects.",
-      href: "/dashboard/notes",
-      color: "from-purple-50 to-purple-100",
-    },
-    {
-      title: "MCQ Practice",
-      icon: <Layers size={32} className="text-blue-600" />,
-      desc: "Practice MCQs for GPAT, NIPER & D.Pharm.",
-      href: "/dashboard/mcq-practice",
-      color: "from-blue-50 to-blue-100",
-    },
-    {
-      title: "Academic Services",
-      icon: <GraduationCap size={32} className="text-rose-600" />,
-      desc: "Project files, reports, dissertation help.",
-      href: "/dashboard/services",
-      color: "from-rose-50 to-rose-100",
-    },
-    {
-      title: "Latest Update",
-      icon: <Megaphone size={32} className="text-green-600" />,
-      desc: "New Pharmacognosy Unit 2 diagrams added.",
-      href: "/dashboard/updates",
-      color: "from-green-50 to-green-100",
-    },
-  ];
-
   return (
-    <div className="p-6">
-      
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Welcome to A2G Smart Notes 👋
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Your all-in-one platform for pharmacy learning.
-        </p>
-      </div>
+    <div className="min-h-screen p-6 md:p-10">
+      {/* HERO */}
+      <section className="relative overflow-hidden rounded-2xl p-6 md:p-10 mb-8 bg-gradient-to-r from-indigo-50 to-sky-50 border border-white/60">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+              Welcome to <span className="text-indigo-700">A2G Smart Notes</span> <span aria-hidden>👋</span>
+            </h1>
+            <p className="mt-2 text-slate-700 max-w-xl">
+              Your all-in-one platform for pharmacy learning. Access curated notes, practice high-quality MCQs,
+              and get academic help — all in one place.
+            </p>
 
-      {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {features.map((f, i) => (
-          <Link key={i} href={f.href}>
-            <div
-              className={`
-                group cursor-pointer p-6 rounded-2xl border shadow-sm 
-                bg-gradient-to-br ${f.color}
-                transition-all duration-300 hover:shadow-xl
-                hover:-translate-y-1
-              `}
-            >
-              <div className="flex items-center gap-4">
-                <div className="bg-white p-3 rounded-xl shadow-sm">
-                  {f.icon}
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800 group-hover:text-purple-700">
-                    {f.title}
-                  </h2>
-                  <p className="text-gray-600 text-sm">{f.desc}</p>
-                </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/dashboard/notes" className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-white/90 shadow-sm text-sm font-medium">
+                <Sparkles size={16} /> Explore Notes
+              </Link>
+              <Link href="/dashboard/mcq-practice" className="inline-flex items-center gap-2 rounded-full px-4 py-2 border bg-transparent text-sm font-medium">
+                Start Practice
+              </Link>
+            </div>
+          </div>
+
+          {/* Hero right: subtle card */}
+          <div className="hidden md:block">
+            <div className="rounded-xl p-4 bg-white/80 border border-white/40 shadow-sm backdrop-blur-sm w-72">
+              <div className="text-sm font-semibold text-slate-800">Latest Update</div>
+              <p className="mt-2 text-sm text-slate-600">Pharmacognosy Unit 2 diagrams added. Check the Notes Library.</p>
+              <div className="mt-3 text-right">
+                <Link href="/dashboard/updates" className="text-sm text-indigo-600 underline">View update →</Link>
               </div>
             </div>
-          </Link>
-        ))}
+          </div>
+        </div>
+
+        {/* wave svg */}
+        <svg viewBox="0 0 1440 80" className="absolute bottom-0 left-0 w-full" preserveAspectRatio="none" aria-hidden>
+          <path d="M0,20 C200,80 400,0 720,20 C1040,40 1240,0 1440,30 L1440 80 L0 80 Z" fill="rgba(255,255,255,0.6)"></path>
+        </svg>
+      </section>
+
+      {/* GRID */}
+      <section className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {features.map((f) => (
+            <FeatureCard key={f.title} item={f} />
+          ))}
+        </div>
+      </section>
+
+      {/* Floating Action Button - mobile */}
+      <div className="fixed right-4 bottom-6 md:hidden">
+        <Link href="/dashboard/generate" className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-indigo-600 text-white shadow-xl">
+          Generate MCQs
+        </Link>
       </div>
     </div>
   );
