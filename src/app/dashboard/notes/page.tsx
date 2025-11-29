@@ -4,7 +4,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useNotes } from "@/context/notes-context";
-import { useAuth } from "@/hooks/use-auth";
 import { ChevronDown } from "lucide-react";
 
 /**
@@ -29,7 +28,6 @@ type TabKey = "all" | "bpharm" | "dpharm" | "mcq" | "premium";
 
 export default function NotesLibraryPage(): JSX.Element {
   const { notes, loading, refresh } = useNotes();
-  const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [query, setQuery] = useState("");
