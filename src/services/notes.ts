@@ -4,6 +4,9 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { GenerateNotesInput } from '@/ai/flows/generate-notes';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 export interface Note extends GenerateNotesInput {
     id?: string;
@@ -19,17 +22,21 @@ function isNoteData(docData: DocumentData): docData is { createdAt: import('fire
 }
 
 
-export async function addNote(note: Omit<Note, 'id'>): Promise<string> {
-  try {
-    const docRef = await addDoc(notesCollection, {
+export async function addNote(note: Omit<Note, 'id'>) {
+    addDoc(notesCollection, {
         ...note,
         createdAt: serverTimestamp() 
+    }).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: notesCollection.path,
+          operation: 'create',
+          requestResourceData: note,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        // We throw the original error as well to not swallow it completely
+        // in case there's another non-permissions issue.
+        throw serverError;
     });
-    return docRef.id;
-  } catch (error) {
-    console.error("Error adding document: ", error);
-    throw new Error("Could not save note to database.");
-  }
 }
 
 export async function getNotes(): Promise<Note[]> {
@@ -50,16 +57,25 @@ export async function getNotes(): Promise<Note[]> {
         return notes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
         console.error("Error getting documents: ", error);
+        
+        const permissionError = new FirestorePermissionError({
+          path: notesCollection.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+
         throw new Error("Could not fetch notes from database.");
     }
 }
 
 export async function deleteNote(id: string): Promise<void> {
-    try {
-        const noteDoc = doc(db, 'notes', id);
-        await deleteDoc(noteDoc);
-    } catch (error) {
-        console.error("Error deleting document: ", error);
-        throw new Error("Could not delete note from database.");
-    }
+    const noteDoc = doc(db, 'notes', id);
+    deleteDoc(noteDoc).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: noteDoc.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    });
 }

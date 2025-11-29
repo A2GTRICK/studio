@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import SidebarClient from "@/components/SidebarClient";
 import { McqProvider } from "@/context/mcq-context";
 import { AuthProvider } from "@/hooks/use-auth"; // Import AuthProvider
+import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,6 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </main>
           </div>
         </div>
+        <FirebaseErrorListener />
       </McqProvider>
     </AuthProvider>
   );
