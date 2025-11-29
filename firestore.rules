@@ -1,15 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Allow users to read all public content
     match /notes/{noteId} {
-      allow read: if true;               // anyone can read notes
-      allow create: if request.auth != null;           // only logged-in users can create
-      allow update, delete: if request.auth != null && request.auth.token.admin == true; // admin-only edits/deletes
+      allow read: if true;    // Anyone can read notes
+      allow write: if request.auth != null
+        && request.auth.token.admin == true; // Only admin
     }
 
-    // keep other collections strict (adjust as needed)
-    match /{document=**} {
-      allow read, write: if false;
+    match /mcqSets/{mcqId} {
+      allow read: if true;  // MCQs visible to everyone
+      allow write: if request.auth != null
+        && request.auth.token.admin == true;
+    }
+
+    // User profile access
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Notifications (public display)
+    match /custom_notifications/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Academic services posts
+    match /posts/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.token.admin == true;
+    }
+
+    // Newsletter subscription
+    match /newsletter_subscriptions/{docId} {
+      allow read: if false;
+      allow write: if true;
     }
   }
 }

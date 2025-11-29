@@ -9,8 +9,8 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-gray-50 text-slate-900">
+    <html lang="en">
+      <body className="min-h-screen bg-gray-50 text-slate-900" suppressHydrationWarning>
         <Providers>
           <AuthProvider> {/* Wrap the app with AuthProvider */}
             {children}
