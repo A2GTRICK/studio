@@ -1,0 +1,62 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { app } from "@/lib/firebase";
+import { getFirestore } from "firebase/firestore";
+import { useRouter } from "next/navigation";
+
+export default function AdminConfigPage() {
+  const router = useRouter();
+  const db = getFirestore(app);
+  const [curCode, setCurCode] = useState("");
+  const [newCode, setNewCode] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const s = sessionStorage.getItem("A2G_ADMIN");
+    if (s !== "ACTIVE") router.push("/adminarvindsharma");
+    (async () => {
+      const snap = await getDoc(doc(db, "adminConfig", "main"));
+      if (snap.exists()) {
+        setCurCode(String(snap.data().adminCode || ""));
+      }
+    })();
+  }, [db, router]);
+
+  const handleChange = async () => {
+    setStatus(null);
+    const adminKey = sessionStorage.getItem("A2G_ADMIN_KEY") || "";
+    if (!adminKey) { setStatus("Missing admin key"); return; }
+    if (!newCode) { setStatus("Enter new code"); return; }
+
+    try {
+      // include adminOldKey to satisfy Firestore rules check
+      await setDoc(doc(db, "adminConfig", "main"), { adminCode: newCode, enabled: true, adminOldKey: adminKey }, { merge: true });
+      
+      // update session key
+      sessionStorage.setItem("A2G_ADMIN_KEY", newCode);
+      setCurCode(newCode);
+      setNewCode("");
+      setStatus("Admin code updated.");
+    } catch (err:any) {
+      console.error(err);
+      setStatus(`Update failed: ${err.message}. Check Firestore rules for adminConfig collection.`);
+    }
+  };
+
+  return (
+    <div className="p-6 max-w-xl mx-auto">
+      <h2 className="text-xl font-semibold mb-4">Admin Config</h2>
+      <div className="p-4 bg-secondary rounded-lg">
+        <div className="mb-3 text-sm">Current code: <strong>{curCode ? "••••••••" : "not set"}</strong></div>
+        <input className="w-full p-3 border rounded mb-3" placeholder="New admin code" value={newCode} onChange={(e) => setNewCode(e.target.value)} type="password"/>
+        <div className="flex gap-3">
+          <button onClick={handleChange} className="px-4 py-2 bg-primary text-primary-foreground rounded-md">Update Code</button>
+          <button onClick={() => router.push("/adminarvindsharma/dashboard")} className="px-4 py-2 border rounded-md">Back</button>
+        </div>
+        {status && <div className="mt-3 text-sm p-3 bg-card rounded-md">{status}</div>}
+      </div>
+    </div>
+  );
+}

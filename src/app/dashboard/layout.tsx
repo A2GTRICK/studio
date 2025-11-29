@@ -1,5 +1,5 @@
 
-import AuthProviderWrapper from "@/components/AuthProvider";
+import { AuthProvider } from "@/hooks/use-auth";
 import { UserNav } from "@/components/user-nav";
 import Providers from "@/components/Providers";
 import {
@@ -13,7 +13,6 @@ import {
   SidebarInset,
   SidebarFooter,
   SidebarTrigger,
-  SidebarGroup,
 } from "@/components/ui/sidebar";
 import {
   Bell,
@@ -68,7 +67,7 @@ export default function DashboardLayout({
 }) {
   return (
     <Providers>
-      <AuthProviderWrapper>
+      <AuthProvider>
         <SidebarProvider>
           <Sidebar variant="floating" collapsible="icon" side="left">
             <SidebarContent>
@@ -110,7 +109,7 @@ export default function DashboardLayout({
             <main className="flex-1 p-6">{children}</main>
           </SidebarInset>
         </SidebarProvider>
-      </AuthProviderWrapper>
+      </AuthProvider>
     </Providers>
   );
 }

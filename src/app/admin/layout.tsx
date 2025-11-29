@@ -1,6 +1,7 @@
+
 "use client";
 
-import AuthProviderWrapper from "@/components/AuthProvider";
+import { AuthProvider } from "@/hooks/use-auth";
 import { UserNav } from "@/components/user-nav";
 import {
   Sidebar,
@@ -91,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <Providers>
-      <AuthProviderWrapper>
+      <AuthProvider>
         <SidebarProvider>
           <Sidebar variant="floating" collapsible="icon" side="left">
             <SidebarContent>
@@ -139,7 +140,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </main>
           </SidebarInset>
         </SidebarProvider>
-      </AuthProviderWrapper>
+      </AuthProvider>
     </Providers>
   );
 }
