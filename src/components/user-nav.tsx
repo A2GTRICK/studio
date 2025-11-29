@@ -11,26 +11,42 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CreditCard, LogOut, Settings, User } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { CreditCard, LogOut, Settings, Shield, User } from 'lucide-react';
 import Link from 'next/link';
 
 export function UserNav() {
+  const { user, loading } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
+  if (loading) {
+    return null; // Or a loading skeleton
+  }
+
+  if (!user) {
+     return (
+      <Button asChild>
+        <Link href="/login">Login</Link>
+      </Button>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
             <AvatarImage src="https://placehold.co/100x100.png" alt="@user" data-ai-hint="person portrait" />
-            <AvatarFallback>A</AvatarFallback>
+            <AvatarFallback>{user.displayName?.[0] || user.email?.[0] || 'A'}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Alex</p>
+            <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              alex@example.com
+              {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -54,6 +70,14 @@ export function UserNav() {
               <span>Settings</span>
             </Link>
           </DropdownMenuItem>
+           {isAdmin && (
+            <DropdownMenuItem asChild>
+              <Link href="/admin">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin Panel</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
