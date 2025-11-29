@@ -1,4 +1,7 @@
+
 import "./globals.css";
+import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata = {
   title: "A2G Smart Notes",
@@ -9,7 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className="min-h-screen bg-gray-50 text-slate-900">
-        {children}
+        <FirebaseClientProvider>
+            {children}
+        </FirebaseClientProvider>
+        <Toaster />
       </body>
     </html>
   );

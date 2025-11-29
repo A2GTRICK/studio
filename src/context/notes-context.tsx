@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useFirestore } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -16,6 +16,7 @@ export type NoteStub = {
   year?: string;
   subject?: string;
   createdAt?: string;
+  isPremium?: boolean;
 };
 
 type NotesContextValue = {
@@ -29,8 +30,13 @@ const NotesContext = createContext<NotesContextValue | undefined>(undefined);
 export function NotesProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<NoteStub[]>([]);
   const [loading, setLoading] = useState(true);
+  const db = useFirestore();
 
   const loadNotes = () => {
+    if(!db) {
+      setLoading(false);
+      return () => {};
+    }
     setLoading(true);
     const notesQuery = query(collection(db, "notes"), orderBy("createdAt", "desc"));
     
@@ -46,6 +52,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
             course: data.course || "General",
             year: data.year || "",
             subject: data.subject || "",
+            isPremium: !!data.isPremium,
             createdAt: data.createdAt ? data.createdAt.toDate?.()?.toISOString?.() || String(data.createdAt) : "",
           };
         });
@@ -55,7 +62,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       (error) => {
         console.error("loadNotes error", error);
         const permissionError = new FirestorePermissionError({
-          path: notesQuery.path,
+          path: 'notes',
           operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -69,7 +76,8 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsub = loadNotes();
     return () => unsub();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db]);
 
   return (
     <NotesContext.Provider value={{ notes, loading, refresh: loadNotes }}>

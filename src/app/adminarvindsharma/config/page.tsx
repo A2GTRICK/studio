@@ -2,22 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { app } from "@/lib/firebase";
-import { getFirestore } from "firebase/firestore";
+import { useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function AdminConfigPage() {
   const router = useRouter();
-  const db = getFirestore(app);
+  const db = useFirestore();
   const [curCode, setCurCode] = useState("");
   const [newCode, setNewCode] = useState("");
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const s = sessionStorage.getItem("A2G_ADMIN");
-    if (s !== "ACTIVE") router.push("/adminarvindsharma");
+    if (s !== "ACTIVE") {
+        router.push("/adminarvindsharma");
+        return;
+    }
+    
+    if(!db) return;
     (async () => {
       const snap = await getDoc(doc(db, "adminConfig", "main"));
       if (snap.exists()) {
@@ -27,6 +31,10 @@ export default function AdminConfigPage() {
   }, [db, router]);
 
   const handleChange = async () => {
+    if (!db) {
+        setStatus("Firestore is not available.");
+        return;
+    }
     setStatus(null);
     const adminKey = sessionStorage.getItem("A2G_ADMIN_KEY") || "";
     if (!adminKey) { setStatus("Missing admin key"); return; }

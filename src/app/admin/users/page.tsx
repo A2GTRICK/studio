@@ -2,28 +2,45 @@
 "use client";
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase"; 
-import { getAuth } from "firebase/auth";
+import { useFirestore } from "@/firebase";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const db = useFirestore();
 
   useEffect(() => {
+    if(!db) return;
     (async () => {
       setLoading(true);
-      const snap = await getDocs(collection(db, "users"));
-      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false);
+      try {
+        const snap = await getDocs(collection(db, "users"));
+        setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (err: any) {
+         const permissionError = new FirestorePermissionError({ path: 'users', operation: 'list' });
+         errorEmitter.emit('permission-error', permissionError);
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, []);
+  }, [db]);
 
   const promote = async (uid: string) => {
-    // This only updates 'users' doc; to grant admin claim, run server script
+    if(!db) return;
     const uDoc = doc(db, "users", uid);
-    await updateDoc(uDoc, { role: "admin" });
-    alert("Set role=admin in users collection. Run make-admin script to grant auth claim.");
+    const updateData = { role: "admin" };
+    updateDoc(uDoc, updateData).then(() => {
+        alert("Set role=admin in users collection. Run make-admin script to grant auth claim.");
+        setUsers(users.map(u => u.id === uid ? {...u, ...updateData} : u));
+    }).catch(err => {
+        const permissionError = new FirestorePermissionError({ path: uDoc.path, operation: 'update', requestResourceData: updateData });
+        errorEmitter.emit('permission-error', permissionError);
+    })
   };
+  
+  if (!db) return <div>Loading...</div>
 
   return (
     <div>

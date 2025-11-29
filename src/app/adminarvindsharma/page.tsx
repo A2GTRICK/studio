@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, getFirestore } from "firebase/firestore";
-import { app } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { useFirestore } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -12,9 +12,14 @@ export default function AdminEntryPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const db = getFirestore(app);
+  const db = useFirestore();
 
   const verify = async () => {
+    if (!db) {
+        setErr("Firestore is not available.");
+        return;
+    }
+
     setErr(null);
     setLoading(true);
     
@@ -72,7 +77,7 @@ export default function AdminEntryPage() {
         />
 
         <div className="flex gap-2">
-          <button onClick={verify} disabled={loading} className="flex-1 py-2 bg-primary text-primary-foreground rounded-md">
+          <button onClick={verify} disabled={loading || !db} className="flex-1 py-2 bg-primary text-primary-foreground rounded-md disabled:opacity-50">
             {loading ? "Verifying..." : "Verify"}
           </button>
           <button onClick={() => (setCode(""), setErr(null))} className="px-4 py-2 border rounded-md">

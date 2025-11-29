@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { addDoc, collection, getFirestore, serverTimestamp } from "firebase/firestore";
-import { app } from "@/lib/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function UploadMCQPage() {
   const router = useRouter();
+  const db = useFirestore();
   const [title, setTitle] = useState("");
   const [course, setCourse] = useState("");
   const [subject, setSubject] = useState("");
@@ -21,9 +22,11 @@ export default function UploadMCQPage() {
     if (s !== "ACTIVE") router.push("/adminarvindsharma");
   }, [router]);
 
-  const db = getFirestore(app);
-
   const handleSubmit = async () => {
+     if (!db) {
+        setStatus("Firestore is not available.");
+        return;
+    }
     setStatus(null);
     const adminKey = sessionStorage.getItem("A2G_ADMIN_KEY") || "";
     if (!adminKey) {

@@ -2,31 +2,56 @@
 "use client";
 import { useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useFirestore } from "@/firebase";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function AdminNotes() {
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const db = useFirestore();
 
   useEffect(() => {
+    if (!db) return;
     (async () => {
       setLoading(true);
       const snap = await getDocs(collection(db, "notes"));
       setNotes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     })();
-  }, []);
+  }, [db]);
 
   const remove = async (id: string) => {
+    if (!db) return;
     if (!confirm("Delete note?")) return;
-    await deleteDoc(doc(db, "notes", id));
-    setNotes(s => s.filter(n => n.id !== id));
+    const docRef = doc(db, "notes", id);
+    deleteDoc(docRef)
+        .then(() => {
+            setNotes(s => s.filter(n => n.id !== id));
+        })
+        .catch(err => {
+            const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'delete' });
+            errorEmitter.emit('permission-error', permissionError);
+            console.error("Delete failed:", err);
+        });
   };
 
   const togglePremium = async (id: string, current: boolean) => {
-    await updateDoc(doc(db, "notes", id), { isPremium: !current });
-    setNotes(s => s.map(n => n.id === id ? { ...n, isPremium: !current } : n));
+    if (!db) return;
+    const docRef = doc(db, "notes", id);
+    const updateData = { isPremium: !current };
+    updateDoc(docRef, updateData)
+        .then(() => {
+            setNotes(s => s.map(n => n.id === id ? { ...n, ...updateData } : n));
+        })
+        .catch(err => {
+            const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: updateData });
+            errorEmitter.emit('permission-error', permissionError);
+            console.error("Update failed:", err);
+        });
   };
+  
+  if (!db) return <div>Loading...</div>
 
   return (
     <div>

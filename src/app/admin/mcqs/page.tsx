@@ -2,32 +2,55 @@
 "use client";
 import { useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import Link from "next/link";
+import { useFirestore } from "@/firebase";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function AdminMcqs() {
   const [sets, setSets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const db = useFirestore();
 
   useEffect(() => {
+    if (!db) return;
     (async () => {
       setLoading(true);
       const snap = await getDocs(collection(db, "mcqSets"));
       setSets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     })();
-  }, []);
+  }, [db]);
 
   const remove = async (id: string) => {
+    if (!db) return;
     if (!confirm("Delete MCQ set?")) return;
-    await deleteDoc(doc(db, "mcqSets", id));
-    setSets(s => s.filter(su => su.id !== id));
+    const docRef = doc(db, "mcqSets", id);
+    deleteDoc(docRef).then(() => {
+        setSets(s => s.filter(su => su.id !== id));
+    }).catch(err => {
+        const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'delete' });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Delete failed:", err);
+    });
   };
 
   const togglePremium = async (id: string, current: boolean) => {
-    await updateDoc(doc(db, "mcqSets", id), { isPremium: !current });
-    setSets(s => s.map(x => x.id === id ? { ...x, isPremium: !current } : x));
+    if (!db) return;
+    const docRef = doc(db, "mcqSets", id);
+    const updatedData = { isPremium: !current };
+    updateDoc(docRef, updatedData).then(() => {
+        setSets(s => s.map(x => x.id === id ? { ...x, ...updatedData } : x));
+    }).catch(err => {
+        const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: updatedData });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Update failed:", err);
+    });
   };
+
+  if (!db) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>

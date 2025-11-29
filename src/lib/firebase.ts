@@ -1,7 +1,9 @@
-// src/lib/firebase.ts
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { getAppCheck, initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+
 
 // All these values must be set as environment vars in Firebase Studio
 const firebaseConfig = {
@@ -14,25 +16,36 @@ const firebaseConfig = {
   appId: "1:593098306784:web:bbf1511a890e423c0e4c85"
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
+function initializeFirebase() {
+    if (getApps().length > 0) {
+        return {
+            app: getApp(),
+            auth: getAuth(getApp()),
+            db: getFirestore(getApp()),
+        };
+    }
 
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-// Ensure single app instance
-if (firebaseConfig.projectId) {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
-} else {
-    console.warn("Firebase config not found. Firebase features will be disabled.");
-    // @ts-ignore
-    app = undefined;
-    // @ts-ignore
-    auth = undefined;
-    // @ts-ignore
-    db = undefined;
+    if (typeof window !== 'undefined') {
+        const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+        if (siteKey) {
+            try {
+                const appCheck = initializeAppCheck(app, {
+                    provider: new ReCaptchaV3Provider(siteKey),
+                    isTokenAutoRefreshEnabled: true
+                });
+            } catch (error) {
+                console.error("Error initializing App Check:", error);
+            }
+        } else {
+            console.warn("ReCAPTCHA V3 site key is not set. App Check will not be initialized.");
+        }
+    }
+    
+    return { app, auth, db };
 }
 
-
-export { app, auth, db };
+export { initializeFirebase };

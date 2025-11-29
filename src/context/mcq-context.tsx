@@ -3,7 +3,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { collection, getDocs, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useFirestore } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -48,8 +48,13 @@ const McqContext = createContext<McqContextType>({
 export const McqProvider = ({ children }: { children: ReactNode }) => {
   const [mcqSets, setMcqSets] = useState<McqSet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const db = useFirestore();
 
   const fetchMcqSets = () => {
+    if (!db) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const colRef = collection(db, "mcqSets");
 
@@ -92,7 +97,8 @@ export const McqProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsub = fetchMcqSets();
     return () => unsub && unsub();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db]);
 
   const value = useMemo(
     () => ({
