@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { addDoc, collection, getFirestore, serverTimestamp } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function UploadNotesPage() {
   const router = useRouter();
@@ -33,9 +35,9 @@ export default function UploadNotesPage() {
       setStatus("Title and Subject required.");
       return;
     }
-
-    try {
-      await addDoc(collection(db, "notes"), {
+    
+    const notesCollection = collection(db, "notes");
+    const noteData = {
         title,
         course,
         year,
@@ -44,17 +46,25 @@ export default function UploadNotesPage() {
         isPremium: !!isPremium,
         createdAt: serverTimestamp(),
         adminKey, // important: used by Firestore rules to validate write
+    };
+
+    addDoc(notesCollection, noteData).then(() => {
+        setStatus("Saved successfully.");
+        setTitle("");
+        setCourse("");
+        setYear("");
+        setSubject("");
+        setContent("");
+    }).catch(async (serverError) => {
+      setStatus("Upload failed. Check permissions.");
+      const permissionError = new FirestorePermissionError({
+        path: notesCollection.path,
+        operation: 'create',
+        requestResourceData: noteData,
       });
-      setStatus("Saved successfully.");
-      setTitle("");
-      setCourse("");
-      setYear("");
-      setSubject("");
-      setContent("");
-    } catch (err: any) {
-      console.error(err);
-      setStatus("Upload failed. See console.");
-    }
+      errorEmitter.emit('permission-error', permissionError);
+      console.error(serverError); // Also log original error for more context
+    });
   };
 
   return (

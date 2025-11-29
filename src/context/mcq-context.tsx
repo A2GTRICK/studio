@@ -77,6 +77,11 @@ export const McqProvider = ({ children }: { children: ReactNode }) => {
       },
       (error) => {
         console.error("[mcq-context] failed to fetch mcqSets:", error);
+        const permissionError = new FirestorePermissionError({
+          path: colRef.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         setMcqSets([]);
         setLoading(false);
       }

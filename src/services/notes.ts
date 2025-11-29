@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, QueryDocumentSnapshot, DocumentData, getDocsFromCache } from 'firebase/firestore';
 import { GenerateNotesInput } from '@/ai/flows/generate-notes';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -23,14 +23,15 @@ function isNoteData(docData: DocumentData): docData is { createdAt: import('fire
 
 
 export async function addNote(note: Omit<Note, 'id'>) {
-    addDoc(notesCollection, {
+    const noteData = {
         ...note,
         createdAt: serverTimestamp() 
-    }).catch(async (serverError) => {
+    };
+    addDoc(notesCollection, noteData).catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: notesCollection.path,
           operation: 'create',
-          requestResourceData: note,
+          requestResourceData: noteData,
         });
         errorEmitter.emit('permission-error', permissionError);
         // We throw the original error as well to not swallow it completely
@@ -55,7 +56,7 @@ export async function getNotes(): Promise<Note[]> {
         });
         // Sort notes by creation date, newest first
         return notes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error getting documents: ", error);
         
         const permissionError = new FirestorePermissionError({
