@@ -1,277 +1,207 @@
+// src/app/adminarvindsharma/upload-notes/page.tsx
 "use client";
 
 import { useState } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
-import { useRouter } from "next/navigation";
-import { getStorage, ref, uploadBytes, getDownloadURL, StorageReference } from "firebase/storage";
-import { useFirebaseApp } from "@/firebase/provider";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { formatNoteOffline } from "@/lib/offlineFormatter";
 
-
-export default function UploadNote() {
-  const router = useRouter();
-  const db = useFirestore();
-  const app = useFirebaseApp();
-  const storage = app ? getStorage(app) : null;
-
-
-  // NOTE FIELDS
+export default function AdminUploadNotePage() {
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [course, setCourse] = useState("");
   const [year, setYear] = useState("");
   const [content, setContent] = useState("");
-
-  // MEDIA
-  const [images, setImages] = useState<File[]>([]);
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [videoLink, setVideoLink] = useState("");
-
-  // Others
-  const [premium, setPremium] = useState(false);
+  const [links, setLinks] = useState<string[]>([""]);
+  const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  async function uploadFileToStorage(file: File, path: string): Promise<string> {
-    if (!storage) throw new Error("Firebase Storage is not available.");
-    const fileRef: StorageReference = ref(storage, `${path}/${Date.now()}_${file.name}`);
-    await uploadBytes(fileRef, file);
-    return getDownloadURL(fileRef);
-  }
+  const onFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAttachments(Array.from(e.target.files || []));
+  };
 
-  async function handleSave() {
-    if (!db) {
-        alert("Firestore is not initialized.");
-        return;
-    }
-    if (!storage) {
-        alert("Firebase Storage is not initialized.");
-        return;
-    }
-    if (!title || !subject || !course || !year || !content) {
-      alert("All fields (Title, Subject, Course, Year, Content) are required.");
-      return;
-    }
+  const handleAddLink = () => setLinks((s) => [...s, ""]);
+  const handleLinkChange = (index: number, v: string) =>
+    setLinks((s) => s.map((x, i) => (i === index ? v : x)));
 
+  const handleAutoFormat = () => {
+    setContent((c) => formatNoteOffline(c));
+    setMessage("Content auto-formatted (offline).");
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  async function uploadNote(e: React.FormEvent) {
+    e.preventDefault();
     setLoading(true);
+    setMessage(null);
 
     try {
-      // Upload IMAGES
-      const imageUrls: string[] = [];
-      for (const img of images) {
-        const url = await uploadFileToStorage(img, "notes/images");
-        imageUrls.push(url);
-      }
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("subject", subject);
+      formData.append("course", course);
+      formData.append("year", year);
+      formData.append("content", content);
+      formData.append("isPremium", String(isPremium));
+      formData.append("externalLinks", JSON.stringify(links.filter((l) => l.trim() !== "")));
 
-      // Upload PDF
-      let pdfUrl = "";
-      if (pdfFile) {
-        pdfUrl = await uploadFileToStorage(pdfFile, "notes/pdfs");
-      }
+      attachments.forEach((file) => formData.append("attachments", file));
 
-      // Upload Attachments
-      const attachmentUrls: string[] = [];
-      for (const file of attachments) {
-        const url = await uploadFileToStorage(file, "notes/attachments");
-        attachmentUrls.push(url);
-      }
-      
-      const adminKey = sessionStorage.getItem("A2G_ADMIN_KEY") || "";
-      if (!adminKey) {
-        alert("Admin key not found. Please log in again.");
-        setLoading(false);
-        return;
-      }
-
-      // Save to Firestore
-      const notesCollection = collection(db, "notes");
-      const noteData = {
-        title,
-        subject,
-        course,
-        year,
-        content,
-        images: imageUrls,
-        videoLink,
-        pdfUrl,
-        attachments: attachmentUrls,
-        isPremium: premium,
-        createdAt: serverTimestamp(),
-        adminKey,
-      };
-
-      await addDoc(notesCollection, noteData).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: notesCollection.path,
-          operation: 'create',
-          requestResourceData: noteData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        throw serverError; // re-throw to be caught by outer catch
+      const res = await fetch("/api/upload-note", {
+        method: "POST",
+        body: formData,
       });
 
-      alert("✅ Note uploaded successfully!");
-      router.push("/adminarvindsharma/dashboard");
+      const data = await res.json();
 
-    } catch (err) {
-      console.error(err);
-      alert("❌ Upload failed! Check console and Firestore rules.");
+      if (!res.ok || !data.success) {
+        throw new Error(data?.error || "Upload failed");
+      }
+
+      setMessage("Note uploaded successfully — visible in Notes Library.");
+      // reset form
+      setTitle("");
+      setSubject("");
+      setCourse("");
+      setYear("");
+      setContent("");
+      setAttachments([]);
+      setLinks([""]);
+      setIsPremium(false);
+
+      setTimeout(() => {
+        window.location.href = "/adminarvindsharma/dashboard";
+      }, 900);
+    } catch (err: any) {
+      setMessage("Upload failed: " + (err?.message || String(err)));
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      
-      {/* HEADER */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-          📤 Upload Note (Premium Studio)
-        </h1>
-        <p className="text-gray-600">Add all types of study materials in one place.</p>
-      </div>
-
-      {/* MAIN CARD */}
-      <div className="bg-white shadow-md rounded-2xl p-6 md:p-8 border border-gray-200 space-y-10">
-
-        {/* BASIC FIELDS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <label className="font-semibold text-gray-700">Title</label>
-            <input 
-              className="w-full mt-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"
-              placeholder="e.g., Introduction to Pharmacology"
+            <h1 className="text-3xl font-bold">Upload Note <span className="text-purple-600">📄</span></h1>
+            <p className="text-gray-600 mt-1">Add high-quality notes (text, PDFs, images, DOCX). Auto-format included.</p>
+          </div>
+          <button
+            onClick={() => (window.location.href = "/adminarvindsharma/dashboard")}
+            className="px-3 py-2 bg-white border rounded-md hover:bg-gray-50"
+          >
+            ← Back
+          </button>
+        </div>
+
+        {message && (
+          <div className="mb-4 p-3 rounded-md bg-purple-50 text-purple-800 border border-purple-100">
+            {message}
+          </div>
+        )}
+
+        <form onSubmit={uploadNote} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              name="title"
+              placeholder="Note Title (e.g., Pharmacology Unit 1)"
+              className="p-3 border rounded-lg bg-gray-50"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              required
             />
-          </div>
-
-          <div>
-            <label className="font-semibold text-gray-700">Subject</label>
-            <input 
-              className="w-full mt-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"
-              placeholder="e.g., Pharmacology"
+            <input
+              name="subject"
+              placeholder="Subject (e.g., Pharmacology)"
+              className="p-3 border rounded-lg bg-gray-50"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              required
             />
-          </div>
-
-          <div>
-            <label className="font-semibold text-gray-700">Course</label>
-            <input 
-              className="w-full mt-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"
-              placeholder="e.g., B.Pharm"
+            <input
+              name="course"
+              placeholder="Course (e.g., B.Pharm)"
+              className="p-3 border rounded-lg bg-gray-50"
               value={course}
               onChange={(e) => setCourse(e.target.value)}
+              required
             />
-          </div>
-
-          <div>
-            <label className="font-semibold text-gray-700">Year</label>
-            <input 
-              className="w-full mt-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"
-              placeholder="e.g., 2nd Year"
+            <input
+              name="year"
+              placeholder="Year (e.g., 2nd Year)"
+              className="p-3 border rounded-lg bg-gray-50"
               value={year}
               onChange={(e) => setYear(e.target.value)}
+              required
             />
           </div>
-        </div>
 
-        {/* CONTENT */}
-        <div>
-          <label className="font-semibold text-gray-700">Full Text Content</label>
-          <textarea
-            rows={10}
-            placeholder="Write full notes here... Markdown supported."
-            className="w-full mt-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
-        </div>
+          <div className="mt-6">
+            <label className="font-medium text-gray-700">Full Content (Markdown supported)</label>
+            <textarea
+              name="content"
+              rows={10}
+              className="w-full p-4 mt-2 border rounded-lg bg-gray-50"
+              placeholder="Paste raw text here..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              required
+            />
+            <div className="flex gap-2 justify-end mt-3">
+              <button
+                type="button"
+                onClick={handleAutoFormat}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                🧹 Auto-Format Offline
+              </button>
+            </div>
+          </div>
 
-        {/* IMAGES */}
-        <div>
-          <label className="font-semibold text-gray-700 block mb-2">Upload Images</label>
-          <input 
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={(e) => setImages(Array.from(e.target.files || []))}
-            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-          />
-           {images.length > 0 && <p className="text-xs text-gray-500 mt-1">{images.length} image(s) selected.</p>}
-        </div>
+          <div className="mt-6">
+            <label className="font-medium text-gray-700">External Links (Google Drive etc.)</label>
+            {links.map((l, idx) => (
+              <input
+                key={idx}
+                className="w-full p-3 rounded-lg bg-gray-50 border mt-2"
+                placeholder="https://..."
+                value={l}
+                onChange={(e) => handleLinkChange(idx, e.target.value)}
+              />
+            ))}
+            <button type="button" onClick={handleAddLink} className="text-sm text-blue-600 mt-2">+ Add another link</button>
+          </div>
 
-        {/* VIDEO LINK */}
-        <div>
-          <label className="font-semibold text-gray-700">Video Link (YouTube / Drive)</label>
-          <input 
-            type="text"
-            placeholder="https://youtube.com/..."
-            className="w-full mt-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"
-            value={videoLink}
-            onChange={(e) => setVideoLink(e.target.value)}
-          />
-        </div>
+          <div className="mt-6">
+            <label className="font-medium text-gray-700">Attachments (PDF, PNG, JPG, DOCX)</label>
+            <input type="file" multiple onChange={onFilesChange} className="mt-2" />
+            {attachments.length > 0 && (
+              <ul className="mt-3 text-sm text-gray-700">
+                {attachments.map((f, i) => (
+                  <li key={i}>📎 {f.name} <span className="text-gray-400 text-xs">({(f.size/1024/1024).toFixed(2)} MB)</span></li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-        {/* PDF */}
-        <div>
-          <label className="font-semibold text-gray-700 block mb-2">Upload PDF</label>
-          <input 
-            type="file"
-            accept="application/pdf"
-            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-          />
-          {pdfFile && <p className="text-xs text-gray-500 mt-1">{pdfFile.name} selected.</p>}
-        </div>
+          <div className="mt-6 flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} />
+              <span>Mark as Premium Content</span>
+            </label>
+          </div>
 
-        {/* ATTACHMENTS */}
-        <div>
-          <label className="font-semibold text-gray-700 block mb-2">Upload Additional Attachments</label>
-          <input 
-            type="file"
-            multiple
-            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-            onChange={(e) => setAttachments(Array.from(e.target.files || []))}
-          />
-          {attachments.length > 0 && <p className="text-xs text-gray-500 mt-1">{attachments.length} file(s) selected.</p>}
-        </div>
-
-        {/* PREMIUM TOGGLE */}
-        <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-          <input 
-            type="checkbox"
-            id="is-premium"
-            checked={premium}
-            onChange={(e) => setPremium(e.target.checked)}
-            className="w-5 h-5 accent-purple-600 rounded"
-          />
-          <label htmlFor="is-premium" className="font-medium text-gray-700 cursor-pointer">Mark as Premium Content</label>
-        </div>
-
-        {/* BUTTONS */}
-        <div className="flex flex-col sm:flex-row justify-between gap-4 mt-10">
-          <button
-            onClick={() => router.push("/adminarvindsharma/dashboard")}
-            className="px-6 py-3 rounded-xl bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200 transition-colors order-2 sm:order-1"
-          >
-            ← Back to Dashboard
-          </button>
-
-          <button
-            onClick={handleSave}
-            disabled={loading || !db || !storage}
-            className="px-8 py-3 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors disabled:bg-purple-300 disabled:cursor-not-allowed order-1 sm:order-2"
-          >
-            {loading ? "Uploading..." : "💾 Save Note"}
-          </button>
-        </div>
-
+          <div className="mt-8">
+            <button
+              type="submit"
+              className="w-full py-3 text-white bg-purple-600 rounded-xl font-semibold hover:bg-purple-700 disabled:opacity-60 flex items-center justify-center gap-2"
+              disabled={loading}
+            >
+              {loading ? "Uploading…" : "Save Note"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
