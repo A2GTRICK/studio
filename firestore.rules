@@ -1,6 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow public read access to notes, but restrict writes.
+    match /notes/{noteId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (request.auth.token.admin == true || request.resource.data.ownerId == request.auth.uid);
+    }
+
     match /mcqSets/{id} {
       allow read: if true;
       allow create, update, delete: if request.auth != null && request.auth.token.admin == true;
