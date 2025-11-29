@@ -1,4 +1,3 @@
-
 // -------------------------------------------------------------
 // PREMIUM OFFLINE NOTE FORMATTER
 // Automatically converts raw text → academic, clean, structured

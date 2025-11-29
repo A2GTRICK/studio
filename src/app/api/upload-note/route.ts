@@ -1,4 +1,3 @@
-
 // src/app/api/upload-note/route.ts
 import { NextResponse } from "next/server";
 import { db, storage } from "@/firebase";
