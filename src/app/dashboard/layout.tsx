@@ -70,7 +70,7 @@ export default function DashboardLayout({
     <Providers>
       <AuthProviderWrapper>
         <SidebarProvider>
-          <Sidebar variant="floating" collapsible="icon">
+          <Sidebar variant="floating" collapsible="icon" side="left">
             <SidebarContent>
               <SidebarHeader>
                 <h1 className="font-headline text-2xl font-bold text-primary">
