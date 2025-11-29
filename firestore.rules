@@ -1,25 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public read access to notes, but restrict writes.
     match /notes/{noteId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && (request.auth.token.admin == true || request.resource.data.ownerId == request.auth.uid);
+      allow read: if true;               // anyone can read notes
+      allow create: if request.auth != null;           // only logged-in users can create
+      allow update, delete: if request.auth != null && request.auth.token.admin == true; // admin-only edits/deletes
     }
 
-    match /mcqSets/{id} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null && request.auth.token.admin == true;
-    }
-    match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
-    }
-    match /attempts/{doc} {
-      allow create: if request.auth != null;
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || request.auth.token.admin == true);
-    }
+    // keep other collections strict (adjust as needed)
     match /{document=**} {
       allow read, write: if false;
     }
