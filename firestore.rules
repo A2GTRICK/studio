@@ -2,34 +2,57 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ----------------------
-    // ADMIN CONFIG (PUBLIC READ)
-    // ----------------------
+    // -----------------------------
+    // ADMIN CONFIG – ADMIN PANEL
+    // -----------------------------
     match /adminConfig/{doc} {
-      allow read: if true;  // REQUIRED for admin panel to load the adminCode
-      allow update: if request.resource.data.adminOldKey ==
-                    get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+
+      // Admin can READ the admin code
+      allow read: if true;
+
+      // Admin can update code ONLY if old code matches
+      allow update: if
+        request.resource.data.adminOldKey ==
+        get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+
+      // Prevent accidental create/delete
       allow create, delete: if false;
     }
 
-    // ----------------------
-    // NOTES COLLECTION
-    // ----------------------
-    match /notes/{noteId} {
+    // -----------------------------
+    // NOTES – PUBLIC READ
+    // -----------------------------
+    match /notes/{id} {
       allow read: if true;
-      allow create: if request.resource.data.adminKey ==
-                     get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+
+      // Admin can CREATE notes using adminKey
+      allow create: if
+        request.resource.data.adminKey ==
+        get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+
       allow update, delete: if false;
     }
 
-    // ----------------------
-    // MCQ COLLECTION
-    // ----------------------
-    match /mcqSets/{mcqId} {
+    // -----------------------------
+    // MCQ SETS – PUBLIC READ
+    // -----------------------------
+    match /mcqSets/{id} {
       allow read: if true;
-      allow create: if request.resource.data.adminKey ==
-                     get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+
+      allow create: if
+        request.resource.data.adminKey ==
+        get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+
       allow update, delete: if false;
     }
+
+    // -----------------------------
+    // GENERAL SAFETY
+    // -----------------------------
+    match /{document=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+
   }
 }
