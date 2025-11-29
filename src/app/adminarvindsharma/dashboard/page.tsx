@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -16,7 +17,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       if (!db) {
-        console.log("Firestore not ready, waiting...");
+        console.error("Firestore DB instance is not available.");
         return;
       }
       try {
