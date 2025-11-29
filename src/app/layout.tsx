@@ -1,6 +1,6 @@
 
 import "./globals.css";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
+import AppProviders from "@/components/AppProviders";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata = {
@@ -12,9 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className="min-h-screen bg-gray-50 text-slate-900">
-        <FirebaseClientProvider>
+        <AppProviders>
             {children}
-        </FirebaseClientProvider>
+        </AppProviders>
         <Toaster />
       </body>
     </html>

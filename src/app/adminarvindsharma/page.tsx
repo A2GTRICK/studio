@@ -1,92 +1,76 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { db } from "@/firebase";
+import { useRouter } from "next/navigation";
 
-export default function AdminEntryPage() {
+export default function AdminAccess() {
   const [code, setCode] = useState("");
-  const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
-  const db = useFirestore();
 
-  const verify = async () => {
-    if (!db) {
-        setErr("Firestore is not available.");
-        return;
-    }
-
-    setErr(null);
+  async function verifyCode() {
     setLoading(true);
-    
-    const cfgRef = doc(db, "adminConfig", "main");
+    setError("");
 
-    getDoc(cfgRef).then(snap => {
+    try {
+      const adminRef = doc(db, "adminConfig", "main");
+      const snap = await getDoc(adminRef);
+
       if (!snap.exists()) {
-        setErr("Admin config not found in Firestore.");
+        setError("Admin config not found!");
         setLoading(false);
         return;
       }
-      const data = snap.data() as any;
-      if (!data.enabled) {
-        setErr("Admin panel is currently disabled.");
-        setLoading(false);
-        return;
-      }
-      const real = String(data.adminCode || "");
-      if (code.trim() === real) {
-        // success — store session key
-        sessionStorage.setItem("A2G_ADMIN", "ACTIVE");
-        sessionStorage.setItem("A2G_ADMIN_KEY", real); // store adminKey for uploads
+
+      const adminCode = snap.data().adminCode;
+      if (code === adminCode) {
         router.push("/adminarvindsharma/dashboard");
       } else {
-        setErr("Invalid admin code.");
+        setError("Invalid admin access code.");
       }
-    }).catch(serverError => {
-       const permissionError = new FirestorePermissionError({
-          path: cfgRef.path,
-          operation: 'get',
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      console.error(serverError); // Also log original error
-      setErr("Verification failed. Check permissions in console.");
-    })
-    .finally(() => {
-      setLoading(false);
-    });
-  };
+    } catch (err) {
+      console.error(err);
+      setError("Error verifying admin code.");
+    }
+
+    setLoading(false);
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white p-6 rounded-xl shadow">
-        <h2 className="text-xl font-semibold mb-2">Admin Access (Hidden)</h2>
-        <p className="text-sm text-gray-600 mb-4">Enter admin access code to open the panel.</p>
+    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow-md">
+      <h2 className="text-xl font-bold mb-3">Admin Access (Hidden)</h2>
 
-        {err && <div className="mb-3 text-red-600 text-sm">{err}</div>}
+      <input
+        className="w-full border p-3 rounded mb-3"
+        type="password"
+        placeholder="Enter access code"
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+      />
 
-        <input
-          className="w-full p-3 border rounded mb-3"
-          placeholder="Admin access code"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          type="password"
-        />
+      {error && <p className="text-red-500 mb-2">{error}</p>}
 
-        <div className="flex gap-2">
-          <button onClick={verify} disabled={loading || !db} className="flex-1 py-2 bg-primary text-primary-foreground rounded-md disabled:opacity-50">
-            {loading ? "Verifying..." : "Verify"}
-          </button>
-          <button onClick={() => (setCode(""), setErr(null))} className="px-4 py-2 border rounded-md">
-            Clear
-          </button>
-        </div>
+      <button
+        onClick={verifyCode}
+        disabled={loading || code.length < 5}
+        className="w-full bg-purple-500 text-white py-3 rounded-lg disabled:opacity-50"
+      >
+        {loading ? "Verifying..." : "Verify"}
+      </button>
 
-        <p className="mt-4 text-xs text-gray-500">Admin URL: /adminarvindsharma — keep it private.</p>
-      </div>
+      <button
+        onClick={() => setCode("")}
+        className="w-full mt-2 p-2 rounded border"
+      >
+        Clear
+      </button>
+
+      <p className="mt-3 text-xs opacity-60">
+        Admin URL: /adminarvindsharma — keep it private.
+      </p>
     </div>
   );
 }

@@ -1,93 +1,82 @@
-
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 
-export type NoteStub = {
+import {
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+} from "firebase/firestore";
+
+import { db } from "@/firebase";
+
+interface Note {
   id: string;
   title: string;
-  short?: string;
-  content?: string;
-  course?: string;
-  year?: string;
-  subject?: string;
-  createdAt?: string;
+  subject: string;
+  course: string;
+  year: string;
+  content: string;
   isPremium?: boolean;
-};
+  createdAt?: any;
+}
 
-type NotesContextValue = {
-  notes: NoteStub[];
+interface NotesContextType {
+  notes: Note[];
   loading: boolean;
-  refresh: () => void;
-};
+  reload: () => void;
+}
 
-const NotesContext = createContext<NotesContextValue | undefined>(undefined);
+const NotesContext = createContext<NotesContextType>({
+  notes: [],
+  loading: true,
+  reload: () => {},
+});
 
 export function NotesProvider({ children }: { children: ReactNode }) {
-  const [notes, setNotes] = useState<NoteStub[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
-  const db = useFirestore();
 
   const loadNotes = () => {
-    if(!db) {
-      setLoading(false);
-      return () => {};
-    }
     setLoading(true);
-    const notesQuery = query(collection(db, "notes"), orderBy("createdAt", "desc"));
-    
-    const unsubscribe = onSnapshot(notesQuery, 
-      (snap) => {
-        const items: NoteStub[] = snap.docs.map((d) => {
-          const data = d.data() as any;
-          return {
-            id: d.id,
-            title: data.title || "Untitled",
-            short: data.short || data.description || data.summary || "",
-            content: data.content || "",
-            course: data.course || "General",
-            year: data.year || "",
-            subject: data.subject || "",
-            isPremium: !!data.isPremium,
-            createdAt: data.createdAt ? data.createdAt.toDate?.()?.toISOString?.() || String(data.createdAt) : "",
-          };
-        });
-        setNotes(items);
+
+    try {
+      const ref = collection(db, "notes");
+      const q = query(ref, orderBy("createdAt", "desc"));
+
+      onSnapshot(q, (snap) => {
+        const list = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as Note[];
+
+        setNotes(list);
         setLoading(false);
-      },
-      (error) => {
-        console.error("loadNotes error", error);
-        const permissionError = new FirestorePermissionError({
-          path: 'notes',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setNotes([]);
-        setLoading(false);
-      }
-    );
-    return unsubscribe;
+      });
+    } catch (err) {
+      console.error("Notes load error:", err);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const unsub = loadNotes();
-    return () => unsub();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db]);
+    loadNotes();
+  }, []);
 
   return (
-    <NotesContext.Provider value={{ notes, loading, refresh: loadNotes }}>
+    <NotesContext.Provider value={{ notes, loading, reload: loadNotes }}>
       {children}
     </NotesContext.Provider>
   );
 }
 
 export function useNotes() {
-  const ctx = useContext(NotesContext);
-  if (!ctx) throw new Error("useNotes must be used inside NotesProvider");
-  return ctx;
+  return useContext(NotesContext);
 }

@@ -2,39 +2,31 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // -----------------------------
-    // ADMIN CONFIG – ADMIN PANEL
-    // -----------------------------
-    match /adminConfig/{doc} {
-      allow read: if true;  // allow admin code to be read publicly for login
-      allow update: if request.resource.data.adminOldKey ==
-                    get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+    // Admin config should be publicly READABLE for the verify page
+    match /adminConfig/{docId} {
+      allow read: if true;
+
+      // Allow admin to change code only if old key matches
+      allow update: if request.resource.data.newAdminCode is string
+                    && request.resource.data.oldAdminCode ==
+                       get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+
       allow create, delete: if false;
     }
 
-    // -----------------------------
-    // NOTES – PUBLIC READ
-    // -----------------------------
+    // Notes
     match /notes/{id} {
       allow read: if true;
-
-      allow create: if
-        request.resource.data.adminKey ==
-        get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-
+      allow create: if request.resource.data.adminKey ==
+                     get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
       allow update, delete: if false;
     }
 
-    // -----------------------------
-    // MCQ SETS – PUBLIC READ
-    // -----------------------------
+    // MCQ Sets
     match /mcqSets/{id} {
       allow read: if true;
-
-      allow create: if
-        request.resource.data.adminKey ==
-        get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-
+      allow create: if request.resource.data.adminKey ==
+                     get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
       allow update, delete: if false;
     }
   }
