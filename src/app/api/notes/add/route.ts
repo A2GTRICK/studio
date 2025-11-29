@@ -1,7 +1,7 @@
 
 import { NextResponse } from "next/server";
-import { db } from "@/firebase"; 
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { adminDb, adminFieldValue } from "@/lib/firebaseAdmin"; 
+import { collection, addDoc } from "firebase/firestore";
 
 export async function POST(req: Request) {
   try {
@@ -26,8 +26,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Add to Firestore
-    await addDoc(collection(db, "notes"), {
+    // Add to Firestore using the Admin SDK
+    await addDoc(collection(adminDb, "notes"), {
       title,
       course,
       year,
@@ -36,11 +36,10 @@ export async function POST(req: Request) {
       isPremium: Boolean(isPremium),
       content: content || "",
       driveLink: driveLink || "",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: adminFieldValue.serverTimestamp(),
+      updatedAt: adminFieldValue.serverTimestamp(),
     });
 
-    // IMPORTANT FIX:
     return NextResponse.json({ success: true });
 
   } catch (error) {
