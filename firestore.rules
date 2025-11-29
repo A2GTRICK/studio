@@ -1,33 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Admin config should be publicly READABLE for the verify page
-    match /adminConfig/{docId} {
-      allow read: if true;
-
-      // Allow admin to change code only if old key matches
-      allow update: if request.resource.data.newAdminCode is string
-                    && request.resource.data.oldAdminCode ==
-                       get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-
-      allow create, delete: if false;
-    }
-
-    // Notes
-    match /notes/{id} {
-      allow read: if true;
-      allow create: if request.resource.data.adminKey ==
-                     get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-      allow update, delete: if false;
-    }
-
-    // MCQ Sets
-    match /mcqSets/{id} {
-      allow read: if true;
-      allow create: if request.resource.data.adminKey ==
-                     get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-      allow update, delete: if false;
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }

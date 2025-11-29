@@ -1,39 +1,29 @@
-// src/app/adminarvindsharma/upload-notes/page.tsx
+
 "use client";
 
 import { useState } from "react";
-import { formatNoteOffline } from "@/lib/offlineFormatter";
+import { formatOfflineNotes } from "@/utils/offlineNoteFormatter";
 
-export default function AdminUploadNotePage() {
+export default function UploadNotesPage() {
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [course, setCourse] = useState("");
   const [year, setYear] = useState("");
   const [content, setContent] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [links, setLinks] = useState<string[]>([""]);
+  const [links, setLinks] = useState([""]);
   const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
 
-  const onFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAttachments(Array.from(e.target.files || []));
+  const applyOfflineFormat = () => {
+    const formatted = formatOfflineNotes(content);
+    setContent(formatted);
+    alert("Content formatted professionally (offline).");
   };
 
-  const handleAddLink = () => setLinks((s) => [...s, ""]);
-  const handleLinkChange = (index: number, v: string) =>
-    setLinks((s) => s.map((x, i) => (i === index ? v : x)));
-
-  const handleAutoFormat = () => {
-    setContent((c) => formatNoteOffline(c));
-    setMessage("Content auto-formatted (offline).");
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  async function uploadNote(e: React.FormEvent) {
+  const uploadNote = async (e: any) => {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
 
     try {
       const formData = new FormData();
@@ -43,9 +33,11 @@ export default function AdminUploadNotePage() {
       formData.append("year", year);
       formData.append("content", content);
       formData.append("isPremium", String(isPremium));
-      formData.append("externalLinks", JSON.stringify(links.filter((l) => l.trim() !== "")));
+      formData.append("externalLinks", JSON.stringify(links));
 
-      attachments.forEach((file) => formData.append("attachments", file));
+      attachments.forEach((file) =>
+        formData.append("attachments", file)
+      );
 
       const res = await fetch("/api/upload-note", {
         method: "POST",
@@ -54,153 +46,127 @@ export default function AdminUploadNotePage() {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data?.error || "Upload failed");
-      }
-
-      setMessage("Note uploaded successfully — visible in Notes Library.");
-      // reset form
-      setTitle("");
-      setSubject("");
-      setCourse("");
-      setYear("");
-      setContent("");
-      setAttachments([]);
-      setLinks([""]);
-      setIsPremium(false);
-
-      setTimeout(() => {
+      if (data.success) {
+        alert("Uploaded successfully!");
         window.location.href = "/adminarvindsharma/dashboard";
-      }, 900);
-    } catch (err: any) {
-      setMessage("Upload failed: " + (err?.message || String(err)));
-    } finally {
-      setLoading(false);
+      } else {
+        alert("Upload failed.");
+      }
+    } catch (e) {
+      alert("Upload error.");
     }
-  }
+
+    setLoading(false);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Upload Note <span className="text-purple-600">📄</span></h1>
-            <p className="text-gray-600 mt-1">Add high-quality notes (text, PDFs, images, DOCX). Auto-format included.</p>
-          </div>
-          <button
-            onClick={() => (window.location.href = "/adminarvindsharma/dashboard")}
-            className="px-3 py-2 bg-white border rounded-md hover:bg-gray-50"
-          >
-            ← Back
-          </button>
-        </div>
+    <div className="min-h-screen bg-gray-50 p-6 flex justify-center">
+      <div className="max-w-4xl w-full bg-white shadow-lg rounded-2xl p-6">
+        <h1 className="text-3xl font-bold flex items-center gap-3 mb-2">
+          Upload Note <span className="text-purple-600">📄</span>
+        </h1>
+        <p className="text-gray-600 mb-6">
+          Add high-quality, professionally formatted study notes.
+        </p>
 
-        {message && (
-          <div className="mb-4 p-3 rounded-md bg-purple-50 text-purple-800 border border-purple-100">
-            {message}
-          </div>
-        )}
-
-        <form onSubmit={uploadNote} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+        <form onSubmit={uploadNote} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
-              name="title"
-              placeholder="Note Title (e.g., Pharmacology Unit 1)"
-              className="p-3 border rounded-lg bg-gray-50"
+              className="input"
+              placeholder="Title (e.g., Pharmacognosy Unit 2)"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
             />
+
             <input
-              name="subject"
-              placeholder="Subject (e.g., Pharmacology)"
-              className="p-3 border rounded-lg bg-gray-50"
+              className="input"
+              placeholder="Subject (e.g., Pharmacognosy)"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               required
             />
+
             <input
-              name="course"
+              className="input"
               placeholder="Course (e.g., B.Pharm)"
-              className="p-3 border rounded-lg bg-gray-50"
               value={course}
               onChange={(e) => setCourse(e.target.value)}
               required
             />
+
             <input
-              name="year"
-              placeholder="Year (e.g., 2nd Year)"
-              className="p-3 border rounded-lg bg-gray-50"
+              className="input"
+              placeholder="Year (e.g., 1st Year)"
               value={year}
               onChange={(e) => setYear(e.target.value)}
               required
             />
           </div>
 
-          <div className="mt-6">
-            <label className="font-medium text-gray-700">Full Content (Markdown supported)</label>
+          {/* Content */}
+          <div>
+            <label className="font-semibold text-sm text-gray-700 block mb-2">
+              Full Content (Markdown supported)
+            </label>
             <textarea
-              name="content"
-              rows={10}
-              className="w-full p-4 mt-2 border rounded-lg bg-gray-50"
-              placeholder="Paste raw text here..."
+              rows={14}
+              className="w-full p-4 border rounded-xl bg-gray-50"
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              placeholder="Paste raw text here…"
               required
-            />
-            <div className="flex gap-2 justify-end mt-3">
-              <button
-                type="button"
-                onClick={handleAutoFormat}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                🧹 Auto-Format Offline
-              </button>
-            </div>
-          </div>
+            ></textarea>
 
-          <div className="mt-6">
-            <label className="font-medium text-gray-700">External Links (Google Drive etc.)</label>
-            {links.map((l, idx) => (
-              <input
-                key={idx}
-                className="w-full p-3 rounded-lg bg-gray-50 border mt-2"
-                placeholder="https://..."
-                value={l}
-                onChange={(e) => handleLinkChange(idx, e.target.value)}
-              />
-            ))}
-            <button type="button" onClick={handleAddLink} className="text-sm text-blue-600 mt-2">+ Add another link</button>
-          </div>
-
-          <div className="mt-6">
-            <label className="font-medium text-gray-700">Attachments (PDF, PNG, JPG, DOCX)</label>
-            <input type="file" multiple onChange={onFilesChange} className="mt-2" />
-            {attachments.length > 0 && (
-              <ul className="mt-3 text-sm text-gray-700">
-                {attachments.map((f, i) => (
-                  <li key={i}>📎 {f.name} <span className="text-gray-400 text-xs">({(f.size/1024/1024).toFixed(2)} MB)</span></li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="mt-6 flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} />
-              <span>Mark as Premium Content</span>
-            </label>
-          </div>
-
-          <div className="mt-8">
             <button
-              type="submit"
-              className="w-full py-3 text-white bg-purple-600 rounded-xl font-semibold hover:bg-purple-700 disabled:opacity-60 flex items-center justify-center gap-2"
-              disabled={loading}
+              type="button"
+              onClick={applyOfflineFormat}
+              className="mt-3 bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700"
             >
-              {loading ? "Uploading…" : "Save Note"}
+              📝 Auto-Format Offline
             </button>
           </div>
+
+          {/* Attachments */}
+          <div>
+            <label className="font-semibold block mb-2">
+              Attachments (PDF, Images, DOCX)
+            </label>
+            <input
+              type="file"
+              multiple
+              onChange={(e) =>
+                setAttachments(Array.from(e.target.files || []))
+              }
+            />
+          </div>
+
+          {/* Premium toggle */}
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isPremium}
+              onChange={(e) => setIsPremium(e.target.checked)}
+            />
+            Mark as Premium Content
+          </label>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-purple-600 text-white rounded-xl text-lg shadow-lg hover:bg-purple-700"
+          >
+            {loading ? "Uploading…" : "Save Note"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => (window.location.href = "/adminarvindsharma/dashboard")}
+            className="w-full py-3 bg-gray-100 rounded-xl"
+          >
+            ← Back to Dashboard
+          </button>
         </form>
       </div>
     </div>
