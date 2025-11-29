@@ -4,9 +4,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { useFirestore } from "@/firebase/provider";
 
 export default function AdminDashboard() {
+  const db = useFirestore();
   const [stats, setStats] = useState({
     notes: 0,
     mcq: 0,
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
       }
     }
     fetchStats();
-  }, []);
+  }, [db]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 p-6">
