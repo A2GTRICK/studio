@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from "react";
-import { db, storage } from "@/lib/firebase"; // ensure these exports exist in src/lib/firebase.ts
+import { db, storage } from "@/firebase";
 import {
   collection,
   addDoc,

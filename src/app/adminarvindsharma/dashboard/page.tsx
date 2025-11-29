@@ -1,9 +1,10 @@
+
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "@/firebase";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
