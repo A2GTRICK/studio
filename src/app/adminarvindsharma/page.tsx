@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { app } from "@/lib/firebase";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function AdminEntryPage() {
   const [code, setCode] = useState("");
@@ -15,9 +17,10 @@ export default function AdminEntryPage() {
   const verify = async () => {
     setErr(null);
     setLoading(true);
-    try {
-      const cfgRef = doc(db, "adminConfig", "main");
-      const snap = await getDoc(cfgRef);
+    
+    const cfgRef = doc(db, "adminConfig", "main");
+
+    getDoc(cfgRef).then(snap => {
       if (!snap.exists()) {
         setErr("Admin config not found in Firestore.");
         setLoading(false);
@@ -38,12 +41,18 @@ export default function AdminEntryPage() {
       } else {
         setErr("Invalid admin code.");
       }
-    } catch (e: any) {
-      console.error(e);
-      setErr("Verification failed. Check console.");
-    } finally {
+    }).catch(serverError => {
+       const permissionError = new FirestorePermissionError({
+          path: cfgRef.path,
+          operation: 'get',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      console.error(serverError); // Also log original error
+      setErr("Verification failed. Check permissions in console.");
+    })
+    .finally(() => {
       setLoading(false);
-    }
+    });
   };
 
   return (
