@@ -1,134 +1,91 @@
+
+// src/app/dashboard/mcq-practice/page.tsx
 "use client";
-import { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useMcqSets } from "@/context/mcq-context";
+import { useAuth } from "@/hooks/use-auth";
+import PremiumMCQCard from "@/components/PremiumMCQCard";
 
-export default function MCQPractice() {
-  const [subject, setSubject] = useState("");
-  const [started, setStarted] = useState(false);
-  const [currentQ, setCurrentQ] = useState(0);
-  const [score, setScore] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [showResult, setShowResult] = useState(false);
+export default function MCQPracticePage() {
+  const { mcqSets, loading, refresh } = useMcqSets();
+  const { user } = useAuth();
+  const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("All");
 
-  // Temporary MCQs (Later replaced with AI or Firestore)
-  const mcqs = [
-    {
-      question: "Which organ is responsible for insulin secretion?",
-      options: ["Liver", "Pancreas", "Kidney", "Stomach"],
-      answer: "Pancreas",
-    },
-    {
-      question: "What is the pH of blood?",
-      options: ["6.8", "7.4", "5.5", "8.0"],
-      answer: "7.4",
-    },
-    {
-      question: "Which vitamin is also known as Ascorbic Acid?",
-      options: ["Vitamin D", "Vitamin C", "Vitamin A", "Vitamin K"],
-      answer: "Vitamin C",
-    },
-  ];
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    mcqSets.forEach((s) => set.add(s.course || "General"));
+    return ["All", ...Array.from(set)];
+  }, [mcqSets]);
 
-  const startPractice = () => {
-    if (!subject) return;
-    setStarted(true);
-  };
-
-  const checkAnswer = () => {
-    if (selectedOption === mcqs[currentQ].answer) {
-      setScore(score + 1);
+  const filtered = useMemo(() => {
+    let list = mcqSets;
+    if (activeCategory && activeCategory !== "All") {
+      list = list.filter((s) => (s.course || "General") === activeCategory);
     }
-    if (currentQ + 1 < mcqs.length) {
-      setCurrentQ(currentQ + 1);
-      setSelectedOption(null);
-    } else {
-      setShowResult(true);
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          (s.description || "").toLowerCase().includes(q) ||
+          (s.subject || "").toLowerCase().includes(q)
+      );
     }
-  };
+    return list;
+  }, [mcqSets, activeCategory, query]);
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">MCQ Practice</h1>
-      <p className="text-gray-600">Practice important questions and improve your exam performance.</p>
-
-      {!started && (
-        <div className="max-w-md space-y-4">
-          <select
-            className="p-3 border rounded w-full"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-          >
-            <option value="">Select Subject</option>
-            <option value="Pharmacognosy">Pharmacognosy</option>
-            <option value="Pharmaceutics">Pharmaceutics</option>
-            <option value="Pharmacology">Pharmacology</option>
-            <option value="Pharmaceutical Chemistry">Pharmaceutical Chemistry</option>
-          </select>
-
-          <button
-            onClick={startPractice}
-            className="p-3 bg-blue-600 text-white rounded w-full"
-          >
-            Start Practice
-          </button>
-        </div>
-      )}
-
-      {started && !showResult && (
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold">
-            Question {currentQ + 1}/{mcqs.length}
-          </h2>
-
-          <div className="p-4 bg-white border rounded shadow-sm">
-            <p className="font-medium mb-4">{mcqs[currentQ].question}</p>
-
-            <div className="space-y-2">
-              {mcqs[currentQ].options.map((opt, index) => (
-                <label key={index} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="mcq"
-                    value={opt}
-                    checked={selectedOption === opt}
-                    onChange={() => setSelectedOption(opt)}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
+    <div className="min-h-screen bg-[#F3EBFF] p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-extrabold flex items-center gap-3 text-gray-900">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 text-white">🧪</span>
+              MCQ Practice
+            </h1>
+            <p className="text-sm text-gray-600 mt-1">Practice important questions and improve your performance.</p>
           </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => refresh()} className="px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm text-sm font-medium hover:bg-gray-50">Refresh</button>
+            <div className="text-sm text-gray-500 hidden md:block">{filtered.length} sets</div>
+          </div>
+        </header>
 
-          <button
-            onClick={checkAnswer}
-            className="p-3 bg-green-600 text-white rounded"
-            disabled={!selectedOption}
-          >
-            Next
-          </button>
+        <div className="flex gap-2 overflow-x-auto pb-2">
+            {categories.map((c) => (
+              <button
+                key={c}
+                onClick={() => setActiveCategory(c)}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition ${activeCategory === c ? "bg-purple-600 text-white shadow-md" : "bg-white border text-gray-700 hover:bg-purple-50"}`}>
+                {c}
+              </button>
+            ))}
         </div>
-      )}
 
-      {showResult && (
-        <div className="p-6 bg-white border rounded shadow-sm">
-          <h2 className="text-xl font-bold mb-4">Your Result</h2>
-          <p className="text-gray-700 text-lg">
-            Score: {score} / {mcqs.length}
-          </p>
-
-          <button
-            className="mt-4 p-3 bg-blue-600 text-white rounded"
-            onClick={() => {
-              setShowResult(false);
-              setStarted(false);
-              setCurrentQ(0);
-              setScore(0);
-              setSelectedOption(null);
-            }}
-          >
-            Practice Again
-          </button>
+        <div className="bg-white p-3 rounded-xl shadow-sm border border-purple-200/80">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search title, description or subject..."
+            className="w-full p-2.5 rounded-lg border-gray-200 focus:ring-purple-500 focus:border-purple-500 transition"
+          />
         </div>
-      )}
+
+        <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
+          {loading && <div className="col-span-full text-center p-8 text-gray-500">Loading MCQ sets…</div>}
+          {!loading && filtered.length === 0 && (
+            <div className="col-span-full bg-white p-8 rounded-xl text-center shadow-sm border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-800">No MCQ Sets Found</h3>
+              <p className="text-gray-500 mt-2">Try adjusting your filters or search terms.</p>
+            </div>
+          )}
+
+          {filtered.map((set) => (
+            <PremiumMCQCard key={set.id} set={set} user={user} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useUserProfile } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function DashboardPage() {
-  const { user } = useUserProfile();
+  const { user } = useAuth();
 
   return (
     <div className="space-y-10">

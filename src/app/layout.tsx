@@ -1,5 +1,6 @@
 import "./globals.css";
 import Providers from "@/components/Providers";
+import AuthProvider from "@/components/AuthProvider"; // Import the new AuthProvider
 
 export const metadata = {
   title: "A2G Smart Notes",
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen bg-gray-50 text-slate-900">
         <Providers>
-          {children}
+          <AuthProvider> {/* Wrap the app with AuthProvider */}
+            {children}
+          </AuthProvider>
         </Providers>
       </body>
     </html>

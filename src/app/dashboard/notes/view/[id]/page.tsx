@@ -56,18 +56,8 @@ function preprocessContent(raw: string) {
       const id = extractDriveId(m);
       if (id) {
         const preview = `https://drive.google.com/file/d/${id}/preview`;
-        return `
-<div class="my-6 ${THEME.accentLight} border border-[#D9C9FF] rounded-xl p-4 shadow-sm not-prose">
-  <div class="flex items-center gap-3">
-    <div class="h-10 w-10 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-lg flex items-center justify-center text-xl">📎</div>
-    <div>
-      <p class="font-semibold ${THEME.accent}">Google Drive Attachment</p>
-      <a href="${m}" target="_blank" rel="noreferrer" class="text-purple-700 underline text-sm font-medium">Open in Drive →</a>
-    </div>
-  </div>
-  <iframe src="${preview}" class="w-full h-72 rounded-lg mt-4 border border-[#EAD8FF]" allow="autoplay"></iframe>
-</div>
-`;
+        // Corrected: Return as a single-line HTML string to avoid markdown interference
+        return `<div class="my-6 ${THEME.accentLight} border border-[#D9C9FF] rounded-xl p-4 shadow-sm not-prose"><div class="flex items-center gap-3"><div class="h-10 w-10 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-lg flex items-center justify-center text-xl">📎</div><div><p class="font-semibold ${THEME.accent}">Google Drive Attachment</p><a href="${m}" target="_blank" rel="noreferrer" class="text-purple-700 underline text-sm font-medium">Open in Drive →</a></div></div><iframe src="${preview}" class="w-full h-72 rounded-lg mt-4 border border-[#EAD8FF]" allow="autoplay"></iframe></div>`;
       }
       // fallback: show link card
       return `<div class="my-4 p-3 rounded-md bg-[#FFF7FB] border"><a href="${m}" target="_blank" rel="noreferrer" class="text-purple-700 underline">${m}</a></div>`;
@@ -83,11 +73,7 @@ function preprocessContent(raw: string) {
       const vid = videoIdMatch ? videoIdMatch[1] : id;
       if (!vid) return full;
       return `
-<div class="my-6 rounded-xl overflow-hidden shadow-sm border">
-  <div class="w-full" style="position:relative;padding-bottom:56.25%;height:0;">
-    <iframe src="https://www.youtube.com/embed/${vid}" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
-  </div>
-</div>
+<div class="my-6 rounded-xl overflow-hidden shadow-sm border"><div class="w-full" style="position:relative;padding-bottom:56.25%;height:0;"><iframe src="https://www.youtube.com/embed/${vid}" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe></div></div>
 `;
     }
   );
@@ -226,9 +212,9 @@ export default function NoteViewPage(): JSX.Element {
                 ul: ({node, ...props}) => <ul className="list-disc ml-6 my-2" {...props} />,
                 ol: ({node, ...props}) => <ol className="list-decimal ml-6 my-2" {...props} />,
                 blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-400 pl-4 italic my-4 text-purple-700" {...props} />,
-                code: ({node, inline, className, children, ...props}) => (
+                code: ({node, inline = false, className, children, ...props}) => (
                   inline ? <code className="bg-gray-100 px-1 rounded text-sm" {...props}>{children}</code> :
-                    <pre className="bg-gray-900 text-white rounded p-4 overflow-auto"><code>{children}</code></pre>
+                    <pre className="bg-gray-900 text-white rounded p-4 overflow-auto"><code className={className} {...props}>{children}</code></pre>
                 )
               }}
             >
