@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useMcqSets } from "@/context/mcq-context";
-import { useAuth } from "@/hooks/use-auth";
 
 function ProgressBar({ idx, total }: { idx: number; total: number }) {
   const percent = Math.round(((idx + 1) / total) * 100);
@@ -18,7 +17,6 @@ function ProgressBar({ idx, total }: { idx: number; total: number }) {
 export default function MCQSetPage() {
   const { id } = useParams();
   const { getById } = useMcqSets();
-  const { user } = useAuth();
   const set = useMemo(() => getById(id as string), [getById, id]);
 
   if (!set) {
@@ -33,7 +31,7 @@ export default function MCQSetPage() {
     );
   }
 
-  const locked = set.isPremium && !(user && user.isPremium);
+  const locked = set.isPremium; // Simplified logic for no-login
   const questions = set.questions || [];
   const total = questions.length;
   const [index, setIndex] = useState(0);
@@ -64,8 +62,8 @@ export default function MCQSetPage() {
       <div className="min-h-screen bg-[#F8F5FF] p-8">
         <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm border text-center">
           <h2 className="text-2xl font-bold">Premium Content</h2>
-          <p className="mt-2 text-gray-600">This MCQ set is premium. Please upgrade to access.</p>
-          <Link href="/premium" className="mt-4 inline-block px-4 py-2 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded">Upgrade</Link>
+          <p className="mt-2 text-gray-600">This is a premium MCQ set.</p>
+           <Link href="/dashboard/mcq-practice" className="mt-4 inline-block px-4 py-2 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded">Back to Library</Link>
         </div>
       </div>
     );

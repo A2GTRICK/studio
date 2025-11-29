@@ -4,8 +4,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
 
 export type NoteStub = {
   id: string;
@@ -54,13 +52,6 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       },
       (error) => {
         console.error("loadNotes error", error);
-        
-        const permissionError = new FirestorePermissionError({
-          path: 'notes',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-
         setNotes([]);
         setLoading(false);
       }

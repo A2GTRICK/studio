@@ -3,8 +3,8 @@
 import Link from "next/link";
 import React from "react";
 
-export default function PremiumMCQCard({ set, user }: any) {
-  const locked = set.isPremium && !(user && user.isPremium);
+export default function PremiumMCQCard({ set }: any) {
+  const locked = set.isPremium;
   return (
     <article className="group bg-white rounded-2xl p-5 shadow-lg border border-purple-200/80 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:border-purple-300 hover:-translate-y-1">
       <div className="flex-grow">
@@ -26,7 +26,7 @@ export default function PremiumMCQCard({ set, user }: any) {
       <div className="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center">
         <div className="text-sm text-purple-600 font-semibold">#{set.subject}</div>
         {locked ? (
-          <Link href="/premium" className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-md hover:opacity-90 transition-opacity">Unlock Premium</Link>
+          <div className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gray-200 text-gray-500 cursor-not-allowed">Premium</div>
         ) : (
           <Link href={`/dashboard/mcq-practice/${set.id}`} className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-md hover:opacity-90 transition-opacity">Start Practice</Link>
         )}

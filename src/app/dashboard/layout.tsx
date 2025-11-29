@@ -1,6 +1,4 @@
 
-import { AuthProvider } from "@/hooks/use-auth";
-import { UserNav } from "@/components/user-nav";
 import Providers from "@/components/Providers";
 import {
   Sidebar,
@@ -67,49 +65,43 @@ export default function DashboardLayout({
 }) {
   return (
     <Providers>
-      <AuthProvider>
-        <SidebarProvider>
-          <Sidebar variant="floating" collapsible="icon" side="left">
-            <SidebarContent>
-              <SidebarHeader>
-                <h1 className="font-headline text-2xl font-bold text-primary">
-                  phamA2G
-                </h1>
-              </SidebarHeader>
-              <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.name}>
-                    <Link href={item.href}>
-                      <SidebarMenuButton
-                        tooltip={item.name}
-                      >
-                        {item.icon}
-                        <span>{item.name}</span>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarContent>
-
-            <SidebarFooter>
-              <UserNav />
-            </SidebarFooter>
-          </Sidebar>
-          <SidebarInset>
-            <header className="flex h-12 items-center justify-between border-b px-4 lg:hidden">
-              <Link
-                href="/dashboard"
-                className="text-lg font-bold text-primary"
-              >
+      <SidebarProvider>
+        <Sidebar variant="floating" collapsible="icon" side="left">
+          <SidebarContent>
+            <SidebarHeader>
+              <h1 className="font-headline text-2xl font-bold text-primary">
                 phamA2G
-              </Link>
-              <SidebarTrigger />
-            </header>
-            <main className="flex-1 p-6">{children}</main>
-          </SidebarInset>
-        </SidebarProvider>
-      </AuthProvider>
+              </h1>
+            </SidebarHeader>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.name}>
+                  <Link href={item.href}>
+                    <SidebarMenuButton
+                      tooltip={item.name}
+                    >
+                      {item.icon}
+                      <span>{item.name}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-12 items-center justify-between border-b px-4 lg:hidden">
+            <Link
+              href="/dashboard"
+              className="text-lg font-bold text-primary"
+            >
+              phamA2G
+            </Link>
+            <SidebarTrigger />
+          </header>
+          <main className="flex-1 p-6">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
     </Providers>
   );
 }

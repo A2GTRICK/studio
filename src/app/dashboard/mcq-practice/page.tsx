@@ -3,12 +3,10 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useMcqSets } from "@/context/mcq-context";
-import { useAuth } from "@/hooks/use-auth";
 import PremiumMCQCard from "@/components/PremiumMCQCard";
 
 export default function MCQPracticePage() {
   const { mcqSets, loading, refresh } = useMcqSets();
-  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
@@ -82,7 +80,7 @@ export default function MCQPracticePage() {
           )}
 
           {filtered.map((set) => (
-            <PremiumMCQCard key={set.id} set={set} user={user} />
+            <PremiumMCQCard key={set.id} set={set} />
           ))}
         </div>
       </div>

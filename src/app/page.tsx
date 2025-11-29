@@ -31,12 +31,9 @@ export default function Home() {
             <h1 className="font-headline text-2xl font-bold text-primary">phamA2G</h1>
           </div>
           <nav className="flex items-center space-x-2">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Login</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/signup">
-                Sign Up <ArrowRight className="ml-2 h-4 w-4" />
+             <Button asChild>
+              <Link href="/dashboard">
+                Enter Dashboard <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </nav>
