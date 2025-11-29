@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
-import { initializeFirebase } from "@/lib/firebase";
-
-const { db } = initializeFirebase();
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -17,17 +15,22 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function fetchStats() {
-      const notesSnap = await getDocs(collection(db, "notes"));
-      const mcqSnap = await getDocs(collection(db, "mcqSets"));
-      const querySnap = await getDocs(collection(db, "contact_queries"));
-      const userSnap = await getDocs(collection(db, "users"));
+      if (!db) return;
+      try {
+        const notesSnap = await getDocs(collection(db, "notes"));
+        const mcqSnap = await getDocs(collection(db, "mcqSets"));
+        const querySnap = await getDocs(collection(db, "contact_queries"));
+        const userSnap = await getDocs(collection(db, "users"));
 
-      setStats({
-        notes: notesSnap.size,
-        mcq: mcqSnap.size,
-        queries: querySnap.size,
-        users: userSnap.size,
-      });
+        setStats({
+          notes: notesSnap.size,
+          mcq: mcqSnap.size,
+          queries: querySnap.size,
+          users: userSnap.size,
+        });
+      } catch (error) {
+        console.error("Error fetching admin dashboard stats:", error);
+      }
     }
     fetchStats();
   }, []);
