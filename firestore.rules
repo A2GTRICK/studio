@@ -2,30 +2,34 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Admin config (read-only publicly, update with old key)
+    // ----------------------
+    // ADMIN CONFIG (PUBLIC READ)
+    // ----------------------
     match /adminConfig/{doc} {
-      allow read: if true;
-      allow update: if request.resource.data.adminOldKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+      allow read: if true;  // REQUIRED for admin panel to load the adminCode
+      allow update: if request.resource.data.adminOldKey ==
+                    get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
       allow create, delete: if false;
     }
 
-    // Notes: public read; writes only if client supplies correct adminKey matching adminConfig/main.adminCode
+    // ----------------------
+    // NOTES COLLECTION
+    // ----------------------
     match /notes/{noteId} {
       allow read: if true;
-      allow create: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-      allow update, delete: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+      allow create: if request.resource.data.adminKey ==
+                     get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+      allow update, delete: if false;
     }
 
-    // MCQ sets: public read; adminKey required for client-side create (same pattern)
+    // ----------------------
+    // MCQ COLLECTION
+    // ----------------------
     match /mcqSets/{mcqId} {
       allow read: if true;
-      allow create: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-      allow update, delete: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-    }
-
-    // Default deny all other access
-    match /{document=**} {
-      allow read, write: if false;
+      allow create: if request.resource.data.adminKey ==
+                     get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+      allow update, delete: if false;
     }
   }
 }
