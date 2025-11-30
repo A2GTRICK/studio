@@ -15,9 +15,9 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // NEW: live_notifications are publicly readable for all users.
+    // custom_notifications are publicly readable for all users.
     // Writes are only allowed by authenticated admins.
-    match /live_notifications/{notifId} {
+    match /custom_notifications/{notifId} {
       allow read: if true;
       allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }

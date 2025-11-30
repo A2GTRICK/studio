@@ -26,7 +26,7 @@ export default function NotificationsPage() {
           return;
       }
       try {
-        const notificationsRef = collection(db, "live_notifications");
+        const notificationsRef = collection(db, "custom_notifications");
         const q = query(notificationsRef, orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         
