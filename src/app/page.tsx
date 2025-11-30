@@ -55,6 +55,16 @@ const socialLinks = [
     { name: 'Website', href: 'https://a2gtricks.wordpress.com', icon: Globe },
 ];
 
+const floatingTags = [
+  { text: 'GPAT 2025', style: { top: '10%', left: '15%', animationDelay: '0s' } },
+  { text: 'B.Pharm', style: { top: '20%', right: '10%', animationDelay: '2s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '15%', animationDelay: '6s' } },
+  { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } },
+  { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
+  { text: 'Human Anatomy', style: { top: '5%', right: '25%', animationDelay: '7s' } },
+];
+
+
 export default function Home() {
 
   const mailtoLink = "mailto:a2gtrickacademy@gmail.com?subject=Subscribe%20to%20phamA2G%20Newsletter&body=Please%20add%20me%20to%20your%20mailing%20list!";
@@ -97,8 +107,18 @@ export default function Home() {
                       </Button>
                     </div>
                 </div>
-                <div className="w-full max-w-sm mx-auto lg:max-w-md h-auto aspect-square">
+                <div className="relative w-full max-w-sm mx-auto lg:max-w-md h-auto aspect-square">
                     <AnimatedHeroIcon />
+                     {floatingTags.map((tag) => (
+                        <div
+                            key={tag.text}
+                            className="absolute bg-white/70 backdrop-blur-sm shadow-lg rounded-full px-4 py-2 text-sm font-medium text-primary-foreground animate-float"
+                            // @ts-ignore
+                            style={tag.style}
+                        >
+                            <span className="text-primary font-semibold">{tag.text}</span>
+                        </div>
+                    ))}
                 </div>
             </div>
           </div>
