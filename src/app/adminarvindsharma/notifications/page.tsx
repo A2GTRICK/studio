@@ -1,67 +1,32 @@
 
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { db } from '@/firebase/config';
+import { useState, useEffect } from "react";
+import { db } from "@/firebase/config";
 import {
-  collection,
   addDoc,
   deleteDoc,
   doc,
-  onSnapshot,
-  query,
+  collection,
   orderBy,
+  onSnapshot,
   serverTimestamp,
+  query,
   Timestamp
-} from 'firebase/firestore';
-
+} from "firebase/firestore";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter
-} from "@/components/ui/card";
-
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Trash2, PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
-
-import { format } from 'date-fns';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { format } from "date-fns";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 interface CustomNotification {
   id: string;
@@ -74,59 +39,52 @@ interface CustomNotification {
 
 export default function AdminNotificationsPage() {
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [notifications, setNotifications] = useState<CustomNotification[]>([]);
 
-  // 📌 FETCH NOTIFICATIONS LIVE
   useEffect(() => {
-    const q = query(
-      collection(db, 'custom_notifications'),
-      orderBy('createdAt', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const list = snapshot.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
+    const q = query(collection(db, "custom_notifications"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+            id: doc.id,
             title: data.title,
             summary: data.summary,
             category: data.category,
             link: data.link,
             createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(),
-          };
-        });
-        setNotifications(list);
-        setLoading(false);
-      },
-      (err) => {
+        };
+      });
+      setNotifications(list);
+      setLoading(false);
+    },
+    (err) => {
         const permissionError = new FirestorePermissionError({
             path: 'custom_notifications',
             operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
         setLoading(false);
-      }
-    );
+    });
 
-    return () => unsubscribe();
-  }, [toast]);
+    return () => unsub();
+  }, []);
 
-  // 📌 ADD NEW NOTIFICATION
-  const handleAdd = async (e: any) => {
+  const createNotification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    const formData = new FormData(e.currentTarget);
+    const notificationData = {
+        title: formData.get("title") as string,
+        summary: formData.get("summary") as string,
+        category: formData.get("category") as string,
+        link: formData.get("link") as string,
+        createdAt: serverTimestamp(),
+    };
 
-    const formData = new FormData(e.target);
-    const title = formData.get("title") as string;
-    const summary = formData.get("summary") as string;
-    const category = formData.get("category") as string;
-    const link = formData.get("link") as string;
-
-    if (!title || !summary || !category) {
+    if (!notificationData.title || !notificationData.summary || !notificationData.category) {
       toast({
         title: "Missing Fields",
         description: "Title, Summary & Category are required.",
@@ -135,32 +93,12 @@ export default function AdminNotificationsPage() {
       setIsSubmitting(false);
       return;
     }
-    
-    const adminKey = sessionStorage.getItem("A2G_ADMIN_KEY");
-    if(!adminKey) {
-       toast({
-        title: "Admin key not found",
-        description: "Please re-verify from the admin page.",
-        variant: "destructive"
-      });
-      setIsSubmitting(false);
-      return;
-    }
 
     const notificationCollection = collection(db, "custom_notifications");
-    const notificationData = {
-      title,
-      summary,
-      category,
-      link,
-      createdAt: serverTimestamp(),
-      adminKey: adminKey 
-    };
-
     addDoc(notificationCollection, notificationData)
     .then(() => {
-        toast({ title: "Success", description: `Published: ${title}` });
-        e.target.reset();
+        toast({ title: "Success", description: `Published: ${notificationData.title}` });
+        e.currentTarget.reset();
     })
     .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -174,9 +112,8 @@ export default function AdminNotificationsPage() {
     });
   };
 
-  // 📌 DELETE NOTIFICATION
-  const handleDelete = async (id: string) => {
-    const noteDoc = doc(db, 'custom_notifications', id);
+  const deleteNotification = async (id: string) => {
+    const noteDoc = doc(db, "custom_notifications", id);
     deleteDoc(noteDoc)
     .then(() => {
         toast({
@@ -195,64 +132,58 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-6">
-
       {/* CREATE FORM */}
       <div className="lg:col-span-1">
         <Card>
-          <form onSubmit={handleAdd}>
+            <form onSubmit={createNotification}>
             <CardHeader>
-              <CardTitle>Create Notification</CardTitle>
-              <CardDescription>Publish updates for all students.</CardDescription>
+                <CardTitle>Create Notification</CardTitle>
+                <CardDescription>Publish an announcement.</CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              <div>
-                <Label>Title</Label>
-                <Input name="title" placeholder="e.g., GPAT Exam Dates Announced" required />
-              </div>
+                <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input id="title" name="title" placeholder="e.g., GPAT Exam Dates Announced" required />
+                </div>
+                <div>
+                    <Label htmlFor="summary">Summary</Label>
+                    <Textarea id="summary" name="summary" placeholder="Summary" required />
+                </div>
 
-              <div>
-                <Label>Summary</Label>
-                <Textarea name="summary" required />
-              </div>
+                <div>
+                    <Label>Category</Label>
+                    <Select name="category" required>
+                    <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Exam Alert">Exam Alert</SelectItem>
+                        <SelectItem value="Job Notification">Job Notification</SelectItem>
+                        <SelectItem value="University Update">University Update</SelectItem>
+                        <SelectItem value="Content Update">Content Update</SelectItem>
+                        <SelectItem value="PCI Circular">PCI Circular</SelectItem>
+                        <SelectItem value="General">General</SelectItem>
+                    </SelectContent>
+                    </Select>
+                </div>
 
-              <div>
-                <Label>Category</Label>
-                <Select name="category" required>
-                  <SelectTrigger><SelectValue placeholder="Choose category" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Exam Alert">Exam Alert</SelectItem>
-                    <SelectItem value="Job Notification">Job Notification</SelectItem>
-                    <SelectItem value="University Update">University Update</SelectItem>
-                    <SelectItem value="Content Update">Content Update</SelectItem>
-                    <SelectItem value="PCI Circular">PCI Circular</SelectItem>
-                    <SelectItem value="General">General</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>External Link (optional)</Label>
-                <Input name="link" placeholder="https://example.com" />
-              </div>
+                <div>
+                    <Label htmlFor="link">External Link (optional)</Label>
+                    <Input id="link" name="link" placeholder="Optional link..." />
+                </div>
             </CardContent>
 
             <CardFooter>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                )}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                 {isSubmitting ? "Publishing..." : "Publish Notification"}
-              </Button>
+                </Button>
             </CardFooter>
-          </form>
+            </form>
         </Card>
       </div>
 
-      {/* NOTIFICATIONS TABLE */}
-      <div className="lg:col-span-2">
+      {/* LIST */}
+       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
             <CardTitle>Published Notifications</CardTitle>
@@ -280,7 +211,7 @@ export default function AdminNotificationsPage() {
                     <TableRow key={n.id}>
                       <TableCell>{n.title}</TableCell>
                       <TableCell>{n.category}</TableCell>
-                      <TableCell>{format(n.createdAt, "PPP")}</TableCell>
+                      <TableCell>{format(n.createdAt.toDate(), "PPP")}</TableCell>
 
                       <TableCell className="text-right">
                         <AlertDialog>
@@ -301,7 +232,7 @@ export default function AdminNotificationsPage() {
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => handleDelete(n.id)}
+                                onClick={() => deleteNotification(n.id)}
                                 className="bg-red-600 hover:bg-red-700"
                               >
                                 Delete
@@ -321,4 +252,3 @@ export default function AdminNotificationsPage() {
     </div>
   );
 }
-
