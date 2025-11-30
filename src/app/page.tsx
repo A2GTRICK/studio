@@ -242,8 +242,8 @@ export default function Home() {
             </div>
 
             <div className="relative mt-12 w-full overflow-hidden">
-                <div className="flex animate-marquee">
-                    <div className="flex w-full justify-around">
+                <div className="flex whitespace-nowrap animate-marquee">
+                    <div className="flex-shrink-0 w-full flex justify-around">
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
@@ -254,7 +254,7 @@ export default function Home() {
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">phamA2G</span>
                     </div>
-                     <div className="flex w-full justify-around" aria-hidden="true">
+                     <div className="flex-shrink-0 w-full flex justify-around" aria-hidden="true">
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
@@ -276,5 +276,7 @@ export default function Home() {
     </div>
   );
 }
+
+    
 
     
