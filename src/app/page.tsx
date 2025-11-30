@@ -81,7 +81,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {features.map((feature, index) => (
-                <div key={index} className="bg-card p-8 rounded-xl shadow-lg border border-transparent hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1">
+                <div key={index} className="flex flex-col items-center text-center">
                   <div className={`w-16 h-16 rounded-full flex items-center justify-center ${feature.bgColor} mb-4`}>
                     {feature.icon}
                   </div>
