@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { fetchAllNotifications } from "@/services/notifications";
 
@@ -10,6 +9,7 @@ export async function GET() {
     return NextResponse.json(list);
   } catch (error) {
     console.error("API Error fetching notifications:", error);
-    return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Failed to fetch notifications", details: errorMessage }, { status: 500 });
   }
 }

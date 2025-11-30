@@ -8,23 +8,26 @@ export async function POST(req: Request) {
     const { title, summary, category, link } = body;
 
     if (!title || !summary || !category) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
-    const notification = {
+    const docRef = await adminDb.collection("custom_notifications").add({
       title,
       summary,
       category,
       link: link || null,
       createdAt: Timestamp.now(),
-    };
-
-    const docRef = await adminDb.collection("custom_notifications").add(notification);
+    });
 
     return NextResponse.json({ success: true, id: docRef.id });
-  } catch (error) {
-    console.error("API Create Notification Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+  } catch (err: any) {
+    console.error("CREATE notification error:", err);
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
   }
 }

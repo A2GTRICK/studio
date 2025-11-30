@@ -7,15 +7,20 @@ export async function DELETE(req: Request) {
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "Notification ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Notification ID is required" },
+        { status: 400 }
+      );
     }
 
     await adminDb.collection("custom_notifications").doc(id).delete();
 
     return NextResponse.json({ success: true, message: "Notification deleted" });
-  } catch (error) {
-    console.error("API Delete Notification Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+  } catch (err: any) {
+    console.error("DELETE notification error:", err);
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
   }
 }
