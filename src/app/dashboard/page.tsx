@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Layers, GraduationCap, Megaphone, Sparkles } from "lucide-react";
+import { BookOpen, Layers, GraduationCap, Sparkles } from "lucide-react";
 import clsx from "clsx";
 
 const features = [
@@ -25,13 +25,6 @@ const features = [
     href: "/dashboard/services",
     icon: <GraduationCap size={28} />,
     accent: "from-rose-200 to-rose-50",
-  },
-  {
-    title: "Latest Update",
-    desc: "New Pharmacognosy Unit 2 diagrams added.",
-    href: "/dashboard/updates",
-    icon: <Megaphone size={28} />,
-    accent: "from-green-200 to-green-50",
   },
 ];
 
@@ -109,17 +102,6 @@ export default function DashboardPage() {
               <Link href="/dashboard/mcq-practice" className="inline-flex items-center gap-2 rounded-full px-4 py-2 border bg-transparent text-sm font-medium">
                 Start Practice
               </Link>
-            </div>
-          </div>
-
-          {/* Hero right: subtle card */}
-          <div className="hidden md:block">
-            <div className="rounded-xl p-4 bg-white/80 border border-white/40 shadow-sm backdrop-blur-sm w-72">
-              <div className="text-sm font-semibold text-slate-800">Latest Update</div>
-              <p className="mt-2 text-sm text-slate-600">Pharmacognosy Unit 2 diagrams added. Check the Notes Library.</p>
-              <div className="mt-3 text-right">
-                <Link href="/dashboard/updates" className="text-sm text-indigo-600 underline">View update →</Link>
-              </div>
             </div>
           </div>
         </div>
