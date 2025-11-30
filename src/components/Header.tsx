@@ -1,4 +1,3 @@
-
 // src/components/Header.tsx
 "use client";
 import Link from 'next/link';
@@ -6,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
-    { href: '/dashboard', label: 'Dashboard' },
     { href: '/dashboard/notes', label: 'Notes' },
     { href: '/dashboard/mcq-practice', label: 'MCQ Practice' },
     { href: '/dashboard/services', label: 'Services' },
@@ -32,7 +30,7 @@ export default function Header() {
                   href={link.href} 
                   className={cn(
                     "text-sm font-medium transition-colors",
-                    pathname === link.href 
+                    pathname.startsWith(link.href)
                       ? "text-primary" 
                       : "text-muted-foreground hover:text-primary"
                   )}
@@ -44,12 +42,7 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link 
-              href="/dashboard" 
-              className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm font-semibold shadow-sm hover:bg-primary/90 transition-colors"
-            >
-              Dashboard
-            </Link>
+             {/* The dashboard button was here and has been removed */}
           </div>
         </div>
       </div>
