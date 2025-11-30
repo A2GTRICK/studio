@@ -6,13 +6,18 @@ export const MortarAndPestle = (props: React.SVGProps<SVGSVGElement>) => (
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
+    strokeWidth="1.5"
     strokeLinecap="round"
     strokeLinejoin="round"
     {...props}
   >
-    <path d="M20 21 9 10" />
-    <path d="M14.5 18a2.5 2.5 0 0 0-3-4.16l-3.1-6.2a.5.5 0 0 0-.9-.13l-2.7 5.1a.5.5 0 0 0 .14.65l3.1 3.1" />
-    <path d="M19.5 13.5a2.5 2.5 0 0 0-4.16-3l-6.2-3.1a.5.5 0 0 0-.65.14l-5.1 2.7a.5.5 0 0 0 .13.9l6.2 3.1" />
-    <path d="m3 21 6-6" />
+    {/* Bowl of Hygieia - A more standard and cleaner pharmacy symbol */}
+    <path d="M18.3,5.9a7.4,7.4,0,0,0-10.5,0" />
+    <path d="M19,8.4a9.9,9.9,0,0,0-14,0" />
+    <path d="M12,14.9v6" />
+    <path d="M10,20.9h4" />
+    <path d="M12,2.9a4.5,4.5,0,0,1,4.5,4.5v0a4.5,4.5,0,0,1-4.5,4.5h0a4.5,4.5,0,0,1-4.5-4.5v0A4.5,4.5,0,0,1,12,2.9Z" />
+    <path d="M14.5,7.4H9.5" />
+    <path d="M12,9.9V4.9" />
   </svg>
 );
