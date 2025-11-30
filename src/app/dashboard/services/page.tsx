@@ -1,67 +1,51 @@
 
-export default function AcademicServices() {
+'use client';
+
+import { useState } from 'react';
+import { services, serviceCategories } from '@/lib/services-data';
+import { ServiceCard } from '@/components/service-card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { GraduationCap } from 'lucide-react';
+
+export default function AcademicServicesPage() {
+  const [activeTab, setActiveTab] = useState('All');
+
+  const filteredServices = activeTab === 'All'
+    ? services
+    : services.filter(s => s.category === activeTab);
+
   return (
-    <div className="p-6 space-y-6">
-
-      <h1 className="text-2xl font-bold">Academic Services</h1>
-      <p className="text-gray-600">
-        Get expert help for academic writing, projects, internship work and more.
-      </p>
-
-      {/* Services Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-
-        {/* Service Card */}
-        <div className="p-6 bg-white border rounded-xl shadow-sm space-y-3">
-          <h2 className="text-xl font-semibold">Internship Report Writing</h2>
-          <p className="text-gray-600">
-            Professionally written internship reports for D.Pharm, B.Pharm & M.Pharm.
-          </p>
-          <a href="#" className="text-blue-600 font-semibold">Request Service →</a>
+    <div className="flex flex-col gap-8">
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <GraduationCap className="h-8 w-8 text-primary" />
+          <h1 className="font-headline text-3xl font-bold tracking-tight">
+            Academic Services Hub
+          </h1>
         </div>
-
-        <div className="p-6 bg-white border rounded-xl shadow-sm space-y-3">
-          <h2 className="text-xl font-semibold">Dissertation / Thesis Help</h2>
-          <p className="text-gray-600">
-            Complete guidance for thesis writing, formatting and proofreading.
-          </p>
-          <a href="#" className="text-blue-600 font-semibold">Request Service →</a>
-        </div>
-
-        <div className="p-6 bg-white border rounded-xl shadow-sm space-y-3">
-          <h2 className="text-xl font-semibold">Project File Preparation</h2>
-          <p className="text-gray-600">
-            Ready-made and custom pharmacy project files with charts and diagrams.
-          </p>
-          <a href="#" className="text-blue-600 font-semibold">Request Service →</a>
-        </div>
-
-        <div className="p-6 bg-white border rounded-xl shadow-sm space-y-3">
-          <h2 className="text-xl font-semibold">Lab Manual Notes</h2>
-          <p className="text-gray-600">
-            Complete lab manual help for Pharmaceutics, Pharmacology & Chemistry.
-          </p>
-          <a href="#" className="text-blue-600 font-semibold">Request Service →</a>
-        </div>
-
-        <div className="p-6 bg-white border rounded-xl shadow-sm space-y-3">
-          <h2 className="text-xl font-semibold">Assignment Help</h2>
-          <p className="text-gray-600">
-            Get topic-wise assignments prepared with diagrams and references.
-          </p>
-          <a href="#" className="text-blue-600 font-semibold">Request Service →</a>
-        </div>
-
-        <div className="p-6 bg-white border rounded-xl shadow-sm space-y-3">
-          <h2 className="text-xl font-semibold">Seminar / PPT Preparation</h2>
-          <p className="text-gray-600">
-            Beautiful and professional PPT creation for pharmacy seminars.
-          </p>
-          <a href="#" className="text-blue-600 font-semibold">Request Service →</a>
-        </div>
-
+        <p className="text-muted-foreground max-w-2xl">
+          Get expert help for academic writing, projects, internship reports, and more. We provide professional support to help you excel in your pharmacy studies.
+        </p>
       </div>
 
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-auto">
+          <TabsTrigger value="All">All Services</TabsTrigger>
+          {serviceCategories.map(category => (
+            <TabsTrigger key={category} value={category}>
+              {category}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <div className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredServices.map(service => (
+              <ServiceCard key={service.slug} service={service} />
+            ))}
+          </div>
+        </div>
+      </Tabs>
     </div>
   );
 }
