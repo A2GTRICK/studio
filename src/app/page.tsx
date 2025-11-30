@@ -7,39 +7,6 @@ import AnimatedHeroIcon from '@/components/animated-hero-icon';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-const features = [
-  {
-    title: "AI Note Generator",
-    description: "Generate comprehensive, syllabus-aligned notes on any topic in seconds.",
-    image: {
-      src: "https://picsum.photos/seed/notes/600/400",
-      width: 600,
-      height: 400,
-      aiHint: "notebook study"
-    }
-  },
-  {
-    title: "Exam-Ready Quizzes",
-    description: "Create customized MCQs for GPAT, NIPER, and other exams to test your knowledge.",
-    image: {
-      src: "https://picsum.photos/seed/quiz/600/400",
-      width: 600,
-      height: 400,
-      aiHint: "exam test"
-    }
-  },
-  {
-    title: "Curated Content Library",
-    description: "Access a library of expert-verified notes and practice sets for all your subjects.",
-    image: {
-      src: "https://picsum_photos/seed/library/600/400",
-      width: 600,
-      height: 400,
-      aiHint: "books library"
-    }
-  }
-];
-
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -81,39 +48,6 @@ export default function Home() {
                 <div className="w-full max-w-sm mx-auto lg:max-w-md h-auto aspect-square">
                     <AnimatedHeroIcon />
                 </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-12 md:py-24 bg-secondary/50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h3 className="font-headline text-3xl font-bold">Your Ultimate Pharmacy Toolkit</h3>
-              <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto">
-                Everything you need to excel in your pharmacy curriculum and competitive exams, all in one place.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature) => (
-                <Card key={feature.title} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <CardHeader className="p-0">
-                    <Image 
-                      src={feature.image.src} 
-                      alt={feature.title} 
-                      width={feature.image.width} 
-                      height={feature.image.height} 
-                      className="w-full h-48 object-cover" 
-                      data-ai-hint={feature.image.aiHint}
-                    />
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <CardTitle className="font-headline text-xl mb-2">{feature.title}</CardTitle>
-                    <p className="text-muted-foreground text-sm">
-                      {feature.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
             </div>
           </div>
         </section>
