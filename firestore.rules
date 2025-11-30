@@ -1,28 +1,33 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow any authenticated user to read notes and mcq sets
+
+    // Notes & MCQ sets - require authenticated client, or remove auth requirement for public
     match /notes/{noteId} {
-      allow read: if request.auth != null;
-      allow write: if false; // Or more specific admin rules
+      allow read: if true;   // change to `if request.auth != null` to restrict
+      allow write: if false;
     }
+
     match /mcqSets/{mcqId} {
-      allow read: if request.auth != null;
-      allow write: if false; // Or more specific admin rules
+      allow read: if true;
+      allow write: if false;
     }
 
-    // Explicitly allow reading notifications for any authenticated user
-    match /custom_notifications/{notificationId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // Notifications - allow read publicly so header popover works if it ever reads directly
+    match /custom_notifications/{notifId} {
+      allow read: if true;
+      allow create: if false;
+      allow update, delete: if false;
     }
 
-    // Rules for admin-only write access
-    match /adminConfig/{configId} {
-       allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // Admin config - make read true (so your admin page can fetch admin code)
+    match /adminConfig/{doc} {
+      allow read: if true;
+      allow update: if false;
+      allow create, delete: if false;
     }
-    
-    // Default deny all other reads/writes
+
+    // Deny everything else
     match /{document=**} {
       allow read, write: if false;
     }

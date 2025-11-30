@@ -1,67 +1,44 @@
-
-import { fetchAllNotifications } from "@/services/notifications";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import { ArrowRight, Bell } from "lucide-react";
-import { getCategoryBadgeVariant } from "@/components/notification-popover";
+// src/app/dashboard/notifications/page.tsx
+import { fetchAllNotifications } from '@/services/notifications';
+import Link from 'next/link';
 
 export default async function NotificationsPage() {
   const notifications = await fetchAllNotifications();
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pt-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-headline font-bold">Live Notifications</h1>
-        <p className="text-muted-foreground">
-          Latest university updates, exam alerts, and job openings.
-        </p>
+    <div className="max-w-5xl mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Live Notifications</h1>
+        <p className="text-sm text-muted-foreground">The latest university updates, exam alerts and job openings.</p>
       </div>
 
-      {notifications.length === 0 ? (
-        <Card className="mt-8">
-            <CardContent className="p-10 flex flex-col items-center justify-center text-center">
-                <Bell className="h-20 w-20 text-muted-foreground/30 mb-4" />
-                <h3 className="text-xl font-semibold">No Notifications Found</h3>
-                <p className="text-muted-foreground mt-2">There are no new announcements at the moment.</p>
-            </CardContent>
-        </Card>
-      ) : (
-        notifications.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>{item.title}</CardTitle>
-                  <CardDescription>
-                    {new Date(item.createdAt).toLocaleDateString("en-IN", {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    })}
-                  </CardDescription>
-                </div>
+      <div className="space-y-4">
+        {notifications.length === 0 && (
+          <div className="p-6 bg-white rounded-xl shadow">No notifications available.</div>
+        )}
 
-                <Badge variant={getCategoryBadgeVariant(item.category as any)}>{item.category}</Badge>
+        {notifications.map((n) => (
+          <article key={n.id} className="p-6 bg-white rounded-xl shadow">
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <h3 className="text-lg font-semibold">{n.title}</h3>
+                <p className="mt-1 text-sm text-gray-600">{n.summary}</p>
+                {n.link && (
+                  <div className="mt-3">
+                    <a href={n.link} className="text-sm text-purple-600 hover:underline" target="_blank" rel="noreferrer">View source</a>
+                  </div>
+                )}
               </div>
-            </CardHeader>
-
-            <CardContent>
-              <p>{item.summary}</p>
-            </CardContent>
-
-            {item.link && (
-              <CardFooter>
-                <Link href={item.link} target="_blank">
-                  <span className="flex items-center gap-2 text-sm text-blue-600">
-                    View Source <ArrowRight size={16} />
-                  </span>
-                </Link>
-              </CardFooter>
-            )}
-          </Card>
-        ))
-      )}
+              <div className="text-right text-xs text-gray-400">
+                {n.createdAt ? new Date(n.createdAt).toLocaleString('en-IN', { dateStyle: 'medium' }) : '—'}
+                <div className="mt-2">
+                  <span className="px-2 py-1 border rounded-lg text-xs bg-gray-50">{n.category}</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
