@@ -2,11 +2,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpen, Layers, GraduationCap, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, BookOpen, Layers, GraduationCap, CheckCircle2, Youtube, Send, Globe } from 'lucide-react';
 import Link from 'next/link';
 import AnimatedHeroIcon from '@/components/animated-hero-icon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Image from 'next/image';
+import { SVGProps } from 'react';
 
 const features = [
   {
@@ -39,6 +40,19 @@ const faqData = [
         question: "Who is this platform for?",
         answer: "Our platform is designed for D.Pharm, B.Pharm, and M.Pharm students, as well as those preparing for competitive exams like GPAT, NIPER, and Drug Inspector tests."
     }
+];
+
+const WhatsAppIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.886-.001 2.269.655 4.357 1.849 6.069l-1.104 4.053 4.144-1.088z"/>
+    </svg>
+);
+
+const socialLinks = [
+    { name: 'YouTube', href: 'https://youtube.com/@a2g_tricks?si=_Ocd7GZHI39TUhof', icon: Youtube, isPrimary: true },
+    { name: 'Telegram', href: 'https://t.me/a2gtrickacademy', icon: Send },
+    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029VafwdunEKyZOy2acO41A', icon: WhatsAppIcon },
+    { name: 'Website', href: 'https://a2gtricks.wordpress.com', icon: Globe },
 ];
 
 export default function Home() {
@@ -183,20 +197,28 @@ export default function Home() {
                 </div>
             </div>
         </section>
-
       </main>
 
       <footer className="bg-secondary/50 py-12 border-t">
         <div className="container mx-auto px-4 text-center">
-            <h4 className="font-headline text-2xl font-bold">Start Your Smart Learning Journey Today</h4>
-            <p className="mt-2 text-muted-foreground">Join thousands of students who are already learning smarter with phamA2G.</p>
-            <div className="mt-6">
+            <h4 className="font-headline text-2xl font-bold">Stay Connected & Join Our Community</h4>
+             <p className="mt-2 text-muted-foreground max-w-xl mx-auto">Get updates on new notes, study resources, and important exam alerts.</p>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button size="lg" asChild>
-                    <Link href="/dashboard">
-                        Enter Dashboard
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
+                    <a href={mailtoLink}>
+                        Join Us
+                    </a>
                 </Button>
+            </div>
+             <div className="mt-8 flex justify-center flex-wrap gap-4">
+                {socialLinks.map((link) => (
+                    <Button key={link.name} variant={link.isPrimary ? "default" : "outline"} asChild>
+                        <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.name}>
+                            <link.icon className="mr-2 h-4 w-4" />
+                            <span>{link.name}</span>
+                        </a>
+                    </Button>
+                ))}
             </div>
             <div className="mt-12 text-center text-sm text-muted-foreground">
               <p>&copy; {new Date().getFullYear()} phamA2G. All rights reserved.</p>
