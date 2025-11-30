@@ -1,12 +1,53 @@
 
 // src/app/dashboard/notifications/page.tsx
-import { fetchAllNotifications } from '@/services/notifications';
+"use client";
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { collection, getDocs, orderBy, query, Timestamp } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
-export const dynamic = 'force-dynamic';
+type NotificationRecord = {
+  id: string;
+  title: string;
+  summary: string;
+  category: string;
+  link?: string;
+  createdAt: Date;
+};
 
-export default async function NotificationsPage() {
-  const notifications = await fetchAllNotifications();
+export default function NotificationsPage() {
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchNotifications() {
+      try {
+        const notificationsRef = collection(db, "custom_notifications");
+        const q = query(notificationsRef, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        
+        const fetchedNotifications = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                title: data.title,
+                summary: data.summary,
+                category: data.category,
+                link: data.link,
+                createdAt: (data.createdAt as Timestamp).toDate(),
+            } as NotificationRecord;
+        });
+        setNotifications(fetchedNotifications);
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchNotifications();
+  }, []);
+
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -16,11 +57,14 @@ export default async function NotificationsPage() {
       </div>
 
       <div className="space-y-4">
-        {notifications.length === 0 && (
+        {loading && (
+          <div className="p-6 bg-white rounded-xl shadow text-center text-muted-foreground">Loading notifications...</div>
+        )}
+        {!loading && notifications.length === 0 && (
           <div className="p-6 bg-white rounded-xl shadow text-center text-muted-foreground">No notifications available.</div>
         )}
 
-        {notifications.map((n) => (
+        {!loading && notifications.map((n) => (
           <article key={n.id} className="p-6 bg-white rounded-xl shadow-sm border">
             <div className="flex justify-between items-start gap-4">
               <div>
