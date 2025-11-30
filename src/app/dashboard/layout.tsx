@@ -1,4 +1,5 @@
 
+
 import Providers from "@/components/Providers";
 import {
   Sidebar,
@@ -21,6 +22,7 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
+import { NotificationPopover } from "@/components/notification-popover";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -90,14 +92,20 @@ export default function DashboardLayout({
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-12 items-center justify-between border-b px-4 lg:hidden">
-            <Link
-              href="/dashboard"
-              className="text-lg font-bold text-primary"
-            >
-              phamA2G
-            </Link>
-            <SidebarTrigger />
+          <header className="flex h-14 items-center justify-between border-b px-4">
+             <div className="flex items-center gap-2">
+                <SidebarTrigger className="lg:hidden" />
+                <Link
+                  href="/dashboard"
+                  className="text-lg font-bold text-primary lg:hidden"
+                >
+                  phamA2G
+                </Link>
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+                <NotificationPopover />
+                {/* Placeholder for future user nav */}
+            </div>
           </header>
           <main className="flex-1 p-6">{children}</main>
         </SidebarInset>
