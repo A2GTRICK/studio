@@ -16,7 +16,9 @@ import {
   Bell,
   BookOpen,
   FileText,
+  HelpCircle,
   Home,
+  Info,
   Layers,
   Settings,
 } from "lucide-react";
@@ -51,6 +53,16 @@ const menuItems = [
     name: "Notifications",
     icon: <Bell />,
     href: "/dashboard/notifications",
+  },
+   {
+    name: "About Us",
+    icon: <Info />,
+    href: "/dashboard/about",
+  },
+  {
+    name: "Help & FAQ",
+    icon: <HelpCircle />,
+    href: "/dashboard/help",
   },
   {
     name: "Settings",
