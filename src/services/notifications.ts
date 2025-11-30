@@ -1,34 +1,51 @@
+
 'use server';
 
 import { db } from '@/firebase/config';
 import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
-import { fetchPharmacyNews } from '@/ai/flows/fetch-pharmacy-news';
-import { type PharmacyNewsOutput as AiNotification } from "@/ai/flows/types";
+
+// This is the category type from the AI flow, kept for compatibility with the frontend
+// but the AI flow itself is no longer used.
+const validCategories = [
+    "University Update", 
+    "Exam Alert", 
+    "Job Notification", 
+    "Content Update", 
+    "General", 
+    "PCI Circular", 
+    "Industry Hiring", 
+    "Student Alert", 
+    "Paramedical Job"
+] as const;
+
+type NotificationCategory = typeof validCategories[number];
+
 
 // Represents a custom notification created by an admin
 export interface CustomNotification {
     id: string;
     title: string;
     summary: string;
-    category: AiNotification[0]['category'];
+    category: NotificationCategory;
     link?: string;
     createdAt: Timestamp | Date;
 }
 
-// A unified type for any kind of notification
+// A unified type for any kind of notification, now sourced only from Firestore
 export interface UnifiedNotification {
     id: string;
     title: string;
     summary: string;
-    category: AiNotification[0]['category'];
+    category: NotificationCategory;
     date: Date;
     source?: string;
 }
 
 /**
  * Fetches all custom notifications from the 'custom_notifications' collection in Firestore.
+ * This is now the single source of truth for all notifications.
  */
-async function fetchCustomNotifications(): Promise<UnifiedNotification[]> {
+export async function fetchAllNotifications(): Promise<UnifiedNotification[]> {
     try {
         const notificationsRef = collection(db, "custom_notifications");
         const q = query(notificationsRef, orderBy("createdAt", "desc"));
@@ -49,37 +66,5 @@ async function fetchCustomNotifications(): Promise<UnifiedNotification[]> {
     } catch (error) {
         console.error("Failed to fetch custom notifications:", error);
         return []; // Return empty array on error to not break the page
-    }
-}
-
-/**
- * Fetches all notifications from both AI and Firestore sources,
- * merges them, and sorts them by date.
- */
-export async function fetchAllNotifications(): Promise<UnifiedNotification[]> {
-    try {
-        // Fetch from both sources in parallel
-        const [aiNotificationsResult, customNotifications] = await Promise.all([
-            fetchPharmacyNews(),
-            fetchCustomNotifications()
-        ]);
-
-        // Map AI notifications to the unified format
-        const formattedAiNotifications: UnifiedNotification[] = aiNotificationsResult.map(n => ({
-            ...n,
-            date: new Date(n.date),
-        }));
-
-        // Combine and sort all notifications
-        const allNotifications = [...formattedAiNotifications, ...customNotifications];
-        allNotifications.sort((a, b) => b.date.getTime() - a.date.getTime());
-
-        return allNotifications;
-
-    } catch (error) {
-        console.error("Failed to fetch all notifications:", error);
-        // If the AI service fails, we can still return the custom notifications
-        // This makes the feature more resilient.
-        return fetchCustomNotifications();
     }
 }
