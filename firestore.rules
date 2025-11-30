@@ -1,8 +1,30 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow any authenticated user to read notes and mcq sets
+    match /notes/{noteId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Or more specific admin rules
+    }
+    match /mcqSets/{mcqId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Or more specific admin rules
+    }
+
+    // Explicitly allow reading notifications for any authenticated user
+    match /custom_notifications/{notificationId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Rules for admin-only write access
+    match /adminConfig/{configId} {
+       allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Default deny all other reads/writes
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }
