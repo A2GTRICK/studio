@@ -10,8 +10,8 @@ import AnimatedHeroIcon from '@/components/animated-hero-icon';
 const floatingTags = [
   { text: 'GPAT 2025', style: { top: '10%', left: '15%', animationDelay: '0s' } },
   { text: 'B.Pharm', style: { top: '20%', right: '10%', animationDelay: '2s' } },
-  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '25%', animationDelay: '6s' } },
-  { text: 'Medicinal Chemistry', style: { top: '65%', right: '8%', animationDelay: '1s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '20%', animationDelay: '6s' } },
+  { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } },
   { text: 'Human Anatomy', style: { top: '5%', right: '45%', animationDelay: '7s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
 ];
@@ -75,11 +75,11 @@ export default function Home() {
       <footer className="bg-secondary/50 py-12 overflow-x-hidden">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-md text-center">
-            <h4 className="font-headline text-2xl font-bold">Subscribe to Our Newsletter</h4>
-            <p className="mt-2 text-muted-foreground">Stay up to date with the latest features and offers.</p>
+            <h4 className="font-headline text-2xl font-bold">📬 Stay Connected</h4>
+            <p className="mt-2 text-muted-foreground">Get updates on new notes, study resources, and important exam alerts.</p>
             <form className="mt-4 flex gap-2">
               <Input type="email" placeholder="Enter your email" className="flex-1" />
-              <Button type="submit" variant="default">Subscribe</Button>
+              <Button type="submit" variant="default">Join Us</Button>
             </form>
           </div>
            <div className="mt-12 border-t pt-8">
