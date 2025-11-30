@@ -1,9 +1,9 @@
-
 // src/app/dashboard/notes/view/[id]/page.tsx
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from 'next/link';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -11,6 +11,7 @@ import DOMPurify from "dompurify";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { Note } from "@/services/notes";
+import { ArrowLeft } from "lucide-react";
 
 
 /**
@@ -200,6 +201,10 @@ export default function NoteViewPage(): JSX.Element {
   return (
     <div className={`min-h-screen ${THEME.pageBg} w-full flex justify-center px-4 py-10`}>
       <div className="max-w-4xl w-full space-y-8">
+        <Link href="/dashboard/notes" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Notes Library
+        </Link>
         {/* Header Card */}
         <div className={THEME.card + " p-8"}>
           <div className="flex items-start gap-4">

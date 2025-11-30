@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useMcqSets } from "@/context/mcq-context";
+import { ArrowLeft } from "lucide-react";
 
 function ProgressBar({ idx, total }: { idx: number; total: number }) {
   const percent = Math.round(((idx + 1) / total) * 100);
@@ -72,6 +73,10 @@ export default function MCQSetPage() {
   return (
     <div className="min-h-screen bg-[#F8F5FF] p-6">
       <div className="max-w-3xl mx-auto space-y-6">
+        <Link href="/dashboard/mcq-practice" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to MCQ Library
+        </Link>
         <header className="bg-white p-6 rounded-xl shadow-sm border">
           <div className="flex justify-between items-start">
             <div>

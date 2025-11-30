@@ -2,9 +2,10 @@
 'use client';
 
 import { useState } from "react";
+import Link from 'next/link';
 import { db } from "@/firebase/config";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { Loader2, Link as LinkIcon, FileText, UploadCloud } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 
 export default function UploadNotesAdmin() {
   const [title, setTitle] = useState("");
@@ -78,7 +79,10 @@ export default function UploadNotesAdmin() {
   return (
     <div className="min-h-screen bg-[#f5f2ff] p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8 border border-purple-200">
-
+        <Link href="/adminarvindsharma/dashboard" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary mb-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+        </Link>
         {/* HEADER */}
         <h1 className="text-3xl font-bold text-purple-800 mb-1">Add New Note</h1>
         <p className="text-gray-600 mb-8">Use this form to upload high-quality pharmacy notes.</p>
