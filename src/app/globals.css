@@ -120,3 +120,37 @@ body {
       --tw-prose-invert-td-borders: hsl(var(--border));
   }
 }
+
+@layer utilities {
+    @keyframes orbit-fast {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .animate-orbit-fast {
+        animation: orbit-fast 10s linear infinite;
+    }
+
+    @keyframes orbit-medium {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(-360deg); }
+    }
+    .animate-orbit-medium {
+        animation: orbit-medium 20s linear infinite;
+    }
+
+    @keyframes orbit-slow {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .animate-orbit-slow {
+        animation: orbit-slow 30s linear infinite;
+    }
+
+    @keyframes pulse-glow {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.02); }
+    }
+    .animate-pulse-glow {
+        animation: pulse-glow 5s ease-in-out infinite;
+    }
+}
