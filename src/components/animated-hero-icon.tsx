@@ -8,6 +8,9 @@ const AnimatedHeroIcon = () => {
           <stop offset="0%" style={{ stopColor: 'hsl(var(--primary))', stopOpacity: 0.3 }} />
           <stop offset="100%" style={{ stopColor: 'hsl(var(--primary))', stopOpacity: 0 }} />
         </radialGradient>
+        <clipPath id="logo-clip">
+            <circle cx="100" cy="100" r="30" />
+        </clipPath>
       </defs>
 
       {/* Background glow */}
@@ -64,7 +67,7 @@ const AnimatedHeroIcon = () => {
       {/* Central Element */}
       <g className="animate-pulse-glow">
         <circle cx="100" cy="100" r="32" fill="hsl(var(--background))" />
-         <image href="https://i.postimg.cc/k5CkkR0S/image-logo.png" x="70" y="70" height="60" width="60" />
+         <image href="https://i.postimg.cc/k5CkkR0S/image-logo.png" x="70" y="70" height="60" width="60" clipPath="url(#logo-clip)" />
       </g>
     </svg>
   );
