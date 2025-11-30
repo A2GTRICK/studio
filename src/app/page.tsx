@@ -56,12 +56,12 @@ const socialLinks = [
 ];
 
 const floatingTags = [
-  { text: 'GPAT 2025', style: { top: '10%', left: '15%', animationDelay: '0s' } },
-  { text: 'B.Pharm', style: { top: '20%', right: '10%', animationDelay: '2s' } },
-  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '15%', animationDelay: '6s' } },
-  { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } },
-  { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
-  { text: 'Human Anatomy', style: { top: '5%', right: '25%', animationDelay: '7s' } },
+  { text: 'GPAT 2025', style: { top: '5%', left: '5%', animationDelay: '0s' } },
+  { text: 'B.Pharm', style: { top: '20%', right: '5%', animationDelay: '2s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '10%', animationDelay: '6s' } },
+  { text: 'Medicinal Chemistry', style: { top: '70%', right: '1%', animationDelay: '1s' } },
+  { text: 'Pharmacognosy', style: { bottom: '5%', left: '20%', animationDelay: '5s' } },
+  { text: 'Human Anatomy', style: { top: '0%', right: '25%', animationDelay: '7s' } },
 ];
 
 
@@ -241,31 +241,33 @@ export default function Home() {
                 ))}
             </div>
 
-            <div className="relative mt-12 w-full overflow-hidden">
-                <div className="flex whitespace-nowrap animate-marquee">
-                    <div className="flex-shrink-0 w-full flex justify-around">
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">phamA2G</span>
-                    </div>
-                     <div className="flex-shrink-0 w-full flex justify-around" aria-hidden="true">
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx_4">phamA2G</span>
-                    </div>
-                </div>
+            <div className="mt-12 space-y-4">
+              <div className="relative w-full overflow-hidden">
+                  <div className="flex whitespace-nowrap animate-marquee">
+                      <div className="flex-shrink-0 w-full flex justify-around">
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">phamA2G</span>
+                      </div>
+                       <div className="flex-shrink-0 w-full flex justify-around" aria-hidden="true">
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
+                          <span className="text-lg font-semibold text-muted-foreground/80 mx_4">phamA2G</span>
+                      </div>
+                  </div>
+              </div>
             </div>
 
             <div className="mt-12 text-center text-sm text-muted-foreground">
@@ -276,5 +278,7 @@ export default function Home() {
     </div>
   );
 }
+
+    
 
     
