@@ -1,4 +1,6 @@
 
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight } from 'lucide-react';
@@ -47,10 +49,10 @@ export default function Home() {
             <div className="grid lg:grid-cols-2 gap-8 items-center">
                 <div className="text-center lg:text-left">
                     <h2 className="font-headline text-4xl font-bold tracking-tighter text-gray-900 dark:text-gray-50 sm:text-5xl md:text-6xl">
-                    Supercharge Your Pharmacy Padhai
+                    Supercharge Your Pharmacy Padhai with phamA2G
                     </h2>
                     <p className="mt-4 max-w-[600px] text-lg text-muted-foreground md:text-xl">
-                    Your smart friend for pharmacy exams and studies. Focus on learning, and we'll handle the rest. Ab padhai hogi smart!
+                    Your smart friend for pharmacy exams and studies. Focus on learning, and we'll handle the rest. “अब पढ़ाई होगी आसान।
                     </p>
                     <div className="mt-8">
                     <Button size="lg" asChild>
