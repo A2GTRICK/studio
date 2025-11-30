@@ -1,15 +1,15 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { db } from "@/firebase/config";
 
 export default function AdminConfigPage() {
   const router = useRouter();
-  const db = useFirestore();
   const [curCode, setCurCode] = useState("");
   const [newCode, setNewCode] = useState("");
   const [status, setStatus] = useState<string | null>(null);
@@ -23,12 +23,21 @@ export default function AdminConfigPage() {
     
     if(!db) return;
     (async () => {
-      const snap = await getDoc(doc(db, "adminConfig", "main"));
-      if (snap.exists()) {
-        setCurCode(String(snap.data().adminCode || ""));
-      }
+        const docRef = doc(db, "adminConfig", "main");
+        getDoc(docRef)
+        .then((snap) => {
+             if (snap.exists()) {
+                setCurCode(String(snap.data().adminCode || ""));
+            }
+        }).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'get',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
     })();
-  }, [db, router]);
+  }, [router]);
 
   const handleChange = async () => {
     if (!db) {
@@ -52,7 +61,6 @@ export default function AdminConfigPage() {
         setStatus("Admin code updated.");
       })
       .catch((serverError: any) => {
-        console.error(serverError);
         setStatus(`Update failed: Check Firestore rules for adminConfig collection.`);
          const permissionError = new FirestorePermissionError({
             path: docRef.path,

@@ -60,6 +60,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { format } from 'date-fns';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface CustomNotification {
   id: string;
@@ -101,12 +103,11 @@ export default function AdminNotificationsPage() {
         setLoading(false);
       },
       (err) => {
-        console.error("Notification fetch error:", err);
-        toast({
-          title: "Error",
-          description: "Failed to fetch notifications.",
-          variant: "destructive"
+        const permissionError = new FirestorePermissionError({
+            path: 'custom_notifications',
+            operation: 'list',
         });
+        errorEmitter.emit('permission-error', permissionError);
         setLoading(false);
       }
     );
@@ -146,28 +147,49 @@ export default function AdminNotificationsPage() {
       return;
     }
 
-
-    await addDoc(collection(db, "custom_notifications"), {
+    const notificationCollection = collection(db, "custom_notifications");
+    const notificationData = {
       title,
       summary,
       category,
       link,
       createdAt: serverTimestamp(),
       adminKey: adminKey 
+    };
+
+    addDoc(notificationCollection, notificationData)
+    .then(() => {
+        toast({ title: "Success", description: `Published: ${title}` });
+        e.target.reset();
+    })
+    .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: notificationCollection.path,
+            operation: 'create',
+            requestResourceData: notificationData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    }).finally(() => {
+        setIsSubmitting(false);
     });
-
-    toast({ title: "Success", description: `Published: ${title}` });
-
-    e.target.reset();
-    setIsSubmitting(false);
   };
 
   // 📌 DELETE NOTIFICATION
   const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, 'custom_notifications', id));
-    toast({
-      title: "Deleted",
-      description: "Notification removed."
+    const noteDoc = doc(db, 'custom_notifications', id);
+    deleteDoc(noteDoc)
+    .then(() => {
+        toast({
+            title: "Deleted",
+            description: "Notification removed."
+        });
+    })
+    .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: noteDoc.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
     });
   };
 
@@ -299,3 +321,4 @@ export default function AdminNotificationsPage() {
     </div>
   );
 }
+

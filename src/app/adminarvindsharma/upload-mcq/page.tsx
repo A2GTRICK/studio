@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,10 +7,10 @@ import { useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { db } from "@/firebase/config";
 
 export default function UploadMCQPage() {
   const router = useRouter();
-  const db = useFirestore();
   const [title, setTitle] = useState("");
   const [course, setCourse] = useState("");
   const [subject, setSubject] = useState("");
@@ -76,7 +77,6 @@ export default function UploadMCQPage() {
           requestResourceData: mcqData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        console.error(serverError);
       });
   };
 
