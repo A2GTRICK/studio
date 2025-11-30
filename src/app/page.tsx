@@ -92,35 +92,24 @@ export default function Home() {
 
       <footer className="bg-secondary/50 py-12 overflow-x-hidden">
         <div className="container mx-auto px-4">
-            <div className="grid gap-12 md:grid-cols-2">
-
-                <div className="text-center md:text-left">
-                    <h4 className="font-headline text-2xl font-bold">📬 Stay Connected</h4>
-                    <p className="mt-2 text-muted-foreground">Get updates on new notes, study resources, and important exam alerts.</p>
-                    <div className="mt-4">
-                        <Button asChild size="lg">
-                            <a href={mailtoLink}>
-                                Join Us
+            <div className="max-w-4xl mx-auto text-center">
+                <h4 className="font-headline text-2xl font-bold">🤝 Stay Connected & Join Our Community</h4>
+                <p className="mt-2 text-muted-foreground">Get updates on new notes, resources, and connect with fellow students on our channels.</p>
+                <div className="mt-6 flex justify-center flex-wrap gap-3">
+                    <Button asChild size="lg">
+                        <a href={mailtoLink}>
+                            Join Us
+                        </a>
+                    </Button>
+                    {socialLinks.map((link) => (
+                        <Button key={link.name} variant={link.variant} asChild>
+                            <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.name}>
+                                <link.icon className="mr-2 h-4 w-4" />
+                                <span>{link.name}</span>
                             </a>
                         </Button>
-                    </div>
+                    ))}
                 </div>
-
-                <div className="text-center md:text-left">
-                     <h4 className="font-headline text-2xl font-bold">🤝 Join Our Community</h4>
-                     <p className="mt-2 text-muted-foreground">Connect with fellow pharmacy students and stay updated on our channels.</p>
-                    <div className="mt-4 flex justify-center md:justify-start flex-wrap gap-3">
-                        {socialLinks.map((link) => (
-                            <Button key={link.name} variant={link.variant} asChild>
-                                <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.name}>
-                                    <link.icon className="mr-2 h-4 w-4" />
-                                    <span>{link.name}</span>
-                                </a>
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-
             </div>
            <div className="mt-12 border-t pt-8">
             <div className="relative flex overflow-x-hidden">
