@@ -53,6 +53,11 @@ export default function AdminNotificationsPage() {
         return;
     }
 
+    if (!db) {
+        setLoading(false);
+        return;
+    }
+
     const q = query(collection(db, "custom_notifications"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((doc) => {
@@ -84,6 +89,11 @@ export default function AdminNotificationsPage() {
 
   const createNotification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!db) {
+        toast({ title: "Error", description: "Firestore not initialized."});
+        return;
+    }
+
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     const notificationData = {
@@ -123,6 +133,10 @@ export default function AdminNotificationsPage() {
   };
 
   const deleteNotification = async (id: string) => {
+    if (!db) {
+        toast({ title: "Error", description: "Firestore not initialized."});
+        return;
+    }
     const noteDoc = doc(db, "custom_notifications", id);
     deleteDoc(noteDoc)
     .then(() => {
