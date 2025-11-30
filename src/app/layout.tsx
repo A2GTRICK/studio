@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={cn(
-        "min-h-screen bg-background font-body text-foreground",
+        "min-h-screen font-body text-foreground bg-gradient-to-br from-purple-50/50 via-white to-blue-50/50",
         fontBody.variable
       )}>
         <AppProviders>
