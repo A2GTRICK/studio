@@ -70,8 +70,16 @@ export default function NotificationPopover() {
 
   return (
     <div className="relative">
-      <button ref={buttonRef} onClick={() => setIsOpen(!isOpen)} className="p-2 rounded-full hover:bg-gray-100">
+      <button 
+        ref={buttonRef} 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="relative p-2 rounded-full hover:bg-gray-100"
+      >
         <Bell />
+        <span className="absolute top-1 right-1 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+        </span>
       </button>
       
       {isOpen && (
