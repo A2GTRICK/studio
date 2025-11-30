@@ -1,8 +1,10 @@
+
 'use client';
 
 import Link from 'next/link';
 import { BookOpen, Layers, GraduationCap, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/components/ui/button';
 
 const features = [
   {
