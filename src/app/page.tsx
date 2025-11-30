@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -15,53 +14,12 @@ const floatingTags = [
   { text: 'D.Pharm Notes', style: { bottom: '15%', right: '20%', animationDelay: '6s' } },
   { text: 'Human Anatomy', style: { top: '5%', right: '45%', animationDelay: '7s' } },
   { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } },
-  { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
+   { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
 ];
 
 export default function Home() {
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
-  const handleSubscription = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: 'Successfully Subscribed!',
-          description: "Thank you for joining. You'll get the latest updates.",
-        });
-        setEmail('');
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Subscription Failed',
-          description: result.error || 'Something went wrong. Please try again.',
-        });
-      }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again later.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  const mailtoLink = "mailto:a2gtrickacademy@gmail.com?subject=Subscribe%20to%20phamA2G%20Newsletter&body=Please%20add%20me%20to%20your%20mailing%20list!";
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -123,20 +81,13 @@ export default function Home() {
           <div className="mx-auto max-w-md text-center">
             <h4 className="font-headline text-2xl font-bold">📬 Stay Connected</h4>
             <p className="mt-2 text-muted-foreground">Get updates on new notes, study resources, and important exam alerts.</p>
-            <form onSubmit={handleSubscription} className="mt-4 flex gap-2">
-              <Input 
-                type="email" 
-                placeholder="Enter your email" 
-                className="flex-1" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-              <Button type="submit" variant="default" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin" /> : 'Join Us'}
-              </Button>
-            </form>
+             <div className="mt-4">
+                <Button asChild size="lg">
+                    <a href={mailtoLink}>
+                        Join Us
+                    </a>
+                </Button>
+            </div>
           </div>
            <div className="mt-12 border-t pt-8">
             <div className="relative flex overflow-x-hidden">

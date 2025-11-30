@@ -44,15 +44,6 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // -----------------------------
-    // SUBSCRIBERS – PUBLIC CREATE
-    // -----------------------------
-    match /subscribers/{subscriberId} {
-      allow create: if true; // Anyone can subscribe
-      allow read, update, delete: if false; // Only backend can manage
-    }
-
-
     // Fallback: Deny all other access
     match /{document=**} {
       allow read, write: if false;
