@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ const floatingTags = [
   { text: 'B.Pharm', style: { top: '20%', right: '10%', animationDelay: '2s' } },
   { text: 'D.Pharm Notes', style: { bottom: '15%', right: '25%', animationDelay: '6s' } },
   { text: 'Medicinal Chemistry', style: { top: '65%', right: '8%', animationDelay: '1s' } },
-  { text: 'Human Anatomy', style: { top: '5%', right: '35%', animationDelay: '7s' } },
+  { text: 'Human Anatomy', style: { top: '5%', right: '45%', animationDelay: '7s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
 ];
 
@@ -83,8 +84,9 @@ export default function Home() {
           </div>
            <div className="mt-12 border-t pt-8">
             <div className="relative flex overflow-x-hidden">
-              <div className="py-2 animate-marquee whitespace-nowrap">
-                <span className="text-sm text-muted-foreground">Pharmacy Notes Library • MCQ Practice for All Levels • Study Material for B.Pharm & D.Pharm • Project Files, Reports & Academic Support • phamA2G</span>
+              <div className="py-2 animate-marquee whitespace-nowrap flex">
+                <span className="text-sm text-muted-foreground mx-4">Pharmacy Notes Library • MCQ Practice for All Levels • Study Material for B.Pharm & D.Pharm • Project Files, Reports & Academic Support • phamA2G</span>
+                <span className="text-sm text-muted-foreground mx-4">Pharmacy Notes Library • MCQ Practice for All Levels • Study Material for B.Pharm & D.Pharm • Project Files, Reports & Academic Support • phamA2G</span>
               </div>
             </div>
             <div className="mt-4 text-center text-sm text-muted-foreground">
