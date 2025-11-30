@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -10,9 +9,9 @@ import AnimatedHeroIcon from '@/components/animated-hero-icon';
 const floatingTags = [
   { text: 'GPAT 2025', style: { top: '10%', left: '15%', animationDelay: '0s' } },
   { text: 'B.Pharm', style: { top: '20%', right: '10%', animationDelay: '2s' } },
-  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '15%', animationDelay: '6s' } },
-  { text: 'Human Anatomy', style: { top: '5%', right: '25%', animationDelay: '7s' } },
-  { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '25%', animationDelay: '6s' } },
+  { text: 'Medicinal Chemistry', style: { top: '65%', right: '8%', animationDelay: '1s' } },
+  { text: 'Human Anatomy', style: { top: '5%', right: '35%', animationDelay: '7s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
 ];
 
@@ -72,7 +71,7 @@ export default function Home() {
 
       </main>
 
-      <footer className="bg-secondary/50 py-12">
+      <footer className="bg-secondary/50 py-12 overflow-x-hidden">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-md text-center">
             <h4 className="font-headline text-2xl font-bold">Subscribe to Our Newsletter</h4>
@@ -82,8 +81,15 @@ export default function Home() {
               <Button type="submit" variant="default">Subscribe</Button>
             </form>
           </div>
-          <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} phamA2G. All rights reserved.</p>
+           <div className="mt-12 border-t pt-8">
+            <div className="relative flex overflow-x-hidden">
+              <div className="py-2 animate-marquee whitespace-nowrap">
+                <span className="text-sm text-muted-foreground">Pharmacy Notes Library • MCQ Practice for All Levels • Study Material for B.Pharm & D.Pharm • Project Files, Reports & Academic Support • phamA2G</span>
+              </div>
+            </div>
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              <p>&copy; {new Date().getFullYear()} phamA2G. All rights reserved.</p>
+            </div>
           </div>
         </div>
       </footer>
