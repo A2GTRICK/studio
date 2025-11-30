@@ -4,9 +4,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase";
+import { useFirestore } from "@/firebase/provider";
 
 export default function AdminDashboard() {
+  const db = useFirestore();
   const [stats, setStats] = useState({
     notes: 0,
     mcq: 0,
@@ -17,7 +18,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       if (!db) {
-        console.error("Firestore DB instance is not available.");
+        console.error("Firestore DB instance is not available for stats.");
         return;
       }
       try {
@@ -36,8 +37,10 @@ export default function AdminDashboard() {
         console.error("Error fetching admin dashboard stats:", error);
       }
     }
-    fetchStats();
-  }, []);
+    if (db) {
+      fetchStats();
+    }
+  }, [db]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 p-6">
@@ -82,7 +85,7 @@ export default function AdminDashboard() {
       {/* QUICK ACTIONS */}
       <h2 className="text-xl font-semibold text-gray-700 mb-3">Quick Actions</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
 
         <Link
           href="/adminarvindsharma/upload-notes"
@@ -100,6 +103,14 @@ export default function AdminDashboard() {
           <p className="text-sm text-gray-600">Create new practice questions.</p>
         </Link>
 
+        <Link
+          href="/adminarvindsharma/notifications"
+          className="block bg-white hover:bg-orange-50 border border-orange-200 p-5 rounded-xl shadow transition"
+        >
+          <h3 className="text-lg font-semibold text-orange-700">🔔 Manage Notifications</h3>
+          <p className="text-sm text-gray-600">Send custom announcements.</p>
+        </Link>
+        
         <Link
           href="/adminarvindsharma/config"
           className="block bg-white hover:bg-green-50 border border-green-200 p-5 rounded-xl shadow transition"
