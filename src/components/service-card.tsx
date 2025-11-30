@@ -33,7 +33,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
         <CardDescription>{description}</CardDescription>
       </CardContent>
       <CardFooter className="flex justify-between items-center bg-secondary/20 p-4">
-        <div className="font-bold text-primary text-sm">{price.replace(/₹/g, '₹')}</div>
+        <div className="font-bold text-primary text-sm">{price}</div>
         <Button asChild size="sm">
           <Link href={`/dashboard/services/${slug}`}>
             Learn More <ArrowRight className="ml-2 h-4 w-4" />
