@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "@/firebase/config";
 import { useRouter } from "next/navigation";
 
 export default function AdminAccess() {
@@ -27,6 +28,8 @@ export default function AdminAccess() {
 
       const adminCode = snap.data().adminCode;
       if (code === adminCode) {
+        sessionStorage.setItem("A2G_ADMIN_KEY", code);
+        sessionStorage.setItem("A2G_ADMIN", "ACTIVE");
         router.push("/adminarvindsharma/dashboard");
       } else {
         setError("Invalid admin access code.");
@@ -49,6 +52,7 @@ export default function AdminAccess() {
         placeholder="Enter access code"
         value={code}
         onChange={(e) => setCode(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && verifyCode()}
       />
 
       {error && <p className="text-red-500 mb-2">{error}</p>}

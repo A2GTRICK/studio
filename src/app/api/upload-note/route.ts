@@ -1,6 +1,7 @@
+
 // src/app/api/upload-note/route.ts
 import { NextResponse } from "next/server";
-import { db, storage } from "@/firebase";
+import { db, storage } from "@/firebase/config";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 

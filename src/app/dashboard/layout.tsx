@@ -1,6 +1,5 @@
 
-
-import Providers from "@/components/Providers";
+import { FirebaseClientProvider } from "@/firebase/client-provider";
 import {
   Sidebar,
   SidebarContent,
@@ -66,7 +65,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Providers>
+    <FirebaseClientProvider>
       <SidebarProvider>
         <Sidebar variant="floating" collapsible="icon" side="left">
           <SidebarContent>
@@ -110,6 +109,6 @@ export default function DashboardLayout({
           <main className="flex-1 p-6">{children}</main>
         </SidebarInset>
       </SidebarProvider>
-    </Providers>
+    </FirebaseClientProvider>
   );
 }

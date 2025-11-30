@@ -1,17 +1,21 @@
+
 // src/app/dashboard/notes/view/[id]/page.tsx
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import DOMPurify from "dompurify";
-import { useNotes } from "@/context/notes-context";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase/config";
+import { Note } from "@/services/notes";
+
 
 /**
  * Premium A2G Note View (client)
- * - reads notes from useNotes()
+ * - Fetches a single note by ID
  * - supports Markdown + inline HTML + GFM
  * - sanitizes HTML with DOMPurify but allows safe iframe embeds (Drive/YouTube)
  * - auto-embeds Drive / YouTube / PDF / images / audio / office files
@@ -139,18 +143,45 @@ function sanitizeForRender(dirty: string) {
 /** Main component */
 export default function NoteViewPage(): JSX.Element {
   const { id } = useParams();
-  const { notes } = useNotes();
+  const [note, setNote] = useState<Note | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const note = notes.find((n) => n.id === id);
+  useEffect(() => {
+    if (!id) return;
+    const fetchNote = async () => {
+      setLoading(true);
+      const noteRef = doc(db, 'notes', id as string);
+      const docSnap = await getDoc(noteRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setNote({ id: docSnap.id, ...data } as Note);
+      } else {
+        setNote(null);
+      }
+      setLoading(false);
+    };
+    fetchNote();
+  }, [id]);
 
   const preprocessed = useMemo(() => {
     if (!note) return "";
-    // prefer note.content; fallback to note.short
-    const raw = (note.content ?? note.short ?? "").toString();
+    const raw = (note.content ?? (note as any).short ?? "").toString();
     const processed = preprocessContent(raw);
     const sanitized = sanitizeForRender(processed);
     return sanitized;
   }, [note]);
+
+  if (loading) {
+     return (
+      <div className={`min-h-screen ${THEME.pageBg} flex items-start justify-center p-6`}>
+        <div className="max-w-3xl w-full space-y-6">
+          <div className={THEME.card + " p-8"}>
+            <h1 className="text-2xl font-bold">Loading Note...</h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!note) {
     return (
@@ -180,7 +211,7 @@ export default function NoteViewPage(): JSX.Element {
                 {note.year && <span>• {note.year}</span>}
                 {note.subject && <span>• {note.subject}</span>}
               </div>
-              {note.short && <p className="mt-4 text-gray-700">{note.short}</p>}
+              {(note as any).short && <p className="mt-4 text-gray-700">{(note as any).short}</p>}
             </div>
           </div>
         </div>

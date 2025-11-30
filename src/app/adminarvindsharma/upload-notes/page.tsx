@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState } from "react";
-import { db } from "@/firebase";
+import { db } from "@/firebase/config";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Loader2, Link as LinkIcon, FileText, UploadCloud } from "lucide-react";
 

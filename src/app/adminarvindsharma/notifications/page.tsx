@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/firebase';
+import { db } from '@/firebase/config';
 import {
   collection,
   addDoc,
@@ -134,6 +134,18 @@ export default function AdminNotificationsPage() {
       setIsSubmitting(false);
       return;
     }
+    
+    const adminKey = sessionStorage.getItem("A2G_ADMIN_KEY");
+    if(!adminKey) {
+       toast({
+        title: "Admin key not found",
+        description: "Please re-verify from the admin page.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
 
     await addDoc(collection(db, "custom_notifications"), {
       title,
@@ -141,7 +153,7 @@ export default function AdminNotificationsPage() {
       category,
       link,
       createdAt: serverTimestamp(),
-      adminKey: "Arvind8826@" // REQUIRED
+      adminKey: adminKey 
     });
 
     toast({ title: "Success", description: `Published: ${title}` });
