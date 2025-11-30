@@ -2,16 +2,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db } from "@/firebase/config";
-import { collection, query, orderBy, limit, onSnapshot, Timestamp } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Bell, Loader2, ArrowRight } from 'lucide-react';
-import { UnifiedNotification } from "@/services/notifications";
+import type { NotificationItem } from "@/services/notifications";
 
-export const getCategoryBadgeVariant = (category: UnifiedNotification['category']) => {
+export const getCategoryBadgeVariant = (category: NotificationItem['category']) => {
     switch(category) {
         case "Exam Alert": return "destructive";
         case "University Update": return "default";
@@ -24,29 +22,31 @@ export const getCategoryBadgeVariant = (category: UnifiedNotification['category'
 }
 
 export function NotificationPopover() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
      if (!isOpen) return;
 
-    const q = query(
-      collection(db, "custom_notifications"),
-      orderBy("createdAt", "desc"),
-      limit(5)
-    );
-
-    const unsub = onSnapshot(q, (snap) => {
-      const newItems = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setItems(newItems);
+     async function load() {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/notifications");
+        if(res.ok) {
+          const data = await res.json();
+          setItems(data.slice(0, 5));
+        } else {
+           setItems([]);
+        }
+      } catch (e) {
+        console.error("Failed to load notifications for popover", e);
+        setItems([]);
+      }
       setLoading(false);
-    }, (err) => {
-        console.error("Popover snapshot error:", err);
-        setLoading(false);
-    });
+    }
 
-    return () => unsub();
+    load();
   }, [isOpen]);
 
   return (
@@ -76,9 +76,7 @@ export function NotificationPopover() {
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
                     ) : items.length > 0 ? (
-                        items.map(item => {
-                            const date = item.createdAt as Timestamp;
-                            return (
+                        items.map(item => (
                                 <div key={item.id} className="grid grid-cols-[25px_1fr] items-start pb-4 last:pb-0">
                                     <span className="flex h-2 w-2 translate-y-1 rounded-full bg-primary" />
                                     <div className="grid gap-1">
@@ -86,12 +84,14 @@ export function NotificationPopover() {
                                         <p className="text-sm text-muted-foreground line-clamp-2">{item.summary}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                              <Badge variant={getCategoryBadgeVariant(item.category)} className="text-xs">{item.category}</Badge>
-                                             <time className="text-xs text-muted-foreground">{date ? date.toDate().toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : ''}</time>
+                                             <time className="text-xs text-muted-foreground">
+                                                {new Date(item.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                                             </time>
                                         </div>
                                     </div>
                                 </div>
                             )
-                        })
+                        )
                     ) : (
                         <p className="text-sm text-center text-muted-foreground p-4">No new notifications right now.</p>
                     )}

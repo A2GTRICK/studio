@@ -19,14 +19,18 @@ export async function fetchAllNotifications(): Promise<NotificationItem[]> {
     .orderBy("createdAt", "desc")
     .get();
 
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
-    const time = data.createdAt as Timestamp;
-
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: time ? time.toDate().toISOString() : new Date().toISOString(),
-    } as NotificationItem;
+  const notifications = snapshot.docs.map(doc => {
+      const data = doc.data();
+      const time = data.createdAt as Timestamp;
+      return {
+        id: doc.id,
+        title: data.title,
+        summary: data.summary,
+        category: data.category,
+        link: data.link,
+        createdAt: time ? time.toDate().toISOString() : new Date().toISOString(),
+      } as NotificationItem;
   });
+
+  return notifications;
 }
