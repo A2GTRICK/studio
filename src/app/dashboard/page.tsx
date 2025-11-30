@@ -3,77 +3,7 @@
 
 import Link from 'next/link';
 import { BookOpen, Layers, GraduationCap, Sparkles } from 'lucide-react';
-import clsx from 'clsx';
 import { Button } from '@/components/ui/button';
-
-const features = [
-  {
-    title: 'Notes Library',
-    desc: 'Access organized notes from all subjects.',
-    href: '/dashboard/notes',
-    icon: <BookOpen size={28} />,
-    accent: 'from-purple-300 to-purple-100',
-  },
-  {
-    title: 'MCQ Practice',
-    desc: 'Practice MCQs for GPAT, NIPER & D.Pharm.',
-    href: '/dashboard/mcq-practice',
-    icon: <Layers size={28} />,
-    accent: 'from-blue-200 to-blue-50',
-  },
-  {
-    title: 'Academic Services',
-    desc: 'Project files, reports, dissertation help.',
-    href: '/dashboard/services',
-    icon: <GraduationCap size={28} />,
-    accent: 'from-rose-200 to-rose-50',
-  },
-];
-
-function FeatureCard({ item }: { item: (typeof features)[number] }) {
-  return (
-    <Link href={item.href} className="group">
-      <article
-        className={clsx(
-          'relative overflow-hidden rounded-2xl p-5 md:p-6 shadow-sm transition-transform transform hover:-translate-y-1 hover:shadow-xl',
-          'bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/40'
-        )}
-        aria-labelledby={`fc-${item.title}`}
-      >
-        <div className="flex items-start gap-4">
-          <div
-            className={clsx(
-              'shrink-0 p-3 rounded-xl flex items-center justify-center',
-              'bg-white/75 ring-1 ring-white/40'
-            )}
-            style={{ boxShadow: '0 6px 18px rgba(16,24,40,0.06)' }}
-          >
-            <div className="text-purple-600">{item.icon}</div>
-          </div>
-
-          <div className="flex-1">
-            <h3
-              id={`fc-${item.title}`}
-              className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100"
-            >
-              {item.title}
-            </h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              {item.desc}
-            </p>
-          </div>
-        </div>
-
-        {/* Accent block (subtle) */}
-        <div
-          aria-hidden
-          className={`absolute -right-10 -top-10 w-48 h-48 rounded-full opacity-30 blur-3xl ${item.accent}`}
-          style={{ mixBlendMode: 'screen' }}
-        />
-      </article>
-    </Link>
-  );
-}
 
 export default function DashboardPage() {
   return (
@@ -84,13 +14,11 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
               Welcome to{' '}
-              <span className="text-purple-700">A2G Smart Notes</span>{' '}
+              <span className="text-purple-700">phamA2G</span>{' '}
               <span aria-hidden>👋</span>
             </h1>
             <p className="mt-2 text-slate-700 max-w-xl">
-              Your all-in-one platform for pharmacy learning. Access curated
-              notes, practice high-quality MCQs, and get academic help — all in
-              one place.
+              You're all set. Explore the library, practice for your exams, or get academic help using the navigation on the left.
             </p>
 
             <div className="mt-4 flex flex-wrap gap-3">
@@ -130,17 +58,6 @@ export default function DashboardPage() {
           ></path>
         </svg>
       </section>
-
-      {/* GRID */}
-      <section className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 gap-6">
-          {features.map(f => (
-            <FeatureCard key={f.title} item={f} />
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
-
-    

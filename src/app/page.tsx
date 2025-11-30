@@ -8,22 +8,30 @@ import AnimatedHeroIcon from '@/components/animated-hero-icon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Image from 'next/image';
 import { SVGProps } from 'react';
+import clsx from 'clsx';
 
-const features = [
+
+const landingFeatures = [
   {
-    icon: <BookOpen className="h-8 w-8 text-primary" />,
-    title: 'Expert Notes',
-    description: 'High-quality, syllabus-aligned notes for D.Pharm & B.Pharm.',
+    title: 'Notes Library',
+    desc: 'Access organized notes from all subjects.',
+    href: '/dashboard/notes',
+    icon: <BookOpen size={28} />,
+    accent: 'from-purple-300 to-purple-100',
   },
   {
-    icon: <Layers className="h-8 w-8 text-primary" />,
-    title: 'AI-Powered MCQs',
-    description: 'Practice for GPAT, NIPER, and other exams with AI-generated quizzes.',
+    title: 'MCQ Practice',
+    desc: 'Practice MCQs for GPAT, NIPER & D.Pharm.',
+    href: '/dashboard/mcq-practice',
+    icon: <Layers size={28} />,
+    accent: 'from-blue-200 to-blue-50',
   },
   {
-    icon: <GraduationCap className="h-8 w-8 text-primary" />,
     title: 'Academic Services',
-    description: 'Get help with projects, reports, dissertations, and more.',
+    desc: 'Project files, reports, dissertation help.',
+    href: '/dashboard/services',
+    icon: <GraduationCap size={28} />,
+    accent: 'from-rose-200 to-rose-50',
   },
 ];
 
@@ -58,24 +66,60 @@ const socialLinks = [
 const floatingTags = [
   { text: 'GPAT 2025', style: { top: '5%', left: '5%', animationDelay: '0s' } },
   { text: 'B.Pharm', style: { top: '20%', right: '5%', animationDelay: '2s' } },
-  { text: 'D.Pharm Notes', style: { bottom: '5%', right: '15%', animationDelay: '6s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '25%', right: '15%', animationDelay: '6s' } },
   { text: 'Medicinal Chemistry', style: { top: '70%', right: '1%', animationDelay: '1s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '20%', animationDelay: '5s' } },
   { text: 'Human Anatomy', style: { top: '0%', right: '25%', animationDelay: '7s' } },
 ];
 
 const marqueeText = [
-    "Pharmacy Notes",
-    "MCQ Practice",
-    "B.Pharm & D.Pharm",
-    "GPAT 2025",
-    "NIPER JEE",
-    "Drug Inspector",
-    "Pharmacist Exams",
-    "Academic Support",
-    "phamA2G",
+    "Pharmacy Notes", "MCQ Practice", "B.Pharm & D.Pharm", "GPAT 2025", "NIPER", "Drug Inspector", "Pharmacist Exams", "Project Support", "phamA2G",
 ];
 
+function FeatureCard({ item }: { item: (typeof landingFeatures)[number] }) {
+  return (
+    <Link href={item.href} className="group">
+      <article
+        className={clsx(
+          'relative overflow-hidden rounded-2xl p-5 md:p-6 shadow-sm transition-transform transform hover:-translate-y-1 hover:shadow-xl',
+          'bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/40'
+        )}
+        aria-labelledby={`fc-${item.title}`}
+      >
+        <div className="flex items-start gap-4">
+          <div
+            className={clsx(
+              'shrink-0 p-3 rounded-xl flex items-center justify-center',
+              'bg-white/75 ring-1 ring-white/40'
+            )}
+            style={{ boxShadow: '0 6px 18px rgba(16,24,40,0.06)' }}
+          >
+            <div className="text-purple-600">{item.icon}</div>
+          </div>
+
+          <div className="flex-1">
+            <h3
+              id={`fc-${item.title}`}
+              className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100"
+            >
+              {item.title}
+            </h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              {item.desc}
+            </p>
+          </div>
+        </div>
+
+        {/* Accent block (subtle) */}
+        <div
+          aria-hidden
+          className={`absolute -right-10 -top-10 w-48 h-48 rounded-full opacity-30 blur-3xl ${item.accent}`}
+          style={{ mixBlendMode: 'screen' }}
+        />
+      </article>
+    </Link>
+  );
+}
 
 export default function Home() {
 
@@ -136,6 +180,18 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Features Section */}
+        <section className="py-12 md:py-24">
+            <div className="container mx-auto px-4">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {landingFeatures.map(f => (
+                        <FeatureCard key={f.title} item={f} />
+                    ))}
+                </div>
+            </div>
+        </section>
+
+
         {/* Why Choose Us Section */}
         <section className="py-12 md:py-24 bg-secondary/50">
           <div className="container mx-auto px-4">
@@ -144,52 +200,29 @@ export default function Home() {
               <p className="mt-2 text-muted-foreground">We blend expert knowledge with AI to create a powerful, personalized learning experience.</p>
             </div>
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <div key={index} className="p-6 bg-white rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
-                  <div className="p-3 bg-primary/10 rounded-full mb-4">{feature.icon}</div>
-                  <h4 className="font-headline text-xl font-semibold">{feature.title}</h4>
-                  <p className="mt-2 text-muted-foreground text-sm flex-grow">{feature.description}</p>
-                </div>
-              ))}
+              <div className="p-6 bg-white rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
+                  <div className="p-3 bg-primary/10 rounded-full mb-4"><BookOpen className="h-8 w-8 text-primary" /></div>
+                  <h4 className="font-headline text-xl font-semibold">Expert Notes</h4>
+                  <p className="mt-2 text-muted-foreground text-sm flex-grow">High-quality, syllabus-aligned notes for D.Pharm & B.Pharm.</p>
+              </div>
+               <div className="p-6 bg-white rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
+                  <div className="p-3 bg-primary/10 rounded-full mb-4"><Layers className="h-8 w-8 text-primary" /></div>
+                  <h4 className="font-headline text-xl font-semibold">AI-Powered MCQs</h4>
+                  <p className="mt-2 text-muted-foreground text-sm flex-grow">Practice for GPAT, NIPER, and other exams with AI-generated quizzes.</p>
+              </div>
+               <div className="p-6 bg-white rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
+                  <div className="p-3 bg-primary/10 rounded-full mb-4"><GraduationCap className="h-8 w-8 text-primary" /></div>
+                  <h4 className="font-headline text-xl font-semibold">Academic Services</h4>
+                  <p className="mt-2 text-muted-foreground text-sm flex-grow">Get help with projects, reports, dissertations, and more.</p>
+              </div>
             </div>
           </div>
         </section>
         
-        {/* Core Offerings Section */}
-        <section className="py-12 md:py-24">
-            <div className="container mx-auto px-4">
-                <div className="text-center max-w-3xl mx-auto">
-                    <h3 className="font-headline text-3xl font-bold">Our Core Offerings</h3>
-                    <p className="mt-2 text-muted-foreground">Everything you need to excel in your pharmacy studies, all in one place.</p>
-                </div>
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <Link href="/dashboard/notes" className="block p-6 bg-white rounded-xl shadow-lg border border-primary/10 transition-all hover:shadow-2xl hover:-translate-y-1">
-                        <div className="flex items-center gap-4 mb-3">
-                            <BookOpen className="h-6 w-6 text-primary" />
-                            <h4 className="font-headline text-xl font-semibold">Notes Library</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground">Access a vast library of syllabus-aligned notes for D.Pharm and B.Pharm, curated by experts.</p>
-                    </Link>
-                    <Link href="/dashboard/ai-quiz-generator" className="block p-6 bg-white rounded-xl shadow-lg border border-primary/10 transition-all hover:shadow-2xl hover:-translate-y-1">
-                        <div className="flex items-center gap-4 mb-3">
-                            <Layers className="h-6 w-6 text-primary" />
-                            <h4 className="font-headline text-xl font-semibold">AI Quiz Generator</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground">Generate unlimited MCQs for any topic and difficulty level to master concepts for competitive exams.</p>
-                    </Link>
-                     <Link href="/dashboard/services" className="block p-6 bg-white rounded-xl shadow-lg border border-primary/10 transition-all hover:shadow-2xl hover:-translate-y-1">
-                         <div className="flex items-center gap-4 mb-3">
-                            <GraduationCap className="h-6 w-6 text-primary" />
-                            <h4 className="font-headline text-xl font-semibold">Academic Services</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground">Get expert assistance with project files, internship reports, dissertations, and more.</p>
-                    </Link>
-                </div>
-            </div>
-        </section>
+        {/* Core Offerings Section is now replaced by the features above */}
 
         {/* Meet Your Mentor Section */}
-        <section className="py-12 md:py-24 bg-secondary/50">
+        <section className="py-12 md:py-24 bg-white">
             <div className="container mx-auto px-4">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                     <div className="text-center lg:text-left">
@@ -210,7 +243,7 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-12 md:py-24">
+        <section className="py-12 md:py-24 bg-secondary/50">
             <div className="container mx-auto px-4 max-w-3xl">
                  <div className="text-center">
                     <h3 className="font-headline text-3xl font-bold">Frequently Asked Questions</h3>
@@ -242,32 +275,32 @@ export default function Home() {
                     </a>
                 </Button>
             </div>
-             <div className="mt-8 flex justify-center flex-wrap gap-4">
-                {socialLinks.map((link) => (
-                    <Button key={link.name} variant={link.isPrimary ? "default" : "outline"} asChild>
-                        <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.name}>
-                            <link.icon className="mr-2 h-4 w-4" />
-                            <span>{link.name}</span>
-                        </a>
-                    </Button>
-                ))}
-            </div>
+            <div className="mt-8 space-y-8">
+                 <div className="flex justify-center flex-wrap gap-4">
+                    {socialLinks.map((link) => (
+                        <Button key={link.name} variant={link.isPrimary ? "default" : "outline"} asChild>
+                            <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.name}>
+                                <link.icon className="mr-2 h-4 w-4" />
+                                <span>{link.name}</span>
+                            </a>
+                        </Button>
+                    ))}
+                </div>
 
-            <div className="mt-12 space-y-4">
-              <div className="relative w-full overflow-hidden">
-                  <div className="flex animate-marquee">
-                      <div className="flex w-full items-center justify-around">
-                          {marqueeText.map((text, index) => (
-                               <span key={index} className="text-lg font-semibold text-muted-foreground/80 mx-8">{text}</span>
-                          ))}
-                      </div>
-                       <div className="flex w-full items-center justify-around" aria-hidden="true">
-                           {marqueeText.map((text, index) => (
-                               <span key={index} className="text-lg font-semibold text-muted-foreground/80 mx-8">{text}</span>
-                          ))}
-                      </div>
-                  </div>
-              </div>
+                <div className="relative w-full overflow-hidden">
+                    <div className="flex animate-marquee">
+                        <div className="flex w-full items-center justify-around">
+                            {marqueeText.map((text, index) => (
+                                 <span key={index} className="text-lg font-semibold text-muted-foreground/80 mx-8">{text}</span>
+                            ))}
+                        </div>
+                         <div className="flex w-full items-center justify-around" aria-hidden="true">
+                             {marqueeText.map((text, index) => (
+                                 <span key={index} className="text-lg font-semibold text-muted-foreground/80 mx-8">{text}</span>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div className="mt-12 text-center text-sm text-muted-foreground">
