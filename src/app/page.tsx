@@ -66,7 +66,7 @@ const socialLinks = [
 const floatingTags = [
   { text: 'GPAT 2025', style: { top: '5%', left: '5%', animationDelay: '0s' } },
   { text: 'B.Pharm', style: { top: '20%', right: '5%', animationDelay: '2s' } },
-  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '15%', animationDelay: '6s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '10%', right: '15%', animationDelay: '6s' } },
   { text: 'Medicinal Chemistry', style: { top: '70%', right: '1%', animationDelay: '1s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '20%', animationDelay: '5s' } },
   { text: 'Human Anatomy', style: { top: '0%', right: '25%', animationDelay: '7s' } },
@@ -81,41 +81,33 @@ function FeatureCard({ item }: { item: (typeof landingFeatures)[number] }) {
     <Link href={item.href} className="group">
       <article
         className={clsx(
-          'relative overflow-hidden rounded-2xl p-5 md:p-6 shadow-sm transition-transform transform hover:-translate-y-1 hover:shadow-xl',
-          'bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-white/40'
+          'relative overflow-hidden rounded-2xl p-6 shadow-lg transition-transform transform hover:-translate-y-1 hover:shadow-xl',
+          'bg-white backdrop-blur-sm border border-slate-100'
         )}
         aria-labelledby={`fc-${item.title}`}
       >
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-5">
           <div
             className={clsx(
-              'shrink-0 p-3 rounded-xl flex items-center justify-center',
-              'bg-white/75 ring-1 ring-white/40'
+              'shrink-0 p-3 rounded-lg flex items-center justify-center',
+              'bg-primary/10'
             )}
-            style={{ boxShadow: '0 6px 18px rgba(16,24,40,0.06)' }}
           >
-            <div className="text-purple-600">{item.icon}</div>
+            <div className="text-primary">{item.icon}</div>
           </div>
 
           <div className="flex-1">
             <h3
               id={`fc-${item.title}`}
-              className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100"
+              className="text-lg md:text-xl font-bold text-slate-900"
             >
               {item.title}
             </h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-1 text-sm text-slate-600">
               {item.desc}
             </p>
           </div>
         </div>
-
-        {/* Accent block (subtle) */}
-        <div
-          aria-hidden
-          className={`absolute -right-10 -top-10 w-48 h-48 rounded-full opacity-30 blur-3xl ${item.accent}`}
-          style={{ mixBlendMode: 'screen' }}
-        />
       </article>
     </Link>
   );
