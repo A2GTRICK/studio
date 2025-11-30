@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
+import { db } from '@/firebase';
 import {
   collection,
   addDoc,
@@ -111,7 +112,7 @@ export default function AdminNotificationsPage() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   // 📌 ADD NEW NOTIFICATION
   const handleAdd = async (e: any) => {
