@@ -27,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { format } from "date-fns";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { useRouter } from "next/navigation";
 
 interface CustomNotification {
   id: string;
@@ -39,11 +40,19 @@ interface CustomNotification {
 
 export default function AdminNotificationsPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notifications, setNotifications] = useState<CustomNotification[]>([]);
 
   useEffect(() => {
+    // Admin Guard
+    const s = sessionStorage.getItem("A2G_ADMIN");
+    if (s !== "ACTIVE") {
+        router.push("/adminarvindsharma");
+        return;
+    }
+
     const q = query(collection(db, "custom_notifications"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((doc) => {
@@ -61,6 +70,7 @@ export default function AdminNotificationsPage() {
       setLoading(false);
     },
     (err) => {
+        console.error(err);
         const permissionError = new FirestorePermissionError({
             path: 'custom_notifications',
             operation: 'list',
@@ -70,7 +80,7 @@ export default function AdminNotificationsPage() {
     });
 
     return () => unsub();
-  }, []);
+  }, [router]);
 
   const createNotification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -211,7 +221,7 @@ export default function AdminNotificationsPage() {
                     <TableRow key={n.id}>
                       <TableCell>{n.title}</TableCell>
                       <TableCell>{n.category}</TableCell>
-                      <TableCell>{format(n.createdAt.toDate(), "PPP")}</TableCell>
+                      <TableCell>{format(n.createdAt, "PPP")}</TableCell>
 
                       <TableCell className="text-right">
                         <AlertDialog>

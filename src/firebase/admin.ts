@@ -31,12 +31,14 @@ if (!admin.apps.length) {
         credential: admin.credential.cert(credentials),
       });
   } else {
-      console.warn('Firebase Admin SDK credentials not found. Set FIREBASE_ADMIN_SERVICE_ACCOUNT_PATH or FIREBASE_ADMIN_SDK. Backend features will be disabled.');
+      // This will cause the server to fail on startup if credentials are not found,
+      // which makes it obvious that the configuration is missing.
+      throw new Error('CRITICAL: Firebase Admin SDK credentials not found. Set FIREBASE_ADMIN_SERVICE_ACCOUNT_PATH or FIREBASE_ADMIN_SDK.');
   }
 }
 
-const adminDb = admin.apps.length ? admin.firestore() : null;
-const adminAuth = admin.apps.length ? admin.auth() : null;
-const adminStorage = admin.apps.length ? admin.storage() : null;
+const adminDb = admin.firestore();
+const adminAuth = admin.auth();
+const adminStorage = admin.storage();
 
 export { adminDb, adminAuth, adminStorage };

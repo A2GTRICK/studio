@@ -6,12 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    // This now correctly uses the server-side service with Admin SDK
     const notifications = await fetchAllNotifications();
     // We only need the latest 8 for the popover
     const limitedNotifications = notifications.slice(0, 8);
     return NextResponse.json({ success: true, notifications: limitedNotifications });
   } catch (err: any) {
     console.error('API /api/notifications GET error:', err.message);
-    return NextResponse.json({ success: false, error: 'Failed to load notifications' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to load notifications. Check server logs.' }, { status: 500 });
   }
 }
