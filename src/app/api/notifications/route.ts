@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const notificationsRef = collection(db, 'custom_notifications');
+    const notificationsRef = collection(db, 'live_notifications');
     const q = query(notificationsRef, orderBy('createdAt', 'desc'), );
     const querySnapshot = await getDocs(q);
     

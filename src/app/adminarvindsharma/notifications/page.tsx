@@ -58,7 +58,7 @@ export default function AdminNotificationsPage() {
         return;
     }
 
-    const q = query(collection(db, "custom_notifications"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "live_notifications"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map((doc) => {
         const data = doc.data();
@@ -77,7 +77,7 @@ export default function AdminNotificationsPage() {
     (err) => {
         console.error(err);
         const permissionError = new FirestorePermissionError({
-            path: 'custom_notifications',
+            path: 'live_notifications',
             operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -114,7 +114,7 @@ export default function AdminNotificationsPage() {
       return;
     }
 
-    const notificationCollection = collection(db, "custom_notifications");
+    const notificationCollection = collection(db, "live_notifications");
     addDoc(notificationCollection, notificationData)
     .then(() => {
         toast({ title: "Success", description: `Published: ${notificationData.title}` });
@@ -137,7 +137,7 @@ export default function AdminNotificationsPage() {
         toast({ title: "Error", description: "Firestore not initialized."});
         return;
     }
-    const noteDoc = doc(db, "custom_notifications", id);
+    const noteDoc = doc(db, "live_notifications", id);
     deleteDoc(noteDoc)
     .then(() => {
         toast({

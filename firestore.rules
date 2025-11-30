@@ -3,22 +3,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Notes, MCQ Sets, and Notifications are publicly readable.
-    // This is simple and effective for content that is not user-specific.
+    // Notes and MCQ Sets are publicly readable.
+    // Writes are disallowed from the client for security.
     match /notes/{noteId} {
       allow read: if true;
-      allow write: if false; // Writes should be handled by admin functions/panel
+      allow write: if false;
     }
 
     match /mcqSets/{mcqId} {
       allow read: if true;
-      allow write: if false; // Writes should be handled by admin functions/panel
+      allow write: if false;
     }
 
-    match /custom_notifications/{notifId} {
+    // NEW: live_notifications are publicly readable for all users.
+    // Writes are only allowed by authenticated admins.
+    match /live_notifications/{notifId} {
       allow read: if true;
-      // Allow writes only by authenticated admins.
-      // This rule is for client-side admin panels. Server-side admin logic bypasses this.
       allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 

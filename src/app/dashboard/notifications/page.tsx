@@ -1,4 +1,3 @@
-
 // src/app/dashboard/notifications/page.tsx
 "use client";
 
@@ -22,8 +21,12 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     async function fetchNotifications() {
+      if (!db) {
+          setLoading(false);
+          return;
+      }
       try {
-        const notificationsRef = collection(db, "custom_notifications");
+        const notificationsRef = collection(db, "live_notifications");
         const q = query(notificationsRef, orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         
