@@ -1,29 +1,42 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Bell, Loader2, ArrowRight } from 'lucide-react';
-import { fetchPharmacyNews } from '@/ai/flows/fetch-pharmacy-news';
-import { type PharmacyNewsOutput as Notification } from "@/ai/flows/types";
+import { fetchAllNotifications, type UnifiedNotification } from "@/services/notifications";
 import { Badge } from './ui/badge';
 import Link from 'next/link';
 
+// Helper to assign a badge color based on the notification category
+const getCategoryBadgeVariant = (category: UnifiedNotification['category']) => {
+    switch(category) {
+        case "Exam Alert": return "destructive";
+        case "University Update": return "default";
+        case "Content Update": return "secondary";
+        case "Job Notification": return "default";
+        case "PCI Circular": return "secondary";
+        case "Industry Hiring": return "default";
+        default: return "outline";
+    }
+}
+
+
 export function NotificationPopover() {
-    const [notifications, setNotifications] = useState<Notification>([]);
+    const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         // Fetch notifications only when the popover is opened for the first time
         if (isOpen && notifications.length === 0 && isLoading) {
-            fetchPharmacyNews()
+            fetchAllNotifications()
                 .then(data => {
-                    setNotifications(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+                    setNotifications(data);
                 })
                 .catch(err => {
                     console.error("Failed to fetch notifications for popover:", err);
-                    // Optionally set an error state here
                 })
                 .finally(() => {
                     setIsLoading(false);
@@ -67,8 +80,8 @@ export function NotificationPopover() {
                                         <p className="text-sm font-medium leading-none">{item.title}</p>
                                         <p className="text-sm text-muted-foreground line-clamp-2">{item.summary}</p>
                                         <div className="flex items-center gap-2 mt-1">
-                                             <Badge variant="secondary" className="text-xs">{item.category}</Badge>
-                                             <time className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</time>
+                                             <Badge variant={getCategoryBadgeVariant(item.category)} className="text-xs">{item.category}</Badge>
+                                             <time className="text-xs text-muted-foreground">{item.date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</time>
                                         </div>
                                     </div>
                                 </div>
