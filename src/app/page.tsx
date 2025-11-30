@@ -64,6 +64,18 @@ const floatingTags = [
   { text: 'Human Anatomy', style: { top: '0%', right: '25%', animationDelay: '7s' } },
 ];
 
+const marqueeText = [
+    "Pharmacy Notes Library",
+    "MCQ Practice",
+    "B.Pharm & D.Pharm Material",
+    "GPAT 2025",
+    "NIPER JEE",
+    "Drug Inspector",
+    "Pharmacist Exams",
+    "Academic Support",
+    "phamA2G",
+];
+
 
 export default function Home() {
 
@@ -243,28 +255,16 @@ export default function Home() {
 
             <div className="mt-12 space-y-4">
               <div className="relative w-full overflow-hidden">
-                  <div className="flex whitespace-nowrap animate-marquee">
-                      <div className="flex-shrink-0 w-full flex justify-around">
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">phamA2G</span>
+                  <div className="flex animate-marquee">
+                      <div className="flex w-full items-center justify-around">
+                          {marqueeText.map((text, index) => (
+                               <span key={index} className="text-lg font-semibold text-muted-foreground/80 mx-8">{text}</span>
+                          ))}
                       </div>
-                       <div className="flex-shrink-0 w-full flex justify-around" aria-hidden="true">
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
-                          <span className="text-lg font-semibold text-muted-foreground/80 mx_4">phamA2G</span>
+                       <div className="flex w-full items-center justify-around" aria-hidden="true">
+                           {marqueeText.map((text, index) => (
+                               <span key={index} className="text-lg font-semibold text-muted-foreground/80 mx-8">{text}</span>
+                          ))}
                       </div>
                   </div>
               </div>
@@ -278,7 +278,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
-
-    
