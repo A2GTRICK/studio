@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, Sparkles, Target, BookCheck } from 'lucide-react';
@@ -49,10 +50,10 @@ export default function Home() {
             <div className="grid lg:grid-cols-2 gap-8 items-center">
                 <div className="text-center lg:text-left">
                     <h2 className="font-headline text-4xl font-bold tracking-tighter text-gray-900 dark:text-gray-50 sm:text-5xl md:text-6xl">
-                    Supercharge Your Studies with AI
+                    Supercharge Your Pharmacy Padhai with AI
                     </h2>
                     <p className="mt-4 max-w-[600px] text-lg text-muted-foreground md:text-xl">
-                    phamA2G is your all-in-one platform for intelligent note-taking and automated quiz generation. Focus on learning, we'll handle the rest.
+                    Your smart friend for pharmacy exams and studies. Focus on learning, and we'll handle the rest. Ab padhai hogi smart!
                     </p>
                     <div className="mt-8">
                     <Button size="lg" asChild>
