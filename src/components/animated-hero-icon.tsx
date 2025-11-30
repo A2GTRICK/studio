@@ -1,5 +1,4 @@
 'use client';
-import { MortarAndPestle } from '@/components/ui/icons';
 
 const AnimatedHeroIcon = () => {
   return (
@@ -65,14 +64,7 @@ const AnimatedHeroIcon = () => {
       {/* Central Element */}
       <g className="animate-pulse-glow">
         <circle cx="100" cy="100" r="32" fill="hsl(var(--background))" />
-        <MortarAndPestle
-          x="78"
-          y="78"
-          width="44"
-          height="44"
-          strokeWidth={1.5}
-          className="text-primary"
-        />
+         <image href="https://i.postimg.cc/k5CkkR0S/image-logo.png" x="70" y="70" height="60" width="60" />
       </g>
     </svg>
   );
