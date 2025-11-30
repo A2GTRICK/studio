@@ -1,8 +1,29 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles, Target, BookCheck } from 'lucide-react';
 import Link from 'next/link';
 import AnimatedHeroIcon from '@/components/animated-hero-icon';
+
+const features = [
+  {
+    icon: <Sparkles className="h-8 w-8 text-white" />,
+    title: "AI Note Generator",
+    description: "Generate comprehensive, syllabus-aligned notes on any topic in seconds. Save time and study smarter.",
+    bgColor: "bg-purple-600",
+  },
+  {
+    icon: <Target className="h-8 w-8 text-white" />,
+    title: "Exam-Ready Quizzes",
+    description: "Create customized MCQs for GPAT, NIPER, and other exams. Test your knowledge and track your progress.",
+    bgColor: "bg-blue-600",
+  },
+  {
+    icon: <BookCheck className="h-8 w-8 text-white" />,
+    title: "Curated Content",
+    description: "Access a library of expert-verified notes and practice sets, ensuring you study from the best resources.",
+    bgColor: "bg-green-600",
+  }
+];
 
 export default function Home() {
   return (
@@ -45,6 +66,30 @@ export default function Home() {
                 <div className="w-full max-w-sm mx-auto lg:max-w-md h-auto aspect-square">
                     <AnimatedHeroIcon />
                 </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-12 md:py-24 bg-secondary/50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h3 className="font-headline text-3xl font-bold">Your Ultimate Pharmacy Toolkit</h3>
+              <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto">
+                Everything you need to excel in your pharmacy curriculum and competitive exams, all in one place.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {features.map((feature, index) => (
+                <div key={index} className="bg-card p-8 rounded-xl shadow-lg border border-transparent hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-1">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center ${feature.bgColor} mb-4`}>
+                    {feature.icon}
+                  </div>
+                  <h4 className="font-headline text-xl font-bold mb-2">{feature.title}</h4>
+                  <p className="text-muted-foreground">
+                    {feature.description}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
