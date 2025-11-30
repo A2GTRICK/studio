@@ -224,22 +224,26 @@ export default function Home() {
             <div className="relative mt-12 w-full overflow-hidden">
                 <div className="flex animate-marquee">
                     <div className="flex w-full justify-around">
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">D.Pharm & B.Pharm</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Free Notes</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">AI MCQs</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">phamA2G</span>
                     </div>
                      <div className="flex w-full justify-around" aria-hidden="true">
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacy Notes Library</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">MCQ Practice for All Levels</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Study Material for B.Pharm & D.Pharm</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">D.Pharm & B.Pharm</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Free Notes</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">AI MCQs</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">phamA2G</span>
                     </div>
                 </div>
             </div>
@@ -252,3 +256,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
