@@ -21,7 +21,7 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
-import { NotificationPopover } from "@/components/notification-popover";
+import NotificationPopover from "@/components/notification-popover";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
