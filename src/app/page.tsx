@@ -11,7 +11,10 @@ const floatingTags = [
   { text: 'Pharmacology', style: { bottom: '25%', left: '5%', animationDelay: '4s' } },
   { text: 'D.Pharm Notes', style: { bottom: '15%', right: '15%', animationDelay: '6s' } },
   { text: 'NIPER', style: { top: '55%', left: '20%', animationDelay: '8s' } },
-  { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } }
+  { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } },
+  { text: 'Pharmaceutics', style: { top: '35%', left: '2%', animationDelay: '3s' } },
+  { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
+  { text: 'Human Anatomy', style: { top: '5%', right: '25%', animationDelay: '7s' } },
 ];
 
 export default function Home() {
