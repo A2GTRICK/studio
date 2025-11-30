@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Globe, Youtube, Send, Users } from "lucide-react";
+import { CheckCircle2, Globe, Youtube, Send } from "lucide-react";
 import Link from "next/link";
 import { SVGProps } from "react";
 import Image from "next/image";
@@ -46,7 +46,7 @@ export default function AboutUsPage() {
                     </blockquote>
                 </div>
                 <div className="flex justify-center items-center p-4">
-                   <Image src="https://storage.googleapis.com/a2g-images/logo.png" alt="phamA2G Logo" width={200} height={200} className="w-48 h-48 object-contain drop-shadow-xl" />
+                   <Image src="https://i.postimg.cc/k5CkkR0S/image-logo.png" alt="phamA2G Logo" width={200} height={200} className="w-48 h-48 object-contain drop-shadow-xl" />
                 </div>
             </div>
             <div className="grid md:grid-cols-2 gap-12 mt-16">
