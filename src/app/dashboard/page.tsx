@@ -4,6 +4,65 @@
 import Link from 'next/link';
 import { BookOpen, Layers, GraduationCap, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import clsx from 'clsx';
+
+const dashboardFeatures = [
+  {
+    title: 'Notes Library',
+    desc: 'Access organized notes from all subjects.',
+    href: '/dashboard/notes',
+    icon: <BookOpen size={28} />,
+  },
+  {
+    title: 'MCQ Practice',
+    desc: 'Practice MCQs for GPAT, NIPER & D.Pharm.',
+    href: '/dashboard/mcq-practice',
+    icon: <Layers size={28} />,
+  },
+  {
+    title: 'Academic Services',
+    desc: 'Project files, reports, dissertation help.',
+    href: '/dashboard/services',
+    icon: <GraduationCap size={28} />,
+  },
+];
+
+function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
+  return (
+    <Link href={item.href} className="group">
+      <article
+        className={clsx(
+          'relative overflow-hidden rounded-2xl p-6 shadow-lg transition-transform transform hover:-translate-y-1 hover:shadow-xl',
+          'bg-white backdrop-blur-sm border border-slate-100'
+        )}
+        aria-labelledby={`fc-${item.title}`}
+      >
+        <div className="flex items-start gap-5">
+          <div
+            className={clsx(
+              'shrink-0 p-3 rounded-lg flex items-center justify-center',
+              'bg-primary/10'
+            )}
+          >
+            <div className="text-primary">{item.icon}</div>
+          </div>
+
+          <div className="flex-1">
+            <h3
+              id={`fc-${item.title}`}
+              className="text-lg md:text-xl font-bold text-slate-900"
+            >
+              {item.title}
+            </h3>
+            <p className="mt-1 text-sm text-slate-600">
+              {item.desc}
+            </p>
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
 
 export default function DashboardPage() {
   return (
@@ -57,6 +116,15 @@ export default function DashboardPage() {
             fill="rgba(255,255,255,0.6)"
           ></path>
         </svg>
+      </section>
+
+      {/* Features Section */}
+      <section>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {dashboardFeatures.map(f => (
+                <FeatureCard key={f.title} item={f} />
+            ))}
+        </div>
       </section>
     </div>
   );
