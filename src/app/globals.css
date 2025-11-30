@@ -34,14 +34,16 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-background: 265 92% 12%;
-    --sidebar-foreground: 260 80% 95%;
-    --sidebar-primary: 333 91% 55%;
+    
+    /* Light sidebar theme */
+    --sidebar-background: 265 20% 96%;
+    --sidebar-foreground: 276 100% 15%;
+    --sidebar-primary: 265 92% 40%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 264 94% 22%;
-    --sidebar-accent-foreground: 260 80% 95%;
-    --sidebar-border: 264 94% 22%;
-    --sidebar-ring: 333 91% 55%;
+    --sidebar-accent: 265 20% 90%;
+    --sidebar-accent-foreground: 265 92% 40%;
+    --sidebar-border: 265 20% 88%;
+    --sidebar-ring: 265 92% 40%;
   }
   .dark {
     --background: 276 100% 10%;
@@ -68,6 +70,8 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Dark sidebar theme (can be customized if dark mode is implemented) */
     --sidebar-background: 265 92% 12%;
     --sidebar-foreground: 260 80% 95%;
     --sidebar-primary: 333 91% 55%;
@@ -171,5 +175,3 @@ body {
         animation: marquee 30s linear infinite;
     }
 }
-
-    
