@@ -34,7 +34,7 @@ export default async function NotificationsPage() {
                 <div>
                   <CardTitle>{item.title}</CardTitle>
                   <CardDescription>
-                    {new Date(item.date).toLocaleDateString("en-IN", {
+                    {new Date(item.createdAt).toLocaleDateString("en-IN", {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -42,7 +42,7 @@ export default async function NotificationsPage() {
                   </CardDescription>
                 </div>
 
-                <Badge variant={getCategoryBadgeVariant(item.category)}>{item.category}</Badge>
+                <Badge variant={getCategoryBadgeVariant(item.category as any)}>{item.category}</Badge>
               </div>
             </CardHeader>
 
@@ -50,9 +50,9 @@ export default async function NotificationsPage() {
               <p>{item.summary}</p>
             </CardContent>
 
-            {item.source && (
+            {item.link && (
               <CardFooter>
-                <Link href={item.source} target="_blank">
+                <Link href={item.link} target="_blank">
                   <span className="flex items-center gap-2 text-sm text-blue-600">
                     View Source <ArrowRight size={16} />
                   </span>
