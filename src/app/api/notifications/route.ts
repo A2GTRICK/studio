@@ -2,18 +2,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb } from '@/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/firebase/config';
 
 export async function GET() {
   try {
-    const notificationsRef = collection(db, 'custom_notifications');
-    const q = query(notificationsRef, orderBy('createdAt', 'desc'), limit(8));
-    const snapshot = await getDocs(q);
+    const notificationsRef = adminDb.collection('custom_notifications');
+    const q = notificationsRef.orderBy('createdAt', 'desc').limit(8);
+    const snapshot = await q.get();
     
     const data = snapshot.docs.map(d => {
       const doc = d.data();
-      const createdAt = doc.createdAt?.toDate ? doc.createdAt.toDate().toISOString() : new Date().toISOString();
+      const createdAt = doc.createdAt ? (doc.createdAt as Timestamp).toDate().toISOString() : new Date().toISOString();
       return {
         id: d.id,
         title: doc.title,
