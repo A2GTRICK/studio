@@ -2,28 +2,55 @@
 // src/components/Header.tsx
 "use client";
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+
+const navLinks = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/dashboard/notes', label: 'Notes' },
+    { href: '/dashboard/mcq-practice', label: 'MCQ Practice' },
+    { href: '/dashboard/services', label: 'Services' },
+    { href: '/dashboard/about', label: 'About' },
+    { href: '/dashboard/help', label: 'Help' },
+];
 
 export default function Header() {
-  return (
-    <header className="w-full bg-white shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <a href="/" className="text-xl font-bold">phamA2G</a>
-          <nav className="hidden md:flex gap-3 text-sm text-slate-600">
-            <a href="/dashboard" className="hover:underline">Dashboard</a>
-            <a href="/dashboard/notes" className="hover:underline">Notes</a>
-            <a href="/dashboard/mcq-practice" className="hover:underline">MCQ Practice</a>
-            <a href="/dashboard/services" className="hover:underline">Services</a>
-            <a href="/dashboard/about" className="hover:underline">About</a>
-            <a href="/dashboard/help" className="hover:underline">Help</a>
-          </nav>
-        </div>
+  const pathname = usePathname();
 
-        <div className="flex items-center gap-3">
-          {/* Sign-in buttons can be re-added here later if needed */}
-          <Link href="/dashboard" className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm">
-            Dashboard
-          </Link>
+  return (
+    <header className="w-full bg-white shadow-sm sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="text-2xl font-extrabold text-gray-900">
+              phamA2G
+            </Link>
+            <nav className="hidden md:flex gap-6">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.href} 
+                  href={link.href} 
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    pathname === link.href 
+                      ? "text-primary" 
+                      : "text-muted-foreground hover:text-primary"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link 
+              href="/dashboard" 
+              className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm font-semibold shadow-sm hover:bg-primary/90 transition-colors"
+            >
+              Dashboard
+            </Link>
+          </div>
         </div>
       </div>
     </header>
