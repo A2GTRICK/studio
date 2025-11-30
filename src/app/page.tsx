@@ -9,9 +9,9 @@ const floatingTags = [
   { text: 'GPAT 2025', style: { top: '10%', left: '15%', animationDelay: '0s' } },
   { text: 'B.Pharm', style: { top: '20%', right: '10%', animationDelay: '2s' } },
   { text: 'D.Pharm Notes', style: { bottom: '15%', right: '15%', animationDelay: '6s' } },
+  { text: 'Human Anatomy', style: { top: '5%', right: '25%', animationDelay: '7s' } },
   { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '30%', animationDelay: '5s' } },
-  { text: 'Human Anatomy', style: { top: '5%', right: '25%', animationDelay: '7s' } },
 ];
 
 export default function Home() {
@@ -47,7 +47,7 @@ export default function Home() {
             <div className="grid lg:grid-cols-2 gap-8 items-center">
                 <div className="text-center lg:text-left">
                     <h2 className="font-headline text-4xl font-bold tracking-tighter text-gray-900 dark:text-gray-50 sm:text-5xl md:text-6xl">
-                    Supercharge Your Pharmacy Padhai with AI
+                    Supercharge Your Pharmacy Padhai
                     </h2>
                     <p className="mt-4 max-w-[600px] text-lg text-muted-foreground md:text-xl">
                     Your smart friend for pharmacy exams and studies. Focus on learning, and we'll handle the rest. Ab padhai hogi smart!
