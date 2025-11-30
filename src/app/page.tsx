@@ -220,6 +220,30 @@ export default function Home() {
                     </Button>
                 ))}
             </div>
+
+            <div className="relative mt-12 w-full overflow-hidden">
+                <div className="flex animate-marquee">
+                    <div className="flex w-full justify-around">
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">D.Pharm & B.Pharm</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Free Notes</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">AI MCQs</span>
+                    </div>
+                     <div className="flex w-full justify-around" aria-hidden="true">
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">GPAT 2025</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">NIPER JEE</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">D.Pharm & B.Pharm</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Free Notes</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">AI MCQs</span>
+                    </div>
+                </div>
+            </div>
+
             <div className="mt-12 text-center text-sm text-muted-foreground">
               <p>&copy; {new Date().getFullYear()} phamA2G. All rights reserved.</p>
             </div>
