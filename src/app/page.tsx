@@ -66,7 +66,7 @@ const socialLinks = [
 const floatingTags = [
   { text: 'GPAT 2025', style: { top: '5%', left: '5%', animationDelay: '0s' } },
   { text: 'B.Pharm', style: { top: '20%', right: '5%', animationDelay: '2s' } },
-  { text: 'D.Pharm Notes', style: { bottom: '25%', right: '15%', animationDelay: '6s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '25%', right: '10%', animationDelay: '6s' } },
   { text: 'Medicinal Chemistry', style: { top: '70%', right: '1%', animationDelay: '1s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '20%', animationDelay: '5s' } },
   { text: 'Human Anatomy', style: { top: '0%', right: '25%', animationDelay: '7s' } },
@@ -127,21 +127,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
-            <h1 className="font-headline text-2xl font-bold text-primary">phamA2G</h1>
-          </div>
-          <nav className="flex items-center space-x-2">
-             <Button asChild>
-              <Link href="/dashboard">
-                Enter Dashboard <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
-
       <main className="flex-grow">
         {/* Hero Section */}
         <section className="relative py-12 md:py-24 lg:py-32 overflow-hidden">

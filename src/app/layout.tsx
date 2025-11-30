@@ -3,6 +3,7 @@ import AppProviders from "@/components/AppProviders";
 import { Toaster } from "@/components/ui/toaster";
 import { PT_Sans } from 'next/font/google';
 import { cn } from "@/lib/utils";
+import Header from "@/components/Header";
 
 const fontBody = PT_Sans({
   subsets: ['latin'],
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         fontBody.variable
       )}>
         <AppProviders>
+            <Header />
             {children}
         </AppProviders>
         <Toaster />

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider, type Auth } from "firebase/auth";
 import { getFirestore, doc, getDoc, type Firestore } from "firebase/firestore";
-import { app } from "@/lib/firebase";
+import app from "@/firebase/config";
 
 export default function Header() {
   const [user, setUser] = useState<any>(null);
@@ -68,12 +68,14 @@ export default function Header() {
     <header className="w-full bg-white shadow-sm">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <a href="/" className="text-xl font-bold">A2G Smart Notes</a>
+          <a href="/" className="text-xl font-bold">phamA2G</a>
           <nav className="hidden md:flex gap-3 text-sm text-slate-600">
             <a href="/dashboard" className="hover:underline">Dashboard</a>
             <a href="/dashboard/notes" className="hover:underline">Notes</a>
             <a href="/dashboard/mcq-practice" className="hover:underline">MCQ Practice</a>
             <a href="/dashboard/services" className="hover:underline">Services</a>
+            <a href="/dashboard/about" className="hover:underline">About</a>
+            <a href="/dashboard/help" className="hover:underline">Help</a>
           </nav>
         </div>
 
