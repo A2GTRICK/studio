@@ -66,7 +66,7 @@ const socialLinks = [
 const floatingTags = [
   { text: 'GPAT 2025', style: { top: '5%', left: '5%', animationDelay: '0s' } },
   { text: 'B.Pharm', style: { top: '20%', right: '5%', animationDelay: '2s' } },
-  { text: 'D.Pharm Notes', style: { bottom: '25%', right: '10%', animationDelay: '6s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '15%', animationDelay: '6s' } },
   { text: 'Medicinal Chemistry', style: { top: '70%', right: '1%', animationDelay: '1s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '20%', animationDelay: '5s' } },
   { text: 'Human Anatomy', style: { top: '0%', right: '25%', animationDelay: '7s' } },
@@ -296,3 +296,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
