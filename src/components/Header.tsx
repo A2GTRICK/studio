@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import NotificationPopover from './notification-popover';
 
 const navLinks = [
     { href: '/dashboard/notes', label: 'Notes' },
     { href: '/dashboard/mcq-practice', label: 'MCQ Practice' },
     { href: '/dashboard/services', label: 'Services' },
+    { href: '/dashboard/notifications', label: 'Notifications' },
     { href: '/dashboard/about', label: 'About' },
     { href: '/dashboard/help', label: 'Help' },
 ];
@@ -42,7 +44,7 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-3">
-             {/* The dashboard button was here and has been removed */}
+             <NotificationPopover />
           </div>
         </div>
       </div>
