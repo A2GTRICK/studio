@@ -4,8 +4,15 @@ import { Input } from '@/components/ui/input';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import AnimatedHeroIcon from '@/components/animated-hero-icon';
-import Image from 'next/image';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+
+const floatingTags = [
+  { text: 'GPAT 2025', style: { top: '10%', left: '15%', animationDelay: '0s' } },
+  { text: 'B.Pharm', style: { top: '20%', right: '10%', animationDelay: '2s' } },
+  { text: 'Pharmacology', style: { bottom: '25%', left: '5%', animationDelay: '4s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '15%', animationDelay: '6s' } },
+  { text: 'NIPER', style: { top: '55%', left: '20%', animationDelay: '8s' } },
+  { text: 'Medicinal Chemistry', style: { top: '70%', right: '5%', animationDelay: '1s' } }
+];
 
 export default function Home() {
   return (
@@ -26,8 +33,17 @@ export default function Home() {
       </header>
 
       <main className="flex-grow">
-        <section className="py-12 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4">
+        <section className="relative py-12 md:py-24 lg:py-32 overflow-hidden">
+          {floatingTags.map(tag => (
+            <div
+              key={tag.text}
+              className="absolute hidden lg:block animate-float rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary shadow-sm border border-primary/20"
+              style={tag.style}
+            >
+              {tag.text}
+            </div>
+          ))}
+          <div className="container mx-auto px-4 relative z-10">
             <div className="grid lg:grid-cols-2 gap-8 items-center">
                 <div className="text-center lg:text-left">
                     <h2 className="font-headline text-4xl font-bold tracking-tighter text-gray-900 dark:text-gray-50 sm:text-5xl md:text-6xl">
