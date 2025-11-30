@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Globe, Youtube, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { SVGProps } from "react";
+import Image from "next/image";
 
 const WhatsAppIcon = (props: SVGProps<SVGSVGElement>) => (
     <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
@@ -45,9 +46,7 @@ export default function AboutUsPage() {
                     </blockquote>
                 </div>
                 <div className="flex justify-center items-center p-4">
-                   <div className="w-48 h-48 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-white">
-                        <Users className="w-24 h-24" />
-                    </div>
+                   <Image src="https://storage.googleapis.com/a2g-images/logo.png" alt="phamA2G Logo" width={200} height={200} className="w-48 h-48 object-contain drop-shadow-xl" />
                 </div>
             </div>
             <div className="grid md:grid-cols-2 gap-12 mt-16">
