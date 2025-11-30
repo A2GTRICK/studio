@@ -1,29 +1,36 @@
-// src/app/api/notifications/route.ts
-import { NextResponse, NextRequest } from 'next/server';
+
+import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb } from '@/firebase/admin';
 import { Timestamp } from 'firebase-admin/firestore';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
 export async function GET() {
   try {
-    const q = adminDb.collection('custom_notifications').orderBy('createdAt', 'desc').limit(8);
-    const snap = await q.get();
-    const data = snap.docs.map(d => {
-      const doc = d.data() as any;
+    const notificationsRef = collection(db, 'custom_notifications');
+    const q = query(notificationsRef, orderBy('createdAt', 'desc'), limit(8));
+    const snapshot = await getDocs(q);
+    
+    const data = snapshot.docs.map(d => {
+      const doc = d.data();
+      const createdAt = doc.createdAt?.toDate ? doc.createdAt.toDate().toISOString() : new Date().toISOString();
       return {
         id: d.id,
         title: doc.title,
         summary: doc.summary,
         category: doc.category,
         link: doc.link || null,
-        createdAt: doc.createdAt ? doc.createdAt.toDate().toISOString() : null,
+        createdAt: createdAt,
       };
     });
+
     return NextResponse.json({ success: true, notifications: data });
-  } catch (err) {
-    console.error('API /api/notifications GET error:', err);
+  } catch (err: any) {
+    console.error('API /api/notifications GET error:', err.message);
     return NextResponse.json({ success: false, error: 'Failed to load notifications' }, { status: 500 });
   }
 }
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,8 +58,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('API /api/notifications POST error:', err);
+  } catch (err: any) {
+    console.error('API /api/notifications POST error:', err.message);
     return NextResponse.json({ success: false, error: 'Failed to create notification' }, { status: 500 });
   }
 }
