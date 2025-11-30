@@ -1,19 +1,13 @@
 import "./globals.css";
 import AppProviders from "@/components/AppProviders";
 import { Toaster } from "@/components/ui/toaster";
-import { PT_Sans, Playfair_Display } from 'next/font/google';
+import { PT_Sans } from 'next/font/google';
 import { cn } from "@/lib/utils";
 
 const fontBody = PT_Sans({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-pt-sans',
-});
-
-const fontHeadline = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '700', '900'],
-  variable: '--font-playfair-display',
 });
 
 export const metadata = {
@@ -26,8 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={cn(
         "min-h-screen bg-background font-body text-foreground",
-        fontBody.variable,
-        fontHeadline.variable
+        fontBody.variable
       )}>
         <AppProviders>
             {children}
