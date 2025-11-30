@@ -14,9 +14,10 @@ const WhatsAppIcon = (props: SVGProps<SVGSVGElement>) => (
 );
 
 const socialLinks = [
-    { name: 'YouTube', href: 'https://www.youtube.com/@A2GTRICKACADEMY', icon: Youtube },
+    { name: 'YouTube', href: 'https://youtube.com/@a2g_tricks?si=_Ocd7GZHI39TUhof', icon: Youtube },
     { name: 'Telegram', href: 'https://t.me/a2gtrickacademy', icon: Send },
-    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029VaA2p8N4Y9l1rC928L3k', icon: WhatsAppIcon },
+    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029VafwdunEKyZOy2acO41A', icon: WhatsAppIcon },
+    { name: 'Website', href: 'https://a2gtricks.wordpress.com', icon: Globe },
 ];
 
 export default function AboutUsPage() {
@@ -83,7 +84,7 @@ export default function AboutUsPage() {
                 <Button key={link.name} variant="outline" asChild>
                     <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.name}>
                         <link.icon className="mr-2 h-4 w-4" />
-                        <span className="ml-2">{link.name}</span>
+                        <span>{link.name}</span>
                     </a>
                 </Button>
             ))}
