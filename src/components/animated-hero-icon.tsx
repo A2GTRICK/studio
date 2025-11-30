@@ -67,7 +67,7 @@ const AnimatedHeroIcon = () => {
       {/* Central Element */}
       <g className="animate-pulse-glow">
         <circle cx="100" cy="100" r="32" fill="hsl(var(--background))" />
-         <image href="https://i.postimg.cc/k5CkkR0S/image-logo.png" x="68" y="68" height="64" width="64" clipPath="url(#logo-clip)" />
+         <image href="https://i.postimg.cc/rKCdpty3/log-2Whats-App-Image-2025-12-01-at-02-44-29-a91fcf8e.jpg" x="68" y="68" height="64" width="64" clipPath="url(#logo-clip)" />
       </g>
     </svg>
   );
