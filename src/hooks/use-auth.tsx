@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebaseClient";
+import { auth, db } from "@/firebase";
 
 /**
  * AppUser - extend as needed (matches your users collection fields)
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // read the user's document from 'users' collection (if exists)
         const userDocRef = doc(db, "users", u.uid);
-        const snap = await getDoc(userDocR_project_files_in_a_tree_format_and_their_contents_hereef);
+        const snap = await getDoc(userDocRef);
 
         if (snap.exists()) {
           const data = snap.data() as any;
