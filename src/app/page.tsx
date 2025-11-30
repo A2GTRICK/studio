@@ -263,7 +263,7 @@ export default function Home() {
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Drug Inspector</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Pharmacist Exams</span>
                         <span className="text-lg font-semibold text-muted-foreground/80 mx-4">Project Files & Academic Support</span>
-                        <span className="text-lg font-semibold text-muted-foreground/80 mx-4">phamA2G</span>
+                        <span className="text-lg font-semibold text-muted-foreground/80 mx_4">phamA2G</span>
                     </div>
                 </div>
             </div>
@@ -276,7 +276,5 @@ export default function Home() {
     </div>
   );
 }
-
-    
 
     
