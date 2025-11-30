@@ -1,28 +1,42 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowRight, Sparkles, Target, BookCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import AnimatedHeroIcon from '@/components/animated-hero-icon';
+import Image from 'next/image';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const features = [
   {
-    icon: <Sparkles className="h-8 w-8 text-white" />,
     title: "AI Note Generator",
-    description: "Generate comprehensive, syllabus-aligned notes on any topic in seconds. Save time and study smarter.",
-    bgColor: "bg-purple-600",
+    description: "Generate comprehensive, syllabus-aligned notes on any topic in seconds.",
+    image: {
+      src: "https://picsum.photos/seed/notes/600/400",
+      width: 600,
+      height: 400,
+      aiHint: "notebook study"
+    }
   },
   {
-    icon: <Target className="h-8 w-8 text-white" />,
     title: "Exam-Ready Quizzes",
-    description: "Create customized MCQs for GPAT, NIPER, and other exams. Test your knowledge and track your progress.",
-    bgColor: "bg-blue-600",
+    description: "Create customized MCQs for GPAT, NIPER, and other exams to test your knowledge.",
+    image: {
+      src: "https://picsum.photos/seed/quiz/600/400",
+      width: 600,
+      height: 400,
+      aiHint: "exam test"
+    }
   },
   {
-    icon: <BookCheck className="h-8 w-8 text-white" />,
-    title: "Curated Content",
-    description: "Access a library of expert-verified notes and practice sets, ensuring you study from the best resources.",
-    bgColor: "bg-green-600",
+    title: "Curated Content Library",
+    description: "Access a library of expert-verified notes and practice sets for all your subjects.",
+    image: {
+      src: "https://picsum_photos/seed/library/600/400",
+      width: 600,
+      height: 400,
+      aiHint: "books library"
+    }
   }
 ];
 
@@ -79,17 +93,26 @@ export default function Home() {
                 Everything you need to excel in your pharmacy curriculum and competitive exams, all in one place.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <div key={index} className="flex flex-col items-center text-center">
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center ${feature.bgColor} mb-4`}>
-                    {feature.icon}
-                  </div>
-                  <h4 className="font-headline text-xl font-bold mb-2">{feature.title}</h4>
-                  <p className="text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {features.map((feature) => (
+                <Card key={feature.title} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <CardHeader className="p-0">
+                    <Image 
+                      src={feature.image.src} 
+                      alt={feature.title} 
+                      width={feature.image.width} 
+                      height={feature.image.height} 
+                      className="w-full h-48 object-cover" 
+                      data-ai-hint={feature.image.aiHint}
+                    />
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <CardTitle className="font-headline text-xl mb-2">{feature.title}</CardTitle>
+                    <p className="text-muted-foreground text-sm">
+                      {feature.description}
+                    </p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
