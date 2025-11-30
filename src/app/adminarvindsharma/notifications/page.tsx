@@ -54,6 +54,7 @@ export default function AdminNotificationsPage() {
     }
 
     if (!db) {
+        toast({ title: "Error", description: "Firestore not initialized." });
         setLoading(false);
         return;
     }
@@ -85,7 +86,7 @@ export default function AdminNotificationsPage() {
     });
 
     return () => unsub();
-  }, [router]);
+  }, [router, toast]);
 
   const createNotification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

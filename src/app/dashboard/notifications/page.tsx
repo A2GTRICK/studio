@@ -2,9 +2,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { collection, getDocs, orderBy, query, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, Timestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { Loader2 } from 'lucide-react';
+
 
 type NotificationRecord = {
   id: string;
@@ -20,16 +23,14 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchNotifications() {
-      if (!db) {
-          setLoading(false);
-          return;
-      }
-      try {
-        const notificationsRef = collection(db, "custom_notifications");
-        const q = query(notificationsRef, orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-        
+    if (!db) {
+        setLoading(false);
+        return;
+    }
+    const notificationsRef = collection(db, "custom_notifications");
+    const q = query(notificationsRef, orderBy("createdAt", "desc"));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedNotifications = snapshot.docs.map((doc) => {
             const data = doc.data();
             return {
@@ -42,13 +43,18 @@ export default function NotificationsPage() {
             } as NotificationRecord;
         });
         setNotifications(fetchedNotifications);
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-      } finally {
         setLoading(false);
-      }
-    }
-    fetchNotifications();
+    }, (error) => {
+        console.error("Failed to fetch notifications:", error);
+        const permissionError = new FirestorePermissionError({
+            path: 'custom_notifications',
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
 
@@ -61,7 +67,10 @@ export default function NotificationsPage() {
 
       <div className="space-y-4">
         {loading && (
-          <div className="p-6 bg-white rounded-xl shadow text-center text-muted-foreground">Loading notifications...</div>
+          <div className="p-6 bg-white rounded-xl shadow text-center text-muted-foreground flex items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            Loading notifications...
+            </div>
         )}
         {!loading && notifications.length === 0 && (
           <div className="p-6 bg-white rounded-xl shadow text-center text-muted-foreground">No notifications available.</div>

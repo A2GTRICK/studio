@@ -7,12 +7,12 @@ service cloud.firestore {
     // Writes are disallowed from the client for security.
     match /notes/{noteId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     match /mcqSets/{mcqId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // custom_notifications are publicly readable for all users.
