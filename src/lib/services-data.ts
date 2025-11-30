@@ -11,11 +11,11 @@ export interface Service {
   audience: string;
   price: string;
   features: string[];
-  sampleUrl: string;
   emailBody: string;
+  sampleRequestEmailBody: string;
 }
 
-const EMAIL_RECIPIENT = 'sharmaarvind28897@gmail.com';
+const EMAIL_RECIPIENT = 'a2gtrickacademy@gmail.com';
 
 export const services: Service[] = [
   {
@@ -32,8 +32,8 @@ export const services: Service[] = [
       'Plagiarism-free content with proper formatting.',
       'Timely delivery guaranteed.',
     ],
-    sampleUrl: '#',
-    emailBody: `Hello phamA2G Team,\n\nI am interested in the Internship Report Writing service.\n\nMy Course: [e.g., B.Pharm]\nMy Year/Semester: [e.g., 4th Year]\nMy College: [Your College Name]\n\nPlease provide me with a quote and further details.\n\nThank you,\n[Your Name]`
+    emailBody: `Hello phamA2G Team,\n\nI am interested in the Internship Report Writing service.\n\nMy Course: [e.g., B.Pharm]\nMy Year/Semester: [e.g., 4th Year]\nMy College: [Your College Name]\n\nPlease provide me with a quote and further details.\n\nThank you,\n[Your Name]`,
+    sampleRequestEmailBody: `Hello phamA2G Team,\n\nI would like to see a sample of your "Internship Report Writing" work.\n\nMy Course: [e.g., B.Pharm]\nMy Email: [Your Email]\n\nPlease send a sample to my email address.\n\nThank you,\n[Your Name]`
   },
   {
     icon: GraduationCap,
@@ -49,8 +49,8 @@ export const services: Service[] = [
       'Data analysis and interpretation using appropriate tools.',
       'Complete writing, formatting, and proofreading services.',
     ],
-    sampleUrl: '#',
-    emailBody: `Hello phamA2G Team,\n\nI need assistance with my dissertation/thesis.\n\nMy Research Topic: [Your Topic]\nMy Course: [e.g., M.Pharm in Pharmaceutics]\nSpecific help needed: [e.g., Literature Review, Full Writing, Data Analysis]\n\nPlease provide me with a custom quote.\n\nThank you,\n[Your Name]`
+    emailBody: `Hello phamA2G Team,\n\nI need assistance with my dissertation/thesis.\n\nMy Research Topic: [Your Topic]\nMy Course: [e.g., M.Pharm in Pharmaceutics]\nSpecific help needed: [e.g., Literature Review, Full Writing, Data Analysis]\n\nPlease provide me with a custom quote.\n\nThank you,\n[Your Name]`,
+    sampleRequestEmailBody: `Hello phamA2G Team,\n\nI would like to see a sample of your "Dissertation & Thesis" work.\n\nMy Course: [e.g., M.Pharm]\nMy Email: [Your Email]\n\nPlease send a sample to my email address.\n\nThank you,\n[Your Name]`
   },
   {
     icon: FileText,
@@ -66,8 +66,8 @@ export const services: Service[] = [
       'Content is clear, concise, and easy to understand.',
       'Available in both digital (PDF) and physical formats.',
     ],
-    sampleUrl: '#',
-    emailBody: `Hello phamA2G Team,\n\nI would like to request a Project File.\n\nSubject: [e.g., Pharmaceutics-I]\nTopic: [e.g., Tablets]\nMy Course: [e.g., D.Pharm 1st Year]\n\nPlease let me know the price and how to proceed.\n\nThank you,\n[Your Name]`
+    emailBody: `Hello phamA2G Team,\n\nI would like to request a Project File.\n\nSubject: [e.g., Pharmaceutics-I]\nTopic: [e.g., Tablets]\nMy Course: [e.g., D.Pharm 1st Year]\n\nPlease let me know the price and how to proceed.\n\nThank you,\n[Your Name]`,
+    sampleRequestEmailBody: `Hello phamA2G Team,\n\nI would like to see a sample of your "Project File Preparation" work.\n\nMy Subject: [e.g., Pharmaceutics-I]\nMy Email: [Your Email]\n\nPlease send a sample to my email address.\n\nThank you,\n[Your Name]`
   },
   {
     icon: TestTube2,
@@ -83,8 +83,8 @@ export const services: Service[] = [
       'Neat diagrams and properly recorded observation tables.',
       'Saves you valuable time and ensures complete records.',
     ],
-    sampleUrl: '#',
-    emailBody: `Hello phamA2G Team,\n\nI need help with my Lab Manual/Record.\n\nSubject: [e.g., Pharmaceutical Chemistry-II]\nMy Course & Year: [e.g., B.Pharm 2nd Year]\nNumber of Experiments: [e.g., 15]\n\nPlease provide a quote.\n\nThank you,\n[Your Name]`
+    emailBody: `Hello phamA2G Team,\n\nI need help with my Lab Manual/Record.\n\nSubject: [e.g., Pharmaceutical Chemistry-II]\nMy Course & Year: [e.g., B.Pharm 2nd Year]\nNumber of Experiments: [e.g., 15]\n\nPlease provide a quote.\n\nThank you,\n[Your Name]`,
+    sampleRequestEmailBody: `Hello phamA2G Team,\n\nI would like to see a sample of your "Lab Manual & Record Work".\n\nMy Subject: [e.g., Pharmaceutical Chemistry-II]\nMy Email: [Your Email]\n\nPlease send a sample to my email address.\n\nThank you,\n[Your Name]`
   },
   {
     icon: Mic,
@@ -100,8 +100,8 @@ export const services: Service[] = [
       'Includes relevant images, diagrams, and animations.',
       'Speaker notes can be provided upon request.',
     ],
-    sampleUrl: '#',
-    emailBody: `Hello phamA2G Team,\n\nI need a PowerPoint presentation for my seminar.\n\nTopic: [Your Seminar Topic]\nNumber of Slides: [e.g., 15-20]\nDate of Presentation: [Date]\n\nPlease send me a quote and some sample designs.\n\nThank you,\n[Your Name]`
+    emailBody: `Hello phamA2G Team,\n\nI need a PowerPoint presentation for my seminar.\n\nTopic: [Your Seminar Topic]\nNumber of Slides: [e.g., 15-20]\nDate of Presentation: [Date]\n\nPlease send me a quote and some sample designs.\n\nThank you,\n[Your Name]`,
+    sampleRequestEmailBody: `Hello phamA2G Team,\n\nI would like to see a sample of your "Seminar & Presentation (PPT)" work.\n\nMy Seminar Topic: [Your Seminar Topic]\nMy Email: [Your Email]\n\nPlease send a sample to my email address.\n\nThank you,\n[Your Name]`
   },
   {
     icon: Presentation,
@@ -117,8 +117,8 @@ export const services: Service[] = [
       'Includes diagrams and flowcharts where necessary.',
       'Guaranteed on-time submission.',
     ],
-    sampleUrl: '#',
-    emailBody: `Hello phamA2G Team,\n\nI require assistance with an assignment.\n\nSubject: [e.g., Human Anatomy and Physiology]\nTopic: [e.g., The Endocrine System]\nWord Count/Length: [e.g., 10 pages]\nDeadline: [Date]\n\nPlease provide a quote.\n\nThank you,\n[Your Name]`
+    emailBody: `Hello phamA2G Team,\n\nI require assistance with an assignment.\n\nSubject: [e.g., Human Anatomy and Physiology]\nTopic: [e.g., The Endocrine System]\nWord Count/Length: [e.g., 10 pages]\nDeadline: [Date]\n\nPlease provide a quote.\n\nThank you,\n[Your Name]`,
+    sampleRequestEmailBody: `Hello phamA2G Team,\n\nI would like to see a sample of your "Assignment Writing" work.\n\nMy Subject: [e.g., Human Anatomy and Physiology]\nMy Email: [Your Email]\n\nPlease send a sample to my email address.\n\nThank you,\n[Your Name]`
   },
 ];
 
@@ -132,4 +132,10 @@ export function createServiceMailto(service: Service) {
   return `mailto:${EMAIL_RECIPIENT}?subject=${encodeURIComponent(
     `Service Inquiry: ${service.title}`
   )}&body=${encodeURIComponent(service.emailBody)}`;
+}
+
+export function createSampleRequestMailto(service: Service) {
+  return `mailto:${EMAIL_RECIPIENT}?subject=${encodeURIComponent(
+    `Sample Request: ${service.title}`
+  )}&body=${encodeURIComponent(service.sampleRequestEmailBody)}`;
 }

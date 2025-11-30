@@ -1,6 +1,6 @@
 
 import { notFound } from 'next/navigation';
-import { getServiceBySlug, createServiceMailto } from '@/lib/services-data';
+import { getServiceBySlug, createServiceMailto, createSampleRequestMailto } from '@/lib/services-data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Mail, FileText } from 'lucide-react';
@@ -13,8 +13,9 @@ export default function ServiceDetailPage({ params }: { params: { slug: string }
     notFound();
   }
 
-  const { icon: Icon, title, description, audience, price, features, sampleUrl, slug } = service;
+  const { icon: Icon, title, description, audience, price, features, slug } = service;
   const mailtoLink = createServiceMailto(service);
+  const sampleMailtoLink = createSampleRequestMailto(service);
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -86,10 +87,10 @@ export default function ServiceDetailPage({ params }: { params: { slug: string }
                     </a>
                 </Button>
                 <Button asChild variant="outline">
-                    <Link href={sampleUrl} target="_blank">
+                    <a href={sampleMailtoLink}>
                         <FileText className="mr-2 h-4 w-4" />
                         View Sample Work
-                    </Link>
+                    </a>
                 </Button>
             </div>
           </Card>
