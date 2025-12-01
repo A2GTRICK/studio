@@ -1,188 +1,179 @@
 
-// src/app/dashboard/notifications/page.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
-import { collection, onSnapshot, orderBy, query, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase/config';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { Loader2, Bell, BookCopy, Briefcase, Building, AlertCircle, Info, Search, ExternalLink } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Input } from '@/components/ui/input';
+import { useEffect, useState, useMemo } from "react";
+import { db } from "@/firebase/config";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  Timestamp,
+} from "firebase/firestore";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, Search, Bell } from "lucide-react";
+import Image from "next/image";
+import clsx from "clsx";
 
-type NotificationRecord = {
+interface NotificationItem {
   id: string;
   title: string;
   summary: string;
   category: string;
-  link?: string;
-  createdAt: Date;
-};
-
-const categoryIcons: Record<string, React.ReactNode> = {
-    "Exam Alert": <AlertCircle className="h-5 w-5 text-red-500" />,
-    "Job Notification": <Briefcase className="h-5 w-5 text-blue-500" />,
-    "University Update": <Building className="h-5 w-5 text-purple-500" />,
-    "Content Update": <BookCopy className="h-5 w-5 text-green-500" />,
-    "PCI Circular": <Info className="h-5 w-5 text-yellow-600" />,
-    "General": <Info className="h-5 w-5 text-gray-500" />,
-};
+  createdAt: Timestamp;
+}
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [search, setSearch] = useState("");
+
+  const categories = [
+    "All",
+    "Job Notification",
+    "Industry Hiring",
+    "University Update",
+  ];
 
   useEffect(() => {
-    if (!db) {
-        setLoading(false);
-        return;
-    }
-    const notificationsRef = collection(db, "custom_notifications");
-    const q = query(notificationsRef, orderBy("createdAt", "desc"));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedNotifications = snapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                title: data.title,
-                summary: data.summary,
-                category: data.category,
-                link: data.link,
-                createdAt: (data.createdAt as Timestamp).toDate(),
-            } as NotificationRecord;
-        });
-        setNotifications(fetchedNotifications);
-        setLoading(false);
-    }, (error) => {
-        console.error("Failed to fetch notifications:", error);
-        const permissionError = new FirestorePermissionError({
-            path: 'custom_notifications',
-            operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setLoading(false);
+    const q = query(
+      collection(db, "custom_notifications"),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const items = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as NotificationItem[];
+
+      setNotifications(items);
     });
 
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  const categories = useMemo(() => {
-    const allCategories = notifications.map(n => n.category);
-    return ['All', ...Array.from(new Set(allCategories))];
-  }, [notifications]);
+  const filtered = useMemo(() => {
+    return notifications.filter((n) => {
+      const matchesCategory =
+        selectedCategory === "All" || n.category === selectedCategory;
 
-  const filteredNotifications = useMemo(() => {
-    return notifications.filter(n => {
-      const matchesCategory = activeCategory === 'All' || n.category === activeCategory;
-      const matchesSearch = searchQuery.trim() === '' ||
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.summary.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch =
+        n.title.toLowerCase().includes(search.toLowerCase()) ||
+        n.summary.toLowerCase().includes(search.toLowerCase());
+
       return matchesCategory && matchesSearch;
     });
-  }, [notifications, searchQuery, activeCategory]);
+  }, [notifications, selectedCategory, search]);
+
+  const categoryIcon = {
+    "Job Notification": "/icons/job.png",
+    "Industry Hiring": "/icons/hiring.png",
+    "University Update": "/icons/university.png",
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-        <header className="mb-8 text-center">
-            <div className="inline-flex items-center justify-center bg-primary/10 text-primary p-3 rounded-full mb-4">
-                <Bell className="w-8 h-8" />
-            </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold font-headline tracking-tight text-gray-900">
-            Live Notifications
-          </h1>
-          <p className="mt-3 max-w-2xl mx-auto text-lg text-muted-foreground">
-            The latest university updates, exam alerts, and job openings.
-          </p>
-        </header>
+    <div className="max-w-4xl mx-auto py-10 px-4 space-y-6">
+      <div className="text-center space-y-1">
+        <h1 className="text-4xl font-extrabold tracking-tight">
+          Live Notifications
+        </h1>
+        <p className="text-gray-600">
+          The latest university updates, exam alerts, and job openings.
+        </p>
+      </div>
 
-        <div className="space-y-6">
-            {/* Search and Filter Controls */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border space-y-4">
-                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input 
-                        placeholder="Search notifications..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                    />
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    {categories.map(category => (
-                        <Button 
-                            key={category}
-                            variant={activeCategory === category ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setActiveCategory(category)}
-                            className="rounded-full"
-                        >
-                            {category}
-                        </Button>
-                    ))}
-                </div>
-            </div>
+      {/* Search bar */}
+      <div className="bg-white shadow-sm border p-4 rounded-xl flex gap-3 items-center">
+        <Search className="h-5 w-5 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search notifications..."
+          className="w-full outline-none text-gray-700"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
 
-            {/* Notifications List */}
-            <div className="space-y-3">
-                {loading && (
-                <div className="flex justify-center items-center h-40">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-                )}
-                {!loading && filteredNotifications.length === 0 && (
-                <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed">
-                    <h2 className="text-2xl font-semibold text-gray-700">No Matching Notifications</h2>
-                    <p className="mt-2 text-muted-foreground">Try adjusting your search or filter.</p>
-                </div>
-                )}
+      {/* Category chips */}
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={clsx(
+              "px-4 py-2 text-sm rounded-full border transition font-medium whitespace-nowrap",
+              selectedCategory === cat
+                ? "bg-purple-600 text-white border-purple-600 shadow"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+            )}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
 
-                {!loading && filteredNotifications.length > 0 && (
-                    <Accordion type="single" collapsible className="w-full space-y-3">
-                        {filteredNotifications.map((n) => (
-                            <AccordionItem key={n.id} value={n.id} className="bg-white border-b-0 rounded-xl shadow-sm transition-shadow hover:shadow-md">
-                                <AccordionTrigger className="p-4 hover:no-underline text-left">
-                                <div className="flex items-start gap-4 w-full">
-                                    <div className="p-2 bg-secondary rounded-full mt-1">
-                                        {categoryIcons[n.category] || <Info className="h-5 w-5 text-gray-500" />}
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-base leading-tight">{n.title}</h3>
-                                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1.5">
-                                            <span>{n.category}</span>
-                                            <span>&bull;</span>
-                                            <span>{n.createdAt ? new Date(n.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-6 pb-6">
-                                    <div className="space-y-4 pl-12 border-l-2 ml-5 border-dashed">
-                                        <p className="text-muted-foreground leading-relaxed">
-                                            {n.summary}
-                                        </p>
-                                        {n.link && (
-                                            <div>
-                                                <Button asChild variant="outline" size="sm">
-                                                    <a href={n.link} target="_blank" rel="noopener noreferrer">
-                                                        View Source <ExternalLink className="ml-2 h-4 w-4" />
-                                                    </a>
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
+      {/* Notification List */}
+      <div className="space-y-4">
+        {filtered.map((item) => (
+          <div
+            key={item.id}
+            className="bg-white shadow-sm border rounded-xl p-4"
+          >
+            <button
+              className="w-full flex items-center justify-between"
+              onClick={() =>
+                setExpanded(expanded === item.id ? null : item.id)
+              }
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Bell className="h-5 w-5 text-purple-600" />
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-lg leading-tight">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-purple-600">
+                    {item.category}
+                    {" • "}
+                    {item.createdAt.toDate().toLocaleDateString("en-IN")}
+                  </p>
+                </div>
+              </div>
+
+              <ChevronDown
+                className={clsx(
+                  "h-5 w-5 text-gray-600 transition-transform",
+                  expanded === item.id ? "rotate-180" : ""
                 )}
-            </div>
-        </div>
+              />
+            </button>
+
+            {/* Expandable summary */}
+            <AnimatePresence>
+              {expanded === item.id && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-4 text-gray-700 text-sm leading-relaxed"
+                >
+                  {item.summary}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="text-center text-gray-500 mt-10">
+            No matching notifications found.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
