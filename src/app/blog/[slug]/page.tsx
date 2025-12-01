@@ -84,7 +84,11 @@ export default async function BlogViewPage({ params }: { params: { slug: string 
   // Convert Firestore Timestamps to serializable format for the client component
   const related = relatedPostsRaw.map(p => ({
     ...p,
-    createdAt: p.createdAt ? { seconds: p.createdAt.seconds, nanoseconds: p.createdAt.nanoseconds } : null,
+    createdAt: p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }) : null,
     updatedAt: p.updatedAt ? { seconds: p.updatedAt.seconds, nanoseconds: p.updatedAt.nanoseconds } : null,
   }));
 
