@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Facebook, Linkedin, Whatsapp, Send } from 'lucide-react';
+import { Facebook, Linkedin, MessageCircle, Send } from 'lucide-react';
 
 export default function ShareButtons({ title, url }: { title: string; url: string }) {
   const encodedUrl = encodeURIComponent(url);
@@ -10,7 +10,7 @@ export default function ShareButtons({ title, url }: { title: string; url: strin
     {
       name: 'WhatsApp',
       href: `https://api.whatsapp.com/send?text=${encodedTitle}%20-%20${encodedUrl}`,
-      icon: <Whatsapp className="h-4 w-4" />
+      icon: <MessageCircle className="h-4 w-4" />
     },
     {
       name: 'Telegram',
