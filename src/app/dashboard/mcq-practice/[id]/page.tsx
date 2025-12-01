@@ -44,7 +44,19 @@ export default function MCQSetPage() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  
+  const questions = set?.questions || [];
+  const total = questions.length;
+  const current = questions[index];
 
+  const correctCount = useMemo(() => {
+    if (!submitted) return 0;
+    return answers ? Object.entries(answers).reduce((acc, [idx, ans]) => {
+        const question = questions[Number(idx)];
+        return question && question.correctAnswer === ans ? acc + 1 : acc;
+    }, 0) : 0;
+  }, [answers, questions, submitted]);
+  
   useEffect(() => {
     if (set) {
       setLoading(false);
@@ -82,10 +94,6 @@ export default function MCQSetPage() {
       </div>
     );
   }
-  
-  const questions = set.questions || [];
-  const total = questions.length;
-  const current = questions[index];
 
   const selectOption = (opt: string) => {
     setAnswers((prev) => ({...prev, [index]: opt}));
@@ -94,14 +102,6 @@ export default function MCQSetPage() {
   const goNext = () => setIndex((i) => Math.min(i + 1, total - 1));
   const goPrev = () => setIndex((i) => Math.max(i - 1, 0));
   const handleSubmit = () => setSubmitted(true);
-
-  const correctCount = useMemo(() => {
-    if (!submitted) return 0;
-    return answers ? Object.entries(answers).reduce((acc, [idx, ans]) => {
-        const question = questions[Number(idx)];
-        return question && question.correctAnswer === ans ? acc + 1 : acc;
-    }, 0) : 0;
-  }, [answers, questions, submitted]);
   
   const scorePercentage = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
@@ -246,4 +246,3 @@ export default function MCQSetPage() {
     </div>
   );
 }
-
