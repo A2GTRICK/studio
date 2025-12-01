@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from "@/firebase/config";
-import { collection, addDoc, getDocs, getDoc, deleteDoc, doc, serverTimestamp, query, where, Timestamp, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, getDoc, deleteDoc, doc, serverTimestamp, query, where, Timestamp, updateDoc, orderBy } from 'firebase/firestore';
 
 export interface BlogPost {
   id: string;
