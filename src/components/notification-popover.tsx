@@ -85,14 +85,14 @@ export default function NotificationPopover() {
       {isOpen && (
         <div ref={popoverRef} style={styles.popper} {...attributes.popper} className="w-96 bg-white shadow-lg rounded-xl z-50 border">
           <div className="p-4 border-b">
-            <div className="font-semibold">Recent updates</div>
+            <div className="font-semibold text-foreground">Recent updates</div>
           </div>
 
           <div className="max-h-80 overflow-auto">
             {loading && (
-              <div className="p-4 flex items-center justify-center gap-2">
-                <Loader2 className="animate-spin" />
-                <div>Loading…</div>
+              <div className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="animate-spin h-4 w-4" />
+                <div>Loading notifications...</div>
               </div>
             )}
 
@@ -106,24 +106,24 @@ export default function NotificationPopover() {
 
             {!loading && !error && items.map((n) => (
               <div key={n.id} className="p-3 border-b hover:bg-gray-50/50">
-                <div className="flex justify-between items-center gap-2">
+                <div className="flex justify-between items-start gap-2">
                   <div className="font-medium text-sm flex-1">{n.title}</div>
-                  <div className="text-xs text-gray-400 flex-shrink-0">{n.category}</div>
+                  <div className="text-xs text-muted-foreground flex-shrink-0">{n.category}</div>
                 </div>
-                <div className="text-sm text-gray-600 mt-1">{n.summary?.slice(0, 160)}{n.summary && n.summary.length > 160 ? '…' : ''}</div>
-                {n.link && (
-                  <div className="mt-2">
-                    <a className="text-xs text-purple-600 hover:underline inline-flex items-center gap-1" href={n.link} target="_blank" rel="noopener noreferrer">
-                      View Source <ArrowRight className="w-3 h-3"/>
-                    </a>
-                  </div>
-                )}
+                <div className="text-sm text-muted-foreground mt-1 pr-4">
+                    {n.summary?.slice(0, 160)}{n.summary && n.summary.length > 160 ? '...' : ''}
+                    {n.link && (
+                        <a className="text-xs text-primary hover:underline inline-flex items-center gap-1 ml-2" href={n.link} target="_blank" rel="noopener noreferrer">
+                            More <ArrowRight className="w-3 h-3"/>
+                        </a>
+                    )}
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="p-2 border-t text-center">
-            <Link href="/dashboard/notifications" onClick={() => setIsOpen(false)} className="text-sm text-purple-600 hover:underline">See all notifications</Link>
+          <div className="p-3 border-t text-center">
+            <Link href="/dashboard/notifications" onClick={() => setIsOpen(false)} className="text-sm text-primary font-medium hover:underline">See all notifications</Link>
           </div>
         </div>
       )}
