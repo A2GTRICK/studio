@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2, Trash2, PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function AdminBlogPage() {
   const { toast } = useToast();
@@ -34,7 +36,7 @@ export default function AdminBlogPage() {
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const data = {
+    const postData = {
       title: formData.get("title"),
       summary: formData.get("summary"),
       content: formData.get("content"),
@@ -44,30 +46,39 @@ export default function AdminBlogPage() {
       createdAt: serverTimestamp(),
     };
 
-    if (!data.title || !data.summary || !data.content || !data.adminKey) {
+    if (!postData.title || !postData.summary || !postData.content || !postData.adminKey) {
         toast({ title: "Missing Fields", description: "Please fill all required fields.", variant: "destructive"});
         setIsLoading(false);
         return;
     }
 
+    const postsCollection = collection(db, "posts");
     try {
-      await addDoc(collection(db, "posts"), data);
+      await addDoc(postsCollection, postData);
       toast({ title: "Success!", description: "Post published." });
       (e.target as HTMLFormElement).reset();
-    } catch (e: any) {
-      console.error("Create post error", e);
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } catch (serverError: any) {
+        const permissionError = new FirestorePermissionError({
+            path: postsCollection.path,
+            operation: 'create',
+            requestResourceData: postData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
     }
     setIsLoading(false);
   };
 
   const deletePost = async (id: string) => {
+    const postDoc = doc(db, "posts", id);
     try {
-        await deleteDoc(doc(db, "posts", id));
+        await deleteDoc(postDoc);
         toast({ title: "Deleted", description: "Post has been removed."});
-    } catch(e: any) {
-        console.error("Delete post error", e);
-        toast({ title: "Error", description: "Could not delete post.", variant: "destructive" });
+    } catch(serverError: any) {
+        const permissionError = new FirestorePermissionError({
+            path: postDoc.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
     }
   };
 
