@@ -1,10 +1,11 @@
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Bell, Loader2, ArrowRight } from 'lucide-react';
-import { usePopper } from 'react-popper';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 type Notif = {
   id: string;
@@ -20,14 +21,6 @@ export default function NotificationPopover() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Notif[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  const { styles, attributes } = usePopper(buttonRef.current, popoverRef.current, {
-    placement: 'bottom-end',
-    modifiers: [{ name: 'offset', options: { offset: [0, 8] } }],
-  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,37 +47,25 @@ export default function NotificationPopover() {
     load();
     return () => { cancelled = true; };
   }, [isOpen]);
-  
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        popoverRef.current && !popoverRef.current.contains(event.target as Node) &&
-        buttonRef.current && !buttonRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
-    <div className="relative">
-      <button 
-        ref={buttonRef} 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="relative p-2 rounded-full hover:bg-gray-100"
-      >
-        <Bell />
-        <span className="absolute top-1 right-1 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-        </span>
-      </button>
-      
-      {isOpen && (
-        <div ref={popoverRef} style={styles.popper} {...attributes.popper} className="w-96 bg-white shadow-lg rounded-xl z-50 border">
-          <div className="p-4 border-b">
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="relative p-2 rounded-full hover:bg-gray-100"
+        >
+          <Bell />
+          {items.length > 0 && (
+            <span className="absolute top-1 right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96 p-0" align="end">
+         <div className="p-4 border-b">
             <div className="font-semibold text-foreground">Recent updates</div>
           </div>
 
@@ -125,8 +106,7 @@ export default function NotificationPopover() {
           <div className="p-3 border-t text-center">
             <Link href="/dashboard/notifications" onClick={() => setIsOpen(false)} className="text-sm text-primary font-medium hover:underline">See all notifications</Link>
           </div>
-        </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 }
