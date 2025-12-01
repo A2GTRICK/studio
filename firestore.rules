@@ -3,70 +3,57 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // -----------------------------
-    // ADMIN CONFIG – ADMIN PANEL
-    // -----------------------------
+    // ========================
+    // ADMIN CONFIG (public read)
+    // ========================
     match /adminConfig/{doc} {
-      allow read: if true;  // allow admin code to be read publicly for login
-      allow update: if request.resource.data.adminOldKey ==
-                    get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-      allow create, delete: if false;
+      allow read: if true;
+      allow write: if false;
     }
 
-    // -----------------------------
-    // NOTES – PUBLIC READ
-    // -----------------------------
+    // ========================
+    // NOTES (public read)
+    // ========================
     match /notes/{id} {
       allow read: if true;
-      // Admin create only, checked via adminKey field
-      allow create: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-      allow update, delete: if false;
+      allow write: if false;
     }
 
-    // -----------------------------
-    // MCQ SETS – PUBLIC READ
-    // -----------------------------
+    // ========================
+    // MCQ SETS (public read)
+    // ========================
     match /mcqSets/{id} {
       allow read: if true;
-      // Admin create only, checked via adminKey field
-      allow create: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-      allow update, delete: if false;
+      allow write: if false;
     }
-    
-    // -----------------------------
-    // POSTS (NEW BLOG) – PUBLIC READ
-    // -----------------------------
-    match /posts/{postId} {
+
+    // ========================
+    // CUSTOM NOTIFICATIONS (public read)
+    // ========================
+    match /custom_notifications/{id} {
       allow read: if true;
-      allow create: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
-      allow update, delete: if false;
+      allow write: if false;
     }
 
-    // -----------------------------
-    // CUSTOM NOTIFICATIONS – PUBLIC READ, ADMIN WRITE
-    // -----------------------------
-    match /custom_notifications/{notificationId} {
+    // ========================
+    // BLOG POSTS (public read)
+    // ========================
+    match /posts/{id} {
       allow read: if true;
-      // Allow create and delete only by an authenticated admin user.
-      // This uses Firebase Auth roles, which is more secure.
-      allow create, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      allow update: if false;
+      allow write: if false;
     }
 
-    // -----------------------------
-    // BLOG POSTS COLLECTION
-    // -----------------------------
-    match /blog/{postId} {
-      // Public can read all posts
-      allow get, list: if true;
-
-      // Only Admin can write (create, edit, delete)
-      allow write: if request.auth != null 
-                    && request.auth.uid == 'WXFMrKzg0eYHgFEspk8WoIIDc3j2';
+    // ========================
+    // USERS (private)
+    // ========================
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
     }
 
-
-    // Fallback: Deny all other access
+    // ========================
+    // DEFAULT DENY
+    // ========================
     match /{document=**} {
       allow read, write: if false;
     }
