@@ -132,49 +132,49 @@ export default function PremiumNoteViewPage() {
   }, [note]);
 
   if (loading)
-    return <div className="min-h-screen flex justify-center items-center text-xl">Loading...</div>;
+    return <div class="min-h-screen flex justify-center items-center text-xl">Loading...</div>;
 
   if (!note)
-    return <div className="min-h-screen flex justify-center items-center text-xl">Note Not Found</div>;
+    return <div class="min-h-screen flex justify-center items-center text-xl">Note Not Found</div>;
 
   const created = new Date(note.createdAt?.seconds * 1000 || Date.now());
 
   return (
-    <div className={`${THEME.pageBg} min-h-screen pb-20`}>
+    <div class={`${THEME.pageBg} min-h-screen pb-20`}>
 
       {/* Sticky Header */}
-      <div className="sticky top-0 z-40 bg-white border-b shadow-sm px-4 py-3 flex justify-between items-center">
-        <div className="font-bold text-purple-700 line-clamp-1">{note.title}</div>
+      <div class="sticky top-0 z-40 bg-white border-b shadow-sm px-4 py-3 flex justify-between items-center">
+        <div class="font-bold text-purple-700 line-clamp-1">{note.title}</div>
         <button
           onClick={() => setShowTOC(true)}
-          className="md:hidden p-2 rounded-lg border text-sm"
+          class="md:hidden p-2 rounded-lg border text-sm"
         >
-          <Menu className="w-4 h-4" />
+          <Menu class="w-4 h-4" />
         </button>
       </div>
 
       {/* MAIN WRAPPER */}
-      <div className="max-w-6xl mx-auto px-4 lg:flex gap-10 mt-8">
+      <div class="max-w-6xl mx-auto px-4 lg:flex gap-10 mt-8">
 
         {/* LEFT CONTENT */}
-        <div className="flex-1">
+        <div class="flex-1">
 
           {/* Back Button */}
-          <Link href="/dashboard/notes" className="inline-flex items-center text-purple-700 mb-6">
-            <ArrowLeft className="mr-2 w-4" /> Back to Notes
+          <Link href="/dashboard/notes" class="inline-flex items-center text-purple-700 mb-6">
+            <ArrowLeft class="mr-2 w-4" /> Back to Notes
           </Link>
 
           {/* HEADER CARD */}
-          <div className={`${THEME.card} p-8 mb-8`}>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">{note.title}</h1>
+          <div class={`${THEME.card} p-8 mb-8`}>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900">{note.title}</h1>
 
-            <p className="text-gray-600 mt-2">
+            <p class="text-gray-600 mt-2">
               {note.course} • {note.subject} • Year {note.year}
             </p>
 
-            <p className="mt-3 text-gray-700">{note.short}</p>
+            <p class="mt-3 text-gray-700">{note.short}</p>
 
-            <div className="mt-4 flex gap-4">
+            <div class="mt-4 flex gap-4">
               {/* Share */}
               <button
                 onClick={() => {
@@ -184,33 +184,33 @@ export default function PremiumNoteViewPage() {
                     url: window.location.href,
                   });
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg"
+                class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg"
               >
-                <Share2 className="w-4" /> Share
+                <Share2 class="w-4" /> Share
               </button>
 
               {/* Download PDF */}
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg"
+                class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg"
               >
-                <FileDown className="w-4" /> Download PDF
+                <FileDown class="w-4" /> Download PDF
               </button>
             </div>
           </div>
 
           {/* CONTENT CARD */}
-          <div className={`${THEME.card} p-8 prose max-w-none`}>
+          <div class={`${THEME.card} p-8 prose max-w-none`}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
               components={{
-                h1: (props) => <h1 className="text-3xl font-bold text-purple-800" {...props} />,
-                h2: (props) => <h2 className="text-2xl font-semibold text-purple-700" {...props} />,
-                h3: (props) => <h3 className="text-xl font-semibold text-purple-600" {...props} />,
-                table: (props) => <table className="w-full border mt-4" {...props} />,
-                th: (props) => <th className="p-2 bg-purple-100 border" {...props} />,
-                td: (props) => <td className="p-2 border" {...props} />,
+                h1: (props) => <h1 class="text-3xl font-bold text-purple-800" {...props} />,
+                h2: (props) => <h2 class="text-2xl font-semibold text-purple-700" {...props} />,
+                h3: (props) => <h3 class="text-xl font-semibold text-purple-600" {...props} />,
+                table: (props) => <table class="w-full border mt-4" {...props} />,
+                th: (props) => <th class="p-2 bg-purple-100 border" {...props} />,
+                td: (props) => <td class="p-2 border" {...props} />,
               }}
             >
               {sanitized}
@@ -219,19 +219,19 @@ export default function PremiumNoteViewPage() {
 
           {/* RELATED NOTES */}
           {related.length > 0 && (
-            <div className={`${THEME.card} p-6 mt-10`}>
-              <h3 className="text-xl font-bold mb-4 text-purple-700 flex items-center gap-2">
-                <BookText className="w-5" /> Related Notes
+            <div class={`${THEME.card} p-6 mt-10`}>
+              <h3 class="text-xl font-bold mb-4 text-purple-700 flex items-center gap-2">
+                <BookText class="w-5" /> Related Notes
               </h3>
-              <div className="space-y-3">
+              <div class="space-y-3">
                 {related.map((r) => (
                   <Link
                     key={r.id}
                     href={`/dashboard/notes/view/${r.id}`}
-                    className="block p-4 border rounded-lg hover:bg-purple-50"
+                    class="block p-4 border rounded-lg hover:bg-purple-50"
                   >
-                    <p className="font-semibold">{r.title}</p>
-                    <p className="text-sm text-gray-600">{r.course} • {r.subject}</p>
+                    <p class="font-semibold">{r.title}</p>
+                    <p class="text-sm text-gray-600">{r.course} • {r.subject}</p>
                   </Link>
                 ))}
               </div>
@@ -241,13 +241,13 @@ export default function PremiumNoteViewPage() {
         </div>
 
         {/* RIGHT SIDEBAR (Desktop) */}
-        <aside className="hidden lg:block w-72 sticky top-20 h-fit">
-          <div className={`${THEME.card} p-6`}>
-            <h3 className="font-bold text-lg mb-3">Note Info</h3>
-            <p className="text-sm text-gray-700">
+        <aside class="hidden lg:block w-72 sticky top-20 h-fit">
+          <div class={`${THEME.card} p-6`}>
+            <h3 class="font-bold text-lg mb-3">Note Info</h3>
+            <p class="text-sm text-gray-700">
               <strong>Author:</strong> pharmA2G Team
             </p>
-            <p className="text-sm text-gray-700 mt-1">
+            <p class="text-sm text-gray-700 mt-1">
               <strong>Published:</strong> {created.toLocaleDateString()}
             </p>
           </div>
@@ -256,13 +256,13 @@ export default function PremiumNoteViewPage() {
 
       {/* MOBILE TOC */}
       {showTOC && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50">
-          <div className="absolute right-0 top-0 w-72 h-full bg-white p-6 shadow-lg">
-            <button className="mb-6" onClick={() => setShowTOC(false)}>
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50">
+          <div class="absolute right-0 top-0 w-72 h-full bg-white p-6 shadow-lg">
+            <button class="mb-6" onClick={() => setShowTOC(false)}>
               Close
             </button>
-            <h3 className="font-bold text-lg mb-3">Reading Tools</h3>
-            <p className="text-sm text-gray-600">Author: pharmA2G Team</p>
+            <h3 class="font-bold text-lg mb-3">Reading Tools</h3>
+            <p class="text-sm text-gray-600">Author: pharmA2G Team</p>
           </div>
         </div>
       )}
