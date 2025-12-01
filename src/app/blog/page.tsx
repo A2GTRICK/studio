@@ -1,9 +1,15 @@
 
-import { fetchAllPosts } from "@/services/posts";
+import { fetchAllPosts, type Post } from "@/services/posts";
 import Image from "next/image";
 import Link from "next/link";
 import { Rss, Loader2 } from 'lucide-react';
 import { Suspense } from "react";
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'The pharmA2G Blog | News, Updates & Insights',
+  description: 'Explore the latest insights, news, and updates from the world of pharmacy. Your go-to resource for academic and career-focused articles.',
+};
 
 async function BlogList() {
   const posts = await fetchAllPosts();
@@ -12,7 +18,7 @@ async function BlogList() {
     <>
       {posts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post: any) => (
+          {posts.map((post: Post) => (
             <Link key={post.id} href={`/blog/${post.id}`} passHref>
               <div className="group bg-white rounded-2xl shadow-lg overflow-hidden h-full flex flex-col transition-transform transform hover:-translate-y-2 hover:shadow-2xl border border-gray-200">
                 {post.banner && (
