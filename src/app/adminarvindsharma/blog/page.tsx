@@ -20,19 +20,24 @@ export default function AdminBlogPage() {
   const [posts, setPosts] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!db) return;
     const ref = collection(db, "posts");
     const q = query(ref, orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     }, (error) => {
       console.error("Error fetching posts:", error);
-      toast({ title: "Error", description: "Could not fetch posts.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch posts. Check Firestore permissions.", variant: "destructive" });
     });
     return () => unsub();
   }, [toast]);
 
   const createPost = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!db) {
+        toast({ title: "Database Error", description: "Firestore is not initialized.", variant: "destructive"});
+        return;
+    }
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -53,33 +58,41 @@ export default function AdminBlogPage() {
     }
 
     const postsCollection = collection(db, "posts");
-    try {
-      await addDoc(postsCollection, postData);
-      toast({ title: "Success!", description: "Post published." });
-      (e.target as HTMLFormElement).reset();
-    } catch (serverError: any) {
-        const permissionError = new FirestorePermissionError({
-            path: postsCollection.path,
-            operation: 'create',
-            requestResourceData: postData,
+    addDoc(postsCollection, postData)
+        .then(() => {
+            toast({ title: "Success!", description: "Post published." });
+            (e.target as HTMLFormElement).reset();
+        })
+        .catch((serverError: any) => {
+            const permissionError = new FirestorePermissionError({
+                path: postsCollection.path,
+                operation: 'create',
+                requestResourceData: postData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        })
+        .finally(() => {
+            setIsLoading(false);
         });
-        errorEmitter.emit('permission-error', permissionError);
-    }
-    setIsLoading(false);
   };
 
   const deletePost = async (id: string) => {
-    const postDoc = doc(db, "posts", id);
-    try {
-        await deleteDoc(postDoc);
-        toast({ title: "Deleted", description: "Post has been removed."});
-    } catch(serverError: any) {
-        const permissionError = new FirestorePermissionError({
-            path: postDoc.path,
-            operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
+    if (!db) {
+        toast({ title: "Database Error", description: "Firestore is not initialized.", variant: "destructive"});
+        return;
     }
+    const postDoc = doc(db, "posts", id);
+    deleteDoc(postDoc)
+        .then(() => {
+            toast({ title: "Deleted", description: "Post has been removed."});
+        })
+        .catch((serverError: any) => {
+            const permissionError = new FirestorePermissionError({
+                path: postDoc.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
   };
 
   return (
