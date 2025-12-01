@@ -1,268 +1,271 @@
-// src/app/dashboard/notes/view/[id]/page.tsx
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from 'next/link';
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import DOMPurify from "dompurify";
-import { doc, getDoc } from "firebase/firestore";
+import Image from "next/image";
+
 import { db } from "@/firebase/config";
-import { Note } from "@/services/notes";
-import { ArrowLeft } from "lucide-react";
+import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 
+import { ArrowLeft, Share2, FileDown, BookText, Menu } from "lucide-react";
 
-/**
- * Premium A2G Note View (client)
- * - Fetches a single note by ID
- * - supports Markdown + inline HTML + GFM
- * - sanitizes HTML with DOMPurify but allows safe iframe embeds (Drive/YouTube)
- * - auto-embeds Drive / YouTube / PDF / images / audio / office files
- */
-
-/* Theme classes (A2G purple style) */
+// THEME
 const THEME = {
-  pageBg: "bg-[#F3EBFF]",
-  card: "bg-white rounded-2xl shadow-lg border border-[#E3D6FF]",
+  pageBg: "bg-[#F5F1FF]",
+  card: "bg-white rounded-2xl shadow-xl border border-[#E5DAFF]",
   accent: "text-[#6B21A8]",
-  accentLight: "bg-[#EAD8FF]",
+  accentBg: "bg-[#EAD8FF]",
 };
 
-function extractDriveId(url: string) {
-  // support /d/ID/ and id=... patterns
-  let m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (m && m[1]) return m[1];
-  m = url.match(/id=([a-zA-Z0-9_-]+)/);
-  if (m && m[1]) return m[1];
-  return "";
-}
-
-function toDomain(url: string) {
-  try {
-    const u = new URL(url);
-    return u.hostname.replace("www.", "");
-  } catch {
-    return url;
-  }
-}
-
-/** Convert known links into embed HTML (Drive, YouTube, PDF, images, audio, office files) */
+// PREPROCESS EMBEDS (Drive, YouTube, PDFs, images, audio)
 function preprocessContent(raw: string) {
   if (!raw) return "";
+  let s = raw;
 
-  let s = String(raw);
+  // Google Drive
+  s = s.replace(/https?:\/\/drive\.google\.com\/[^\s)]+/g, (m) => {
+    const idMatch = m.match(/\/d\/([^/]+)\//) || m.match(/id=([^&]+)/);
+    const id = idMatch ? idMatch[1] : "";
+    if (!id) return m;
 
-  // 1) Convert Google Drive file links to embed card + iframe
-  s = s.replace(
-    /(https?:\/\/drive\.google\.com\/[^\s)]+)/g,
-    (m) => {
-      const id = extractDriveId(m);
-      if (id) {
-        const preview = `https://drive.google.com/file/d/${id}/preview`;
-        // Corrected: Return as a single-line HTML string to avoid markdown interference
-        return `<div class="my-6 ${THEME.accentLight} border border-[#D9C9FF] rounded-xl p-4 shadow-sm not-prose"><div class="flex items-center gap-3"><div class="h-10 w-10 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-lg flex items-center justify-center text-xl">📎</div><div><p class="font-semibold ${THEME.accent}">Google Drive Attachment</p><a href="${m}" target="_blank" rel="noreferrer" class="text-purple-700 underline text-sm font-medium">Open in Drive →</a></div></div><iframe src="${preview}" class="w-full h-72 rounded-lg mt-4 border border-[#EAD8FF]" allow="autoplay"></iframe></div>`;
-      }
-      // fallback: show link card
-      return `<div class="my-4 p-3 rounded-md bg-[#FFF7FB] border"><a href="${m}" target="_blank" rel="noreferrer" class="text-purple-700 underline">${m}</a></div>`;
-    }
-  );
-
-  // 2) YouTube links -> responsive iframe
-  s = s.replace(
-    /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{6,}))([^\s]*)?/g,
-    (_m, full, id) => {
-      // id maybe in full; extract numeric id properly
-      const videoIdMatch = full.match(/v=([A-Za-z0-9_-]{6,})/) || full.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/);
-      const vid = videoIdMatch ? videoIdMatch[1] : id;
-      if (!vid) return full;
-      return `
-<div class="my-6 rounded-xl overflow-hidden shadow-sm border"><div class="w-full" style="position:relative;padding-bottom:56.25%;height:0;"><iframe src="https://www.youtube.com/embed/${vid}" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe></div></div>
+    return `
+<div class="my-6 p-4 rounded-xl border bg-[#F9F0FF] shadow-sm not-prose">
+  <p class="font-semibold text-purple-700">Google Drive File</p>
+  <iframe src="https://drive.google.com/file/d/${id}/preview" class="w-full h-72 rounded-lg mt-3"></iframe>
+</div>
 `;
+  });
+
+  // YouTube
+  s = s.replace(
+    /(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{6,}))/g,
+    (_m, full) => {
+      const idMatch = full.match(/v=([^&]+)/) || full.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
+      const id = idMatch ? idMatch[1] : "";
+      if (!id) return full;
+
+      return `
+<div class="my-6 rounded-xl overflow-hidden shadow-sm border">
+  <div style="position: relative; padding-bottom: 56.25%; height: 0;">
+    <iframe src="https://www.youtube.com/embed/${id}" 
+      class="absolute top-0 left-0 w-full h-full"
+      allowfullscreen></iframe>
+  </div>
+</div>`;
     }
   );
 
-  // 3) PDF links -> open card
-  s = s.replace(
-    /(https?:\/\/[^\s]+\.pdf)/g,
-    (m) =>
-      `<div class="my-6 ${THEME.card} p-4"><div class="flex items-center gap-3"><div class="h-10 w-10 bg-blue-600 text-white rounded-lg flex items-center justify-center text-xl">📄</div><div><p class="font-semibold text-blue-800">PDF Document</p><a href="${m}" target="_blank" rel="noreferrer" class="text-blue-700 underline text-sm">Open PDF →</a></div></div></div>`
-  );
-
-  // 4) Image URLs -> embed
-  s = s.replace(
-    /(https?:\/\/[^\s]+\.(?:png|jpg|jpeg|gif|webp))/gi,
-    (m) =>
-      `<div class="my-6 text-center"><img src="${m}" alt="note-image" class="rounded-xl border shadow-md mx-auto max-w-full" /></div>`
-  );
-
-  // 5) Audio (mp3) -> audio player
-  s = s.replace(
-    /(https?:\/\/[^\s]+\.mp3)/gi,
-    (m) => `<div class="my-4"><audio controls src="${m}" class="w-full"></audio></div>`
-  );
-
-  // 6) Office files (.docx, .pptx, .xlsx, .zip) -> download card
-  s = s.replace(
-    /(https?:\/\/[^\s]+\.(?:docx|pptx|xlsx|zip))/gi,
-    (m) =>
-      `<div class="my-6 ${THEME.card} p-4"><div class="flex items-center gap-3"><div class="h-10 w-10 bg-gray-800 text-white rounded-lg flex items-center justify-center text-xl">⬇️</div><div><p class="font-semibold">${toDomain(m)}</p><a href="${m}" target="_blank" rel="noreferrer" class="text-gray-700 underline text-sm">Download →</a></div></div></div>`
-  );
-
-  // 7) Generic external URLs -> nice link card
-  s = s.replace(
-    /(https?:\/\/[^\s]+)/g,
-    (m) => {
-      // if already converted above, skip (already contains iframe etc). Basic guard: if m appears in generated HTML like '<iframe' then skip.
-      if (m.includes("/embed") || m.includes("/preview") || m.includes("youtube.com/embed")) return m;
-      return `<div class="my-4 p-3 rounded-md ${THEME.accentLight} border border-[#EAD8FF]"><a href="${m}" target="_blank" rel="noreferrer" class="text-purple-700 font-medium underline">${toDomain(m)}</a></div>`;
-    }
-  );
+  // PDFs
+  s = s.replace(/https?:\/\/[^\s]+\.pdf/g, (m) => {
+    return `
+<div class="my-6 p-4 rounded-xl border shadow-sm bg-[#F5FBFF] not-prose">
+  <p class="font-semibold text-blue-700">PDF Document</p>
+  <a href="${m}" target="_blank" class="underline text-blue-600">Open PDF →</a>
+</div>`;
+  });
 
   return s;
 }
 
-/** sanitize allowing iframe + attrs */
+// SANITIZE
 function sanitizeForRender(dirty: string) {
-  // Allow iframe and common attributes for embeds
   return DOMPurify.sanitize(dirty, {
     ADD_TAGS: ["iframe"],
-    ADD_ATTR: [
-      "allow",
-      "allowfullscreen",
-      "frameborder",
-      "scrolling",
-      "loading",
-      "referrerpolicy",
-      "sandbox",
-      "target",
-    ],
+    ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling", "loading", "src", "class"],
   });
 }
 
-/** Main component */
-export default function NoteViewPage(): JSX.Element {
+export default function PremiumNoteViewPage() {
   const { id } = useParams();
-  const [note, setNote] = useState<Note | null>(null);
+
+  const [note, setNote] = useState<any>(null);
+  const [related, setRelated] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTOC, setShowTOC] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    const fetchNote = async () => {
+
+    async function load() {
       setLoading(true);
-      const noteRef = doc(db, 'notes', id as string);
-      const docSnap = await getDoc(noteRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setNote({ id: docSnap.id, ...data } as Note);
-      } else {
-        setNote(null);
+
+      const ref = doc(db, "notes", id as string);
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        const data = { id: snap.id, ...snap.data() };
+        setNote(data);
+
+        // FETCH RELATED NOTES
+        const q = query(
+          collection(db, "notes"),
+          where("course", "==", data.course),
+          where("subject", "==", data.subject),
+          where("year", "==", data.year),
+          limit(5)
+        );
+
+        const docs = await getDocs(q);
+
+        const rel = docs.docs
+          .filter((d) => d.id !== snap.id)
+          .map((d) => ({ id: d.id, ...d.data() }));
+
+        setRelated(rel);
       }
+
       setLoading(false);
-    };
-    fetchNote();
+    }
+
+    load();
   }, [id]);
 
-  const preprocessed = useMemo(() => {
+  const sanitized = useMemo(() => {
     if (!note) return "";
-    const raw = (note.content ?? (note as any).short ?? "").toString();
-    const processed = preprocessContent(raw);
-    const sanitized = sanitizeForRender(processed);
-    return sanitized;
+    const processed = preprocessContent(note.content || note.short || "");
+    return sanitizeForRender(processed);
   }, [note]);
 
-  if (loading) {
-     return (
-      <div className={`min-h-screen ${THEME.pageBg} flex items-start justify-center p-6`}>
-        <div className="max-w-3xl w-full space-y-6">
-          <div className={THEME.card + " p-8"}>
-            <h1 className="text-2xl font-bold">Loading Note...</h1>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading)
+    return <div className="min-h-screen flex justify-center items-center text-xl">Loading...</div>;
 
-  if (!note) {
-    return (
-      <div className={`min-h-screen ${THEME.pageBg} flex items-start justify-center p-6`}>
-        <div className="max-w-3xl w-full space-y-6">
-          <div className={THEME.card + " p-8"}>
-            <h1 className="text-2xl font-bold">Note not found</h1>
-            <p className="mt-2 text-gray-600">The note you're looking for is missing or not published.</p>
-            <a href="/dashboard/notes" className={`${THEME.accent} mt-4 inline-block`}>← Back to Notes Library</a>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!note)
+    return <div className="min-h-screen flex justify-center items-center text-xl">Note Not Found</div>;
+
+  const created = new Date(note.createdAt?.seconds * 1000 || Date.now());
 
   return (
-    <div className={`min-h-screen ${THEME.pageBg} w-full flex justify-center px-4 py-10`}>
-      <div className="max-w-4xl w-full space-y-8">
-        <Link href="/dashboard/notes" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Notes Library
-        </Link>
-        {/* Header Card */}
-        <div className={THEME.card + " p-8"}>
-          <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-white text-2xl">📘</div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-extrabold text-gray-900 leading-tight">{note.title}</h1>
-              <div className="text-gray-700 text-sm mt-3 flex flex-wrap gap-3">
-                <span className={`${THEME.accent} font-semibold`}>{note.course}</span>
-                {note.year && <span>• {note.year}</span>}
-                {note.subject && <span>• {note.subject}</span>}
-              </div>
-              {(note as any).short && <p className="mt-4 text-gray-700">{(note as any).short}</p>}
+    <div className={`${THEME.pageBg} min-h-screen pb-20`}>
+
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-40 bg-white border-b shadow-sm px-4 py-3 flex justify-between items-center">
+        <div className="font-bold text-purple-700 line-clamp-1">{note.title}</div>
+        <button
+          onClick={() => setShowTOC(true)}
+          className="md:hidden p-2 rounded-lg border text-sm"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* MAIN WRAPPER */}
+      <div className="max-w-6xl mx-auto px-4 lg:flex gap-10 mt-8">
+
+        {/* LEFT CONTENT */}
+        <div className="flex-1">
+
+          {/* Back Button */}
+          <Link href="/dashboard/notes" className="inline-flex items-center text-purple-700 mb-6">
+            <ArrowLeft className="mr-2 w-4" /> Back to Notes
+          </Link>
+
+          {/* HEADER CARD */}
+          <div className={`${THEME.card} p-8 mb-8`}>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">{note.title}</h1>
+
+            <p className="text-gray-600 mt-2">
+              {note.course} • {note.subject} • Year {note.year}
+            </p>
+
+            <p className="mt-3 text-gray-700">{note.short}</p>
+
+            <div className="mt-4 flex gap-4">
+              {/* Share */}
+              <button
+                onClick={() => {
+                  navigator.share({
+                    title: note.title,
+                    text: "Check this pharmacy note",
+                    url: window.location.href,
+                  });
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg"
+              >
+                <Share2 className="w-4" /> Share
+              </button>
+
+              {/* Download PDF */}
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg"
+              >
+                <FileDown className="w-4" /> Download PDF
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Content Card */}
-        <div className={THEME.card + " p-8"}>
-          <div className="flex items-center mb-6">
-            <span className="h-4 w-4 rounded bg-blue-500 mr-2" />
-            <h2 className="text-xl font-bold text-gray-900">Full Content</h2>
-          </div>
-
-          {/* Use ReactMarkdown for rendering sanitized markdown+html with GFM support */}
-          <div className="prose max-w-none text-[16px] leading-7 text-gray-900">
+          {/* CONTENT CARD */}
+          <div className={`${THEME.card} p-8 prose max-w-none`}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
               components={{
-                h1: ({node, ...props}) => <h1 className="text-3xl font-bold text-purple-800 mt-6 mb-3" {...props} />,
-                h2: ({node, ...props}) => <h2 className="text-2xl font-semibold text-purple-700 mt-6 mb-2" {...props} />,
-                h3: ({node, ...props}) => <h3 className="text-xl font-semibold text-purple-600 mt-4 mb-2" {...props} />,
-                p: ({node, ...props}) => <p className="text-gray-800 my-2" {...props} />,
-                strong: ({node, ...props}) => <strong className="text-purple-700 font-semibold" {...props} />,
-                em: ({node, ...props}) => <em className="italic" {...props} />,
-                a: ({node, href, ...props}) => <a href={href} target="_blank" rel="noreferrer" className="text-purple-700 underline" {...props} />,
-                img: ({node, src, alt, ...props}) => <img src={src} alt={alt || "note-image"} className="rounded-xl border shadow-md mx-auto max-w-full" {...props} />,
-                table: ({node, ...props}) => <table className="min-w-full bg-white border-collapse" {...props} />,
-                th: ({node, ...props}) => <th className="border bg-[#F3EBFF] p-2 text-left font-semibold" {...props} />,
-                td: ({node, ...props}) => <td className="border p-2" {...props} />,
-                ul: ({node, ...props}) => <ul className="list-disc ml-6 my-2" {...props} />,
-                ol: ({node, ...props}) => <ol className="list-decimal ml-6 my-2" {...props} />,
-                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-400 pl-4 italic my-4 text-purple-700" {...props} />,
-                code: ({node, inline = false, className, children, ...props}) => (
-                  inline ? <code className="bg-gray-100 px-1 rounded text-sm" {...props}>{children}</code> :
-                    <pre className="bg-gray-900 text-white rounded p-4 overflow-auto"><code className={className} {...props}>{children}</code></pre>
-                )
+                h1: (props) => <h1 className="text-3xl font-bold text-purple-800" {...props} />,
+                h2: (props) => <h2 className="text-2xl font-semibold text-purple-700" {...props} />,
+                h3: (props) => <h3 className="text-xl font-semibold text-purple-600" {...props} />,
+                table: (props) => <table className="w-full border mt-4" {...props} />,
+                th: (props) => <th className="p-2 bg-purple-100 border" {...props} />,
+                td: (props) => <td className="p-2 border" {...props} />,
               }}
             >
-              {preprocessed /* already sanitized HTML+markdown string */}
+              {sanitized}
             </ReactMarkdown>
           </div>
+
+          {/* RELATED NOTES */}
+          {related.length > 0 && (
+            <div className={`${THEME.card} p-6 mt-10`}>
+              <h3 className="text-xl font-bold mb-4 text-purple-700 flex items-center gap-2">
+                <BookText className="w-5" /> Related Notes
+              </h3>
+              <div className="space-y-3">
+                {related.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/dashboard/notes/view/${r.id}`}
+                    className="block p-4 border rounded-lg hover:bg-purple-50"
+                  >
+                    <p className="font-semibold">{r.title}</p>
+                    <p className="text-sm text-gray-600">{r.course} • {r.subject}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
 
-        <div>
-          <a href="/dashboard/notes" className={`${THEME.accent} font-semibold`}>← Back to Notes Library</a>
-        </div>
+        {/* RIGHT SIDEBAR (Desktop) */}
+        <aside className="hidden lg:block w-72 sticky top-20 h-fit">
+          <div className={`${THEME.card} p-6`}>
+            <h3 className="font-bold text-lg mb-3">Note Info</h3>
+            <p className="text-sm text-gray-700">
+              <strong>Author:</strong> pharmA2G Team
+            </p>
+            <p className="text-sm text-gray-700 mt-1">
+              <strong>Published:</strong> {created.toLocaleDateString()}
+            </p>
+          </div>
+        </aside>
       </div>
+
+      {/* MOBILE TOC */}
+      {showTOC && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50">
+          <div className="absolute right-0 top-0 w-72 h-full bg-white p-6 shadow-lg">
+            <button className="mb-6" onClick={() => setShowTOC(false)}>
+              Close
+            </button>
+            <h3 className="font-bold text-lg mb-3">Reading Tools</h3>
+            <p className="text-sm text-gray-600">Author: pharmA2G Team</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
