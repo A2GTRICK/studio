@@ -69,17 +69,25 @@ export default async function BlogViewPage({ params }: { params: { slug: string 
   // ReactMarkdown brand: we'll manually add ids via a rehype plugin ideally, but for simplicity we transform heading rendering using components prop below.
 
   // Fetch related posts for "Read this also" (fallback to fetchAllPosts if available)
-  let related = [] as any[];
+  let relatedPostsRaw = [] as any[];
   try {
     if (typeof fetchAllPosts === 'function') {
       const all = await fetchAllPosts();
-      related = (all || [])
+      relatedPostsRaw = (all || [])
         .filter((p: any) => p.id !== post.id && (p.category === post.category))
         .slice(0, 3);
     }
   } catch (e) {
     // ignore, related stays []
   }
+
+  // Convert Firestore Timestamps to serializable format for the client component
+  const related = relatedPostsRaw.map(p => ({
+    ...p,
+    createdAt: p.createdAt ? { seconds: p.createdAt.seconds, nanoseconds: p.createdAt.nanoseconds } : null,
+    updatedAt: p.updatedAt ? { seconds: p.updatedAt.seconds, nanoseconds: p.updatedAt.nanoseconds } : null,
+  }));
+
 
   const postDate = post.createdAt ? new Date(post.createdAt.seconds * 1000) : new Date();
   const canonicalUrl = `https://${process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//,'') || 'pharma2g.com'}/blog/${post.id}`;
