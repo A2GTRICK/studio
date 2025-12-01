@@ -68,7 +68,7 @@ export async function createBlogPost(postData: CreatePostDTO): Promise<string> {
             requestResourceData: newPost,
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw serverError;
+        throw serverError; // Re-throw original error after emitting
     }
 }
 
@@ -88,7 +88,7 @@ export async function updateBlogPost(postData: UpdatePostDTO): Promise<void> {
             requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw serverError;
+        throw serverError; // Re-throw original error after emitting
     }
 }
 
@@ -102,6 +102,6 @@ export async function deleteBlogPost(id: string): Promise<void> {
             operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw serverError;
+        throw serverError; // Re-throw original error after emitting
     }
 }
