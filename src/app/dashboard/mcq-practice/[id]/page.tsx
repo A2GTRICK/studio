@@ -1,16 +1,36 @@
+
 // src/app/dashboard/mcq-practice/[id]/page.tsx
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useMcqSets } from "@/context/mcq-context";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Send, Repeat, BarChart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-function ProgressBar({ idx, total }: { idx: number; total: number }) {
-  const percent = Math.round(((idx + 1) / total) * 100);
+const THEME = {
+  pageBg: 'bg-[#F3EBFF]',
+  card: 'bg-white rounded-2xl shadow-lg border border-[#EDE1FF]',
+  accent: 'text-[#6B21A8]',
+  accentBg: 'bg-[#EAD8FF]',
+};
+
+
+function ProgressBar({ current, total }: { current: number; total: number }) {
+  const percent = total > 0 ? Math.round(((current + 1) / total) * 100) : 0;
   return (
-    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-      <div style={{ width: `${percent}%` }} className="h-2 bg-gradient-to-r from-purple-600 to-pink-500 transition-all"></div>
+    <div className="w-full">
+      <div className="flex justify-between mb-1">
+        <span className="text-sm font-medium text-primary">Question {current + 1} of {total}</span>
+        <span className="text-sm font-medium text-primary">{percent}%</span>
+      </div>
+      <Progress value={percent} className="h-2" />
     </div>
   );
 }
@@ -20,147 +40,210 @@ export default function MCQSetPage() {
   const { getById } = useMcqSets();
   const set = useMemo(() => getById(id as string), [getById, id]);
 
-  if (!set) {
-    return (
-      <div className="min-h-screen bg-[#F8F5FF] p-8">
-        <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm border">
-          <h2 className="text-2xl font-bold">MCQ set not found</h2>
-          <p className="text-gray-600 mt-2">This set isn't available. Go back to the library.</p>
-          <Link href="/dashboard/mcq-practice" className="mt-4 inline-block text-purple-700">← Back</Link>
+  const [loading, setLoading] = useState(true);
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (set) {
+      setLoading(false);
+    }
+  }, [set]);
+
+  if (loading) {
+     return (
+      <div className={`min-h-screen ${THEME.pageBg} p-8 flex items-center justify-center`}>
+        <div className="text-center">
+            <h2 className="text-2xl font-bold">Loading MCQ Set...</h2>
+            <p className="text-muted-foreground mt-2">Please wait a moment.</p>
         </div>
       </div>
     );
   }
 
-  const locked = set.isPremium; // Simplified logic for no-login
+  if (!set) {
+    return (
+      <div className={`min-h-screen ${THEME.pageBg} p-8 flex items-center justify-center`}>
+        <Card className={`${THEME.card} text-center`}>
+            <CardHeader>
+                <CardTitle>MCQ Set Not Found</CardTitle>
+                <CardDescription>This practice set could not be loaded. It might have been removed.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/dashboard/mcq-practice">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Library
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   const questions = set.questions || [];
   const total = questions.length;
-  const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<(string | null)[]>(Array(total).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-
   const current = questions[index];
 
   const selectOption = (opt: string) => {
-    setAnswers((prev) => {
-      const copy = [...prev];
-      copy[index] = opt;
-      return copy;
-    });
+    setAnswers((prev) => ({...prev, [index]: opt}));
   };
 
   const goNext = () => setIndex((i) => Math.min(i + 1, total - 1));
   const goPrev = () => setIndex((i) => Math.max(i - 1, 0));
-
   const handleSubmit = () => setSubmitted(true);
 
   const correctCount = useMemo(() => {
-    return answers.reduce((acc, ans, i) => (ans && ans === (questions[i]?.correctAnswer) ? acc + 1 : acc), 0);
-  }, [answers, questions]);
+    if (!submitted) return 0;
+    return answers ? Object.entries(answers).reduce((acc, [idx, ans]) => {
+        const question = questions[Number(idx)];
+        return question && question.correctAnswer === ans ? acc + 1 : acc;
+    }, 0) : 0;
+  }, [answers, questions, submitted]);
+  
+  const scorePercentage = total > 0 ? Math.round((correctCount / total) * 100) : 0;
 
-  if (locked) {
-    return (
-      <div className="min-h-screen bg-[#F8F5FF] p-8">
-        <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-sm border text-center">
-          <h2 className="text-2xl font-bold">Premium Content</h2>
-          <p className="mt-2 text-gray-600">This is a premium MCQ set.</p>
-           <Link href="/dashboard/mcq-practice" className="mt-4 inline-block px-4 py-2 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded">Back to Library</Link>
-        </div>
+  const restartQuiz = () => {
+    setSubmitted(false);
+    setAnswers({});
+    setIndex(0);
+  };
+  
+  if (set.isPremium) {
+     return (
+      <div className={`min-h-screen ${THEME.pageBg} p-8 flex items-center justify-center`}>
+        <Card className={`${THEME.card} text-center`}>
+            <CardHeader>
+                <CardTitle>🔒 Premium Content</CardTitle>
+                <CardDescription>This is a premium MCQ set. Upgrade to access.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/dashboard/mcq-practice">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Library
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
       </div>
     );
   }
-
+  
   return (
-    <div className="min-h-screen bg-[#F8F5FF] p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <Link href="/dashboard/mcq-practice" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-primary">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to MCQ Library
-        </Link>
-        <header className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-extrabold">{set.title}</h1>
-              <p className="text-sm text-gray-500 mt-2">{set.description}</p>
-              <div className="mt-3 text-xs text-gray-500">{set.course} • {set.year || "—"} • {set.questionCount || questions.length} Questions</div>
+    <div className={`min-h-screen ${THEME.pageBg} p-4 md:p-8`}>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+            <Link href="/dashboard/mcq-practice" className="inline-flex items-center text-sm font-medium text-primary hover:underline">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to MCQ Library
+            </Link>
+        </div>
+        
+        <Card className={`${THEME.card}`}>
+          <CardHeader>
+            <CardTitle className="font-headline text-3xl">{set.title}</CardTitle>
+            <CardDescription className="text-base">{set.description || `A set of ${total} questions on ${set.subject}.`}</CardDescription>
+             <div className="flex flex-wrap gap-2 pt-2">
+                <Badge variant="secondary">{set.course}</Badge>
+                <Badge variant="secondary">{set.year || 'All Years'}</Badge>
+                <Badge variant="secondary">{set.subject}</Badge>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Q {index + 1} / {total}</div>
-              <div className="mt-2"><ProgressBar idx={index} total={total} /></div>
-            </div>
-          </div>
-        </header>
+          </CardHeader>
+        </Card>
 
         {!submitted ? (
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-gray-500">Question {index + 1} of {total}</div>
-              <div className="text-sm text-gray-600">{set.subject || ""}</div>
+          <>
+            <Card className={`${THEME.card}`}>
+              <CardHeader>
+                 <ProgressBar current={index} total={total} />
+              </CardHeader>
+              <CardContent>
+                {current ? (
+                  <>
+                    <p className="font-bold text-lg mb-6">{current.question}</p>
+                    <RadioGroup value={answers[index]} onValueChange={selectOption} className="space-y-3">
+                      {current.options.map((opt: string) => (
+                         <Label key={opt} htmlFor={opt} className={cn(
+                            "flex items-center p-4 rounded-lg border-2 transition-all cursor-pointer",
+                            answers[index] === opt ? 'border-primary bg-primary/5' : 'border-border'
+                         )}>
+                           <RadioGroupItem value={opt} id={opt} />
+                           <span className="ml-4 text-base">{opt}</span>
+                         </Label>
+                      ))}
+                    </RadioGroup>
+                  </>
+                ) : (
+                  <div>No question available at this index.</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-between mt-6">
+              <Button variant="outline" onClick={goPrev} disabled={index === 0}>Previous</Button>
+              {index === total - 1 ? (
+                <Button onClick={handleSubmit} size="lg">
+                    <Send className="mr-2 h-4 w-4" />
+                    Submit & View Results
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={goNext}>Next</Button>
+              )}
             </div>
-
-            {current ? (
-              <>
-                <div className="text-lg font-semibold mb-4">{current.question}</div>
-                <div className="grid gap-3">
-                  {current.options.map((opt: string) => {
-                    const selected = answers[index] === opt;
-                    return (
-                      <button
-                        key={opt}
-                        onClick={() => selectOption(opt)}
-                        className={`text-left p-3 rounded-lg border ${selected ? "border-purple-600 bg-purple-50" : "border-gray-200"} hover:bg-gray-50`}>
-                        <span className="font-medium">{opt}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <button onClick={goPrev} className="px-3 py-2 bg-white border rounded">Previous</button>
-                    <button onClick={goNext} className="px-3 py-2 bg-white border rounded">Next</button>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button onClick={() => { setAnswers(Array(total).fill(null)); setIndex(0); }} className="px-3 py-2 bg-white border rounded">Reset</button>
-                    <button onClick={handleSubmit} className="px-4 py-2 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded">Submit</button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div>No question available.</div>
-            )}
-          </div>
+          </>
         ) : (
-          <div className="bg-white p-6 rounded-xl shadow-sm border">
-            <h2 className="text-2xl font-bold">Results</h2>
-            <p className="mt-2 text-gray-600">You scored <span className="font-semibold">{correctCount}</span> out of <span className="font-semibold">{total}</span></p>
-
-            <div className="mt-6 space-y-4">
+          <Card className={`${THEME.card}`}>
+            <CardHeader className="text-center">
+                <BarChart className="mx-auto h-12 w-12 text-primary" />
+                <CardTitle className="font-headline text-3xl">Quiz Results</CardTitle>
+                <CardDescription>You scored {correctCount} out of {total}</CardDescription>
+                <div className="w-full max-w-sm mx-auto pt-4">
+                    <div className="flex justify-between mb-1">
+                        <span className="text-base font-medium text-primary">Your Score</span>
+                        <span className="text-sm font-medium text-primary">{scorePercentage}%</span>
+                    </div>
+                    <Progress value={scorePercentage} className="h-3" />
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
               {questions.map((q: any, i: number) => {
                 const userAns = answers[i];
-                const correct = q.correctAnswer;
-                const isCorrect = userAns === correct;
+                const isCorrect = userAns === q.correctAnswer;
                 return (
-                  <div key={i} className="p-4 border rounded">
-                    <div className="font-semibold">Q{i + 1}. {q.question}</div>
-                    <div className="mt-2">
-                      Your answer: <span className={`${isCorrect ? "text-green-600" : "text-red-600"} font-medium`}>{userAns || "No answer"}</span>
+                  <div key={i} className={`p-4 rounded-lg border-2 ${isCorrect ? 'border-green-300 bg-green-50/50' : 'border-red-300 bg-red-50/50'}`}>
+                    <p className="font-semibold">Q{i + 1}. {q.question}</p>
+                    <div className="mt-3 space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                           <XCircle className={cn("h-5 w-5", isCorrect ? "text-muted-foreground" : "text-red-500")} />
+                           <span>Your Answer: <span className={cn(isCorrect ? "text-muted-foreground" : "font-bold text-red-700")}>{userAns || "Not Answered"}</span></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <CheckCircle className="h-5 w-5 text-green-500" />
+                           <span>Correct Answer: <span className="font-bold text-green-700">{q.correctAnswer}</span></span>
+                        </div>
+                        {q.explanation && (
+                           <div className="pt-2 mt-2 border-t text-muted-foreground">
+                                <strong>Explanation:</strong> {q.explanation}
+                           </div>
+                        )}
                     </div>
-                    <div className="mt-1">Correct answer: <span className="font-medium">{correct}</span></div>
-                    {q.explanation && <div className="mt-2 text-gray-600">Explanation: {q.explanation}</div>}
                   </div>
                 );
               })}
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button onClick={() => { setSubmitted(false); setAnswers(Array(total).fill(null)); setIndex(0); }} className="px-4 py-2 bg-white border rounded">Retake</button>
-              <Link href="/dashboard/mcq-practice" className="px-4 py-2 bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded">Back to Library</Link>
-            </div>
-          </div>
+            </CardContent>
+            <CardContent className="text-center">
+                <Button onClick={restartQuiz} size="lg">
+                    <Repeat className="mr-2 h-4 w-4" />
+                    Retake This Quiz
+                </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
   );
 }
+
