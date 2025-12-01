@@ -32,6 +32,15 @@ service cloud.firestore {
       allow create: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
       allow update, delete: if false;
     }
+    
+    // -----------------------------
+    // POSTS (NEW BLOG) – PUBLIC READ
+    // -----------------------------
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if request.resource.data.adminKey == get(/databases/$(database)/documents/adminConfig/main).data.adminCode;
+      allow update, delete: if false;
+    }
 
     // -----------------------------
     // CUSTOM NOTIFICATIONS – PUBLIC READ, ADMIN WRITE
