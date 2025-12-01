@@ -2,15 +2,16 @@
 // src/app/dashboard/notifications/page.tsx
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { collection, onSnapshot, orderBy, query, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { Loader2, Bell, BookCopy, Briefcase, Building, AlertCircle, Info } from 'lucide-react';
+import { Loader2, Bell, BookCopy, Briefcase, Building, AlertCircle, Info, Search, ExternalLink } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Input } from '@/components/ui/input';
 
 type NotificationRecord = {
   id: string;
@@ -33,6 +34,8 @@ const categoryIcons: Record<string, React.ReactNode> = {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
     if (!db) {
@@ -69,6 +72,21 @@ export default function NotificationsPage() {
     return () => unsubscribe();
   }, []);
 
+  const categories = useMemo(() => {
+    const allCategories = notifications.map(n => n.category);
+    return ['All', ...Array.from(new Set(allCategories))];
+  }, [notifications]);
+
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter(n => {
+      const matchesCategory = activeCategory === 'All' || n.category === activeCategory;
+      const matchesSearch = searchQuery.trim() === '' ||
+        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.summary.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [notifications, searchQuery, activeCategory]);
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
         <header className="mb-8 text-center">
@@ -83,59 +101,88 @@ export default function NotificationsPage() {
           </p>
         </header>
 
-      <div className="space-y-4">
-        {loading && (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-        {!loading && notifications.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed">
-            <h2 className="text-2xl font-semibold text-gray-700">No Notifications Yet</h2>
-            <p className="mt-2 text-muted-foreground">Check back soon for new announcements!</p>
-        </div>
-        )}
+        <div className="space-y-6">
+            {/* Search and Filter Controls */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border space-y-4">
+                 <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search notifications..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    {categories.map(category => (
+                        <Button 
+                            key={category}
+                            variant={activeCategory === category ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setActiveCategory(category)}
+                            className="rounded-full"
+                        >
+                            {category}
+                        </Button>
+                    ))}
+                </div>
+            </div>
 
-        {!loading && notifications.length > 0 && (
-             <Accordion type="single" collapsible className="w-full space-y-3">
-                {notifications.map((n) => (
-                     <AccordionItem key={n.id} value={n.id} className="bg-white border-b-0 rounded-xl shadow-sm transition-shadow hover:shadow-md">
-                        <AccordionTrigger className="p-4 hover:no-underline text-left">
-                           <div className="flex items-start gap-4 w-full">
-                                <div className="p-2 bg-secondary rounded-full mt-1">
-                                    {categoryIcons[n.category] || <Info className="h-5 w-5 text-gray-500" />}
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="font-semibold text-base leading-tight">{n.title}</h3>
-                                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1.5">
-                                        <span>{n.category}</span>
-                                        <span>&bull;</span>
-                                        <span>{n.createdAt ? new Date(n.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
+            {/* Notifications List */}
+            <div className="space-y-3">
+                {loading && (
+                <div className="flex justify-center items-center h-40">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+                )}
+                {!loading && filteredNotifications.length === 0 && (
+                <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed">
+                    <h2 className="text-2xl font-semibold text-gray-700">No Matching Notifications</h2>
+                    <p className="mt-2 text-muted-foreground">Try adjusting your search or filter.</p>
+                </div>
+                )}
+
+                {!loading && filteredNotifications.length > 0 && (
+                    <Accordion type="single" collapsible className="w-full space-y-3">
+                        {filteredNotifications.map((n) => (
+                            <AccordionItem key={n.id} value={n.id} className="bg-white border-b-0 rounded-xl shadow-sm transition-shadow hover:shadow-md">
+                                <AccordionTrigger className="p-4 hover:no-underline text-left">
+                                <div className="flex items-start gap-4 w-full">
+                                    <div className="p-2 bg-secondary rounded-full mt-1">
+                                        {categoryIcons[n.category] || <Info className="h-5 w-5 text-gray-500" />}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-base leading-tight">{n.title}</h3>
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1.5">
+                                            <span>{n.category}</span>
+                                            <span>&bull;</span>
+                                            <span>{n.createdAt ? new Date(n.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span>
+                                        </div>
                                     </div>
                                 </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-6 pb-6">
-                            <div className="space-y-4 pl-12 border-l-2 ml-5 border-dashed">
-                                <p className="text-muted-foreground leading-relaxed">
-                                    {n.summary}
-                                </p>
-                                {n.link && (
-                                    <div>
-                                        <Button asChild variant="outline" size="sm">
-                                            <a href={n.link} target="_blank" rel="noopener noreferrer">
-                                                View Source
-                                            </a>
-                                        </Button>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-6 pb-6">
+                                    <div className="space-y-4 pl-12 border-l-2 ml-5 border-dashed">
+                                        <p className="text-muted-foreground leading-relaxed">
+                                            {n.summary}
+                                        </p>
+                                        {n.link && (
+                                            <div>
+                                                <Button asChild variant="outline" size="sm">
+                                                    <a href={n.link} target="_blank" rel="noopener noreferrer">
+                                                        View Source <ExternalLink className="ml-2 h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
-            </Accordion>
-        )}
-      </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                )}
+            </div>
+        </div>
     </div>
   );
 }
