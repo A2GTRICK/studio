@@ -9,6 +9,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Image from 'next/image';
 import { SVGProps } from 'react';
 import clsx from 'clsx';
+import { fetchAllPosts, type Post } from "@/services/posts";
+import React, { useState, useEffect } from 'react';
 
 
 const landingFeatures = [
@@ -113,6 +115,85 @@ function FeatureCard({ item }: { item: (typeof landingFeatures)[number] }) {
   );
 }
 
+const RecentPosts = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function getPosts() {
+      try {
+        const fetchedPosts = await fetchAllPosts();
+        setPosts(fetchedPosts.slice(0, 3)); // Get latest 3 posts
+      } catch (error) {
+        console.error("Failed to fetch posts for landing page:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    getPosts();
+  }, []);
+
+  if (loading) {
+    return (
+        <div className="text-center py-10">
+            <p>Loading latest articles...</p>
+        </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return null; // Don't show the section if there are no posts
+  }
+
+  return (
+    <section className="py-12 md:py-24 bg-secondary/50">
+        <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto">
+                <h3 className="font-headline text-3xl font-bold">Latest from Our Blog</h3>
+                <p className="mt-2 text-muted-foreground">Stay updated with the latest news, articles, and study tips from the world of pharmacy.</p>
+            </div>
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                 {posts.map((post) => (
+                    <Link key={post.id} href={`/blog/${post.id}`} className="group">
+                        <div className="bg-white rounded-2xl shadow-lg overflow-hidden h-full flex flex-col transition-transform transform hover:-translate-y-2 hover:shadow-2xl border border-gray-200">
+                            {post.banner && (
+                            <div className="relative w-full h-48">
+                                <Image
+                                src={post.banner}
+                                alt={post.title}
+                                fill
+                                className="object-cover"
+                                />
+                            </div>
+                            )}
+                            <div className="p-6 flex-grow flex flex-col">
+                            <span className="text-sm font-semibold text-primary">{post.category || 'General'}</span>
+                            <h2 className="mt-2 text-xl font-bold font-headline text-gray-900 group-hover:text-primary transition-colors">
+                                {post.title}
+                            </h2>
+                            <p className="mt-2 text-sm text-muted-foreground flex-grow line-clamp-3">{post.summary}</p>
+                            <div className="mt-4 text-xs text-muted-foreground">
+                                {post.createdAt ? new Date(post.createdAt.seconds * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric'}) : ''}
+                            </div>
+                            </div>
+                        </div>
+                    </Link>
+                ))}
+            </div>
+            <div className="text-center mt-12">
+                <Button variant="outline" asChild>
+                    <Link href="/blog">
+                        View All Posts
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+            </div>
+        </div>
+    </section>
+  );
+};
+
+
 export default function Home() {
 
   const mailtoLink = "mailto:a2gtrickacademy@gmail.com?subject=Subscribe%20to%20pharmA2G%20Newsletter&body=Please%20add%20me%20to%20your%20mailing%20list!";
@@ -167,27 +248,29 @@ export default function Home() {
                 </div>
             </div>
         </section>
+        
+        <RecentPosts />
 
 
         {/* Why Choose Us Section */}
-        <section className="py-12 md:py-24 bg-secondary/50">
+        <section className="py-12 md:py-24 bg-white">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto">
               <h3 className="font-headline text-3xl font-bold">Why Choose pharmA2G?</h3>
               <p className="mt-2 text-muted-foreground">We blend expert knowledge with AI to create a powerful, personalized learning experience.</p>
             </div>
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-6 bg-white rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
+              <div className="p-6 bg-secondary/30 rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
                   <div className="p-3 bg-primary/10 rounded-full mb-4"><BookOpen className="h-8 w-8 text-primary" /></div>
                   <h4 className="font-headline text-xl font-semibold">Expert Notes</h4>
                   <p className="mt-2 text-muted-foreground text-sm flex-grow">High-quality, syllabus-aligned notes for D.Pharm & B.Pharm.</p>
               </div>
-               <div className="p-6 bg-white rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
+               <div className="p-6 bg-secondary/30 rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
                   <div className="p-3 bg-primary/10 rounded-full mb-4"><Layers className="h-8 w-8 text-primary" /></div>
                   <h4 className="font-headline text-xl font-semibold">AI-Powered MCQs</h4>
                   <p className="mt-2 text-muted-foreground text-sm flex-grow">Practice for GPAT, NIPER, and other exams with AI-generated quizzes.</p>
               </div>
-               <div className="p-6 bg-white rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
+               <div className="p-6 bg-secondary/30 rounded-xl shadow-lg border border-primary/10 text-center flex flex-col items-center">
                   <div className="p-3 bg-primary/10 rounded-full mb-4"><GraduationCap className="h-8 w-8 text-primary" /></div>
                   <h4 className="font-headline text-xl font-semibold">Academic Services</h4>
                   <p className="mt-2 text-muted-foreground text-sm flex-grow">Get help with projects, reports, dissertations, and more.</p>
@@ -196,10 +279,8 @@ export default function Home() {
           </div>
         </section>
         
-        {/* Core Offerings Section is now replaced by the features above */}
-
         {/* Meet Your Mentor Section */}
-        <section className="py-12 md:py-24 bg-white">
+        <section className="py-12 md:py-24 bg-secondary/50">
             <div className="container mx-auto px-4">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                     <div className="text-center lg:text-left">
@@ -220,7 +301,7 @@ export default function Home() {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-12 md:py-24 bg-secondary/50">
+        <section className="py-12 md:py-24 bg-white">
             <div className="container mx-auto px-4 max-w-3xl">
                  <div className="text-center">
                     <h3 className="font-headline text-3xl font-bold">Frequently Asked Questions</h3>
@@ -228,7 +309,7 @@ export default function Home() {
                 <div className="mt-8">
                      <Accordion type="single" collapsible className="w-full">
                         {faqData.map((faq, index) => (
-                            <AccordionItem key={index} value={`item-${index}`} className="bg-white rounded-lg shadow-sm mb-4 px-4 border">
+                            <AccordionItem key={index} value={`item-${index}`} className="bg-secondary/30 rounded-lg shadow-sm mb-4 px-4 border">
                                 <AccordionTrigger className="text-left font-semibold hover:no-underline">{faq.question}</AccordionTrigger>
                                 <AccordionContent className="text-muted-foreground">
                                     {faq.answer}
@@ -288,5 +369,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
