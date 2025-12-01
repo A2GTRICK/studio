@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -21,6 +20,7 @@ interface NotificationItem {
   summary: string;
   category: string;
   createdAt: Timestamp;
+  source?: string;
 }
 
 export default function NotificationsPage() {
@@ -161,7 +161,21 @@ export default function NotificationsPage() {
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-4 text-gray-700 text-sm leading-relaxed"
                 >
-                  {item.summary}
+                  <div className="space-y-3">
+                    <p>{item.summary}</p>
+
+                    {/* Official source link */}
+                    {item.source && (
+                      <a
+                        href={item.source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-purple-600 font-semibold hover:text-purple-700 hover:underline transition"
+                      >
+                        🔗 View Official Source
+                      </a>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
