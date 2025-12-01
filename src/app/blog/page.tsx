@@ -5,7 +5,7 @@ import { getBlogPosts, BlogPost } from '@/services/blog';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { Rss } from 'lucide-react';
+import { Rss, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 function BlogPage() {
@@ -28,8 +28,10 @@ function BlogPage() {
 
   if (loading) {
     return (
-        <div className="text-center py-16">
+        <div className="flex flex-col justify-center items-center min-h-[400px]">
+            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
             <h2 className="text-2xl font-semibold text-gray-700">Loading Posts...</h2>
+            <p className="text-muted-foreground">Please wait a moment.</p>
         </div>
     );
   }
@@ -84,7 +86,7 @@ function BlogPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
+          <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed">
             <h2 className="text-2xl font-semibold text-gray-700">No Posts Yet</h2>
             <p className="mt-2 text-muted-foreground">Check back soon for new articles!</p>
           </div>
