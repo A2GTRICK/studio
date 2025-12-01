@@ -2,57 +2,58 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ========================
-    // ADMIN CONFIG (public read)
-    // ========================
+    // Admin config (read public)
     match /adminConfig/{doc} {
       allow read: if true;
       allow write: if false;
     }
 
-    // ========================
-    // NOTES (public read)
-    // ========================
-    match /notes/{id} {
+    // Tests and questions - public read
+    match /tests/{testId} {
+      allow read: if true;
+      allow write: if false; // server/console only
+      match /questions/{questionId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // Notes (your existing content) - public read
+    match /notes/{noteId} {
       allow read: if true;
       allow write: if false;
     }
-
-    // ========================
-    // MCQ SETS (public read)
-    // ========================
+    
+    // MCQ Sets (public read)
     match /mcqSets/{id} {
       allow read: if true;
       allow write: if false;
     }
 
-    // ========================
-    // CUSTOM NOTIFICATIONS (public read)
-    // ========================
-    match /custom_notifications/{id} {
-      allow read: if true;
-      allow write: if false;
+    // Results - clients cannot write directly (server should use Admin SDK)
+    match /results/{resultId} {
+      allow read: if true; // allow read for analytics/leaderboards
+      allow create, update, delete: if false;
     }
 
-    // ========================
-    // BLOG POSTS (public read)
-    // ========================
-    match /posts/{id} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // ========================
-    // USERS (private)
-    // ========================
+    // Users
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
     }
 
-    // ========================
-    // DEFAULT DENY
-    // ========================
+    // Custom notifications (public read)
+    match /custom_notifications/{id} {
+        allow read: if true;
+        allow write: if false;
+    }
+    
+    // Blog posts (public read)
+    match /posts/{id} {
+        allow read: if true;
+        allow write: if false;
+    }
+    
     match /{document=**} {
       allow read, write: if false;
     }
