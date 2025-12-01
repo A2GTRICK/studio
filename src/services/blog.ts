@@ -3,6 +3,8 @@
 
 import { db } from "@/firebase/config";
 import { collection, addDoc, getDocs, getDoc, deleteDoc, doc, serverTimestamp, query, where, Timestamp, updateDoc, orderBy } from 'firebase/firestore';
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export interface BlogPost {
   id: string;
@@ -22,7 +24,8 @@ const blogCollection = collection(db, 'blog');
 // --- Public Read Operations ---
 
 export async function getBlogPosts(): Promise<BlogPost[]> {
-    const snapshot = await getDocs(query(blogCollection, orderBy('createdAt', 'desc')));
+    const q = query(blogCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
 }
 
@@ -55,20 +58,50 @@ export async function createBlogPost(postData: CreatePostDTO): Promise<string> {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     };
-    const docRef = await addDoc(blogCollection, newPost);
-    return docRef.id;
+    try {
+        const docRef = await addDoc(blogCollection, newPost);
+        return docRef.id;
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+            path: blogCollection.path,
+            operation: 'create',
+            requestResourceData: newPost,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    }
 }
 
 export async function updateBlogPost(postData: UpdatePostDTO): Promise<void> {
     const { id, ...dataToUpdate } = postData;
     const docRef = doc(db, 'blog', id);
-    await updateDoc(docRef, {
+    const updateData = {
         ...dataToUpdate,
         updatedAt: serverTimestamp(),
-    });
+    };
+    try {
+        await updateDoc(docRef, updateData);
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    }
 }
 
 export async function deleteBlogPost(id: string): Promise<void> {
     const docRef = doc(db, 'blog', id);
-    await deleteDoc(docRef);
+    try {
+        await deleteDoc(docRef);
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    }
 }
