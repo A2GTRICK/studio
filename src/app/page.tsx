@@ -37,8 +37,8 @@ const landingFeatures = [
 
 const faqData = [
     {
-        question: "What is phamA2G?",
-        answer: "phamA2G is a digital learning platform for pharmacy students, providing high-quality notes, AI-powered study tools, exam preparation materials, and academic support services."
+        question: "What is pharmA2G?",
+        answer: "pharmA2G is a digital learning platform for pharmacy students, providing high-quality notes, AI-powered study tools, exam preparation materials, and academic support services."
     },
     {
         question: "Is there a free plan?",
@@ -66,14 +66,14 @@ const socialLinks = [
 const floatingTags = [
   { text: 'GPAT 2025', style: { top: '5%', left: '5%', animationDelay: '0s' } },
   { text: 'B.Pharm', style: { top: '20%', right: '5%', animationDelay: '2s' } },
-  { text: 'D.Pharm Notes', style: { bottom: '15%', right: '10%', animationDelay: '6s' } },
+  { text: 'D.Pharm Notes', style: { bottom: '25%', right: '10%', animationDelay: '6s' } },
   { text: 'Medicinal Chemistry', style: { top: '70%', right: '1%', animationDelay: '1s' } },
   { text: 'Pharmacognosy', style: { bottom: '5%', left: '20%', animationDelay: '5s' } },
   { text: 'Human Anatomy', style: { top: '0%', right: '25%', animationDelay: '7s' } },
 ];
 
 const marqueeText = [
-    "Pharmacy Notes", "MCQ Practice", "B.Pharm & D.Pharm", "GPAT 2025", "NIPER", "Drug Inspector", "Pharmacist Exams", "Project Support", "phamA2G",
+    "Pharmacy Notes", "MCQ Practice", "B.Pharm & D.Pharm", "GPAT 2025", "NIPER", "Drug Inspector", "Pharmacist Exams", "Project Support", "pharmA2G",
 ];
 
 function FeatureCard({ item }: { item: (typeof landingFeatures)[number] }) {
@@ -115,7 +115,7 @@ function FeatureCard({ item }: { item: (typeof landingFeatures)[number] }) {
 
 export default function Home() {
 
-  const mailtoLink = "mailto:a2gtrickacademy@gmail.com?subject=Subscribe%20to%20phamA2G%20Newsletter&body=Please%20add%20me%20to%20your%20mailing%20list!";
+  const mailtoLink = "mailto:a2gtrickacademy@gmail.com?subject=Subscribe%20to%20pharmA2G%20Newsletter&body=Please%20add%20me%20to%20your%20mailing%20list!";
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -126,7 +126,7 @@ export default function Home() {
             <div className="grid lg:grid-cols-2 gap-8 items-center">
                 <div className="text-center lg:text-left">
                     <h2 className="font-headline text-4xl font-bold tracking-tighter text-gray-900 dark:text-gray-50 sm:text-5xl md:text-6xl">
-                    Supercharge Your Pharmacy Padhai with phamA2G
+                    Supercharge Your Pharmacy Padhai with pharmA2G
                     </h2>
                     <p className="mt-4 max-w-[600px] mx-auto lg:mx-0 text-lg text-muted-foreground md:text-xl">
                     Your smart friend for pharmacy exams and studies. Focus on learning, and we'll handle the rest. “अब पढ़ाई होगी आसान।
@@ -173,7 +173,7 @@ export default function Home() {
         <section className="py-12 md:py-24 bg-secondary/50">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto">
-              <h3 className="font-headline text-3xl font-bold">Why Choose phamA2G?</h3>
+              <h3 className="font-headline text-3xl font-bold">Why Choose pharmA2G?</h3>
               <p className="mt-2 text-muted-foreground">We blend expert knowledge with AI to create a powerful, personalized learning experience.</p>
             </div>
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -206,7 +206,7 @@ export default function Home() {
                         <h3 className="font-headline text-3xl font-bold">Meet Your Mentor</h3>
                         <h4 className="text-xl font-semibold text-primary mt-2">Arvind Sharma, Founder of A2GTRICK Academy</h4>
                         <p className="mt-4 text-muted-foreground">
-                          With years of experience in pharmacy education and a passion for helping students succeed, Arvind Sharma created phamA2G to make learning simpler, smarter, and more accessible for every pharmacy student in India.
+                          With years of experience in pharmacy education and a passion for helping students succeed, Arvind Sharma created pharmA2G to make learning simpler, smarter, and more accessible for every pharmacy student in India.
                         </p>
                         <blockquote className="mt-6 border-l-4 border-primary pl-4 italic text-muted-foreground">
                           “My mission is to provide the tools and guidance you need to not just pass your exams, but to build a successful career in pharmacy.”
@@ -281,7 +281,7 @@ export default function Home() {
             </div>
 
             <div className="mt-12 text-center text-sm text-muted-foreground">
-              <p>&copy; {new Date().getFullYear()} phamA2G. All rights reserved.</p>
+              <p>&copy; {new Date().getFullYear()} pharmA2G. All rights reserved.</p>
             </div>
         </div>
       </footer>

@@ -23,7 +23,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <Link href="/" className="text-2xl font-extrabold text-gray-900">
-              phamA2G
+              pharmA2G
             </Link>
             <nav className="hidden md:flex gap-6">
               {navLinks.map((link) => (

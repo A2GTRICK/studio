@@ -73,7 +73,7 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
               Welcome to{' '}
-              <span className="text-purple-700">phamA2G</span>{' '}
+              <span className="text-purple-700">pharmA2G</span>{' '}
               <span aria-hidden>👋</span>
             </h1>
             <p className="mt-2 text-slate-700 max-w-xl">

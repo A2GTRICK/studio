@@ -25,7 +25,7 @@ export default function AboutUsPage() {
     <div className="max-w-4xl mx-auto space-y-8 p-4 sm:p-6 lg:p-8">
       <section className="text-center pb-8">
         <h1 className="text-4xl lg:text-5xl font-headline font-extrabold tracking-tight">
-          About phamA2G
+          About pharmA2G
         </h1>
         <p className="mt-6 max-w-3xl mx-auto text-lg text-muted-foreground">
           Empowering pharmacy students through smart learning, expert guidance, and a supportive community.
@@ -39,14 +39,14 @@ export default function AboutUsPage() {
                     <h2 className="text-3xl font-headline font-bold">Our Mission</h2>
                     <h3 className="text-xl font-semibold text-primary mt-2">Making Pharmacy Education Accessible, Smarter, and Future-Ready</h3>
                     <p className="mt-4 text-muted-foreground">
-                      phamA2G is a digital learning initiative by Arvind Sharma, founder of A2GTRICK Academy. We believe every pharmacy student deserves access to high-quality, affordable, and easy-to-understand learning resources.
+                      pharmA2G is a digital learning initiative by Arvind Sharma, founder of A2GTRICK Academy. We believe every pharmacy student deserves access to high-quality, affordable, and easy-to-understand learning resources.
                     </p>
                      <blockquote className="mt-6 border-l-4 border-primary pl-4 italic text-muted-foreground">
                       “We’re not just a notes provider – we’re your academic partner, helping you grow smarter, every day.”
                     </blockquote>
                 </div>
                 <div className="flex justify-center items-center p-4">
-                   <Image src="https://i.postimg.cc/k5CkkR0S/image-logo.png" alt="phamA2G Logo" width={200} height={200} className="w-48 h-48 rounded-full object-cover drop-shadow-xl" />
+                   <Image src="https://i.postimg.cc/k5CkkR0S/image-logo.png" alt="pharmA2G Logo" width={200} height={200} className="w-48 h-48 rounded-full object-cover drop-shadow-xl" />
                 </div>
             </div>
             <div className="grid md:grid-cols-2 gap-12 mt-16">

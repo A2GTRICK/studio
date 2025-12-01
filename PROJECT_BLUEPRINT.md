@@ -1,7 +1,7 @@
 
-# Application Blueprint: phamA2G
+# Application Blueprint: pharmA2G
 
-This document provides a high-level overview of the project structure, key components, and core functionality of the `phamA2G` application.
+This document provides a high-level overview of the project structure, key components, and core functionality of the `pharmA2G` application.
 
 ## 1. Project Overview
 

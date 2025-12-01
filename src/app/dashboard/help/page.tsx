@@ -8,11 +8,11 @@ import Link from "next/link";
 const faqData = {
     "General Questions": [
         {
-            question: "What is phamA2G?",
-            answer: "phamA2G is a digital learning platform for pharmacy students, providing high-quality notes, AI-powered study tools, exam preparation materials, and academic support services."
+            question: "What is pharmA2G?",
+            answer: "pharmA2G is a digital learning platform for pharmacy students, providing high-quality notes, AI-powered study tools, exam preparation materials, and academic support services."
         },
         {
-            question: "Who is behind phamA2G?",
+            question: "Who is behind pharmA2G?",
             answer: "The platform is an initiative by Arvind Sharma, the founder of A2GTRICK Academy, and is designed to make pharmacy education more accessible and effective through technology."
         }
     ],
