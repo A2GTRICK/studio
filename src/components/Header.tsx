@@ -1,3 +1,4 @@
+
 // src/components/Header.tsx
 "use client";
 import Link from 'next/link';
@@ -8,6 +9,7 @@ import NotificationPopover from './notification-popover';
 const navLinks = [
     { href: '/dashboard/notes', label: 'Notes' },
     { href: '/dashboard/mcq-practice', label: 'MCQ Practice' },
+    { href: '/blog', label: 'Blog' },
     { href: '/dashboard/services', label: 'Services' },
     { href: '/dashboard/notifications', label: 'Notifications' },
     { href: '/dashboard/about', label: 'About' },

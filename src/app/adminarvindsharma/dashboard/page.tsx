@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useFirestore } from "@/firebase/provider";
+import { Book, FileText } from "lucide-react";
 
 export default function AdminDashboard() {
   const db = useFirestore();
@@ -13,6 +14,7 @@ export default function AdminDashboard() {
     mcq: 0,
     queries: 0,
     users: 0,
+    blogPosts: 0,
   });
 
   useEffect(() => {
@@ -26,12 +28,14 @@ export default function AdminDashboard() {
         const mcqSnap = await getDocs(collection(db, "mcqSets"));
         const querySnap = await getDocs(collection(db, "contact_queries"));
         const userSnap = await getDocs(collection(db, "users"));
+        const blogSnap = await getDocs(collection(db, "blog"));
 
         setStats({
           notes: notesSnap.size,
           mcq: mcqSnap.size,
           queries: querySnap.size,
           users: userSnap.size,
+          blogPosts: blogSnap.size,
         });
       } catch (error) {
         console.error("Error fetching admin dashboard stats:", error);
@@ -59,7 +63,7 @@ export default function AdminDashboard() {
       {/* STAT CARDS */}
       <h2 className="text-xl font-semibold text-gray-700 mb-3">Overview</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
 
         <div className="p-5 rounded-xl shadow bg-white border border-purple-100">
           <h3 className="text-xl font-semibold text-purple-700">📚 Notes</h3>
@@ -69,6 +73,11 @@ export default function AdminDashboard() {
         <div className="p-5 rounded-xl shadow bg-white border border-blue-100">
           <h3 className="text-xl font-semibold text-blue-700">🧪 MCQ Sets</h3>
           <p className="text-4xl font-bold mt-2">{stats.mcq}</p>
+        </div>
+        
+        <div className="p-5 rounded-xl shadow bg-white border border-teal-100">
+          <h3 className="text-xl font-semibold text-teal-700"><FileText className="inline-block mr-2" />Blog Posts</h3>
+          <p className="text-4xl font-bold mt-2">{stats.blogPosts}</p>
         </div>
 
         <div className="p-5 rounded-xl shadow bg-white border border-green-100">
@@ -101,6 +110,14 @@ export default function AdminDashboard() {
         >
           <h3 className="text-lg font-semibold text-blue-700">🧪 Upload MCQ Set</h3>
           <p className="text-sm text-gray-600">Create new practice questions.</p>
+        </Link>
+
+        <Link
+          href="/adminarvindsharma/blog"
+          className="block bg-white hover:bg-teal-50 border border-teal-200 p-5 rounded-xl shadow transition"
+        >
+          <h3 className="text-lg font-semibold text-teal-700">✍️ Manage Blog</h3>
+          <p className="text-sm text-gray-600">Create and edit blog posts.</p>
         </Link>
 
         <Link
