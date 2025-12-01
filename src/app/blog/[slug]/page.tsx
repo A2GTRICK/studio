@@ -1,17 +1,44 @@
 
-import { getBlogPostBySlug } from '@/services/blog';
-import { notFound } from 'next/navigation';
+'use client';
+
+import { getBlogPostBySlug, BlogPost } from '@/services/blog';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = await getBlogPostBySlug(params.slug);
+function BlogPostPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const [post, setPost] = useState<BlogPost | null | undefined>(undefined);
 
-  if (!post) {
+  useEffect(() => {
+    if (!slug) return;
+    async function loadPost() {
+      try {
+        const fetchedPost = await getBlogPostBySlug(slug);
+        setPost(fetchedPost);
+      } catch (error) {
+        console.error("Failed to fetch post:", error);
+        setPost(null); // Set to null on error
+      }
+    }
+    loadPost();
+  }, [slug]);
+
+  if (post === undefined) {
+     return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (post === null) {
     notFound();
   }
 

@@ -1,12 +1,38 @@
 
+'use client';
+
 import { getBlogPosts, BlogPost } from '@/services/blog';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { Rss } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-async function BlogPage() {
-  const posts = await getBlogPosts();
+function BlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPosts() {
+      try {
+        const fetchedPosts = await getBlogPosts();
+        setPosts(fetchedPosts);
+      } catch (error) {
+        console.error("Failed to fetch blog posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPosts();
+  }, []);
+
+  if (loading) {
+    return (
+        <div className="text-center py-16">
+            <h2 className="text-2xl font-semibold text-gray-700">Loading Posts...</h2>
+        </div>
+    );
+  }
 
   return (
     <div className="bg-secondary/30">
