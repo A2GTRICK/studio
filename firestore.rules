@@ -2,11 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // TEMPORARY DEBUG RULE - MAKES ENTIRE DATABASE READABLE
+    match /{path=**} {
+      allow read: if true;
+    }
+
     // =============================
     // ADMIN CONFIG (public read)
     // =============================
     match /adminConfig/{doc} {
-      allow read: if true;
+      // allow read: if true; // Covered by debug rule
       allow write: if false;
     }
 
@@ -14,10 +19,10 @@ service cloud.firestore {
     // NOTES (public read)
     // =============================
     match /notes/{noteId} {
-      allow read: if true;
+      // allow read: if true; // Covered by debug rule
       allow write: if false;
       match /{sub=**} {
-        allow read: if true;
+        // allow read: if true; // Covered by debug rule
         allow write: if false;
       }
     }
@@ -26,10 +31,10 @@ service cloud.firestore {
     // MCQ SETS (public read)
     // =============================
     match /mcqSets/{setId} {
-      allow read: if true;
+      // allow read: if true; // Covered by debug rule
       allow write: if false;
       match /{sub=**} {
-        allow read: if true;
+        // allow read: if true; // Covered by debug rule
         allow write: if false;
       }
     }
@@ -38,7 +43,7 @@ service cloud.firestore {
     // CUSTOM NOTIFICATIONS (public read)
     // =============================
     match /custom_notifications/{id} {
-        allow read: if true;
+        // allow read: if true; // Covered by debug rule
         allow write: if false;
     }
     
@@ -46,10 +51,10 @@ service cloud.firestore {
     // BLOG POSTS (public read)
     // =============================
     match /posts/{postId} {
-      allow read: if true;
+      // allow read: if true; // Covered by debug rule
       allow write: if false;
       match /{sub=**} {
-        allow read: if true;
+        // allow read: if true; // Covered by debug rule
         allow write: if false;
       }
     }
@@ -58,10 +63,10 @@ service cloud.firestore {
     // TEST ENGINE (public read)
     // =============================
     match /tests/{testId} {
-      allow read: if true;
+      // allow read: if true; // Covered by debug rule
       allow write: if false;
       match /{sub=**} {
-        allow read: if true;
+        // allow read: if true; // Covered by debug rule
         allow write: if false;
       }
     }
@@ -70,7 +75,7 @@ service cloud.firestore {
     // RESULTS (SERVER ONLY WRITE)
     // =============================
     match /results/{resultId} {
-      allow read: if true;
+      // allow read: if true; // Covered by debug rule
       allow create, update, delete: if false;
     }
 
@@ -83,10 +88,10 @@ service cloud.firestore {
     }
 
     // =============================
-    // STRICT DENY EVERYTHING ELSE
+    // STRICT DENY EVERYTHING ELSE (Now overridden by debug rule for reads)
     // =============================
     match /{document=**} {
-      allow read, write: if false;
+      allow write: if false;
     }
   }
 }
