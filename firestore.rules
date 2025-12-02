@@ -2,58 +2,89 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Admin config (read public)
+    // =============================
+    // ADMIN CONFIG (public read)
+    // =============================
     match /adminConfig/{doc} {
       allow read: if true;
       allow write: if false;
     }
 
-    // Tests and questions - public read
-    match /tests/{testId} {
+    // =============================
+    // NOTES (public read)
+    // =============================
+    match /notes/{noteId} {
       allow read: if true;
-      allow write: if false; // server/console only
-      match /questions/{questionId} {
+      allow write: if false;
+      match /{sub=**} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+    
+    // =============================
+    // MCQ SETS (public read)
+    // =============================
+    match /mcqSets/{setId} {
+      allow read: if true;
+      allow write: if false;
+      match /{sub=**} {
         allow read: if true;
         allow write: if false;
       }
     }
 
-    // Notes (your existing content) - public read
-    match /notes/{noteId} {
-      allow read: if true;
-      allow write: if false;
-    }
-    
-    // MCQ Sets (public read)
-    match /mcqSets/{id} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // Results - clients cannot write directly (server should use Admin SDK)
-    match /results/{resultId} {
-      allow read: if true; // allow read for analytics/leaderboards
-      allow create, update, delete: if false;
-    }
-
-    // Users
-    match /users/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
-    }
-
-    // Custom notifications (public read)
+    // =============================
+    // CUSTOM NOTIFICATIONS (public read)
+    // =============================
     match /custom_notifications/{id} {
         allow read: if true;
         allow write: if false;
     }
     
-    // Blog posts (public read)
-    match /posts/{id} {
+    // =============================
+    // BLOG POSTS (public read)
+    // =============================
+    match /posts/{postId} {
+      allow read: if true;
+      allow write: if false;
+      match /{sub=**} {
         allow read: if true;
         allow write: if false;
+      }
     }
     
+    // =============================
+    // TEST ENGINE (public read)
+    // =============================
+    match /tests/{testId} {
+      allow read: if true;
+      allow write: if false;
+      match /{sub=**} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // =============================
+    // RESULTS (SERVER ONLY WRITE)
+    // =============================
+    match /results/{resultId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    // =============================
+    // USERS COLLECTION (private data)
+    // =============================
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // =============================
+    // STRICT DENY EVERYTHING ELSE
+    // =============================
     match /{document=**} {
       allow read, write: if false;
     }
