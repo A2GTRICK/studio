@@ -1,9 +1,8 @@
-
 // src/app/practice/premium/page.tsx
 import React from "react";
 import Link from "next/link";
 import { db } from "@/firebase/config"; // existing client config used for server reads
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
 import MCQCard from "@/components/practice-premium/MCQCard";
 import FilterBar from "@/components/practice-premium/FilterBar";
 import HistoryWidget from "@/components/practice-premium/HistoryWidget";
@@ -13,10 +12,19 @@ export default async function PremiumPracticePage() {
   const ref = collection(db, "mcqSets");
   // A where clause on a field that doesn't exist on all documents will filter them out. 
   // Let's query without it for now to ensure all sets are fetched.
-  // const q = query(ref, where("isPublished", "==", true), orderBy("createdAt", "desc"));
   const q = query(ref, orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
-  const sets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  
+  const sets = snap.docs.map(d => {
+    const data = d.data();
+    return { 
+      id: d.id, 
+      ...data,
+      // Convert Timestamps to serializable format (ISO string)
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : null,
+      updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : null,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-[#F5F1FF] pb-20">
