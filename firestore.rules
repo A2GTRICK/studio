@@ -2,95 +2,72 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // TEMPORARY DEBUG RULE - MAKES ENTIRE DATABASE READABLE
-    match /{path=**} {
-      allow read: if true;
+    // Helper function to check for Admin UID
+    // IMPORTANT: Replace 'YOUR_ADMIN_UID_HERE' with your actual Firebase Authentication User ID.
+    function isAdmin() {
+      return request.auth.uid == "s5d4Z9q3N4Xb2P1hA6jK7cV8wFp2"; 
     }
 
     // =============================
-    // ADMIN CONFIG (public read)
-    // =============================
-    match /adminConfig/{doc} {
-      // allow read: if true; // Covered by debug rule
-      allow write: if false;
-    }
-
-    // =============================
-    // NOTES (public read)
+    // PUBLIC READ-ONLY COLLECTIONS
     // =============================
     match /notes/{noteId} {
-      // allow read: if true; // Covered by debug rule
-      allow write: if false;
-      match /{sub=**} {
-        // allow read: if true; // Covered by debug rule
-        allow write: if false;
-      }
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
-    // =============================
-    // MCQ SETS (public read)
-    // =============================
     match /mcqSets/{setId} {
-      // allow read: if true; // Covered by debug rule
-      allow write: if false;
-      match /{sub=**} {
-        // allow read: if true; // Covered by debug rule
-        allow write: if false;
-      }
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // =============================
-    // CUSTOM NOTIFICATIONS (public read)
-    // =============================
     match /custom_notifications/{id} {
-        // allow read: if true; // Covered by debug rule
-        allow write: if false;
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
-    // =============================
-    // BLOG POSTS (public read)
-    // =============================
     match /posts/{postId} {
-      // allow read: if true; // Covered by debug rule
-      allow write: if false;
-      match /{sub=**} {
-        // allow read: if true; // Covered by debug rule
-        allow write: if false;
-      }
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
-    // =============================
-    // TEST ENGINE (public read)
-    // =============================
+    match /blog/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
     match /tests/{testId} {
-      // allow read: if true; // Covered by debug rule
-      allow write: if false;
+      allow read: if true;
+      allow write: if false; // Test engine writes are server-side
       match /{sub=**} {
-        // allow read: if true; // Covered by debug rule
+        allow read: if true;
         allow write: if false;
       }
     }
 
     // =============================
-    // RESULTS (SERVER ONLY WRITE)
+    // OTHER COLLECTIONS
     // =============================
-    match /results/{resultId} {
-      // allow read: if true; // Covered by debug rule
-      allow create, update, delete: if false;
+    match /adminConfig/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // =============================
-    // USERS COLLECTION (private data)
-    // =============================
+    match /results/{resultId} {
+      allow read: if request.auth != null; // Users can probably read their own results
+      allow create, update, delete: if false; // Server-side writes only
+    }
+
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
+      allow write: if false; // User profiles not editable from client yet
     }
 
     // =============================
-    // STRICT DENY EVERYTHING ELSE (Now overridden by debug rule for reads)
+    // STRICT DENY ALL OTHER WRITES
     // =============================
     match /{document=**} {
+      // This rule is now safe because reads are handled above, and this denies all other writes.
       allow write: if false;
     }
   }
