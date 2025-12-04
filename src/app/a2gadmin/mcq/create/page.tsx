@@ -5,7 +5,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Plus, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, ArrowLeft, BookDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Question = {
@@ -30,6 +30,7 @@ export default function CreateMcqSetPage() {
   const [isPublished, setIsPublished] = useState(false);
   
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [bulkText, setBulkText] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -68,6 +69,37 @@ export default function CreateMcqSetPage() {
           }
           return q;
       }));
+  };
+
+  const handleBulkParse = () => {
+    const blocks = bulkText.trim().split(/\n\s*\n/);
+    const newQuestions: Question[] = [];
+    let errors = 0;
+
+    blocks.forEach(block => {
+      const lines = block.split('\n').filter(line => line.trim() !== '');
+      if (lines.length === 7) {
+        const [question, opt1, opt2, opt3, opt4, correctAnswer, explanation] = lines;
+        newQuestions.push({
+          id: uuidv4(),
+          question: question.trim(),
+          options: [opt1.trim(), opt2.trim(), opt3.trim(), opt4.trim()],
+          correctAnswer: correctAnswer.trim(),
+          explanation: explanation.trim(),
+          topic: "",
+          difficulty: "Medium",
+        });
+      } else {
+        errors++;
+      }
+    });
+    
+    if (newQuestions.length > 0) {
+        setQuestions(prev => [...prev, ...newQuestions]);
+    }
+
+    setBulkText("");
+    alert(`${newQuestions.length} questions added successfully. ${errors > 0 ? `${errors} blocks had incorrect format and were skipped.` : ''}`);
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -134,6 +166,21 @@ export default function CreateMcqSetPage() {
               <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} /> Published</label>
           </div>
         </div>
+
+        {/* Bulk Add Questions Section */}
+        <div className="p-6 bg-white/10 rounded-lg border border-white/20">
+          <h2 className="text-lg font-semibold mb-4">Bulk Add Questions</h2>
+          <textarea
+            value={bulkText}
+            onChange={(e) => setBulkText(e.target.value)}
+            placeholder="Paste questions here. Each block should have 7 lines: question, 4 options, correct answer, and explanation. Separate blocks with a blank line."
+            className="w-full p-3 rounded bg-white/10 h-48"
+          />
+          <Button type="button" onClick={handleBulkParse} className="mt-3 bg-blue-600 hover:bg-blue-700 text-white">
+            <BookDown className="w-4 h-4 mr-2" /> Parse & Add Questions
+          </Button>
+        </div>
+
 
         {/* Questions Section */}
         <div className="p-6 bg-white/10 rounded-lg border border-white/20">
