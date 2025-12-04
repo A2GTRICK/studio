@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { title, course, subject, questions } = body;
+    const { title, course, subject, questions, isPublished } = body;
 
     if (!title || !course || !subject) {
       return NextResponse.json({ error: "Title, Course, and Subject are required." }, { status: 400 });
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
 
     const newSet = {
       ...body,
+      isPublished: isPublished === true, // Ensure it's a boolean, default to false
       questions: processedQuestions,
       questionCount: processedQuestions.length,
       createdAt: FieldValue.serverTimestamp(),
