@@ -24,21 +24,21 @@ type Question = {
   difficulty: "Easy" | "Medium" | "Hard";
 };
 
-const bulkExample = `What is the primary mechanism of action for benzodiazepines?
-They enhance the effect of the neurotransmitter GABA.
-They block dopamine receptors in the brain.
-They inhibit the enzyme acetylcholinesterase.
-They act as selective serotonin reuptake inhibitors.
-They enhance the effect of the neurotransmitter GABA.
-Benzodiazepines bind to the GABAA receptor, which potentiates the effect of GABA, leading to CNS depression.
+const bulkExample = `Q: What is the primary mechanism of action for benzodiazepines?
+A: They enhance the effect of the neurotransmitter GABA.
+B: They block dopamine receptors in the brain.
+C: They inhibit the enzyme acetylcholinesterase.
+D: They act as selective serotonin reuptake inhibitors.
+ANSWER: A
+EXPLAIN: Benzodiazepines bind to the GABAA receptor, which potentiates the effect of GABA, leading to CNS depression.
 
-Which of the following is a Schedule H drug?
-Paracetamol
-Aspirin
-Diazepam
-Cetirizine
-Diazepam
-Diazepam is a prescription-only drug listed under Schedule H of the Drugs and Cosmetics Act.`;
+Q: Which of the following is a Schedule H drug?
+A: Paracetamol
+B: Aspirin
+C: Diazepam
+D: Cetirizine
+ANSWER: C
+EXPLAIN: Diazepam is a prescription-only drug listed under Schedule H of the Drugs and Cosmetics Act.`;
 
 export default function CreateMcqSetPage() {
   const router = useRouter();
@@ -99,21 +99,49 @@ export default function CreateMcqSetPage() {
     let errors = 0;
 
     blocks.forEach(block => {
-      const lines = block.split('\n').filter(line => line.trim() !== '');
-      if (lines.length === 7) {
-        const [question, opt1, opt2, opt3, opt4, correctAnswer, explanation] = lines;
+        const lines = block.split('\n').filter(line => line.trim() !== '');
+        if (lines.length < 7) {
+            errors++;
+            return;
+        }
+
+        const questionLine = lines.find(l => l.startsWith('Q:'));
+        const optionA = lines.find(l => l.startsWith('A:'));
+        const optionB = lines.find(l => l.startsWith('B:'));
+        const optionC = lines.find(l => l.startsWith('C:'));
+        const optionD = lines.find(l => l.startsWith('D:'));
+        const answerLine = lines.find(l => l.startsWith('ANSWER:'));
+        const explainLine = lines.find(l => l.startsWith('EXPLAIN:'));
+
+        if (!questionLine || !optionA || !optionB || !optionC || !optionD || !answerLine || !explainLine) {
+            errors++;
+            return;
+        }
+
+        const optionsMap: { [key: string]: string } = {
+            'A': optionA.substring(2).trim(),
+            'B': optionB.substring(2).trim(),
+            'C': optionC.substring(2).trim(),
+            'D': optionD.substring(2).trim(),
+        };
+
+        const answerKey = answerLine.substring(7).trim();
+        const correctAnswer = optionsMap[answerKey];
+        
+        if (!correctAnswer) {
+            errors++;
+            return;
+        }
+
         newQuestions.push({
-          id: uuidv4(),
-          question: question.trim(),
-          options: [opt1.trim(), opt2.trim(), opt3.trim(), opt4.trim()],
-          correctAnswer: correctAnswer.trim(),
-          explanation: explanation.trim(),
-          topic: "",
-          difficulty: "Medium",
+            id: uuidv4(),
+            question: questionLine.substring(2).trim(),
+            options: Object.values(optionsMap),
+            correctAnswer: correctAnswer,
+            explanation: explainLine.substring(8).trim(),
+            topic: "",
+            difficulty: "Medium",
         });
-      } else {
-        errors++;
-      }
     });
     
     if (newQuestions.length > 0) {
@@ -123,6 +151,7 @@ export default function CreateMcqSetPage() {
     setBulkText("");
     alert(`${newQuestions.length} questions added successfully. ${errors > 0 ? `${errors} blocks had incorrect format and were skipped.` : ''}`);
   };
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -195,7 +224,7 @@ export default function CreateMcqSetPage() {
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
-            placeholder="Paste questions here. Each block should have 7 lines: question, 4 options, correct answer, and explanation. Separate blocks with a blank line."
+            placeholder="Paste questions here using the specified format. Separate question blocks with a blank line."
             className="w-full p-3 rounded bg-white/10 h-48"
           />
           <div className="mt-3 flex items-center gap-4">
