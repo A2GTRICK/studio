@@ -80,7 +80,7 @@ export default function McqPracticeSetPage() {
 
         <div className="flex flex-col gap-3">
           {current.options.map((opt: string, index: number) => {
-            const isCorrect = opt === current.correctAnswer; // Corrected from `current.answer`
+            const isCorrect = opt === current.correctAnswer;
 
             return (
               <button
