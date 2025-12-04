@@ -190,25 +190,25 @@ export async function DELETE(req: NextRequest) {
     const snap = await docRef.get();
     if (!snap.exists) return NextResponse.json({ error: "Note not found" }, { status: 404 });
 
-    // Delete attachments from storage (if any)
+    // Delete attachments from storage
     const data = snap.data() || {};
     const attachments: string[] = Array.isArray(data.attachments) ? data.attachments : [];
 
     const bucket = admin.storage().bucket(BUCKET_NAME);
-    for (const url of attachments) {
+    for (const fileUrl of attachments) {
       try {
-        // url pattern: https://storage.googleapis.com/<bucket>/<encodedPath>
-        const prefix = `https://storage.googleapis.com/${bucket.name}/`;
-        if (url.startsWith(prefix)) {
-          const filePath = decodeURIComponent(url.substring(prefix.length));
-          await bucket.file(filePath).delete().catch(() => {});
-        }
+        // Example URL:
+        // https://storage.googleapis.com/<bucket>/<path>
+        const path = decodeURIComponent(fileUrl.split(`${bucket.name}/`)[1]);
+        await bucket.file(path).delete().catch(() => {});
       } catch (e) {
-        // continue
+        console.warn("Failed to delete file:", fileUrl, e);
       }
     }
 
+    // Delete Firestore document
     await docRef.delete();
+
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     console.error("Admin DELETE notes error:", err);
