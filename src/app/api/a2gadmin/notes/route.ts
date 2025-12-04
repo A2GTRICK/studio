@@ -7,7 +7,8 @@ import type { NextRequest } from "next/server";
 import { adminDb, default as admin } from "@/lib/firebaseAdmin"; // adminDb + admin
 import { v4 as uuidv4 } from "uuid";
 
-const BUCKET_NAME = process.env.FIREBASE_STORAGE_BUCKET;
+// 🚀 FIXED: Get bucket name from the initialized admin app, not from a separate env var.
+const BUCKET_NAME = admin.storage().bucket().name;
 
 async function uploadFileToStorage(path: string, file: File) {
   const arrayBuffer = await file.arrayBuffer();

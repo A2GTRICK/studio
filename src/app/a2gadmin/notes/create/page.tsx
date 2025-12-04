@@ -90,8 +90,9 @@ export default function CreateNoteAdminPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
+          {/* 🚀 FIXED: Only Title is now required */}
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="p-3 rounded bg-white/10 w-full" required />
-          <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" className="p-3 rounded bg-white/10 w-full" required />
+          <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" className="p-3 rounded bg-white/10 w-full" />
           <input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Course (e.g. B.Pharm)" className="p-3 rounded bg-white/10 w-full" />
           <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year (e.g. 2nd Year)" className="p-3 rounded bg-white/10 w-full" />
           <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Topic" className="p-3 rounded bg-white/10 w-full" />
