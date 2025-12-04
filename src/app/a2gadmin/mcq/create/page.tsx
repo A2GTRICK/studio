@@ -5,8 +5,14 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Plus, Trash2, Save, ArrowLeft, BookDown } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, ArrowLeft, BookDown, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 type Question = {
   id: string;
@@ -17,6 +23,22 @@ type Question = {
   topic: string;
   difficulty: "Easy" | "Medium" | "Hard";
 };
+
+const bulkExample = `What is the primary mechanism of action for benzodiazepines?
+They enhance the effect of the neurotransmitter GABA.
+They block dopamine receptors in the brain.
+They inhibit the enzyme acetylcholinesterase.
+They act as selective serotonin reuptake inhibitors.
+They enhance the effect of the neurotransmitter GABA.
+Benzodiazepines bind to the GABAA receptor, which potentiates the effect of GABA, leading to CNS depression.
+
+Which of the following is a Schedule H drug?
+Paracetamol
+Aspirin
+Diazepam
+Cetirizine
+Diazepam
+Diazepam is a prescription-only drug listed under Schedule H of the Drugs and Cosmetics Act.`;
 
 export default function CreateMcqSetPage() {
   const router = useRouter();
@@ -176,9 +198,23 @@ export default function CreateMcqSetPage() {
             placeholder="Paste questions here. Each block should have 7 lines: question, 4 options, correct answer, and explanation. Separate blocks with a blank line."
             className="w-full p-3 rounded bg-white/10 h-48"
           />
-          <Button type="button" onClick={handleBulkParse} className="mt-3 bg-blue-600 hover:bg-blue-700 text-white">
-            <BookDown className="w-4 h-4 mr-2" /> Parse & Add Questions
-          </Button>
+          <div className="mt-3 flex items-center gap-4">
+            <Button type="button" onClick={handleBulkParse} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <BookDown className="w-4 h-4 mr-2" /> Parse & Add Questions
+            </Button>
+            <Accordion type="single" collapsible className="w-auto border-none">
+              <AccordionItem value="item-1" className="border-none">
+                <AccordionTrigger className="text-sm py-0 hover:no-underline flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4" /> Show Example
+                </AccordionTrigger>
+                <AccordionContent>
+                  <pre className="text-xs p-3 mt-2 bg-black/30 rounded-md whitespace-pre-wrap max-w-full overflow-auto">
+                    {bulkExample}
+                  </pre>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
         </div>
 
 
