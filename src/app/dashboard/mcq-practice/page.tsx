@@ -15,10 +15,13 @@ export default function McqPracticePage() {
     async function loadSets() {
       setLoading(true);
       try {
-        const res = await fetch('/api/mcq-sets');
+        // Using the same reliable API route as the admin panel
+        const res = await fetch('/api/a2gadmin/mcq');
         const data = await res.json();
         if (res.ok) {
-          setMcqSets(data.sets || []);
+          // Filtering for published sets on the client
+          const publishedSets = (data.sets || []).filter((set: McqSet) => set.isPublished);
+          setMcqSets(publishedSets);
         } else {
           console.error("Failed to fetch MCQ sets:", data.error);
         }
