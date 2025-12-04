@@ -1,73 +1,147 @@
 "use client";
-import { useState } from "react";
-import { createTest, bulkUploadQuestions } from "@/services/practice";
+
+import React, { useState } from "react";
 import BulkUpload from "@/components/a2gadmin/BulkUpload";
 
 export default function CreateTestPage() {
   const [title, setTitle] = useState("");
-  const [createdId, setCreatedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [bulkUploadMsg, setBulkUploadMsg] = useState("");
+  const [course, setCourse] = useState("");
+  const [subject, setSubject] = useState("");
+  const [year, setYear] = useState("");
+  const [difficulty, setDifficulty] = useState("Easy");
+  const [description, setDescription] = useState("");
 
-  async function onSave() {
-    if (!title) {
-      alert("Please enter a title for the test.");
-      return;
-    }
-    setLoading(true);
-    const res = await createTest({ title });
-    setLoading(false);
-    if (res?.error) {
-      alert(res.error || "Error creating test");
-      return;
-    }
-    if (res?.id) {
-      setCreatedId(res.id);
-    }
+  const [questions, setQuestions] = useState<any[]>([]);
+
+  function addQuestion() {
+    setQuestions([
+      ...questions,
+      { question: "", optionA: "", optionB: "", optionC: "", optionD: "", answer: "" },
+    ]);
   }
 
-  async function handleBulkUpload(questions: any[]) {
-    if (!createdId) return;
-    setBulkUploadMsg("Uploading...");
-    
-    const sections = [{
-        title: 'Main Section',
-        questions: questions.map(q => ({
-            text: q.question,
-            type: 'single',
-            options: [q.optionA, q.optionB, q.optionC, q.optionD].map(opt => ({ text: opt })),
-            answer: q.answer, // Assuming answer is 'A', 'B', etc. corresponding to index. Adjust if needed.
-        }))
-    }];
+  async function saveTest() {
+    const res = await fetch("/api/a2gadmin/tests", {
+      method: "POST",
+      body: JSON.stringify({
+        title,
+        course,
+        subject,
+        year,
+        difficulty,
+        description,
+        questions,
+      }),
+    });
 
-    const res = await bulkUploadQuestions(createdId, sections);
-    if (res?.error) {
-        setBulkUploadMsg("Error: " + res.error);
-    } else {
-        setBulkUploadMsg("Questions uploaded successfully!");
+    const data = await res.json();
+    if (data.id) {
+      alert("Test created!");
+      window.location.href = "/a2gadmin/tests";
     }
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Create Test</h1>
-      <div className="p-4 rounded mb-4 text-black bg-white/80">
-        <label className="block text-sm mb-1 font-semibold">Test Title</label>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border p-2 rounded" />
-        <div className="mt-3">
-          <button onClick={onSave} disabled={loading || !!createdId} className="bg-purple-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-400">
-            {loading ? "Saving…" : "1. Save Test"}
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold">Create Test</h1>
+
+      <div className="space-y-3">
+        <input
+          placeholder="Test Title"
+          className="w-full p-3 border rounded-lg"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+
+        <input
+          placeholder="Course"
+          className="w-full p-3 border rounded-lg"
+          value={course}
+          onChange={(e) => setCourse(e.target.value)}
+        />
+
+        <input
+          placeholder="Subject"
+          className="w-full p-3 border rounded-lg"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+        />
+
+        <input
+          placeholder="Year"
+          className="w-full p-3 border rounded-lg"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+        />
+
+        <textarea
+          placeholder="Description"
+          className="w-full p-3 border rounded-lg"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+
+        {/* BULK UPLOAD */}
+        <BulkUpload
+          onUpload={(bulkQs) => setQuestions([...questions, ...bulkQs])}
+        />
+
+        {/* MANUAL QUESTIONS */}
+        <div className="space-y-4 mt-6">
+          <h2 className="text-lg font-bold">Manual Questions</h2>
+
+          {questions.map((q, i) => (
+            <div key={i} className="border p-4 rounded-lg space-y-2">
+              <input
+                placeholder="Question"
+                className="w-full p-2 border rounded"
+                value={q.question}
+                onChange={(e) => {
+                  questions[i].question = e.target.value;
+                  setQuestions([...questions]);
+                }}
+              />
+
+              {["A", "B", "C", "D"].map((opt) => (
+                <input
+                  key={opt}
+                  placeholder={`Option ${opt}`}
+                  className="w-full p-2 border rounded"
+                  value={q[`option${opt}`]}
+                  onChange={(e) => {
+                    questions[i][`option${opt}`] = e.target.value;
+                    setQuestions([...questions]);
+                  }}
+                />
+              ))}
+
+              <input
+                placeholder="Correct Answer (A/B/C/D)"
+                className="w-full p-2 border rounded"
+                value={q.answer}
+                onChange={(e) => {
+                  questions[i].answer = e.target.value;
+                  setQuestions([...questions]);
+                }}
+              />
+            </div>
+          ))}
+
+          <button
+            onClick={addQuestion}
+            className="w-full bg-purple-600 text-white py-2 rounded-lg"
+          >
+            + Add Question
           </button>
         </div>
-      </div>
 
-      {createdId && (
-        <div className="p-4 rounded text-black bg-white/80">
-          <h3 className="font-semibold mb-2 text-lg">2. Bulk Upload Questions for '{title}'</h3>
-          <BulkUpload onUpload={handleBulkUpload} />
-          {bulkUploadMsg && <p className="mt-2 text-sm text-gray-600">{bulkUploadMsg}</p>}
-        </div>
-      )}
+        <button
+          onClick={saveTest}
+          className="w-full bg-green-600 text-white py-3 rounded-lg text-lg font-bold"
+        >
+          Save Test
+        </button>
+      </div>
     </div>
   );
 }
