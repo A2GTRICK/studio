@@ -85,7 +85,8 @@ function sanitizeForRender(dirty: string) {
 }
 
 export default function PremiumNoteViewPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id;
 
   const [note, setNote] = useState<any>(null);
   const [related, setRelated] = useState<any[]>([]);
