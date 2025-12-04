@@ -14,7 +14,10 @@ export default function McqPracticeHome() {
         const res = await fetch("/api/a2gadmin/mcq");
         const data = await res.json();
 
-        const onlyPublished = (data.sets || []).filter(
+        // FIX: The API returns `data.sets`, not `data.mcqSets`.
+        const allSets = data.sets || [];
+
+        const onlyPublished = allSets.filter(
           (s: any) => s.isPublished === true
         );
 
