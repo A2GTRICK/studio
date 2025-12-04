@@ -2,10 +2,10 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, query, orderBy, where } from "firebase/firestore";
 import { db } from "@/firebase/config";
 
-interface McqSet {
+export interface McqSet {
   id: string;
   title: string;
   subject: string;
@@ -14,13 +14,16 @@ interface McqSet {
   description?: string;
   questionCount: number;
   isPremium?: boolean;
+  isPublished?: boolean;
   createdAt?: any;
+  updatedAt?: any;
   questions?: any[];
 }
 
 interface McqContextType {
   mcqSets: McqSet[];
   loading: boolean;
+  error?: string | null;
   getById: (id: string) => McqSet | undefined;
   refresh: () => void;
 }
@@ -28,6 +31,7 @@ interface McqContextType {
 const McqContext = createContext<McqContextType>({
   mcqSets: [],
   loading: true,
+  error: null,
   getById: () => undefined,
   refresh: () => {},
 });
@@ -35,33 +39,48 @@ const McqContext = createContext<McqContextType>({
 export function McqProvider({ children }: { children: ReactNode }) {
   const [mcqSets, setMcqSets] = useState<McqSet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const refresh = async () => {
+  const fetchAndSetSets = async () => {
     try {
-      setLoading(true);
-      const ref = collection(db, "mcqSets");
-      const snap = await getDocs(ref);
-
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as McqSet[];
-      setMcqSets(list);
-    } catch(err) {
-      console.error("MCQ refresh error", err)
+        setLoading(true);
+        setError(null);
+        // Query only published sets for the client-side
+        const q = query(
+            collection(db, "mcqSets"), 
+            where("isPublished", "==", true),
+            orderBy("createdAt", "desc")
+        );
+        const snap = await getDocs(q);
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as McqSet[];
+        setMcqSets(list);
+    } catch (err: any) {
+        console.error("MCQ fetch error", err);
+        setError("Could not load MCQ sets. The database might be offline or rules are blocking access.");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
   useEffect(() => {
-    const ref = collection(db, "mcqSets");
+    // Initial fetch
+    fetchAndSetSets();
 
-    // Live update listener
-    const unsubscribe = onSnapshot(ref, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as McqSet[];
-      setMcqSets(list);
-      setLoading(false);
+    // Set up a listener for real-time updates.
+    // This is more complex if you need live updates on the client for published sets.
+    // For now, a manual refresh is simpler and safer.
+    const q = query(
+      collection(db, "mcqSets"), 
+      where("isPublished", "==", true),
+      orderBy("createdAt", "desc")
+    );
+    const unsubscribe = onSnapshot(q, (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as McqSet[];
+        setMcqSets(list);
     }, (err) => {
-      console.error("MCQ onSnapshot error", err);
-      setLoading(false);
+        console.error("MCQ snapshot error:", err);
+        // Don't overwrite data if listener fails, but log the error
+        setError("Live updates failed. Data may be stale.");
     });
 
     return () => unsubscribe();
@@ -70,9 +89,13 @@ export function McqProvider({ children }: { children: ReactNode }) {
   const getById = (id: string) => {
     return mcqSets.find(s => s.id === id);
   }
+  
+  const refresh = () => {
+    fetchAndSetSets();
+  }
 
   return (
-    <McqContext.Provider value={{ mcqSets, loading, getById, refresh }}>
+    <McqContext.Provider value={{ mcqSets, loading, error, getById, refresh }}>
       {children}
     </McqContext.Provider>
   );

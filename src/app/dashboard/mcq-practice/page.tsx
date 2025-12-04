@@ -4,9 +4,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useMcqSets } from "@/context/mcq-context";
 import PremiumMCQCard from "@/components/PremiumMCQCard";
+import { Loader2 } from "lucide-react";
 
 export default function MCQPracticePage() {
-  const { mcqSets, loading, refresh } = useMcqSets();
+  const { mcqSets, loading, error, refresh } = useMcqSets();
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
@@ -70,19 +71,35 @@ export default function MCQPracticePage() {
           />
         </div>
 
-        <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
-          {loading && <div className="col-span-full text-center p-8 text-gray-500">Loading MCQ sets…</div>}
-          {!loading && filtered.length === 0 && (
+        {loading && (
+            <div className="col-span-full text-center p-8 text-gray-500 flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500 mb-3" />
+                <p className="font-semibold">Loading MCQ sets...</p>
+            </div>
+        )}
+        
+        {!loading && error && (
+             <div className="col-span-full bg-red-50 p-8 rounded-xl text-center shadow-sm border-red-200">
+              <h3 className="text-xl font-semibold text-red-800">Something Went Wrong</h3>
+              <p className="text-red-600 mt-2">{error}</p>
+              <button onClick={refresh} className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg">Try Again</button>
+            </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
             <div className="col-span-full bg-white p-8 rounded-xl text-center shadow-sm border-gray-200">
               <h3 className="text-xl font-semibold text-gray-800">No MCQ Sets Found</h3>
               <p className="text-gray-500 mt-2">Try adjusting your filters or search terms.</p>
             </div>
-          )}
+        )}
 
-          {filtered.map((set) => (
-            <PremiumMCQCard key={set.id} set={set} />
-          ))}
-        </div>
+        {!loading && !error && (
+            <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
+                {filtered.map((set) => (
+                    <PremiumMCQCard key={set.id} set={set} />
+                ))}
+            </div>
+        )}
       </div>
     </div>
   );

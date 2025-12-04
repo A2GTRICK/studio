@@ -1,3 +1,4 @@
+
 "use client";
 
 export default function AdminDashboard() {
@@ -11,7 +12,7 @@ export default function AdminDashboard() {
       value: "346",
     },
     {
-      label: "MCQ Tests",
+      label: "MCQ Sets",
       value: "58",
     },
     {
@@ -22,7 +23,7 @@ export default function AdminDashboard() {
 
   const quickActions = [
     { label: "Add New Note", href: "/a2gadmin/notes/create" },
-    { label: "Create MCQ Test", href: "/a2gadmin/tests/create" },
+    { label: "Create MCQ Set", href: "/a2gadmin/mcq/create" },
     { label: "Write Blog Post", href: "/a2gadmin/blog/create" },
     { label: "Add Job Update", href: "/a2gadmin/jobs/create" },
   ];

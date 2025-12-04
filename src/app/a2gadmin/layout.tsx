@@ -28,7 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {[
             { label: "Dashboard", href: "/a2gadmin" },
             { label: "Notes", href: "/a2gadmin/notes" },
-            { label: "Tests", href: "/a2gadmin/tests" },
+            { label: "MCQs", href: "/a2gadmin/mcq" },
             { label: "Blog", href: "/a2gadmin/blog" },
             { label: "Jobs", href: "/a2gadmin/jobs" },
             { label: "Notifications", href: "/a2gadmin/notifications" },
@@ -39,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               key={nav.href}
               href={nav.href}
               className={`px-3 py-2 rounded-lg transition-all ${
-                pathname === nav.href
+                pathname.startsWith(nav.href)
                   ? "bg-white/20 font-semibold shadow-md"
                   : "hover:bg-white/10"
               }`}
