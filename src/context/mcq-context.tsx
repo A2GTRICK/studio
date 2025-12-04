@@ -63,27 +63,10 @@ export function McqProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Initial fetch
     fetchAndSetSets();
-
-    // Set up a listener for real-time updates.
-    // This is more complex if you need live updates on the client for published sets.
-    // For now, a manual refresh is simpler and safer.
-    const q = query(
-      collection(db, "mcqSets"), 
-      where("isPublished", "==", true),
-      orderBy("createdAt", "desc")
-    );
-    const unsubscribe = onSnapshot(q, (snap) => {
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as McqSet[];
-        setMcqSets(list);
-    }, (err) => {
-        console.error("MCQ snapshot error:", err);
-        // Don't overwrite data if listener fails, but log the error
-        setError("Live updates failed. Data may be stale.");
-    });
-
-    return () => unsubscribe();
+    
+    // The onSnapshot listener is removed to prefer manual refresh for simplicity and to avoid potential permission issues on the client.
+    // A manual refresh button is provided on the UI.
   }, []);
 
   const getById = (id: string) => {
