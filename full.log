@@ -27,3 +27,9 @@
  ✓ Compiled middleware in 4ms
  ✓ Compiled in 1034ms
  ✓ Compiled middleware in 24ms
+ ○ Compiling / ...
+ ✓ Compiled in 43s
+ ✓ Compiled / in 43.1s
+ GET / 200 in 44565ms
+   Reload env: .env
+[?25h

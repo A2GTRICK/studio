@@ -39,8 +39,30 @@ function sanitizeString(v: any) {
 // -------------------------
 // GET ALL NOTES
 // -------------------------
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+
+    // GET SINGLE NOTE
+    if (id) {
+      const doc = await adminDb.collection("notes").doc(id).get();
+
+      if (!doc.exists) {
+        return NextResponse.json({ error: "Note not found" }, { status: 404 });
+      }
+
+      const data = doc.data();
+      return NextResponse.json({
+        note: {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
+        },
+      });
+    }
+
+    // GET ALL NOTES
     const snapshot = await adminDb
       .collection("notes")
       .orderBy("createdAt", "desc")
@@ -51,13 +73,12 @@ export async function GET() {
       return {
         id: d.id,
         ...data,
-        createdAt: data.createdAt?.toDate
-          ? data.createdAt.toDate()
-          : data.createdAt || null,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
       };
     });
 
     return NextResponse.json({ notes });
+
   } catch (err: any) {
     console.error("Admin GET notes error:", err);
     return NextResponse.json(
