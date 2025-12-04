@@ -39,6 +39,8 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@types/dompurify": "^3.0.5",
     "@types/marked": "^5.0.2",
+    "@uiw/react-markdown-preview": "^5.1.1",
+    "@uiw/react-md-editor": "^4.0.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -65,6 +67,7 @@
     "tailwind-merge": "^3.0.1",
     "tailwind-scrollbar": "^3.1.0",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^10.0.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -72,6 +75,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/uuid": "^9.0.8",
     "genkit-cli": "^1.24.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
