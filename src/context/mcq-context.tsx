@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { collection, getDocs, onSnapshot, query, orderBy, where } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
 import { db } from "@/firebase/config";
 
 export interface McqSet {
@@ -64,9 +64,6 @@ export function McqProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchAndSetSets();
-    
-    // The onSnapshot listener is removed to prefer manual refresh for simplicity and to avoid potential permission issues on the client.
-    // A manual refresh button is provided on the UI.
   }, []);
 
   const getById = (id: string) => {

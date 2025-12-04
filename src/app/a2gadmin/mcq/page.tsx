@@ -4,50 +4,44 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { useMcqSets } from "@/context/mcq-context";
-import { ChevronDown, Loader2, PlusCircle } from "lucide-react";
+import { Loader2, PlusCircle, ChevronDown } from "lucide-react";
 import type { McqSet } from "@/context/mcq-context";
-import { adminDb } from "@/lib/firebaseAdmin"; // This is fine for type-only in some setups, but direct calls are server-only.
 
 export default function McqAdminPage() {
-  const { mcqSets: allSets, loading: contextLoading, refresh } = useMcqSets();
   const [loading, setLoading] = useState(true);
   const [allMcqSets, setAllMcqSets] = useState<McqSet[]>([]);
-
-  // Local fetch to bypass potential client-side context issues in admin
-  useEffect(() => {
-    async function loadSets() {
-        setLoading(true);
-        try {
-            const res = await fetch('/api/a2gadmin/mcq');
-            const data = await res.json();
-            if (res.ok) {
-                setAllMcqSets(data.sets);
-            } else {
-                console.error("Failed to fetch MCQ sets:", data.error);
-            }
-        } catch (error) {
-            console.error("Error calling API route:", error);
-        }
-        setLoading(false);
-    }
-    loadSets();
-  }, []);
   
   const [search, setSearch] = useState("");
   const [premiumFilter, setPremiumFilter] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    if (allMcqSets.length > 0) {
-      const subjects = Array.from(new Set(allMcqSets.map((n: McqSet) => n.subject || "General")));
-      const initialExpansion: Record<string, boolean> = {};
-      subjects.forEach(sub => { initialExpansion[sub] = true; });
-      setExpandedSubjects(initialExpansion);
-    }
-  }, [allMcqSets]);
+  async function loadSets() {
+      setLoading(true);
+      try {
+          const res = await fetch('/api/a2gadmin/mcq');
+          const data = await res.json();
+          if (res.ok) {
+              const sets = data.sets || [];
+              setAllMcqSets(sets);
+              // Auto-expand all subjects by default
+              const subjects = Array.from(new Set(sets.map((n: McqSet) => n.subject || "General")));
+              const initialExpansion: Record<string, boolean> = {};
+              subjects.forEach(sub => { initialExpansion[sub] = true; });
+              setExpandedSubjects(initialExpansion);
+          } else {
+              console.error("Failed to fetch MCQ sets:", data.error);
+          }
+      } catch (error) {
+          console.error("Error calling API route:", error);
+      }
+      setLoading(false);
+  }
 
+  useEffect(() => {
+    loadSets();
+  }, []);
+  
   const toggleSubjectExpansion = (subject: string) => {
     setExpandedSubjects(prev => ({ ...prev, [subject]: !prev[subject] }));
   };
@@ -228,4 +222,3 @@ export default function McqAdminPage() {
     </div>
   );
 }
-
