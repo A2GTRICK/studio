@@ -14,7 +14,6 @@ export default function McqPracticeHome() {
         const res = await fetch("/api/a2gadmin/mcq");
         const data = await res.json();
 
-        // CORRECTED: The API returns `data.sets`, not `data.mcqSets`.
         const onlyPublished = (data.sets || []).filter(
           (s: any) => s.isPublished === true
         );
@@ -54,7 +53,7 @@ export default function McqPracticeHome() {
         {sets.map((set: any) => (
           <Link
             key={set.id}
-            href={`/dashboard/mcq-practice/${set.id}`}
+            href={`/dashboard/mcq-player/${set.id}`}
             className="p-5 border rounded-lg shadow bg-white hover:bg-purple-50 transition"
           >
             <h2 className="font-semibold text-lg">{set.title}</h2>
