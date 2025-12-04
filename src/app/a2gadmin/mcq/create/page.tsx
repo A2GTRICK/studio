@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { Loader2, Plus, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type Question = {
   id: string;
