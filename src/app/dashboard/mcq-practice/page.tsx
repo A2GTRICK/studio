@@ -1,69 +1,47 @@
 
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React from 'react';
 import McqSetCard from "@/components/McqSetCard";
 import { Loader2 } from "lucide-react";
 import type { McqSet } from "@/types/mcq-set";
+import McqPracticeClient from "@/components/McqPracticeClient";
+import { adminDb } from '@/lib/firebaseAdmin';
+import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 
-export default function McqPracticePage() {
-  const [mcqSets, setMcqSets] = useState<McqSet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("All");
+async function getPublishedMcqSets(): Promise<McqSet[]> {
+    try {
+        const setsRef = collection(adminDb, 'mcqSets');
+        const q = query(setsRef, where("isPublished", "==", true), orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
 
-  useEffect(() => {
-    async function loadSets() {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/a2gadmin/mcq');
-        const data = await res.json();
-        if (res.ok && data.sets) {
-          // Filter for published sets on the client side
-          const publishedSets = (data.sets || []).filter((set: McqSet) => set.isPublished);
-          setMcqSets(publishedSets);
-        } else {
-          console.error("Failed to fetch MCQ sets:", data.error);
+        if (snapshot.empty) {
+            return [];
         }
-      } catch (error) {
-        console.error("Error calling API route:", error);
-      }
-      setLoading(false);
-    }
-    loadSets();
-  }, []);
 
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    mcqSets.forEach((s) => set.add(s.course || "General"));
-    return ["All", ...Array.from(set)];
-  }, [mcqSets]);
+        // Manually convert Timestamp to a serializable format (milliseconds)
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            const plainData: any = { id: doc.id };
+            for (const key in data) {
+                const value = data[key];
+                if (value instanceof Timestamp) {
+                    plainData[key] = value.toMillis();
+                } else {
+                    plainData[key] = value;
+                }
+            }
+            return plainData as McqSet;
+        });
 
-  const filtered = useMemo(() => {
-    let list = mcqSets;
-    if (activeCategory && activeCategory !== "All") {
-      list = list.filter((s) => (s.course || "General") === activeCategory);
+    } catch (error) {
+        console.error("Error fetching published MCQ sets on server:", error);
+        return [];
     }
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          (s.description || "").toLowerCase().includes(q) ||
-          (s.subject || "").toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [mcqSets, activeCategory, query]);
+}
 
-  if (loading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[400px]">
-          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-700">Loading Practice Sets...</h2>
-          <p className="text-muted-foreground">Please wait a moment.</p>
-      </div>
-    );
-  }
+
+export default async function McqPracticePage() {
+  
+  const initialSets = await getPublishedMcqSets();
 
   return (
     <div className="min-h-screen bg-[#F3EBFF] p-4 md:p-8">
@@ -76,45 +54,10 @@ export default function McqPracticePage() {
             </h1>
             <p className="text-sm text-gray-600 mt-1">Practice important questions and improve your performance.</p>
           </div>
-          <div className="flex items-center gap-3">
-             <div className="text-sm text-gray-500 hidden md:block">{filtered.length} sets</div>
-          </div>
         </header>
+        
+        <McqPracticeClient initialSets={initialSets} />
 
-        <div className="flex gap-2 overflow-x-auto pb-2">
-            {categories.map((c) => (
-              <button
-                key={c}
-                onClick={() => setActiveCategory(c)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition ${activeCategory === c ? "bg-purple-600 text-white shadow-md" : "bg-white border text-gray-700 hover:bg-purple-50"}`}>
-                {c}
-              </button>
-            ))}
-        </div>
-
-        <div className="bg-white p-3 rounded-xl shadow-sm border border-purple-200/80">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search title, description or subject..."
-            className="w-full p-2.5 rounded-lg border-gray-200 focus:ring-purple-500 focus:border-purple-500 transition"
-          />
-        </div>
-
-        {filtered.length === 0 && !loading && (
-            <div className="col-span-full bg-white p-8 rounded-xl text-center shadow-sm border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-800">No MCQ Sets Found</h3>
-              <p className="text-gray-500 mt-2">There are currently no published MCQ sets available.</p>
-            </div>
-        )}
-
-        {filtered.length > 0 && (
-            <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
-                {filtered.map((set) => (
-                    <McqSetCard key={set.id} set={set} />
-                ))}
-            </div>
-        )}
       </div>
     </div>
   );
