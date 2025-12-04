@@ -1,15 +1,41 @@
-
 // src/app/dashboard/mcq-practice/page.tsx
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { useMcqSets } from "@/context/mcq-context";
 import PremiumMCQCard from "@/components/PremiumMCQCard";
 import { Loader2 } from "lucide-react";
+import type { McqSet } from "@/context/mcq-context";
 
 export default function MCQPracticePage() {
-  const { mcqSets, loading, error, refresh } = useMcqSets();
+  const [mcqSets, setMcqSets] = useState<McqSet[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
+
+  const refresh = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/a2gadmin/mcq');
+      const data = await res.json();
+      if (res.ok) {
+        // Filter for published sets on the client side
+        const publishedSets = (data.sets || []).filter((set: McqSet) => set.isPublished === true);
+        setMcqSets(publishedSets);
+      } else {
+        setError(data.error || "Failed to fetch MCQ sets.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -46,7 +72,7 @@ export default function MCQPracticePage() {
             <p className="text-sm text-gray-600 mt-1">Practice important questions and improve your performance.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => refresh()} className="px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm text-sm font-medium hover:bg-gray-50">Refresh</button>
+            <button onClick={refresh} className="px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm text-sm font-medium hover:bg-gray-50">Refresh</button>
             <div className="text-sm text-gray-500 hidden md:block">{filtered.length} sets</div>
           </div>
         </header>

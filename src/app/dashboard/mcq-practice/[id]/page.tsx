@@ -1,10 +1,8 @@
-
 // src/app/dashboard/mcq-practice/[id]/page.tsx
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useMcqSets } from "@/context/mcq-context";
 import { ArrowLeft, CheckCircle, XCircle, Send, Repeat, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { McqSet } from "@/context/mcq-context";
 
 const THEME = {
   pageBg: 'bg-[#F3EBFF]',
@@ -37,14 +36,36 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
 
 export default function MCQSetPage() {
   const { id } = useParams();
-  const { getById } = useMcqSets();
-  const set = useMemo(() => getById(id as string), [getById, id]);
-
+  
+  const [set, setSet] = useState<McqSet | null>(null);
   const [loading, setLoading] = useState(true);
+
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
   
+  useEffect(() => {
+    if (!id) return;
+
+    async function loadSet() {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/a2gadmin/mcq?id=${id}`);
+        const data = await res.json();
+        if (res.ok) {
+          setSet(data.set);
+        } else {
+          console.error("Failed to load set", data.error);
+        }
+      } catch (err) {
+        console.error("Error fetching set", err);
+      }
+      setLoading(false);
+    }
+    
+    loadSet();
+  }, [id]);
+
   const questions = set?.questions || [];
   const total = questions.length;
   const current = questions[index];
@@ -57,12 +78,6 @@ export default function MCQSetPage() {
     }, 0) : 0;
   }, [answers, questions, submitted]);
   
-  useEffect(() => {
-    if (set) {
-      setLoading(false);
-    }
-  }, [set]);
-
   if (loading) {
      return (
       <div className={`min-h-screen ${THEME.pageBg} p-8 flex items-center justify-center`}>
