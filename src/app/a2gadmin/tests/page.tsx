@@ -54,7 +54,13 @@ export default function TestsAdminPage() {
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/a2gadmin/tests/preview/${t.id}`}
+                className="text-blue-600 underline text-sm"
+              >
+                Preview
+              </Link>
               <Link
                 href={`/a2gadmin/tests/edit/${t.id}`}
                 className="px-3 py-1 bg-blue-600 text-white rounded-lg"
