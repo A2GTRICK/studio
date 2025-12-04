@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function TestsAdminPage() {
-  const [tests, setTests] = useState([]);
+  const [tests, setTests] = useState<any[]>([]);
 
   async function loadTests() {
     const res = await fetch("/api/a2gadmin/tests");
@@ -73,6 +73,23 @@ export default function TestsAdminPage() {
                 className="px-3 py-1 bg-red-500 text-white rounded-lg"
               >
                 Delete
+              </button>
+              <button
+                onClick={async () => {
+                  const res = await fetch(`/api/a2gadmin/tests/publish?id=${t.id}`, {
+                    method: "PUT",
+                  });
+                  const data = await res.json();
+                  if (data.ok) {
+                    alert("Updated!");
+                    window.location.reload();
+                  }
+                }}
+                className={`px-3 py-1 rounded-lg text-white text-sm ${
+                  t.published ? "bg-green-600" : "bg-gray-500"
+                }`}
+              >
+                {t.published ? "Published" : "Draft"}
               </button>
             </div>
           </div>

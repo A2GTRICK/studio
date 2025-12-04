@@ -39,12 +39,13 @@ export async function POST(req: NextRequest) {
 
     const docRef = await adminDb.collection("tests").add({
       title,
+      subject,
       course,
       year,
-      subject,
       description,
       difficulty,
       questions,
+      published: false, // NEW FIELD
       createdAt: new Date(),
     });
 

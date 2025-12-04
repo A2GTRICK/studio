@@ -43,7 +43,16 @@ export default function TestPreviewPage() {
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">{title}</h1>
+        <div>
+            <h1 className="text-3xl font-bold">{title}</h1>
+            <p
+            className={`mt-2 font-semibold px-3 py-1 rounded-lg w-fit ${
+                test.published ? "bg-green-200 text-green-800" : "bg-gray-300 text-gray-800"
+            }`}
+            >
+            {test.published ? "Published" : "Draft"}
+            </p>
+        </div>
         <Link
           href={`/a2gadmin/tests/edit/${id}`}
           className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
