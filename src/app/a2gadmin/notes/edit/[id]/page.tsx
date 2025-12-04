@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import "react-quill/dist/quill.snow.css";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
 
-// Load ReactQuill CLIENT-SIDE ONLY (Fixes "document is not defined")
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+// Load MDEditor CLIENT-SIDE ONLY
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
-export default function EditNotePage({ params }: any) {
-  const { id } = use(params); // REQUIRED FIX FOR NEXT.JS 15
-
+export default function EditNotePage() {
+  const { id } = useParams();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
+  const [loading, setLoading] = useState(true);
   const [note, setNote] = useState<any>({
     title: "",
     subject: "",
@@ -60,19 +60,19 @@ export default function EditNotePage({ params }: any) {
   // SAVE/UPDATE NOTE
   // ----------------------------------------------------
   async function saveNote() {
-    const form = new FormData();
+    const formData = new FormData();
 
-    form.append("title", note.title);
-    form.append("subject", note.subject);
-    form.append("course", note.course);
-    form.append("year", note.year);
-    form.append("topic", note.topic);
-    form.append("content", note.content);
-    form.append("isPremium", note.isPremium ? "true" : "false");
+    formData.append("title", note.title);
+    formData.append("subject", note.subject);
+    formData.append("course", note.course);
+    formData.append("year", note.year);
+    formData.append("topic", note.topic);
+    formData.append("content", note.content);
+    formData.append("isPremium", note.isPremium ? "true" : "false");
 
     const res = await fetch(`/api/a2gadmin/notes?id=${id}`, {
       method: "PUT",
-      body: form,
+      body: formData,
     });
 
     if (res.ok) {
@@ -82,62 +82,25 @@ export default function EditNotePage({ params }: any) {
       alert("Update failed!");
     }
   }
-
-  // ----------------------------------------------------
-  // PAGE LOADING STATE
-  // ----------------------------------------------------
+  
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="text-white max-w-5xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Edit Note</h1>
 
-      {/* Title */}
-      <label className="block mb-2 font-semibold">Title</label>
-      <input
-        value={note.title}
-        onChange={(e) => setNote({ ...note, title: e.target.value })}
-        className="w-full border p-2 rounded mb-4"
-        type="text"
-      />
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
+        <input value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" className="p-3 rounded bg-white/10 w-full" required />
+        <input value={note.subject} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" className="p-3 rounded bg-white/10 w-full" />
+        <input value={note.course} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" className="p-3 rounded bg-white/10 w-full" />
+        <input value={note.year} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" className="p-3 rounded bg-white/10 w-full" />
+      </div>
 
-      {/* Subject */}
-      <label className="block mb-2 font-semibold">Subject</label>
-      <input
-        value={note.subject}
-        onChange={(e) => setNote({ ...note, subject: e.target.value })}
-        className="w-full border p-2 rounded mb-4"
-        type="text"
-      />
+       <div className="mb-4">
+          <input value={note.topic} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" className="p-3 rounded bg-white/10 w-full" />
+       </div>
 
-      {/* Course */}
-      <label className="block mb-2 font-semibold">Course</label>
-      <input
-        value={note.course}
-        onChange={(e) => setNote({ ...note, course: e.target.value })}
-        className="w-full border p-2 rounded mb-4"
-        type="text"
-      />
 
-      {/* Year */}
-      <label className="block mb-2 font-semibold">Year</label>
-      <input
-        value={note.year}
-        onChange={(e) => setNote({ ...note, year: e.target.value })}
-        className="w-full border p-2 rounded mb-4"
-        type="text"
-      />
-
-      {/* Topic */}
-      <label className="block mb-2 font-semibold">Topic</label>
-      <input
-        value={note.topic}
-        onChange={(e) => setNote({ ...note, topic: e.target.value })}
-        className="w-full border p-2 rounded mb-4"
-        type="text"
-      />
-
-      {/* Premium Toggle */}
       <label className="flex items-center gap-3 mb-4">
         <input
           type="checkbox"
@@ -151,19 +114,17 @@ export default function EditNotePage({ params }: any) {
 
       {/* Content Editor */}
       <label className="block mb-2 font-semibold">Content</label>
-      <div className="bg-white border rounded mb-6">
-        <ReactQuill
-          theme="snow"
+      <div className="bg-white/5 p-2 rounded mb-6">
+        <MDEditor
           value={note.content}
-          onChange={(html) => setNote({ ...note, content: html })}
-          className="h-80"
+          onChange={(v = "") => setNote({ ...note, content: String(v) })}
+          height={400}
         />
       </div>
 
-      {/* Save Button */}
       <button
         onClick={saveNote}
-        className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700"
+        className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700"
       >
         Save Changes
       </button>
