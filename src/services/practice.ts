@@ -1,22 +1,37 @@
-// src/services/practice.ts
-import { db } from '@/firebase/config';
-import { collection, doc, getDoc, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
-import type { Test, Question } from '@/types/practice';
-
-export async function fetchAllTests(): Promise<Test[]> {
-  const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Test));
+export async function createTest(data: any) {
+  try {
+    const res = await fetch("/api/a2gadmin/tests", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { error: "NETWORK_ERROR", details: err?.message || "" };
+  }
 }
 
-export async function fetchTestById(id: string): Promise<Test | null> {
-  const d = await getDoc(doc(db, 'tests', id));
-  if (!d.exists()) return null;
-  return { id: d.id, ...(d.data() as any) } as Test;
+export async function listTests() {
+  try {
+    const res = await fetch("/api/a2gadmin/tests", { credentials: "include" });
+    return await res.json();
+  } catch (err: any) {
+    return { error: "NETWORK_ERROR", details: err?.message || "" };
+  }
 }
 
-export async function fetchTestQuestions(testId: string): Promise<Question[]> {
-  const q = query(collection(db, `tests/${testId}/questions`), orderBy('section'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Question));
+export async function bulkUploadQuestions(testId: string, sections: any[]) {
+  try {
+    const res = await fetch("/api/a2gadmin/tests/questions", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ testId, sections }),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { error: "NETWORK_ERROR", details: err?.message || "" };
+  }
 }
+export default {};

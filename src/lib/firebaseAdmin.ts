@@ -1,25 +1,27 @@
-// src/lib/firebaseAdmin.ts
-import admin from 'firebase-admin';
-
-let app: admin.app.App | undefined;
+/**
+ * src/lib/firebaseAdmin.ts
+ * Initializes firebase-admin. Exports adminDb (Firestore instance).
+ *
+ * Required env vars:
+ * - FIREBASE_PROJECT_ID
+ * - FIREBASE_PRIVATE_KEY (newline escaped as \n; this file will replace \\n -> \n)
+ * - FIREBASE_CLIENT_EMAIL
+ * - FIREBASE_STORAGE_BUCKET (optional)
+ */
+import * as admin from "firebase-admin";
 
 if (!admin.apps.length) {
-  // Prefer GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_ADMIN_SERVICE_ACCOUNT JSON
-  const saJson = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT;
-  if (saJson) {
-    const parsed = JSON.parse(saJson);
-    app = admin.initializeApp({
-      credential: admin.credential.cert(parsed),
-    });
-  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    app = admin.initializeApp();
-  } else {
-    // fallback - try initialize with project ID (for some hosting)
-    app = admin.initializeApp();
-  }
-} else {
-  app = admin.app();
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      privateKey,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    }),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
+  });
 }
 
 export const adminDb = admin.firestore();
+export const adminAuth = admin.auth();
 export default admin;
