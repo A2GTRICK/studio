@@ -1,9 +1,10 @@
 
-// src/components/PremiumMCQCard.tsx
+// src/components/McqSetCard.tsx
 import Link from "next/link";
 import React from "react";
+import type { McqSet } from "@/types/mcq-set";
 
-export default function PremiumMCQCard({ set }: any) {
+export default function McqSetCard({ set }: { set: McqSet }) {
   const locked = set.isPremium;
   return (
     <article className="group bg-white rounded-2xl p-5 shadow-lg border border-purple-200/80 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:border-purple-300 hover:-translate-y-1">
