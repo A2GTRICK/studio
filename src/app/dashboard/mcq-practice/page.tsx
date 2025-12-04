@@ -1,4 +1,4 @@
-// src/app/dashboard/mcq-practice/page.tsx
+
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import McqSetCard from "@/components/McqSetCard";
@@ -15,11 +15,10 @@ export default function McqPracticePage() {
     async function loadSets() {
       setLoading(true);
       try {
-        // Using the same reliable API route as the admin panel
         const res = await fetch('/api/a2gadmin/mcq');
         const data = await res.json();
-        if (res.ok) {
-          // Filtering for published sets on the client
+        if (res.ok && data.sets) {
+          // Filter for published sets on the client side
           const publishedSets = (data.sets || []).filter((set: McqSet) => set.isPublished);
           setMcqSets(publishedSets);
         } else {
@@ -102,17 +101,10 @@ export default function McqPracticePage() {
           />
         </div>
 
-        {mcqSets.length === 0 && !loading && (
+        {filtered.length === 0 && !loading && (
             <div className="col-span-full bg-white p-8 rounded-xl text-center shadow-sm border-gray-200">
               <h3 className="text-xl font-semibold text-gray-800">No MCQ Sets Found</h3>
               <p className="text-gray-500 mt-2">There are currently no published MCQ sets available.</p>
-            </div>
-        )}
-
-        {mcqSets.length > 0 && filtered.length === 0 && !loading && (
-            <div className="col-span-full bg-white p-8 rounded-xl text-center shadow-sm border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-800">No Matching MCQ Sets</h3>
-              <p className="text-gray-500 mt-2">Try adjusting your filters or search terms.</p>
             </div>
         )}
 
