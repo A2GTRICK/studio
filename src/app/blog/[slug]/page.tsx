@@ -94,7 +94,7 @@ export default async function BlogViewPage({ params }: { params: { slug: string 
 
 
   const postDate = post.createdAt ? new Date(post.createdAt.seconds * 1000) : new Date();
-  const canonicalUrl = `https://${process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//,'') || 'pharma2g.com'}/blog/${post.id}`;
+  const canonicalUrl = `https://${process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//,'') || 'pharma2g.com'}/blog/${post.slug || post.id}`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -104,7 +104,7 @@ export default async function BlogViewPage({ params }: { params: { slug: string 
     image: post.banner ? [post.banner] : [],
     datePublished: postDate.toISOString(),
     dateModified: post.updatedAt ? new Date(post.updatedAt.seconds * 1000).toISOString() : postDate.toISOString(),
-    author: { '@type': 'Person', name: post.author || 'A2G Smart Notes Team' },
+    author: { '@type': 'Person', name: (post as any).author || 'A2G Smart Notes Team' },
     publisher: {
       '@type': 'Organization',
       name: 'pharmA2G',
@@ -178,7 +178,7 @@ export default async function BlogViewPage({ params }: { params: { slug: string 
               <div className="mt-12 border-t pt-6 flex items-center justify-between">
                 <div>
                   <div className="text-sm font-semibold">Author</div>
-                  <div className="text-sm text-muted-foreground">{post.author || 'A2G Smart Notes Team'}</div>
+                  <div className="text-sm text-muted-foreground">{(post as any).author || 'A2G Smart Notes Team'}</div>
                 </div>
                 <div className="hidden md:block">
                   <NewsletterBox />
@@ -203,7 +203,7 @@ export default async function BlogViewPage({ params }: { params: { slug: string 
                   <div className="text-sm text-muted-foreground">No related posts available.</div>
                 ) : (
                   related.map((r:any) => (
-                    <Link key={r.id} href={`/blog/${r.id}`} className="block p-4 border rounded-lg hover:shadow">
+                    <Link key={r.id} href={`/blog/${r.slug || r.id}`} className="block p-4 border rounded-lg hover:shadow">
                       <h4 className="font-medium">{r.title}</h4>
                       <p className="text-xs text-muted-foreground mt-2">{r.summary?.slice(0,120)}</p>
                     </Link>

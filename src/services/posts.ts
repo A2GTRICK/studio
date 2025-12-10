@@ -1,10 +1,11 @@
 
 import { db } from "@/firebase/config";
-import { collection, getDocs, doc, getDoc, orderBy, query, Timestamp } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, orderBy, query, Timestamp, where } from "firebase/firestore";
 
 export interface Post {
     id: string;
     title: string;
+    slug?: string; // Added slug field
     summary: string;
     content: string;
     category: string;
@@ -20,11 +21,30 @@ export async function fetchAllPosts(): Promise<Post[]> {
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as Post));
 }
 
-export async function fetchSinglePost(id: string): Promise<Post | null> {
-  const ref = doc(db, "posts", id);
-  const snap = await getDoc(ref);
+// Updated to fetch by slug primarily, falling back to ID.
+export async function fetchSinglePost(slugOrId: string): Promise<Post | null> {
+  // 1. Try to fetch by slug first
+  const q = query(collection(db, "posts"), where("slug", "==", slugOrId));
+  const slugSnap = await getDocs(q);
 
-  if (!snap.exists()) return null;
+  if (!slugSnap.empty) {
+    const postDoc = slugSnap.docs[0];
+    return { id: postDoc.id, ...postDoc.data() } as Post;
+  }
+  
+  // 2. If not found by slug, try to fetch by ID (for backwards compatibility)
+  try {
+    const ref = doc(db, "posts", slugOrId);
+    const idSnap = await getDoc(ref);
 
-  return { id: snap.id, ...snap.data() } as Post;
+    if (idSnap.exists()) {
+      return { id: idSnap.id, ...idSnap.data() } as Post;
+    }
+  } catch(e) {
+      // This can happen if slugOrId is not a valid document ID path segment.
+      // We can ignore this error because we already tried fetching by slug.
+  }
+
+  // 3. If neither works, return null
+  return null;
 }
