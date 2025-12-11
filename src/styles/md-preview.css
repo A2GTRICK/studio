@@ -1,0 +1,76 @@
+/* Apply pharmA2G theme to markdown preview */
+.wmde-markdown {
+  font-family: Inter, ui-sans-serif, system-ui !important;
+  color: #f3f4f6 !important; /* text-gray-100 */
+  background: transparent !important;
+  line-height: 1.75 !important;
+}
+
+/* Headings */
+.wmde-markdown h1,
+.wmde-markdown h2,
+.wmde-markdown h3 {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.wmde-markdown h2 {
+  font-size: 1.4rem !important;
+  border-left: 4px solid #7c3aed !important; /* purple-600 */
+  padding-left: 8px !important;
+}
+
+.wmde-markdown h3 {
+  font-size: 1.2rem !important;
+}
+
+/* Paragraphs */
+.wmde-markdown p {
+  margin-bottom: 1rem !important;
+  color: #e5e7eb !important; /* text-gray-300 */
+}
+
+/* Links */
+.wmde-markdown a {
+  color: #a78bfa !important; /* purple-300 */
+  text-decoration: underline;
+}
+
+/* Lists */
+.wmde-markdown ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+}
+
+.wmde-markdown li {
+  margin-bottom: 0.4rem !important;
+}
+
+/* Blockquotes */
+.wmde-markdown blockquote {
+  border-left: 4px solid #7c3aed !important;
+  padding-left: 1rem !important;
+  margin: 1rem 0 !important;
+  color: #d1d5db !important;
+  background: rgba(124, 58, 237, 0.1) !important;
+  border-radius: 0.25rem;
+}
+
+/* Code blocks */
+.wmde-markdown pre {
+  background: #1f1f2e !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+}
+
+.wmde-markdown code {
+  color: #fbbf24 !important; /* amber-400 */
+}
+
+/* Horizontal rule */
+.wmde-markdown hr {
+  border-color: #4b5563 !important;
+  margin: 1.5rem 0 !important;
+}
