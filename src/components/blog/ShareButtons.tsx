@@ -1,9 +1,16 @@
 'use client';
 import { Facebook, Linkedin, Twitter, Share2, MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 
 export default function ShareButtons({ title, url }: { title: string, url: string }) {
-    const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${url}` : `https://pharma2g.com${url}`;
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    const fullUrl = isClient ? `${window.location.origin}${url}` : `https://pharma2g.com${url}`;
     
     const shareTargets = [
         {
@@ -33,7 +40,7 @@ export default function ShareButtons({ title, url }: { title: string, url: strin
         }
     };
     
-    if (typeof navigator !== 'undefined' && navigator.share) {
+    if (isClient && navigator.share) {
         return (
             <Button onClick={handleNativeShare} size="sm" variant="outline">
                 <Share2 className="mr-2 h-4 w-4" />
