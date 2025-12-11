@@ -73,8 +73,8 @@ export default function AdminManualVerificationPage() {
                     status: "verified",
                     requestedAt: serverTimestamp(),
                     verifiedAt: serverTimestamp()
-                 }
-             }, { merge: true });
+                 } as any
+             });
              toast({ title: 'User Approved!', description: `${selectedUser.displayName} has been manually verified and granted access.`});
              setSelectedUser(null); // Close the dialog
              setProductName('');

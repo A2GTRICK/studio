@@ -205,8 +205,8 @@ export default function AiNotesPage() {
   }
 
   const renderMessageContent = (content: string) => {
-    const htmlContent = marked.parse(content);
-    return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+    const htmlContent = marked.parseInline(content);
+    return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent as string }} />;
   };
 
   const usageProgress = (dailyGenerations / dailyGenerationLimit) * 100;

@@ -82,8 +82,8 @@ export default function NoteDetailPage() {
         }
         
         // For AI-generated notes and uploaded file content
-        const htmlContent = marked.parse(note.content || "");
-        return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+        const htmlContent = marked.parseInline(note.content || "");
+        return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent as string }} />;
     };
 
 

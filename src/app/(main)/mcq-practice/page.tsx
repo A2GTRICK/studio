@@ -410,7 +410,12 @@ export default function McqPracticePage() {
   
   const renderContent = (content: string | null) => {
     if (!content) return null;
-    const htmlContent = marked.parse(content);
+    let htmlContent: string;
+    try {
+      htmlContent = marked.parseInline(content) as string;
+    } catch {
+      htmlContent = content;
+    }
     return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
 
@@ -612,7 +617,7 @@ export default function McqPracticePage() {
                             <AccordionContent>
                                <div
                                   className="prose dark:prose-invert max-w-none pt-2 text-muted-foreground"
-                                  dangerouslySetInnerHTML={{ __html: marked.parse(q.explanation) }}
+                                  dangerouslySetInnerHTML={{ __html: marked.parseInline(q.explanation) as string }}
                                 />
                             </AccordionContent>
                           </AccordionItem>

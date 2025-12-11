@@ -106,8 +106,8 @@ export default function ServicesPage() {
     
     const renderAiResult = (content: string | null) => {
         if (!content) return null;
-        const htmlContent = marked.parse(content);
-        return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+        const htmlContent = marked.parseInline(content);
+        return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent as string }} />;
     };
 
     return (

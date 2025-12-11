@@ -1,8 +1,8 @@
-
 {
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+  "hosting": {
+    "source": "app",
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
   }
 }
-

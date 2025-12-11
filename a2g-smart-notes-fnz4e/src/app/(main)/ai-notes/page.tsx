@@ -200,7 +200,14 @@ export default function AiNotesPage() {
   }
 
   const renderMessageContent = (content: string) => {
-    const htmlContent = marked.parse(content);
+    let htmlContent: string;
+    try {
+      // For marked v14+, parse is async, but we can use parseInline for sync parsing
+      htmlContent = marked.parseInline(content) as string;
+    } catch {
+      // Fallback if parsing fails
+      htmlContent = content;
+    }
     return <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
   };
 

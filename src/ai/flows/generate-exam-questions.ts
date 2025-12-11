@@ -74,3 +74,4 @@ const generateExamQuestionsFlow = ai.defineFlow(
   }
 );
 
+export { GenerateExamQuestionsInputSchema, GenerateExamQuestionsOutputSchema, generateExamQuestionsFlow };

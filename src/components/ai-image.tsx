@@ -20,11 +20,11 @@ export function AiImage({ 'data-ai-hint': hint, alt, className, fill, ...props }
   // Directly use the placeholder URL. The data-ai-hint is kept for potential future backend processing.
   const placeholderUrl = `https://placehold.co/${width || 600}x${height || 400}.png`;
 
-  const imageProps = {
+  const imageProps: any = {
     alt,
     className,
     ...(fill
-      ? { fill: true, style: { objectFit: 'cover' } }
+      ? { fill: true, style: { objectFit: 'cover' as const } }
       : { width: width, height: height }),
   };
 
