@@ -3,7 +3,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, PlusCircle } from "lucide-react";
+import Link from "next/link";
 
 interface Note {
   id: string;
@@ -87,8 +88,8 @@ export default function NotesDashboard() {
     // Sort within each group
     Object.keys(grouped).forEach(subject => {
       grouped[subject].sort((a, b) => {
-        const dateA = a.updatedAt?.seconds ? a.updatedAt.seconds * 1000 : a.updatedAt;
-        const dateB = b.updatedAt?.seconds ? b.updatedAt.seconds * 1000 : b.updatedAt;
+        const dateA = a.updatedAt?.seconds ? a.updatedAt.seconds * 1000 : new Date(a.updatedAt).getTime();
+        const dateB = b.updatedAt?.seconds ? b.updatedAt.seconds * 1000 : new Date(b.updatedAt).getTime();
         
         if (sortBy === "latest") return Number(dateB) - Number(dateA);
         if (sortBy === "oldest") return Number(dateA) - Number(dateB);
@@ -120,7 +121,17 @@ export default function NotesDashboard() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto text-black">
-      <h1 className="text-3xl font-bold mb-6">Notes Manager</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Notes Manager</h1>
+           <p className="text-sm text-gray-400">Create, edit, and manage all your notes.</p>
+        </div>
+        <Link href="/a2gadmin/notes/create" className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition">
+          <PlusCircle className="w-5 h-5" />
+          Create New Note
+        </Link>
+      </div>
+
 
       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-xl border">
         <input
