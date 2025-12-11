@@ -1,9 +1,8 @@
-
 // src/app/api/a2gadmin/mcq/route.ts
 export const dynamic = "force-dynamic";
 
 import { NextResponse, type NextRequest } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 
 const COLLECTION_NAME = "mcqSets";
@@ -11,6 +10,7 @@ const COLLECTION_NAME = "mcqSets";
 // GET all or a single MCQ set
 export async function GET(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
 // CREATE a new MCQ set
 export async function POST(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
     const body = await req.json();
     const { title, course, subject, questions, isPublished } = body;
 
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
 // UPDATE an existing MCQ set
 export async function PUT(req: NextRequest) {
     try {
+        const adminDb = getAdminDb();
         const url = new URL(req.url);
         const id = url.searchParams.get("id");
 
@@ -105,6 +107,7 @@ export async function PUT(req: NextRequest) {
 // DELETE an MCQ set
 export async function DELETE(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 

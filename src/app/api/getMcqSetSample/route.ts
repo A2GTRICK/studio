@@ -1,8 +1,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb } from '@/lib/firebaseAdmin';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
 export async function GET(req: NextRequest) {
+  const adminDb = getAdminDb();
   const url = new URL(req.url);
   const setId = url.searchParams.get("setId");
   if (!setId) return NextResponse.json({ error: "setId required" }, { status: 400 });

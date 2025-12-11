@@ -1,10 +1,12 @@
 // src/app/practice/test/[id]/result/[resultId]/page.tsx
 import React from 'react';
-import { adminDb } from '@/lib/firebaseAdmin'; // server-only
+import { getAdminDb } from '@/lib/firebaseAdmin'; // server-only
 
 export default async function ResultPage({ params }: { params: { id: string, resultId: string }}) {
+  const adminDb = getAdminDb();
   const resDoc = await adminDb.collection('results').doc(params.resultId).get();
   if (!resDoc.exists) return <div className="p-10">Result not found</div>;
+  
   const data = resDoc.data();
 
   if(!data) return <div className="p-10">Result not found</div>;

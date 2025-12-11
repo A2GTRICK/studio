@@ -3,18 +3,19 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { adminDb, default as admin } from "@/lib/firebaseAdmin";
+import { getAdminDb, getAdminStorage, getAdmin } from "@/lib/firebaseAdmin";
 import { v4 as uuidv4 } from "uuid";
-
-const BUCKET_NAME = admin.storage().bucket().name;
 
 // -------------------------
 // FILE UPLOAD HELPER
 // -------------------------
 async function uploadFileToStorage(path: string, file: File) {
+  const adminStorage = getAdminStorage();
+  const BUCKET_NAME = adminStorage.bucket().name;
+  
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
-  const bucket = admin.storage().bucket(BUCKET_NAME);
+  const bucket = adminStorage.bucket(BUCKET_NAME);
   const fileRef = bucket.file(path);
 
   await fileRef.save(buffer, {
@@ -41,6 +42,7 @@ function sanitizeString(v: any) {
 // -------------------------
 export async function GET(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
         note: {
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
+          createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : null,
         },
       });
     }
@@ -93,6 +95,8 @@ export async function GET(req: NextRequest) {
 // -------------------------
 export async function POST(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
+    const admin = getAdmin();
     const form = await req.formData();
 
     const title = sanitizeString(form.get("title"));
@@ -168,6 +172,8 @@ export async function POST(req: NextRequest) {
 // -------------------------
 export async function PUT(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
+    const admin = getAdmin();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     if (!id)
@@ -251,6 +257,9 @@ export async function PUT(req: NextRequest) {
 // -------------------------
 export async function DELETE(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
+    const adminStorage = getAdminStorage();
+    const BUCKET_NAME = adminStorage.bucket().name;
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     if (!id)
@@ -266,7 +275,7 @@ export async function DELETE(req: NextRequest) {
       ? data.attachments
       : [];
 
-    const bucket = admin.storage().bucket(BUCKET_NAME);
+    const bucket = adminStorage.bucket(BUCKET_NAME);
 
     for (const fileUrl of attachments) {
       try {

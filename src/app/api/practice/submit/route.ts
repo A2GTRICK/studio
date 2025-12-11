@@ -1,9 +1,11 @@
 // src/app/api/practice/submit/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { getAdminDb, getAdmin } from '@/lib/firebaseAdmin';
 
 export async function POST(req: NextRequest) {
   try {
+    const adminDb = getAdminDb();
+    const admin = getAdmin();
     const payload = await req.json();
     /**
       payload: {
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
       accuracy,
       timeTakenSeconds,
       answers: answerDetails,
-      createdAt: adminDb.FieldValue ? adminDb.FieldValue.serverTimestamp() : new Date(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     // Save result using Admin SDK (server context)
