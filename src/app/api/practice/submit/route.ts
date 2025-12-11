@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
+<<<<<<< HEAD
     const { getAdminDb, getAdmin } = await import('@/lib/firebaseAdmin');
+=======
+    const { getAdminDb, getAdmin } = await import("@/lib/firebaseAdmin");
+>>>>>>> d107d6ed05fef7a778319de0ecc59361ceac8f83
     const adminDb = getAdminDb();
     const admin = getAdmin();
     const payload = await req.json();

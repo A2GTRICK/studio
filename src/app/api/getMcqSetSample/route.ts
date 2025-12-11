@@ -2,7 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+<<<<<<< HEAD
   const { getAdminDb } = await import('@/lib/firebaseAdmin');
+=======
+  const { getAdminDb } = await import("@/lib/firebaseAdmin");
+>>>>>>> d107d6ed05fef7a778319de0ecc59361ceac8f83
   const adminDb = getAdminDb();
   const url = new URL(req.url);
   const setId = url.searchParams.get("setId");
