@@ -5,9 +5,10 @@ import remarkGfm from "remark-gfm";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Link as LinkIcon, Copy, Share2 } from "lucide-react";
+import { ArrowLeft, Link as LinkIcon, Copy } from "lucide-react";
 import type { Metadata } from "next";
 import PageScripts from "./page-scripts";
+import ShareButtons from "@/components/blog/ShareButtons"; // Correctly import the new client component
 
 // fetchRelatedPosts is not defined in services/posts.ts, so I will comment out the related parts.
 // import { fetchRelatedPosts } from "@/services/posts"; 
@@ -71,6 +72,7 @@ export default async function PremiumBlog({ params }: { params: { slug: string }
   const headings = extractHeadings(content);
   const readTime = readingTime(content);
   const postDate = post.createdAt ? new Date(post.createdAt.seconds * 1000) : new Date();
+  const pageUrl = `/blog/${params.slug}`;
 
   // Optional: server-side related posts fetch (implement in services/posts)
   let related: any[] = [];
@@ -174,6 +176,10 @@ export default async function PremiumBlog({ params }: { params: { slug: string }
                 {content}
               </ReactMarkdown>
             </div>
+            
+            <div className="not-prose mt-8">
+                 <ShareButtons title={post.title} url={pageUrl} />
+            </div>
 
             <div className="mt-12 pt-6 border-t">
               <div className="text-sm font-semibold">Author</div>
@@ -204,17 +210,7 @@ export default async function PremiumBlog({ params }: { params: { slug: string }
             <div className="border rounded-lg p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold">On this page</h4>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({ title: post.title, text: post.summary, url: window.location.href }).catch(() => {});
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 text-sm bg-white px-3 py-1 rounded shadow-sm"
-                >
-                  <Share2 className="w-4 h-4" /> Share
-                </button>
+                <ShareButtons title={post.title} url={pageUrl} />
               </div>
 
               {headings.length === 0 ? (
@@ -240,8 +236,8 @@ export default async function PremiumBlog({ params }: { params: { slug: string }
             {/* small CTA */}
             <div className="mt-6 p-4 border rounded-lg">
               <div className="text-sm font-semibold mb-2">Enjoyed this?</div>
-              <Link href="/subscribe" className="inline-block w-full text-center bg-primary text-white py-2 rounded">
-                Subscribe to updates
+              <Link href="/dashboard/billing" className="inline-block w-full text-center bg-primary text-white py-2 rounded">
+                Subscribe to Premium
               </Link>
             </div>
           </div>
