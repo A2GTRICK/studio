@@ -19,81 +19,59 @@ function slugify(text: string) {
     .toString()
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^\w\-]+/g, "")
-    .replace(/\-\-+/g, "-");
+    .replace(/\s+/g, "-") // Replace spaces with -
+    .replace(/[^\w\-]+/g, "") // Remove all non-word chars
+    .replace(/\-\-+/g, "-"); // Replace multiple - with single -
 }
 
-/* Deterministic non-AI auto-format:
-   - Convert lines like "**Heading**" or "HEADING:" to "## Heading"
-   - Normalize multiple blank lines
-   - Ensure lists use "-" bullet style
-   - Convert ordered list numbering if malformed
-   - Do NOT rewrite content meaningfully
-*/
+/* --- Deterministic auto-format (non-AI) --- */
 function autoFormatMarkdown(input: string) {
-  let s = input;
-
-  // 1) Replace Windows CRLF with LF
+  let s = input || "";
   s = s.replace(/\r\n/g, "\n");
 
-  // 2) Convert bold-only lines to headings:
-  //    e.g. "**Section Title**" or "<strong>Section</strong>" will turn to "## Section"
+  // Convert bold-only lines to headings: **Heading** -> ## Heading
   s = s.replace(/^\s*\*\*(.+?)\*\*\s*$/gm, (_m, g1) => `## ${g1.trim()}`);
 
-  // 3) Convert lines like "SECTION TITLE:" or "Section Title -" into heading
+  // Convert lines like "SECTION TITLE:" to heading
   s = s.replace(/^\s*([A-Z0-9][A-Za-z0-9\s\-\u00A0]{3,})\s*:\s*$/gm, (_m, g1) => `## ${g1.trim()}`);
 
-  // 4) Normalize multiple blank lines to at most 2
+  // Normalize multiple blank lines
   s = s.replace(/\n{3,}/g, "\n\n");
 
-  // 5) Normalize unordered list markers to "-" (convert leading "*" or "•")
+  // Normalize list markers from * or • to -
   s = s.replace(/^\s*[\*\u2022]\s+/gm, "- ");
 
-  // 6) Ensure ordered lists remain "1." pattern; fix stray numbering
-  s = s.replace(/^\s*\d+[\.\)]\s+/gm, (m) => {
-    // keep numeric form as-is (safe)
-    return m;
-  });
-
-  // 7) Trim trailing whitespace on lines
+  // Trim trailing whitespace
   s = s.split("\n").map((l) => l.replace(/\s+$/g, "")).join("\n");
 
   return s;
 }
 
-/* Very small HTML-to-Markdown conversion using Turndown (deterministic)
-   Called on paste events when HTML is present in clipboard
-*/
+/* --- HTML -> Markdown with turndown (deterministic) --- */
 function htmlToMarkdown(html: string) {
   const turndownService = new TurndownService({
     headingStyle: "atx",
     codeBlockStyle: "fenced",
     emDelimiter: "*",
   });
-
-  // Keep basic formatting, tables, lists etc.
-  const md = turndownService.turndown(html);
-  return md;
+  return turndownService.turndown(html);
 }
 
-/* utility: checks presence of at least one H2 ("## ") in markdown */
+/* --- Helpers --- */
 function hasH2Heading(markdown: string) {
-  return /\n##\s+/.test("\n" + markdown) || /^\s*##\s+/m.test(markdown);
+  // require at least one H2 (## ) anywhere
+  return /(^|\n)##\s+/.test(markdown);
 }
 
-/* simple reading time */
-function readingTime(text = "") {
+function readingTimeMinutes(text = "") {
   const words = text.replace(/<[^>]*>/g, "").trim().split(/\s+/).filter(Boolean).length || 0;
   const wpm = 220;
-  const minutes = Math.max(1, Math.round(words / wpm));
-  return minutes;
+  return Math.max(1, Math.round(words / wpm));
 }
 
+/* ---------------------- Component ---------------------- */
 export default function CreateBlogPage() {
   const router = useRouter();
-
-  // form state
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [summary, setSummary] = useState("");
@@ -107,45 +85,34 @@ export default function CreateBlogPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const mdEditorRef = useRef<HTMLDivElement | null>(null);
 
-  // update slug when title changes
   useEffect(() => {
-    if (!slug || slug === "") {
-      setSlug(slugify(title));
-    }
-  }, [title, slug]);
+    // Auto-generate slug if user hasn't modified it manually
+    if (!slug) setSlug(slugify(title));
+  }, [title]);
 
-  // Paste handler: capture HTML clipboard and convert to Markdown
+  // Paste handler — when rich HTML is in clipboard convert to Markdown and insert
   useEffect(() => {
     function onPaste(e: ClipboardEvent) {
       if (!e.clipboardData) return;
       const html = e.clipboardData.getData("text/html");
-      const plain = e.clipboardData.getData("text/plain");
-
-      // Only act if HTML content is present (pasted from docs/sites)
       if (html && html.trim() !== "") {
         e.preventDefault();
         const md = htmlToMarkdown(html);
-        // Insert at cursor location by appending to content (simple append)
-        // For better UX, a proper selection-based insertion can be added later.
+        // append at end of content (keeps MDEditor integration simple)
         setContent((prev) => (prev ? prev + "\n\n" + md : md));
-      } else if (plain) {
-        // let plain text default paste occur inside MDEditor; we append
-        // We'll not override plain paste; editor handles it.
+        setMsg("HTML pasted and converted to Markdown. Click Auto-format to normalize.");
       }
+      // if plain text only, let the editor handle default behavior
     }
 
-    // Attach to md editor container
     const el = mdEditorRef.current;
-    if (el) {
-      el.addEventListener("paste", onPaste as EventListener);
-    }
+    if (el) el.addEventListener("paste", onPaste as EventListener);
     return () => {
       if (el) el.removeEventListener("paste", onPaste as EventListener);
     };
-  }, []);
+  }, [mdEditorRef.current]);
 
   function runAutoFormat() {
-    // Non-AI deterministic auto-format
     const formatted = autoFormatMarkdown(content);
     setContent(formatted);
     setMsg("Auto-format applied (non-AI). Please review before saving.");
@@ -157,11 +124,11 @@ export default function CreateBlogPage() {
     setMsg("");
     setErrors([]);
 
-    // Basic validation
+    // Validation rules (per your choices)
     const errs: string[] = [];
     if (!title.trim()) errs.push("Title is required.");
     if (!slug.trim()) errs.push("Slug is required.");
-    if (!summary.trim()) errs.push("Short summary / meta description is required (manual).");
+    if (!summary.trim()) errs.push("Short Summary / Meta Description is required (manual).");
     if (!content.trim()) errs.push("Content is required.");
     if (!hasH2Heading(content)) errs.push("Content must contain at least one H2 heading (## Heading) for TOC support.");
 
@@ -179,11 +146,12 @@ export default function CreateBlogPage() {
         summary: summary.trim(),
         category: category.trim(),
         banner: banner.trim() || null,
-        content: content,
+        content,
         tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
         author: "A2G Admin",
         isPublished: true,
-        readingTimeMinutes: readingTime(content),
+        readingTimeMinutes: readingTimeMinutes(content),
+        createdAt: new Date().toISOString(),
       };
 
       const res = await fetch("/api/a2gadmin/blog", {
@@ -207,16 +175,16 @@ export default function CreateBlogPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-8">
-      <button onClick={() => router.back()} className="flex items-center gap-2 text-sm mb-4 hover:underline text-white">
+    <div className="text-white max-w-4xl mx-auto">
+      <button onClick={() => router.back()} className="flex items-center gap-2 text-sm mb-4 hover:underline">
         <ArrowLeft className="w-4 h-4" /> Back to Blog Manager
       </button>
 
-      <h1 className="text-2xl font-semibold mb-6 text-white">Create New Blog Post</h1>
+      <h1 className="text-2xl font-semibold mb-6">Create New Blog Post</h1>
 
-      {/* show errors */}
+      {/* Validation errors */}
       {errors.length > 0 && (
-        <div className="mb-4 p-3 bg-red-600/10 border border-red-600/20 rounded text-sm text-red-300">
+        <div className="mb-4 p-3 bg-red-600/10 border border-red-600/20 rounded text-sm text-red-700">
           <div className="font-medium mb-2">Please fix the following:</div>
           <ul className="list-disc pl-5">
             {errors.map((er, i) => (
@@ -230,30 +198,23 @@ export default function CreateBlogPage() {
         <div className="p-6 bg-white/10 rounded-lg border border-white/20 space-y-4">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="* Post Title" required />
           <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="* URL Slug (auto-generated)" required />
-          <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Short Summary / Meta Description (required)" />
+          <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Short Summary / Meta Description" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category (e.g., GPAT)" />
             <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Tags (comma-separated, e.g., pharma, tips)" />
           </div>
-          <Input value={banner} onChange={(e) => setBanner(e.target.value)} placeholder="Banner Image URL (optional)" />
+          <Input value={banner} onChange={(e) => setBanner(e.target.value)} placeholder="Banner Image URL" />
         </div>
 
         <div className="p-6 bg-white/10 rounded-lg border border-white/20">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-white">Content (Markdown)</h2>
-            <div className="flex items-center gap-2">
-              <Button type="button" onClick={() => runAutoFormat()} className="bg-yellow-600 hover:bg-yellow-700 text-white">
-                Auto-format (non-AI)
-              </Button>
-            </div>
+          <h2 className="text-lg font-semibold mb-2">Content (Markdown)</h2>
+          <div className="flex items-center justify-end mb-2">
+            <Button type="button" onClick={() => runAutoFormat()} className="bg-yellow-600 hover:bg-yellow-700 text-white">
+              Auto-format (non-AI)
+            </Button>
           </div>
-
           <div ref={mdEditorRef as any} className="bg-white/5 p-2 rounded">
-            <MDEditor value={content} onChange={(v = "") => setContent(String(v))} height={520} />
-          </div>
-
-          <div className="mt-3 text-sm text-gray-400">
-            Tip: You can paste from Google Docs — the editor will auto-convert HTML to Markdown. After paste click <strong>Auto-format</strong> to normalize headings & lists.
+            <MDEditor value={content} onChange={(v = "") => setContent(String(v))} height={500} />
           </div>
         </div>
 
@@ -262,7 +223,7 @@ export default function CreateBlogPage() {
             {loading ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
             {loading ? "Saving..." : "Create Post"}
           </Button>
-          {msg && <span className="text-sm text-white">{msg}</span>}
+          {msg && <span className="text-sm">{msg}</span>}
         </div>
       </form>
     </div>
