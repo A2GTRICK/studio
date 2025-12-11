@@ -1,8 +1,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from '@/lib/firebaseAdmin';
 
 export async function GET(req: NextRequest) {
+  const { getAdminDb } = await import('@/lib/firebaseAdmin');
   const adminDb = getAdminDb();
   const url = new URL(req.url);
   const setId = url.searchParams.get("setId");

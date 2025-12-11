@@ -1,9 +1,9 @@
 // src/app/api/practice/submit/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminDb, getAdmin } from '@/lib/firebaseAdmin';
 
 export async function POST(req: NextRequest) {
   try {
+    const { getAdminDb, getAdmin } = await import('@/lib/firebaseAdmin');
     const adminDb = getAdminDb();
     const admin = getAdmin();
     const payload = await req.json();
