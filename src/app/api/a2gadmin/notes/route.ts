@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     }
 
     // GET ALL NOTES
-    const q = query(collection(db, "notes"), orderBy("updatedAt", "desc"));
+    const q = query(collection(db, "notes"), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(q);
 
     const notes = snapshot.docs.map((d) => {
