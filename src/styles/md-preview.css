@@ -1,9 +1,9 @@
 /* Apply pharmA2G theme to markdown preview */
 .wmde-markdown {
   font-family: Inter, ui-sans-serif, system-ui !important;
-  color: #f3f4f6 !important; /* text-gray-100 */
-  background: transparent !important;
   line-height: 1.75 !important;
+  background-color: #1f1f2e !important; /* deep dark background */
+  color: #f0f0f0 !important;
 }
 
 /* Headings */
@@ -29,7 +29,7 @@
 /* Paragraphs */
 .wmde-markdown p {
   margin-bottom: 1rem !important;
-  color: #e5e7eb !important; /* text-gray-300 */
+  color: #f0f0f0 !important;
 }
 
 /* Links */
@@ -46,6 +46,7 @@
 
 .wmde-markdown li {
   margin-bottom: 0.4rem !important;
+  color: #f0f0f0 !important;
 }
 
 /* Blockquotes */
