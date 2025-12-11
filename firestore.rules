@@ -12,38 +12,38 @@ service cloud.firestore {
     // PUBLIC READ-ONLY COLLECTIONS
     // =============================
     match /notes/{noteId} {
-      // Anyone can read a single note, but only admin can write.
       allow get: if true;
-      // Anyone can list all notes.
       allow list: if true;
       allow write: if isAdmin();
     }
     
     match /mcqSets/{setId} {
-      // Anyone can read a single mcq set, but only admin can write.
       allow get: if true;
-      // Anyone can list all mcq sets.
       allow list: if true;
       allow write: if isAdmin();
     }
 
     match /custom_notifications/{id} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if true;
       allow write: if isAdmin();
     }
     
     match /posts/{postId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if true;
       allow write: if isAdmin();
     }
     
     match /blog/{postId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if true;
       allow write: if isAdmin();
     }
     
     match /tests/{testId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if true;
       allow write: if false; // Test engine writes are server-side
       match /{sub=**} {
         allow read: if true;
