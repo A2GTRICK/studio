@@ -1,76 +1,42 @@
-/**
- * SAFE & LAZY Firebase Admin Initialization
- *
- * This file ensures the Admin SDK is initialized only once, and not during the build process.
- * It reads environment variables at runtime, which is required for Firebase App Hosting.
- */
-import * as admin from "firebase-admin";
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
+import { getStorage } from "firebase-admin/storage";
 
-// Store a singleton instance
-let app: admin.app.App;
-
-function initializeAdminApp() {
-  if (app) {
-    return app;
-  }
-
-  // These are automatically provided by Firebase App Hosting at runtime
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-  const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
-
-  if (!projectId || !clientEmail || !privateKey) {
-    // This will only be a problem at runtime if secrets aren't set, not during build.
-    // In a deployed App Hosting environment, these are guaranteed to be present.
-    console.warn("Firebase Admin environment variables are not fully set. This is expected during local development without a .env.local file, but will fail in production if not configured.");
-    
-    // Fallback for local dev if no env vars
-    if (admin.apps.length > 0) {
-      app = admin.app();
-      return app;
-    } else {
-       throw new Error("Firebase Admin environment variables are not set and no default app is initialized.");
-    }
-  }
-
-  if (admin.apps.length > 0) {
-      app = admin.app();
-  } else {
-      app = admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
-        storageBucket,
-      });
-  }
-
-  return app;
+const serviceAccount = {
+    projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\n/g, '\n'),
 }
 
-
-// LAZY GETTERS
-// Use these functions in your API routes instead of direct imports.
+function getAdminApp() {
+    if (getApps().length) {
+        return getApps()[0];
+    }
+    return initializeApp({
+        credential: cert(serviceAccount),
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    });
+}
 
 export function getAdminDb() {
-  initializeAdminApp();
-  return admin.firestore();
+  return getFirestore(getAdminApp());
 }
 
 export function getAdminAuth() {
-  initializeAdminApp();
-  return admin.auth();
+  return getAuth(getAdminApp());
 }
 
 export function getAdminStorage() {
-    initializeAdminApp();
-    return admin.storage();
+    return getStorage(getAdminApp());
 }
 
-// For cases where you might need the raw admin object
 export function getAdmin() {
-    initializeAdminApp();
-    return admin;
+    // This is a placeholder for the full 'admin' object if needed elsewhere.
+    // Be cautious as direct use can pull in unwanted dependencies.
+    return {
+        firestore: {
+            FieldValue: getFirestore(getAdminApp()).FieldValue,
+        }
+    }
 }

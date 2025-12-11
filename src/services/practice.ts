@@ -1,6 +1,6 @@
+
 import { db } from "@/firebase/config";  
 import { collection, addDoc, getDocs, getDoc, query, where, doc } from "firebase/firestore";
-import { docToPlain } from "@/lib/firestore-helpers";
 
 // Example function
 export async function fetchAllTests() {
@@ -27,15 +27,9 @@ export async function fetchTestQuestions(testId: string) {
 
 
 export async function fetchTestResult(resultId: string) {
-    try {
-        const { getAdminDb } = await import('@/lib/firebaseAdmin');
-        const adminDb = getAdminDb();
-        const resDoc = await adminDb.collection('results').doc(resultId).get();
-        if (!resDoc.exists) return null;
-        return docToPlain(resDoc);
-    } catch(err) {
-        console.error("Failed to fetch test result:", err);
-        return null;
-    }
+    const res = await fetch(`/api/practice/result?id=${resultId}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      return res.json();
 }
-

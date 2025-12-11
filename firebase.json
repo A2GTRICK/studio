@@ -7,7 +7,7 @@
   },
   "apphosting": {
     "backendId": "studio",
-    "rootDir": "/",
+    "rootDir": ".",
     "ignore": [
       "node_modules",
       ".git",
