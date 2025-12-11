@@ -1,4 +1,4 @@
-// app/blog/[slug]/client-controls.tsx
+// src/app/blog/[slug]/client-controls.tsx
 "use client";
 import React, { useState } from "react";
 import { Share2, List, X } from "lucide-react";

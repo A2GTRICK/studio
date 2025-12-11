@@ -1,6 +1,5 @@
-
 import { db } from "@/firebase/config";
-import { collection, getDocs, doc, getDoc, orderBy, query, Timestamp, where } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, orderBy, query, Timestamp, where, limit } from "firebase/firestore";
 
 export interface Post {
     id: string;
@@ -12,6 +11,7 @@ export interface Post {
     banner?: string;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
+    tags?: string[];
 }
 
 export async function fetchAllPosts(): Promise<Post[]> {
@@ -47,4 +47,18 @@ export async function fetchSinglePost(slugOrId: string): Promise<Post | null> {
 
   // 3. If neither works, return null
   return null;
+}
+
+export async function fetchRelatedPosts(tags: string[] = [], postLimit = 4): Promise<Post[]> {
+  try {
+    if (!tags || tags.length === 0) return [];
+    const q = query(collection(db, "posts"), where("tags", "array-contains-any", tags), limit(postLimit));
+    const snap = await getDocs(q);
+    const rows: Post[] = [];
+    snap.forEach((d) => rows.push({ id: d.id, ...d.data() } as Post));
+    return rows;
+  } catch (err) {
+    console.warn("related posts fetch failed", err);
+    return [];
+  }
 }
