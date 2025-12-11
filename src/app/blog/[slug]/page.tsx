@@ -205,7 +205,7 @@ export default async function BlogPage({ params }: { params: { slug: string } })
                     </div>
                   ) : (
                     related.map((r) => (
-                      <Link key={r.slug} href={`/blog/${r.slug}`} className="block p-4 border rounded hover:shadow-sm">
+                      <Link key={r.id} href={`/blog/${r.slug}`} className="block p-4 border rounded hover:shadow-sm">
                         <div className="text-sm text-primary font-semibold">{r.category || "Article"}</div>
                         <div className="mt-2 font-medium text-gray-900">{r.title}</div>
                         {r.summary && <div className="mt-1 text-sm text-muted-foreground">{r.summary}</div>}
