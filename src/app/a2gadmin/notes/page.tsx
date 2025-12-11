@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -33,12 +34,15 @@ export default function NotesDashboard() {
       try {
         const res = await fetch("/api/a2gadmin/notes");
         const data = await res.json();
-        setAllNotes(data.notes || []);
+        const notes = data.notes || [];
+        setAllNotes(notes);
         // By default, expand all subject groups
-        const subjects = Array.from(new Set(data.notes.map((n: Note) => n.subject || "General")));
-        const initialExpansion: Record<string, boolean> = {};
-        subjects.forEach(sub => { initialExpansion[sub] = true; });
-        setExpandedSubjects(initialExpansion);
+        if (Array.isArray(notes)) {
+            const subjects = Array.from(new Set(notes.map((n: Note) => n.subject || "General")));
+            const initialExpansion: Record<string, boolean> = {};
+            subjects.forEach(sub => { initialExpansion[sub] = true; });
+            setExpandedSubjects(initialExpansion);
+        }
       } catch (error) {
         console.error("Failed to load notes:", error);
       }
