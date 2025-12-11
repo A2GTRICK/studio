@@ -2,78 +2,63 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check for Admin UID
-    // IMPORTANT: Replace 'YOUR_ADMIN_UID_HERE' with your actual Firebase Authentication User ID.
     function isAdmin() {
-      return request.auth.uid == "s5d4Z9q3N4Xb2P1hA6jK7cV8wFp2"; 
+      return request.auth.uid == "s5d4Z9q3N4Xb2P1hA6jK7cV8wFp2";
     }
 
-    // =============================
     // PUBLIC READ-ONLY COLLECTIONS
-    // =============================
     match /notes/{noteId} {
-      allow get: if true;
-      allow list: if true;
+      allow read: if true;
       allow write: if isAdmin();
     }
     
     match /mcqSets/{setId} {
-      allow get: if true;
-      allow list: if true;
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     match /custom_notifications/{id} {
-      allow get: if true;
-      allow list: if true;
+      allow read: if true;
       allow write: if isAdmin();
     }
     
     match /posts/{postId} {
-      allow get: if true;
-      allow list: if true;
+      allow read: if true;
       allow write: if isAdmin();
     }
     
     match /blog/{postId} {
-      allow get: if true;
-      allow list: if true;
+      allow read: if true;
       allow write: if isAdmin();
     }
     
     match /tests/{testId} {
-      allow get: if true;
-      allow list: if true;
-      allow write: if false; // Test engine writes are server-side
+      allow read: if true;           // required for queries + snapshot
+      allow write: if false;         // server only
       match /{sub=**} {
         allow read: if true;
         allow write: if false;
       }
     }
 
-    // =============================
-    // OTHER COLLECTIONS
-    // =============================
+    // OTHER COLLECTIONS  
     match /adminConfig/{doc} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
     match /results/{resultId} {
-      allow read: if request.auth != null; // Users can probably read their own results
-      allow create, update, delete: if false; // Server-side writes only
+      allow read: if request.auth != null;
+      allow create, update, delete: if false;
     }
 
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false; // User profiles not editable from client yet
+      allow write: if false;
     }
 
-    // =============================
-    // STRICT DENY ALL OTHER WRITES
-    // =============================
+    // Deny everything else
     match /{document=**} {
-      // This rule is now safe because reads are handled above, and this denies all other writes.
       allow write: if false;
     }
   }
