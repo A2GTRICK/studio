@@ -1,4 +1,3 @@
-
 // app/blog/[slug]/page.tsx  (premium variant)
 import { fetchSinglePost } from "@/services/posts";
 import ReactMarkdown from "react-markdown";
@@ -8,13 +7,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Link as LinkIcon, Copy, Share2 } from "lucide-react";
 import type { Metadata } from "next";
-import { useEffect } from "react";
+import PageScripts from "./page-scripts";
 
 // fetchRelatedPosts is not defined in services/posts.ts, so I will comment out the related parts.
 // import { fetchRelatedPosts } from "@/services/posts"; 
 
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { slug:string } }): Promise<Metadata> {
   const post = await fetchSinglePost(params.slug);
   if (!post) return { title: "Post Not Found" };
 
@@ -62,33 +61,6 @@ function slugify(text = "") {
     .replace(/\s+/g, "-")
     .replace(/[^\w\-]+/g, "")
     .replace(/\-\-+/g, "-");
-}
-
-/* Small client-side helpers for copy/share -- we will use progressive enhancement */
-function PageScripts() {
-  'use client';
-  useEffect(() => {
-    // add click handler for copy icons (progressive enhancement)
-    document.querySelectorAll("[data-copy]").forEach((btn) => {
-      btn.addEventListener("click", async (e) => {
-        const target = (e.currentTarget as HTMLElement).dataset.copy;
-        if (!target) return;
-        try {
-          await navigator.clipboard.writeText(`${location.origin}${location.pathname}#${target}`);
-          (e.currentTarget as HTMLElement).textContent = "Copied";
-          setTimeout(() => {
-            const copyButton = document.createElement('Copy');
-            copyButton.className = 'w-3 h-3 inline-block';
-            (e.currentTarget as HTMLElement).innerHTML = '';
-            (e.currentTarget as HTMLElement).appendChild(copyButton);
-          }, 1200);
-        } catch {
-          // ignore
-        }
-      });
-    });
-  }, []);
-  return null;
 }
 
 export default async function PremiumBlog({ params }: { params: { slug: string } }) {
