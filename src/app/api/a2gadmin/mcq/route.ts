@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ set: { id: docSnap.id, ...docSnap.data() } });
     }
 
-    // Get all documents
-    const snapshot = await adminDb.collection(COLLECTION_NAME).orderBy("createdAt", "desc").get();
+    // Get all documents - FIX: sort by `updatedAt` as it's more reliable than `createdAt`
+    const snapshot = await adminDb.collection(COLLECTION_NAME).orderBy("updatedAt", "desc").get();
     const sets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return NextResponse.json({ sets });
 
