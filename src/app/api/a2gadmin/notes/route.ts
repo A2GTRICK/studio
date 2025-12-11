@@ -66,9 +66,10 @@ export async function GET(req: NextRequest) {
     }
 
     // GET ALL NOTES
+    // ❗ FIX: Order by `updatedAt` as `createdAt` might be missing on old docs.
     const snapshot = await adminDb
       .collection("notes")
-      .orderBy("createdAt", "desc")
+      .orderBy("updatedAt", "desc")
       .get();
 
     const notes = snapshot.docs.map((d) => {
@@ -77,6 +78,7 @@ export async function GET(req: NextRequest) {
         id: d.id,
         ...data,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : null,
       };
     });
 
@@ -141,6 +143,7 @@ export async function POST(req: NextRequest) {
       attachments: [],
       externalLinks,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     const noteId = docRef.id;
