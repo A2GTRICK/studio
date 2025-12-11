@@ -3,13 +3,13 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAdminDb, getAdminStorage, getAdmin } from "@/lib/firebaseAdmin";
 import { v4 as uuidv4 } from "uuid";
 
 // -------------------------
 // FILE UPLOAD HELPER
 // -------------------------
 async function uploadFileToStorage(path: string, file: File) {
+  const { getAdminStorage } = await import("@/lib/firebaseAdmin");
   const adminStorage = getAdminStorage();
   const BUCKET_NAME = adminStorage.bucket().name;
   
@@ -42,6 +42,7 @@ function sanitizeString(v: any) {
 // -------------------------
 export async function GET(req: NextRequest) {
   try {
+    const { getAdminDb } = await import("@/lib/firebaseAdmin");
     const adminDb = getAdminDb();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
@@ -95,6 +96,7 @@ export async function GET(req: NextRequest) {
 // -------------------------
 export async function POST(req: NextRequest) {
   try {
+    const { getAdminDb, getAdmin } = await import("@/lib/firebaseAdmin");
     const adminDb = getAdminDb();
     const admin = getAdmin();
     const form = await req.formData();
@@ -172,6 +174,7 @@ export async function POST(req: NextRequest) {
 // -------------------------
 export async function PUT(req: NextRequest) {
   try {
+    const { getAdminDb, getAdmin } = await import("@/lib/firebaseAdmin");
     const adminDb = getAdminDb();
     const admin = getAdmin();
     const url = new URL(req.url);
@@ -257,6 +260,7 @@ export async function PUT(req: NextRequest) {
 // -------------------------
 export async function DELETE(req: NextRequest) {
   try {
+    const { getAdminDb, getAdminStorage } = await import("@/lib/firebaseAdmin");
     const adminDb = getAdminDb();
     const adminStorage = getAdminStorage();
     const BUCKET_NAME = adminStorage.bucket().name;

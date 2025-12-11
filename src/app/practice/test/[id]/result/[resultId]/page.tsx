@@ -1,8 +1,9 @@
 // src/app/practice/test/[id]/result/[resultId]/page.tsx
 import React from 'react';
-import { getAdminDb } from '@/lib/firebaseAdmin'; // server-only
 
+// This page now uses dynamic imports for server-side firebase admin
 export default async function ResultPage({ params }: { params: { id: string, resultId: string }}) {
+  const { getAdminDb } = await import('@/lib/firebaseAdmin');
   const adminDb = getAdminDb();
   const resDoc = await adminDb.collection('results').doc(params.resultId).get();
   if (!resDoc.exists) return <div className="p-10">Result not found</div>;
