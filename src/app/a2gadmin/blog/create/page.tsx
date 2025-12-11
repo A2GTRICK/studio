@@ -8,12 +8,91 @@ import TurndownService from "turndown";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import "@/styles/md-preview.css";
+
+import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
+import js from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
+import bash from "react-syntax-highlighter/dist/esm/languages/hljs/bash";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 
+SyntaxHighlighter.registerLanguage("javascript", js);
+SyntaxHighlighter.registerLanguage("bash", bash);
+
+
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+
+function YouTubeEmbed({ id }: { id: string }) {
+  return (
+    <div className="my-6 w-full aspect-video rounded-xl overflow-hidden">
+      <iframe
+        src={`https://www.youtube.com/embed/${id}`}
+        className="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      ></iframe>
+    </div>
+  );
+}
+
+function PDFViewer({ url }: { url: string }) {
+  return (
+    <div className="my-6 border rounded-xl overflow-hidden">
+      <iframe src={url} className="w-full h-96" />
+    </div>
+  );
+}
+
+function DriveEmbed({ url }: { url: string }) {
+  return (
+    <div className="my-6 border rounded-xl overflow-hidden">
+      <iframe src={url} className="w-full h-96" />
+    </div>
+  );
+}
+
+const previewComponents = {
+  code({ inline, className, children, ...props }: any) {
+    const match = /language-(\w+)/.exec(className || "");
+    return !inline ? (
+      <SyntaxHighlighter
+        style={atomOneDark}
+        language={match ? match[1] : "text"}
+        PreTag="div"
+      >
+        {String(children).replace(/\n$/, "")}
+      </SyntaxHighlighter>
+    ) : (
+      <code className="bg-gray-800 text-gray-200 px-1 rounded" {...props}>
+        {children}
+      </code>
+    );
+  },
+  p({ children }: any) {
+    const child = children?.[0];
+    if (typeof child === "string") {
+      if (child.startsWith("@youtube(")) {
+        const url = child.replace("@youtube(", "").replace(")", "");
+        const idMatch = url.match(/v=([^&]+)/) || url.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
+        const id = idMatch ? idMatch[1] : null;
+        return id ? <YouTubeEmbed id={id} /> : null;
+      }
+      if (child.startsWith("@pdf(")) {
+        const url = child.replace("@pdf(", "").replace(")", "");
+        return <PDFViewer url={url} />;
+      }
+      if (child.startsWith("@drive(")) {
+        const url = child.replace("@drive(", "").replace(")", "");
+        return <DriveEmbed url={url} />;
+      }
+    }
+    return <p>{children}</p>;
+  },
+};
+
 
 function slugify(text: string) {
   return text
@@ -215,7 +294,15 @@ export default function CreateBlogPage() {
             </Button>
           </div>
           <div ref={mdEditorRef as any} className="bg-white/5 p-2 rounded" data-color-mode="dark">
-            <MDEditor value={content} onChange={(v = "") => setContent(String(v))} height={500} />
+            <MDEditor 
+              value={content} 
+              onChange={(v = "") => setContent(String(v))} 
+              height={500} 
+              previewOptions={{
+                components: previewComponents,
+                rehypePlugins: [rehypeRaw, rehypeSanitize]
+              }}
+            />
           </div>
         </div>
 

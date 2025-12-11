@@ -7,9 +7,20 @@ import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
+
+// highlight.js for code blocks
+import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
+import js from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
+import bash from "react-syntax-highlighter/dist/esm/languages/hljs/bash";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark";
+
 import { ArrowLeft } from "lucide-react";
 import ClientControls from "./client-controls";
 import { fetchSinglePost, fetchRelatedPosts } from "@/services/posts";
+
+SyntaxHighlighter.registerLanguage("javascript", js);
+SyntaxHighlighter.registerLanguage("bash", bash);
 
 /* -------------------------
    Types
@@ -28,8 +39,9 @@ type Post = {
 };
 
 /* -------------------------
-   Helpers
+   Helpers & Components
 ------------------------- */
+
 function slugify(text = "") {
   return text
     .toString()
@@ -55,18 +67,97 @@ function extractHeadings(markdown = "") {
   const lines = markdown.split("\n");
   const headings: { level: number; text: string }[] = [];
   for (const line of lines) {
-    // ## and ### markdown headings
     let m = line.match(/^(#{2,3})\s+(.*)/);
     if (m) {
       headings.push({ level: m[1].length, text: m[2].trim() });
-      continue;
     }
-    // fallback: simple HTML heading detection <h2>..</h2>
-    m = line.match(/^<h([23])[^>]*>(.*?)<\/h\1>/i);
-    if (m) headings.push({ level: Number(m[1]), text: m[2].replace(/<[^>]+>/g, "").trim() });
   }
   return headings;
 }
+
+function YouTubeEmbed({ id }: { id: string }) {
+  return (
+    <div className="my-6 w-full aspect-video rounded-xl overflow-hidden shadow-lg">
+      <iframe
+        src={`https://www.youtube.com/embed/${id}`}
+        className="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      ></iframe>
+    </div>
+  );
+}
+
+function PDFViewer({ url }: { url: string }) {
+  return (
+    <div className="my-6 border rounded-xl overflow-hidden h-96 shadow-lg">
+      <iframe src={url} className="w-full h-full" />
+    </div>
+  );
+}
+
+function DriveEmbed({ url }: { url: string }) {
+  return (
+    <div className="my-6 border rounded-xl overflow-hidden h-96 shadow-lg">
+      <iframe src={url} className="w-full h-full" />
+    </div>
+  );
+}
+
+const mdComponents: any = {
+  h2: ({ node, ...props }: any) => {
+    const text = String(props.children);
+    return <h2 id={slugify(text)} {...props} className="text-2xl md:text-2xl font-semibold mt-8 mb-4 text-primary-dark" />;
+  },
+  h3: ({ node, ...props }: any) => {
+    const text = String(props.children);
+    return <h3 id={slugify(text)} {...props} className="text-xl font-medium mt-6 mb-3" />;
+  },
+  a: (props: any) => <a {...props} className="text-primary hover:underline break-words" target={props.href?.startsWith('#') ? undefined : '_blank'} rel="noopener noreferrer" />,
+  img: (props: any) => <img {...props} alt={props.alt || ''} className="rounded-lg mx-auto shadow-md max-w-full" />,
+  p: (props: any) => {
+     const child = props.children?.[0];
+     if (typeof child === "string") {
+        if (child.startsWith("@youtube(")) {
+          const url = child.replace("@youtube(", "").replace(")", "");
+          const idMatch = url.match(/v=([^&]+)/) || url.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
+          const id = idMatch ? idMatch[1] : null;
+          return id ? <YouTubeEmbed id={id} /> : null;
+        }
+        if (child.startsWith("@pdf(")) {
+          const url = child.replace("@pdf(", "").replace(")", "");
+          return <PDFViewer url={url} />;
+        }
+        if (child.startsWith("@drive(")) {
+          const url = child.replace("@drive(", "").replace(")", "");
+          return <DriveEmbed url={url} />;
+        }
+      }
+    return <p {...props} className="leading-8 text-gray-800" />;
+  },
+  ul: (props: any) => <ul {...props} className="list-disc pl-6 space-y-2" />,
+  ol: (props: any) => <ol {...props} className="list-decimal pl-6 space-y-2" />,
+  li: (props: any) => <li {...props} className="mb-1" />,
+  blockquote: (props: any) => <blockquote {...props} className="border-l-4 border-primary/30 bg-primary/5 p-4 italic text-gray-800 rounded" />,
+  pre: (props: any) => <div {...props} className="rounded-md bg-gray-900 text-white overflow-auto not-prose" />,
+  code({ inline, className, children, ...props }: any) {
+    const match = /language-(\w+)/.exec(className || "");
+    return !inline ? (
+      <SyntaxHighlighter
+        style={atomOneDark}
+        language={match ? match[1] : "text"}
+        PreTag="div"
+        customStyle={{ background: 'transparent', padding: '1rem' }}
+      >
+        {String(children).replace(/\n$/, "")}
+      </SyntaxHighlighter>
+    ) : (
+      <code className="bg-gray-200 text-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+        {children}
+      </code>
+    );
+  },
+};
 
 /* -------------------------
    Metadata for SEO
@@ -105,7 +196,6 @@ export default async function BlogPage({ params }: { params: { slug: string } })
     new Date();
   const rt = readingTime(content);
 
-  // related posts (server side) — service returns [] if not available
   let related: Post[] = [];
   try {
     if (typeof fetchRelatedPosts === "function") related = await fetchRelatedPosts(post.tags || [], 4);
@@ -113,38 +203,9 @@ export default async function BlogPage({ params }: { params: { slug: string } })
     related = [];
   }
 
-  const mdComponents: any = {
-    h2: ({ node, ...props }: any) => {
-      const text = String(props.children);
-      return (
-        <h2 id={slugify(text)} {...props} className="text-2xl md:text-2xl font-semibold mt-6 mb-3 text-primary-dark">
-          {props.children}
-        </h2>
-      );
-    },
-    h3: ({ node, ...props }: any) => {
-      const text = String(props.children);
-      return (
-        <h3 id={slugify(text)} {...props} className="text-xl font-medium mt-5 mb-2">
-          {props.children}
-        </h3>
-      );
-    },
-    a: (props: any) => <a {...props} className="text-primary hover:underline break-words" target={props.href?.startsWith("#") ? undefined : "_blank"} rel="noopener noreferrer" />,
-    img: (props: any) => <img {...props} alt={props.alt || ""} className="rounded-lg mx-auto shadow-md max-w-full" />,
-    p: (props: any) => <p {...props} className="leading-8 text-gray-800" />,
-    ul: (props: any) => <ul {...props} className="list-disc pl-6 space-y-2" />,
-    ol: (props: any) => <ol {...props} className="list-decimal pl-6 space-y-2" />,
-    li: (props: any) => <li {...props} className="mb-1" />,
-    blockquote: (props: any) => <blockquote {...props} className="border-l-4 border-primary/30 bg-primary/5 p-4 italic text-gray-800 rounded" />,
-    pre: (props: any) => <pre {...props} className="rounded-md p-3 bg-gray-900 text-white overflow-auto" />,
-    code: (props: any) => <code {...props} className="font-mono text-sm bg-gray-100 px-1 rounded" />,
-  };
-
   return (
     <div className="bg-white py-8 md:py-12">
       <div className="container mx-auto px-4 max-w-6xl">
-        {/* Back link */}
         <div className="mb-6">
           <Link href="/blog" className="inline-flex items-center text-sm font-medium text-primary hover:underline">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Blog
@@ -152,7 +213,6 @@ export default async function BlogPage({ params }: { params: { slug: string } })
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main */}
           <main className="lg:col-span-8">
             <article className="max-w-none">
               <header className="mb-6">
@@ -171,14 +231,12 @@ export default async function BlogPage({ params }: { params: { slug: string } })
                 </div>
               )}
 
-              {/* Article body */}
               <div className="prose lg:prose-lg max-w-none">
-                <ReactMarkdown components={mdComponents} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                 <ReactMarkdown components={mdComponents} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeSanitize]}>
                   {content}
                 </ReactMarkdown>
               </div>
 
-              {/* Author & CTA */}
               <div className="mt-12 pt-8 border-t">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
@@ -193,7 +251,6 @@ export default async function BlogPage({ params }: { params: { slug: string } })
                 </div>
               </div>
 
-              {/* Related posts */}
               <section className="mt-10">
                 <h3 className="text-lg font-semibold">Suggested reads</h3>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -217,14 +274,12 @@ export default async function BlogPage({ params }: { params: { slug: string } })
             </article>
           </main>
 
-          {/* Sidebar / TOC */}
           <aside className="lg:col-span-4 hidden lg:block">
             <div className="sticky top-24 space-y-4">
               <ClientControls headings={headings} title={post.title} summary={post.summary} isDesktop={true} />
             </div>
           </aside>
 
-          {/* Mobile controls (fixed bottom) */}
           <div className="lg:hidden fixed left-0 right-0 bottom-4 px-4 z-40">
             <div className="mx-auto max-w-3xl">
               <ClientControls headings={headings} title={post.title} summary={post.summary} />
@@ -233,7 +288,6 @@ export default async function BlogPage({ params }: { params: { slug: string } })
         </div>
       </div>
 
-      {/* JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
