@@ -7,7 +7,7 @@ import { getStorage } from "firebase-admin/storage";
 const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
 if (!privateKey) {
-  console.error("❌ FIREBASE_ADMIN_PRIVATE_KEY IS MISSING");
+  console.error("❌ FIREBASE_ADMIN_PRIVATE_KEY is missing.");
 }
 
 const adminConfig = {
