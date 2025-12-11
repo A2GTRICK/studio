@@ -3,6 +3,7 @@
 
 backend:
   codebase: default
+  rootDirectory: .
 
 runConfig:
   # Increase this value if you'd like to automatically spin up
