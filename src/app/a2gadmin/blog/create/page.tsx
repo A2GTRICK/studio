@@ -1,3 +1,4 @@
+
 // src/app/a2gadmin/blog/create/page.tsx
 "use client";
 
@@ -9,6 +10,8 @@ import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import "@/styles/md-preview.css";
 
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import js from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
 import bash from "react-syntax-highlighter/dist/esm/languages/hljs/bash";
