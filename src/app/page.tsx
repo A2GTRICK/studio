@@ -154,7 +154,7 @@ const RecentPosts = () => {
             </div>
             <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
                  {posts.map((post) => (
-                    <Link key={post.id} href={`/blog/${post.id}`} className="group">
+                    <Link key={post.id} href={`/blog/${post.slug || post.id}`} className="group">
                         <div className="bg-white rounded-2xl shadow-lg overflow-hidden h-full flex flex-col transition-transform transform hover:-translate-y-2 hover:shadow-2xl border border-gray-200">
                             {post.banner && (
                             <div className="relative w-full h-48">
@@ -173,7 +173,7 @@ const RecentPosts = () => {
                             </h2>
                             <p className="mt-2 text-sm text-muted-foreground flex-grow line-clamp-3">{post.summary}</p>
                             <div className="mt-4 text-xs text-muted-foreground">
-                                {post.createdAt ? new Date(post.createdAt.seconds * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric'}) : ''}
+                                {post.createdAt ? new Date((post.createdAt as any).seconds * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric'}) : ''}
                             </div>
                             </div>
                         </div>
@@ -294,7 +294,16 @@ export default function Home() {
                         </blockquote>
                     </div>
                     <div className="flex justify-center items-center">
-                       <Image src="https://i.postimg.cc/k5CkkR0S/image-logo.png" alt="Arvind Sharma" width={200} height={200} className="w-48 h-48 rounded-full object-cover drop-shadow-xl border-4 border-white" />
+                       <div className="aspect-video w-full max-w-lg rounded-xl shadow-2xl overflow-hidden border-4 border-white">
+                         <iframe 
+                            className="w-full h-full" 
+                            src="https://www.youtube.com/embed/jfKfPfyJRdk" 
+                            title="YouTube video player" 
+                            frameBorder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowFullScreen>
+                         </iframe>
+                       </div>
                     </div>
                 </div>
             </div>
