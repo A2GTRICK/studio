@@ -214,7 +214,7 @@ export default function CreateBlogPage() {
               Auto-format (non-AI)
             </Button>
           </div>
-          <div ref={mdEditorRef as any} className="bg-white/5 p-2 rounded">
+          <div ref={mdEditorRef as any} className="bg-white/5 p-2 rounded" data-color-mode="dark">
             <MDEditor value={content} onChange={(v = "") => setContent(String(v))} height={500} />
           </div>
         </div>
