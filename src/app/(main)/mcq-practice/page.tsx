@@ -312,6 +312,7 @@ export default function McqPracticePage() {
 
 
   const handleSubmitQuiz = async () => {
+    if (!questions) return;
     setIsSubmitted(true);
     const newScore = questions.reduce((score, question, index) => {
       return score + (answers[index] === question.correctAnswer ? 1 : 0);

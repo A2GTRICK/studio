@@ -151,7 +151,7 @@ export default function AiNotesPage() {
     setFollowUpCount(0); // Reset follow-up count for new note
     try {
       const result = await generateNotesFromTopic(data);
-      const assistantMessage = { role: 'assistant', content: result.notes };
+      const assistantMessage: ChatMessage = { role: 'assistant', content: result.notes };
       setGeneratedNotes(result.notes);
       setChatHistory([assistantMessage]);
       incrementGenerations();

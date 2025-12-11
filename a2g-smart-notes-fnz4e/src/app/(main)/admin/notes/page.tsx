@@ -556,8 +556,9 @@ export default function AdminNotesPage() {
                 )}
             </DialogContent>
         </Dialog>
-      </>
-    );
+            </>
+        );
+}
 
     
 
