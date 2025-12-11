@@ -4,32 +4,32 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+import { db, storage } from "@/firebase/config";
+import {
+  collection,
+  getDocs,
+  getDoc,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  orderBy,
+  query,
+  serverTimestamp,
+} from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+
 
 // -------------------------
 // FILE UPLOAD HELPER
 // -------------------------
 async function uploadFileToStorage(path: string, file: File) {
-  const { getAdminStorage } = await import("@/lib/firebaseAdmin");
-  const adminStorage = getAdminStorage();
-  const BUCKET_NAME = adminStorage.bucket().name;
-  
+  const fileRef = ref(storage, path);
   const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const bucket = adminStorage.bucket(BUCKET_NAME);
-  const fileRef = bucket.file(path);
-
-  await fileRef.save(buffer, {
-    metadata: { contentType: file.type },
-    resumable: false,
+  await uploadBytes(fileRef, arrayBuffer, {
+    contentType: file.type,
   });
-
-  try {
-    await fileRef.makePublic();
-  } catch {}
-
-  return `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(
-    fileRef.name
-  )}`;
+  return getDownloadURL(fileRef);
 }
 
 function sanitizeString(v: any) {
@@ -42,23 +42,22 @@ function sanitizeString(v: any) {
 // -------------------------
 export async function GET(req: NextRequest) {
   try {
-    const { getAdminDb } = await import("@/lib/firebaseAdmin");
-    const adminDb = getAdminDb();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
     // GET SINGLE NOTE
     if (id) {
-      const doc = await adminDb.collection("notes").doc(id).get();
+      const docRef = doc(db, "notes", id);
+      const docSnap = await getDoc(docRef);
 
-      if (!doc.exists) {
+      if (!docSnap.exists()) {
         return NextResponse.json({ error: "Note not found" }, { status: 404 });
       }
 
-      const data = doc.data();
+      const data = docSnap.data();
       return NextResponse.json({
         note: {
-          id: doc.id,
+          id: docSnap.id,
           ...data,
           createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : null,
         },
@@ -66,11 +65,8 @@ export async function GET(req: NextRequest) {
     }
 
     // GET ALL NOTES
-    // ❗ FIX: Order by `updatedAt` as `createdAt` might be missing on old docs.
-    const snapshot = await adminDb
-      .collection("notes")
-      .orderBy("updatedAt", "desc")
-      .get();
+    const q = query(collection(db, "notes"), orderBy("updatedAt", "desc"));
+    const snapshot = await getDocs(q);
 
     const notes = snapshot.docs.map((d) => {
       const data = d.data();
@@ -98,9 +94,6 @@ export async function GET(req: NextRequest) {
 // -------------------------
 export async function POST(req: NextRequest) {
   try {
-    const { getAdminDb, getAdmin } = await import("@/lib/firebaseAdmin");
-    const adminDb = getAdminDb();
-    const admin = getAdmin();
     const form = await req.formData();
 
     const title = sanitizeString(form.get("title"));
@@ -129,7 +122,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const docRef = await adminDb.collection("notes").add({
+    const docRef = await addDoc(collection(db, "notes"), {
       title,
       subject,
       course,
@@ -142,8 +135,8 @@ export async function POST(req: NextRequest) {
       notes: content,
       attachments: [],
       externalLinks,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
 
     const noteId = docRef.id;
@@ -159,7 +152,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (attachments.length) {
-      await docRef.update({ attachments });
+      await updateDoc(docRef, { attachments });
     }
 
     return NextResponse.json({ id: noteId }, { status: 201 });
@@ -177,9 +170,6 @@ export async function POST(req: NextRequest) {
 // -------------------------
 export async function PUT(req: NextRequest) {
   try {
-    const { getAdminDb, getAdmin } = await import("@/lib/firebaseAdmin");
-    const adminDb = getAdminDb();
-    const admin = getAdmin();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     if (!id)
@@ -187,8 +177,8 @@ export async function PUT(req: NextRequest) {
 
     const form = await req.formData();
 
-    const docRef = adminDb.collection("notes").doc(id);
-    const snap = await docRef.get();
+    const docRef = doc(db, "notes", id);
+    const snap = await getDoc(docRef);
     if (!snap.exists)
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
 
@@ -244,9 +234,9 @@ export async function PUT(req: NextRequest) {
     if (newAttachments.length)
       updates.attachments = [...existingAttachments, ...newAttachments];
 
-    updates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+    updates.updatedAt = serverTimestamp();
 
-    await docRef.update(updates);
+    await updateDoc(docRef, updates);
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
@@ -263,18 +253,14 @@ export async function PUT(req: NextRequest) {
 // -------------------------
 export async function DELETE(req: NextRequest) {
   try {
-    const { getAdminDb, getAdminStorage } = await import("@/lib/firebaseAdmin");
-    const adminDb = getAdminDb();
-    const adminStorage = getAdminStorage();
-    const BUCKET_NAME = adminStorage.bucket().name;
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     if (!id)
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    const docRef = adminDb.collection("notes").doc(id);
-    const snap = await docRef.get();
-    if (!snap.exists)
+    const docRef = doc(db, "notes", id);
+    const snap = await getDoc(docRef);
+    if (!snap.exists())
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
 
     const data = snap.data() || {};
@@ -282,20 +268,18 @@ export async function DELETE(req: NextRequest) {
       ? data.attachments
       : [];
 
-    const bucket = adminStorage.bucket(BUCKET_NAME);
-
     for (const fileUrl of attachments) {
       try {
-        const path = decodeURIComponent(
-          fileUrl.split(`${bucket.name}/`)[1]
-        );
-        await bucket.file(path).delete().catch(() => {});
-      } catch (e) {
-        console.warn("Failed to delete file:", fileUrl, e);
+        const fileRef = ref(storage, fileUrl);
+        await deleteObject(fileRef);
+      } catch (e: any) {
+        if (e.code !== 'storage/object-not-found') {
+          console.warn("Failed to delete file:", fileUrl, e);
+        }
       }
     }
 
-    await docRef.delete();
+    await deleteDoc(docRef);
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {

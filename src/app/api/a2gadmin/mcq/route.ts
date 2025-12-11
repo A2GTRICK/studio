@@ -2,31 +2,42 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse, type NextRequest } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
+import { db } from "@/firebase/config";
+import {
+  collection,
+  getDocs,
+  getDoc,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  orderBy,
+  query,
+  serverTimestamp,
+} from "firebase/firestore";
 
 const COLLECTION_NAME = "mcqSets";
 
 // GET all or a single MCQ set
 export async function GET(req: NextRequest) {
   try {
-    const { getAdminDb } = await import("@/lib/firebaseAdmin");
-    const adminDb = getAdminDb();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
     if (id) {
       // Get single document
-      const docRef = adminDb.collection(COLLECTION_NAME).doc(id);
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) {
+      const docRef = doc(db, COLLECTION_NAME, id);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
         return NextResponse.json({ error: "MCQ set not found" }, { status: 404 });
       }
       return NextResponse.json({ set: { id: docSnap.id, ...docSnap.data() } });
     }
 
-    // Get all documents - FIX: sort by `updatedAt` as it's more reliable than `createdAt`
-    const snapshot = await adminDb.collection(COLLECTION_NAME).orderBy("updatedAt", "desc").get();
-    const sets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Get all documents
+    const q = query(collection(db, COLLECTION_NAME), orderBy("updatedAt", "desc"));
+    const snapshot = await getDocs(q);
+    const sets = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     return NextResponse.json({ sets });
 
   } catch (err: any) {
@@ -38,8 +49,6 @@ export async function GET(req: NextRequest) {
 // CREATE a new MCQ set
 export async function POST(req: NextRequest) {
   try {
-    const { getAdminDb } = await import("@/lib/firebaseAdmin");
-    const adminDb = getAdminDb();
     const body = await req.json();
     const { title, course, subject, questions, isPublished } = body;
 
@@ -55,11 +64,11 @@ export async function POST(req: NextRequest) {
       isPublished: isPublished === true, // Ensure it's a boolean, default to false
       questions: processedQuestions,
       questionCount: processedQuestions.length,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
-    const docRef = await adminDb.collection(COLLECTION_NAME).add(newSet);
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), newSet);
     return NextResponse.json({ id: docRef.id }, { status: 201 });
 
   } catch (err: any) {
@@ -71,8 +80,6 @@ export async function POST(req: NextRequest) {
 // UPDATE an existing MCQ set
 export async function PUT(req: NextRequest) {
     try {
-        const { getAdminDb } = await import("@/lib/firebaseAdmin");
-        const adminDb = getAdminDb();
         const url = new URL(req.url);
         const id = url.searchParams.get("id");
 
@@ -87,15 +94,15 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "Title, Course, and Subject are required." }, { status: 400 });
         }
         
-        const docRef = adminDb.collection(COLLECTION_NAME).doc(id);
+        const docRef = doc(db, COLLECTION_NAME, id);
 
         const updatedData = {
             ...body,
             questionCount: body.questions?.length || 0,
-            updatedAt: FieldValue.serverTimestamp(),
+            updatedAt: serverTimestamp(),
         };
 
-        await docRef.update(updatedData);
+        await updateDoc(docRef, updatedData);
 
         return NextResponse.json({ ok: true });
 
@@ -109,8 +116,6 @@ export async function PUT(req: NextRequest) {
 // DELETE an MCQ set
 export async function DELETE(req: NextRequest) {
   try {
-    const { getAdminDb } = await import("@/lib/firebaseAdmin");
-    const adminDb = getAdminDb();
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
@@ -118,7 +123,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "MCQ set ID is required for deletion." }, { status: 400 });
     }
 
-    await adminDb.collection(COLLECTION_NAME).doc(id).delete();
+    await deleteDoc(doc(db, COLLECTION_NAME, id));
     return NextResponse.json({ ok: true });
 
   } catch (err: any) {
