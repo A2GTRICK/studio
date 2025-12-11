@@ -4,40 +4,38 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
 
-const serviceAccount = {
-    projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+
+if (!privateKey) {
+  console.error("❌ FIREBASE_ADMIN_PRIVATE_KEY IS MISSING");
 }
 
-function getAdminApp() {
-    if (getApps().length) {
-        return getApps()[0];
-    }
-    return initializeApp({
-        credential: cert(serviceAccount),
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    });
+const adminConfig = {
+  projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+  clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+  privateKey: privateKey?.replace(/\\n/g, "\n"),
+};
+
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(adminConfig),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  });
 }
 
-export function getAdminDb() {
-  return getFirestore(getAdminApp());
-}
-
-export function getAdminAuth() {
-  return getAuth(getAdminApp());
-}
-
-export function getAdminStorage() {
-    return getStorage(getAdminApp());
-}
+export const adminDb = getFirestore();
+export const adminAuth = getAuth();
+export const adminStorage = getStorage();
 
 export function getAdmin() {
     // This is a placeholder for the full 'admin' object if needed elsewhere.
     // Be cautious as direct use can pull in unwanted dependencies.
+    // For now, this is kept minimal.
+    const { getFirestore: getAdminFirestore } = require("firebase-admin/firestore");
+
     return {
         firestore: {
-            FieldValue: getFirestore(getAdminApp()).FieldValue,
+            FieldValue: getAdminFirestore().FieldValue,
         }
     }
 }
