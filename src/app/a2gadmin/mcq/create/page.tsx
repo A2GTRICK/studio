@@ -1,4 +1,3 @@
-
 // src/app/a2gadmin/mcq/create/page.tsx
 "use client";
 
@@ -17,6 +16,8 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 type Question = {
   id: string;
@@ -168,24 +169,31 @@ export default function CreateMcqSetPage() {
       return;
     }
 
-    try {
-      const payload = {
-        title, course, subject, year, description, isPremium, isPublished,
-        questionCount: questions.length,
-        questions,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
+    const payload = {
+      title, course, subject, year, description, isPremium, isPublished,
+      questionCount: questions.length,
+      questions,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
 
-      const docRef = await addDoc(collection(db, "mcqSets"), payload);
-      setMsg("MCQ set created successfully!");
-      router.push(`/a2gadmin/mcq/edit/${docRef.id}`);
-
-    } catch (err: any) {
-      setMsg("A network or server error occurred.");
-    } finally {
-      setLoading(false);
-    }
+    addDoc(collection(db, "mcqSets"), payload)
+      .then(docRef => {
+        setMsg("MCQ set created successfully!");
+        router.push(`/a2gadmin/mcq/edit/${docRef.id}`);
+      })
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: 'mcqSets',
+            operation: 'create',
+            requestResourceData: payload,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setMsg("A permission error occurred. Check the console.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }
 
   return (

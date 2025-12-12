@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -10,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from "@/firebase/config";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 // Premium MCQ editor: bulk upload (text/CSV/JSON), preview, validation, save, local draft
 
@@ -263,16 +266,26 @@ export default function EditMcqSetPagePremium() {
       if (!q.correctAnswer || !q.options.map(o=>o.trim()).includes(q.correctAnswer.trim())) { setMsg(`Question ${i+1} has invalid correct answer`); setSaving(false); return; }
     }
 
-    try {
-      const ref = doc(db, 'mcqSets', id);
-      const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length, updatedAt: serverTimestamp() };
-      await updateDoc(ref, payload);
-      setMsg('Saved successfully');
-      try { localStorage.removeItem(draftKey); } catch {}
-    } catch (err) {
-      console.error(err);
-      setMsg('Failed to save to server');
-    } finally { setSaving(false); }
+    const ref = doc(db, 'mcqSets', id);
+    const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length, updatedAt: serverTimestamp() };
+    
+    updateDoc(ref, payload)
+      .then(() => {
+        setMsg('Saved successfully');
+        try { localStorage.removeItem(draftKey); } catch {}
+      })
+      .catch(serverError => {
+          const permissionError = new FirestorePermissionError({
+              path: ref.path,
+              operation: 'update',
+              requestResourceData: payload,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          setMsg('A permission error occurred. Check the console.');
+      })
+      .finally(() => {
+          setSaving(false);
+      });
   }
 
   function exportJson() {
