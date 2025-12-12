@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -32,7 +31,7 @@ function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
     <Link href={item.href} className="group">
       <article
         className={clsx(
-          'relative overflow-hidden rounded-2xl p-6 shadow-lg transition-transform transform hover:-translate-y-1 hover:shadow-xl',
+          'relative overflow-hidden rounded-2xl p-6 shadow-lg transition-transform transform hover:-translate-y-1 hover:shadow-xl h-full',
           'bg-white backdrop-blur-sm border border-slate-100'
         )}
         aria-labelledby={`fc-${item.title}`}
@@ -68,7 +67,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen p-4 md:p-8">
       {/* HERO */}
-      <section className="relative overflow-hidden rounded-2xl p-6 md:p-10 mb-8 bg-gradient-to-br from-purple-50 via-fuchsia-50 to-blue-50 border border-white/60">
+      <section className="relative overflow-hidden rounded-2xl p-6 md:p-10 mb-8 bg-gradient-to-br from-purple-50 via-fuchsia-50 to-blue-50/50 border border-white/60">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
@@ -120,7 +119,7 @@ export default function DashboardPage() {
 
       {/* Features Section */}
       <section>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {dashboardFeatures.map(f => (
                 <FeatureCard key={f.title} item={f} />
             ))}
