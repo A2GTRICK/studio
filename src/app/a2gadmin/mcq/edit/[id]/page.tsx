@@ -1,17 +1,19 @@
-
+// Premium Upgraded MCQ Editor with Bulk Upload
 // src/app/a2gadmin/mcq/edit/[id]/page.tsx
+
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Plus, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, ArrowLeft, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { db } from "@/firebase/config";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+// ------------------ Types ------------------
 type Question = {
   id: string;
   question: string;
@@ -33,19 +35,23 @@ export default function EditMcqSetPage() {
   const [description, setDescription] = useState("");
   const [isPremium, setIsPremium] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
-  
+
   const [questions, setQuestions] = useState<Question[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
+  const bulkRef = useRef<HTMLTextAreaElement | null>(null);
+  const [bulkModal, setBulkModal] = useState(false);
+
+  // ------------------ Load MCQ Set ------------------
   useEffect(() => {
     if (!id) return;
     async function loadSet() {
       setLoading(true);
       try {
-        const docRef = doc(db, 'mcqSets', Array.isArray(id) ? id[0] : id);
+        const docRef = doc(db, "mcqSets", Array.isArray(id) ? id[0] : id);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -69,6 +75,7 @@ export default function EditMcqSetPage() {
     loadSet();
   }, [id]);
 
+  // ------------------ Add Question ------------------
   const addQuestion = () => {
     setQuestions([
       ...questions,
@@ -89,27 +96,28 @@ export default function EditMcqSetPage() {
   };
 
   const handleQuestionChange = (qId: string, field: keyof Question, value: any) => {
-    setQuestions(
-      questions.map((q) => (q.id === qId ? { ...q, [field]: value } : q))
-    );
-  };
-  
-  const handleOptionChange = (qId: string, optIndex: number, value: string) => {
-      setQuestions(questions.map(q => {
-          if (q.id === qId) {
-              const newOptions = [...q.options];
-              newOptions[optIndex] = value;
-              return { ...q, options: newOptions };
-          }
-          return q;
-      }));
+    setQuestions(questions.map((q) => (q.id === qId ? { ...q, [field]: value } : q)));
   };
 
+  const handleOptionChange = (qId: string, idx: number, value: string) => {
+    setQuestions(
+      questions.map((q) => {
+        if (q.id === qId) {
+          const newOpts = [...q.options];
+          newOpts[idx] = value;
+          return { ...q, options: newOpts };
+        }
+        return q;
+      })
+    );
+  };
+
+  // ------------------ Save MCQ Set ------------------
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setMsg("");
-    
+
     if (!title || !course || !subject) {
       setMsg("Title, Course, and Subject are required.");
       setSaving(false);
@@ -117,35 +125,107 @@ export default function EditMcqSetPage() {
     }
 
     try {
-      const docRef = doc(db, 'mcqSets', Array.isArray(id) ? id[0] : id);
+      const docRef = doc(db, "mcqSets", Array.isArray(id) ? id[0] : id);
       const payload = {
-        title, course, subject, year, description, isPremium, isPublished,
+        title,
+        course,
+        subject,
+        year,
+        description,
+        isPremium,
+        isPublished,
         questionCount: questions.length,
         questions,
         updatedAt: serverTimestamp(),
       };
-      
+
       await updateDoc(docRef, payload);
       setMsg("MCQ set updated successfully!");
-    } catch (err: any) {
+    } catch (err) {
       setMsg("A network or server error occurred.");
     } finally {
       setSaving(false);
     }
   }
 
+  // ------------------ BULK MCQ IMPORT (Premium Feature) ------------------
+  // Expected Format (one block per question):
+  // Q: What is pharmacology?
+  // A) Option1
+  // B) Option2
+  // C) Option3
+  // D) Option4
+  // Correct: B
+  // Explanation: ...
+  // Topic: ...
+  // Difficulty: Medium
+
+  const processBulkUpload = () => {
+    if (!bulkRef.current) return;
+    const raw = bulkRef.current.value.trim();
+    if (!raw) return;
+
+    const blocks = raw.split(/\n\s*\n/); // separated by blank lines
+    const parsed: Question[] = [];
+
+    blocks.forEach((block) => {
+      const lines = block.split("\n").map((l) => l.trim());
+      if (lines.length < 3) return;
+
+      const q: Question = {
+        id: uuidv4(),
+        question: "",
+        options: ["", "", "", ""],
+        correctAnswer: "",
+        explanation: "",
+        topic: "",
+        difficulty: "Medium",
+      };
+
+      lines.forEach((l) => {
+        if (l.startsWith("Q:")) q.question = l.replace("Q:", "").trim();
+        else if (/^[A-D]\)/.test(l)) {
+          const idx = l.charCodeAt(0) - 65;
+          q.options[idx] = l.substring(2).trim();
+        }
+        else if (l.startsWith("Correct:")) q.correctAnswer = l.replace("Correct:", "").trim();
+        else if (l.startsWith("Explanation:")) q.explanation = l.replace("Explanation:", "").trim();
+        else if (l.startsWith("Topic:")) q.topic = l.replace("Topic:", "").trim();
+        else if (l.startsWith("Difficulty:")) q.difficulty = l.replace("Difficulty:", "").trim() as any;
+      });
+
+      parsed.push(q);
+    });
+
+    setQuestions([...questions, ...parsed]);
+    setBulkModal(false);
+  };
+
+  // ------------------ UI Rendering ------------------
   if (loading) {
-    return <div className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return (
+      <div className="p-6 text-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <div className="text-foreground max-w-4xl mx-auto">
-       <button onClick={() => router.back()} className="flex items-center gap-2 text-sm mb-4 hover:underline text-primary">
-          <ArrowLeft className="w-4 h-4" />
-          Back to MCQ Manager
+    <div className="text-foreground max-w-5xl mx-auto pb-20">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-2 text-sm mb-4 hover:underline text-primary"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back to MCQ Manager
       </button>
 
-      <h1 className="text-2xl font-semibold mb-4">Edit MCQ Set</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-semibold">Edit MCQ Set</h1>
+
+        <Button variant="outline" onClick={() => setBulkModal(true)}>
+          <Upload className="w-4 h-4 mr-2" /> Bulk Upload MCQs
+        </Button>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="p-6 bg-secondary/30 rounded-lg border space-y-4">
@@ -157,48 +237,83 @@ export default function EditMcqSetPage() {
             <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" />
           </div>
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="h-24" />
-           <div className="flex gap-6 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer text-sm"><input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} /> Is Premium</label>
-              <label className="flex items-center gap-2 cursor-pointer text-sm"><input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} /> Published</label>
+          <div className="flex gap-6 pt-2">
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} /> Is Premium
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} /> Published
+            </label>
           </div>
         </div>
 
         <div className="p-6 bg-secondary/30 rounded-lg border">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Questions ({questions.length})</h2>
-            <Button type="button" onClick={addQuestion}><Plus className="w-4 h-4 mr-2" /> Add Question</Button>
+            <Button type="button" onClick={addQuestion}>
+              <Plus className="w-4 h-4 mr-2" /> Add Question
+            </Button>
           </div>
-          
+
           <div className="space-y-4">
             {questions.map((q, qIndex) => (
               <div key={q.id} className="p-4 bg-card rounded-md border">
                 <div className="flex justify-between items-center mb-3">
                   <p className="font-bold">Question {qIndex + 1}</p>
-                  <Button type="button" size="sm" variant="destructive" onClick={() => removeQuestion(q.id)}><Trash2 className="w-4 h-4"/></Button>
+                  <Button type="button" size="sm" variant="destructive" onClick={() => removeQuestion(q.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
                 <div className="space-y-3">
-                   <Textarea value={q.question} onChange={(e) => handleQuestionChange(q.id, 'question', e.target.value)} placeholder="Question text" className="h-20" />
-                   <div className="grid grid-cols-2 gap-2">
-                       {q.options.map((opt, i) => (
-                           <Input key={i} value={opt} onChange={(e) => handleOptionChange(q.id, i, e.target.value)} placeholder={`Option ${i+1}`} />
-                       ))}
-                   </div>
-                   <Input value={q.correctAnswer} onChange={(e) => handleQuestionChange(q.id, 'correctAnswer', e.target.value)} placeholder="Correct Answer (must match an option)" />
-                   <Textarea value={q.explanation} onChange={(e) => handleQuestionChange(q.id, 'explanation', e.target.value)} placeholder="Explanation" className="h-24" />
-                   <div className="grid grid-cols-2 gap-2">
-                      <Input value={q.topic} onChange={(e) => handleQuestionChange(q.id, 'topic', e.target.value)} placeholder="Topic (e.g. Diuretics)" />
-                      <select value={q.difficulty} onChange={(e) => handleQuestionChange(q.id, 'difficulty', e.target.value)} className="w-full p-2 rounded-lg border bg-card">
-                          <option value="Easy">Easy</option>
-                          <option value="Medium">Medium</option>
-                          <option value="Hard">Hard</option>
-                      </select>
-                   </div>
+                  <Textarea
+                    value={q.question}
+                    onChange={(e) => handleQuestionChange(q.id, "question", e.target.value)}
+                    placeholder="Question text"
+                    className="h-20"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    {q.options.map((opt, i) => (
+                      <Input
+                        key={i}
+                        value={opt}
+                        onChange={(e) => handleOptionChange(q.id, i, e.target.value)}
+                        placeholder={`Option ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                  <Input
+                    value={q.correctAnswer}
+                    onChange={(e) => handleQuestionChange(q.id, "correctAnswer", e.target.value)}
+                    placeholder="Correct Answer (must match an option)"
+                  />
+                  <Textarea
+                    value={q.explanation}
+                    onChange={(e) => handleQuestionChange(q.id, "explanation", e.target.value)}
+                    placeholder="Explanation"
+                    className="h-24"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={q.topic}
+                      onChange={(e) => handleQuestionChange(q.id, "topic", e.target.value)}
+                      placeholder="Topic (e.g. Diuretics)"
+                    />
+                    <select
+                      value={q.difficulty}
+                      onChange={(e) => handleQuestionChange(q.id, "difficulty", e.target.value)}
+                      className="w-full p-2 rounded-lg border bg-card"
+                    >
+                      <option value="Easy">Easy</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Hard">Hard</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4 mt-6">
           <Button type="submit" disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
             {saving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
@@ -207,6 +322,38 @@ export default function EditMcqSetPage() {
           {msg && <span className="text-sm">{msg}</span>}
         </div>
       </form>
+
+      {/* Bulk Upload Modal */}
+      {bulkModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg shadow-xl w-full max-w-2xl">
+            <div className="p-4 border-b">
+              <h3 className="text-lg font-semibold">Bulk Upload Questions</h3>
+            </div>
+            <div className="p-4">
+              <Textarea
+                ref={bulkRef}
+                className="h-64"
+                placeholder={`Paste questions here, separated by a blank line.
+Example:
+Q: What is pharmacology?
+A) Option1
+B) Option2
+Correct: Option1
+Explanation: ...
+Topic: Intro
+Difficulty: Easy`}
+              />
+            </div>
+            <div className="p-4 border-t flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setBulkModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={processBulkUpload}>Add to Question List</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
