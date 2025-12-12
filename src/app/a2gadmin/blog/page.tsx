@@ -84,7 +84,7 @@ export default function BlogAdminPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto text-black">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto text-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Blog Manager</h1>
@@ -96,19 +96,19 @@ export default function BlogAdminPage() {
         </Link>
       </div>
 
-       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-xl border">
+       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white/10 rounded-xl border border-white/20">
         <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"/>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300"/>
             <input
             type="text"
             placeholder="Search posts by title..."
-            className="border p-2 rounded-lg w-full sm:w-auto flex-grow pl-9"
+            className="border p-2 rounded-lg w-full sm:w-auto flex-grow pl-9 bg-white/10 text-white"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             />
         </div>
         <select
-          className="border p-2 rounded-lg"
+          className="border p-2 rounded-lg bg-white/10 text-white"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -118,9 +118,9 @@ export default function BlogAdminPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+      <div className="bg-white/10 rounded-xl border border-white/20 shadow-sm overflow-hidden">
         <table className="w-full text-left">
-            <thead className="bg-purple-50/50 border-b border-purple-200/80">
+            <thead className="bg-white/20 border-b border-white/30">
                 <tr>
                     <th className="p-4 font-semibold">Title</th>
                     <th className="p-4 font-semibold hidden md:table-cell">Category</th>
@@ -131,18 +131,18 @@ export default function BlogAdminPage() {
             </thead>
             <tbody>
                 {filteredPosts.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center p-8 text-gray-500">No posts found.</td></tr>
+                    <tr><td colSpan={5} className="text-center p-8 text-gray-400">No posts found.</td></tr>
                 ) : (
                     filteredPosts.map(post => (
-                        <tr key={post.id} className="border-b last:border-b-0 border-gray-100">
+                        <tr key={post.id} className="border-b last:border-b-0 border-white/20">
                             <td className="p-4 font-medium">{post.title}</td>
                             <td className="p-4 hidden md:table-cell">{post.category || '—'}</td>
                             <td className="p-4 hidden sm:table-cell">
-                                <span className={`px-2 py-1 text-xs rounded-full ${post.isPublished ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                                <span className={`px-2 py-1 text-xs rounded-full ${post.isPublished ? 'bg-green-600/50 text-green-100' : 'bg-amber-600/50 text-amber-100'}`}>
                                     {post.isPublished ? 'Published' : 'Draft'}
                                 </span>
                             </td>
-                            <td className="p-4 hidden md:table-cell text-sm text-gray-500">{formatDate(post.updatedAt)}</td>
+                            <td className="p-4 hidden md:table-cell text-sm text-gray-400">{formatDate(post.updatedAt)}</td>
                             <td className="p-4 text-right">
                                 <div className="flex justify-end gap-2">
                                      <Link href={`/a2gadmin/blog/edit/${post.id}`} className="px-3 py-1 rounded-md text-sm bg-blue-600 text-white hover:bg-blue-700">Edit</Link>

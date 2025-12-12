@@ -97,14 +97,14 @@ export default function EditNotePage() {
       <h1 className="text-2xl font-bold">Edit Note</h1>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <Input value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" required />
-        <Input value={note.subject} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" />
-        <Input value={note.course} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" />
-        <Input value={note.year} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" />
+        <Input className="bg-white/10" value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" required />
+        <Input className="bg-white/10" value={note.subject} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" />
+        <Input className="bg-white/10" value={note.course} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" />
+        <Input className="bg-white/10" value={note.year} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" />
       </div>
 
        <div className="mb-4">
-          <Input value={note.topic} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" />
+          <Input className="bg-white/10" value={note.topic} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" />
        </div>
 
 

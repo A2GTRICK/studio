@@ -114,7 +114,7 @@ export default function McqAdminPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto text-black">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto text-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">MCQ Sets Manager</h1>
@@ -126,16 +126,16 @@ export default function McqAdminPage() {
         </Link>
       </div>
 
-       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white rounded-xl border">
+       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white/10 rounded-xl border border-white/20">
         <input
           type="text"
           placeholder="Search sets..."
-          className="border p-2 rounded-lg w-full sm:w-auto flex-grow"
+          className="border p-2 rounded-lg w-full sm:w-auto flex-grow bg-white/10"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
-          className="border p-2 rounded-lg"
+          className="border p-2 rounded-lg bg-white/10"
           value={premiumFilter}
           onChange={(e) => setPremiumFilter(e.target.value)}
         >
@@ -144,7 +144,7 @@ export default function McqAdminPage() {
           <option value="free">Free Only</option>
         </select>
         <select
-          className="border p-2 rounded-lg"
+          className="border p-2 rounded-lg bg-white/10"
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
         >
@@ -156,19 +156,19 @@ export default function McqAdminPage() {
 
       <div className="space-y-6">
         {orderedSubjects.length === 0 && (
-          <p className="text-center text-gray-500 mt-10">No MCQ sets found matching your criteria.</p>
+          <p className="text-center text-gray-400 mt-10">No MCQ sets found matching your criteria.</p>
         )}
         
         {orderedSubjects.map(subject => (
-           <section key={subject} className="bg-white rounded-xl border border-purple-200/80 shadow-sm overflow-hidden">
+           <section key={subject} className="bg-white/10 rounded-xl border border-white/20 shadow-sm overflow-hidden">
                 <button 
-                  className="w-full flex items-center justify-between p-4 bg-purple-50/50 border-b border-purple-200/80"
+                  className="w-full flex items-center justify-between p-4 bg-white/20 border-b border-white/30"
                   onClick={() => toggleSubjectExpansion(subject)}
                 >
-                    <h3 className="text-lg font-bold text-purple-900">{subject}</h3>
+                    <h3 className="text-lg font-bold text-white">{subject}</h3>
                     <div className="flex items-center gap-4">
-                        <span className="text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded-full">{groupedAndSortedSets[subject].length} sets</span>
-                        <ChevronDown className={`h-5 w-5 text-purple-700 transition-transform ${expandedSubjects[subject] ? 'rotate-180' : ''}`} />
+                        <span className="text-sm bg-purple-600 text-white px-2 py-1 rounded-full">{groupedAndSortedSets[subject].length} sets</span>
+                        <ChevronDown className={`h-5 w-5 text-purple-300 transition-transform ${expandedSubjects[subject] ? 'rotate-180' : ''}`} />
                     </div>
                 </button>
 
@@ -177,21 +177,21 @@ export default function McqAdminPage() {
                     {groupedAndSortedSets[subject].map((set) => (
                       <div
                         key={set.id}
-                        className="border rounded-xl shadow-sm hover:shadow-lg transition bg-white p-4 flex flex-col"
+                        className="border rounded-xl shadow-sm hover:shadow-lg transition bg-white/5 p-4 flex flex-col"
                       >
                         <div className="flex-grow">
                           <div className="flex justify-between items-start mb-2">
                             <h2 className="font-semibold text-base leading-tight flex-1 pr-2">{set.title}</h2>
                             {set.isPremium && (
-                              <span className="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">Premium</span>
+                              <span className="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full font-medium">Premium</span>
                             )}
                           </div>
-                           <p className="text-sm text-gray-600 line-clamp-2">{set.description || "No description."}</p>
-                           <p className="text-xs text-gray-500 mt-2">{set.course} • {set.year}</p>
-                           <p className="text-xs font-semibold text-purple-700 mt-2">{set.questions?.length || 0} Questions</p>
+                           <p className="text-sm text-gray-300 line-clamp-2">{set.description || "No description."}</p>
+                           <p className="text-xs text-gray-400 mt-2">{set.course} • {set.year}</p>
+                           <p className="text-xs font-semibold text-purple-300 mt-2">{set.questions?.length || 0} Questions</p>
                         </div>
                         
-                        <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-white/10">
                           <p className="text-xs text-gray-400 mb-3">
                             Updated: {formatDate(set.updatedAt)}
                           </p>
