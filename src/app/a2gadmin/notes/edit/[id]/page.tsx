@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Save, FileText, Repeat, Eye, Download } from "lucide-react";
+import { Loader2, Save, FileText, Repeat, Eye, Download, Trash } from "lucide-react";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+
+// ----------------- Types -----------------
 
 type NoteShape = {
   id?: string;
@@ -24,11 +26,11 @@ type NoteShape = {
   [k: string]: any;
 };
 
-// -------------- Smart formatter (from user) --------------
+// -------------- Smart formatter (offline, deterministic) --------------
 function autoFormatMarkdown(input: string) {
   if (!input) return "";
 
-  // normalize CRLF and NFKC (keeps unicode consistent)
+  // normalize newlines and unicode
   let s = input.replace(/\r\n/g, "\n").replace(/\r/g, "\n").normalize();
 
   // split into lines and trim right-side whitespace
@@ -37,44 +39,34 @@ function autoFormatMarkdown(input: string) {
   const outLines: string[] = [];
   const push = (ln: string) => outLines.push(ln);
 
-  // helper tests
   const looksLikeNumbered = (ln: string) => /^\s*\d{1,3}\.\s+/.test(ln);
-  const looksLikeBullet   = (ln: string) => /^\s*[\*\u2022\u25E6\u25CF\-]\s+/.test(ln);
-  const looksLikeAllCaps  = (ln: string) => {
-    // treat short-ish ALL CAPS (or starts with letter+dot like "E. Title") as heading
+  const looksLikeBullet = (ln: string) => /^\s*[\*\u2022\u25E6\u25CF\-]\s+/.test(ln);
+  const looksLikeAllCaps = (ln: string) => {
     const t = ln.trim();
     if (!t) return false;
-    // ignore lines with many punctuation or digits (likely content)
-    if (/[^A-Z0-9\s\.\,&\-\/:()]/.test(t)) return false;
-    // length heuristic  > 3 chars and < 80
+    if (/[^A-Z0-9\s\.\,\&\-\/:\(\)]/.test(t)) return false;
     return /^[A-Z0-9\.\s\-\&\,\/\(\)]+$/.test(t) && t.replace(/[^A-Z0-9]/g, "").length >= 2 && t.length <= 120;
   };
   const looksLikeTitleCase = (ln: string) => {
-    // Title case: many words start with uppercase letter followed by lowercase
     const t = ln.trim();
     if (t.length < 4 || t.length > 120) return false;
     const words = t.split(/\s+/);
     let countTitle = 0;
     for (const w of words) {
-      if (/^[A-Z][a-z0-9\-\']+$/.test(w)) countTitle++;
+      if (/^[A-Z][a-z0-9\-']+$/.test(w)) countTitle++;
     }
     return countTitle >= Math.max(1, Math.floor(words.length / 2));
   };
 
-  // iterate and transform
   for (let i = 0; i < rawLines.length; i++) {
     let line = rawLines[i];
-
-    // trim overall, but keep intentional leading numbering or bullets
     if (line !== "") line = line.replace(/^\s+/, "");
 
-    // convert common bold headings: **Heading** -> heading
+    // bold-only lines -> heading
     const boldHeadingMatch = line.match(/^\s*\*\*(.+?)\*\*\s*$/);
     if (boldHeadingMatch) {
-      // ensure blank line before heading
       if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
       push(`## ${boldHeadingMatch[1].trim()}`);
-      // ensure blank line after heading (we'll add later if next non-empty isn't blank)
       continue;
     }
 
@@ -85,34 +77,31 @@ function autoFormatMarkdown(input: string) {
       continue;
     }
 
-    // lines that look like section titles (E. ... or ALL CAPS) -> heading
+    // capitalized/title heuristics
     if (looksLikeAllCaps(line) || looksLikeTitleCase(line)) {
-      // but avoid turning short list item labels like "ALL THE BEST" when it appears in context as a footer --
-      // we use a simple heuristic: if next non-empty line is a list/number or empty, still convert.
       if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
       push(`## ${line.trim()}`);
       continue;
     }
 
-    // normalize bullets -> "- "
+    // bullets
     if (looksLikeBullet(line)) {
       line = line.replace(/^\s*[\*\u2022\u25E6\u25CF]\s+/, "- ");
       push(line);
       continue;
     }
 
-    // normalize numbered lists: ensure "N. text" with single space
+    // numbered lists
     if (looksLikeNumbered(line)) {
       line = line.replace(/^\s*(\d{1,3})\.\s+/, (_m, n) => `${n}. `);
       push(line);
       continue;
     }
 
-    // keep blank lines but collapse later
     push(line);
   }
 
-  // Post-process: ensure blank line above and below headings and collapse multiple blanks
+  // ensure spacing around headings and collapse multiple blanks
   const withSpacing: string[] = [];
   for (let i = 0; i < outLines.length; i++) {
     const line = outLines[i];
@@ -123,19 +112,14 @@ function autoFormatMarkdown(input: string) {
     })();
 
     if (/^##\s+/.test(line)) {
-      // ensure blank line before heading
       if (prev !== null && prev.trim() !== "") withSpacing.push("");
       withSpacing.push(line.trim());
-      // ensure blank line after heading (but don't add double if next is already blank or heading)
       if (next && !/^##\s+/.test(next) && next.trim() !== "") withSpacing.push("");
       continue;
     }
-
-    // normalize any line with excessive internal spaces
     withSpacing.push(line);
   }
 
-  // collapse runs of >2 blank lines to exactly 2
   let collapsed: string[] = [];
   let blankRun = 0;
   for (const ln of withSpacing) {
@@ -148,14 +132,11 @@ function autoFormatMarkdown(input: string) {
     }
   }
 
-  // final trim of leading/trailing blank lines
   while (collapsed.length && collapsed[0].trim() === "") collapsed.shift();
   while (collapsed.length && collapsed[collapsed.length - 1].trim() === "") collapsed.pop();
 
-  // join and final cleanup: ensure single trailing newline
   return collapsed.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
 }
-
 
 // Generate TOC from formatted markdown (only lines starting with ## )
 function generateTOC(markdown: string) {
@@ -189,6 +170,42 @@ function diffLines(left: string, right: string) {
   return out;
 }
 
+// ----------------- Minimal markdown -> HTML renderer (keeps work offline) -----------------
+function renderMarkdownToHtml(md: string) {
+  if (!md) return "";
+  // escape
+  let html = md.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // headings
+  html = html.replace(/^##\s+(.+)$/gm, (_, h) => {
+    const id = String(h).toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
+    return `<h2 id="${id}">${h}</h2>`;
+  });
+
+  // bold
+  html = html.replace(/\*\*(.+?)\*\*/g, (_, b) => `<strong>${b}</strong>`);
+
+  // inline code
+  html = html.replace(/`([^`]+?)`/g, (_, c) => `<code>${c}</code>`);
+
+  // links
+  html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, t, u) => `<a href="${u}" rel="noreferrer noopener">${t}</a>`);
+
+  // bullets -> <li>
+  html = html.replace(/^\s*-\s+(.+)$/gm, (_, t) => `<li>${t}</li>`);
+  html = html.replace(/(<li>.*?<\/li>\s*)+/gms, (m) => `<ul>${m}</ul>`);
+
+  // numbered
+  html = html.replace(/^(\d+)\.\s+(.+)$/gm, (_, n, t) => `<li>${t}</li>`);
+  html = html.replace(/(<li>.*?<\/li>\s*)+/gms, (m) => `<ol>${m}</ol>`);
+
+  // paragraphs: any line not wrapped
+  const lines = html.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  html = lines.join("\n").replace(/(<h2>.*?<\/h2>|<ul>.*?<\/ul>|<ol>.*?<\/ol>)/gms, (m) => m + "\n");
+  return html;
+}
+
+// ----------------- Component -----------------
 export default function EditNotePageClient() {
   const params = useParams() as any;
   const rawId = params?.id;
@@ -208,18 +225,20 @@ export default function EditNotePageClient() {
     content: "",
   });
 
-  // version history (in-memory); admin can persist external if desired
+  // version history (in-memory)
   const [history, setHistory] = useState<string[]>([]);
 
   // diff modal
   const [diffOpen, setDiffOpen] = useState(false);
   const [formattedPreview, setFormattedPreview] = useState("");
-  const [formatLevel, setFormatLevel] = useState<0 | 1 | 2>(2);
 
   // reader preview mode
   const [readerOpen, setReaderOpen] = useState(false);
 
   const contentRef = useRef<HTMLDivElement | null>(null);
+
+  // Local storage draft key
+  const draftKey = `a2g:note:draft:${id}`;
 
   useEffect(() => {
     if (!id) {
@@ -242,6 +261,12 @@ export default function EditNotePageClient() {
         else if (payload?.id) n = payload;
         if (!n) throw new Error("Note not found from API");
         if (!mounted) return;
+
+        const incomingContent = n.content ?? n.notes ?? "";
+        // if a draft exists in localStorage, prefer it (admin might have unsaved work)
+        const local = typeof window !== 'undefined' ? localStorage.getItem(draftKey) : null;
+        const contentToUse = local ?? incomingContent;
+
         setNote({
           id: n.id,
           title: n.title ?? "",
@@ -250,11 +275,11 @@ export default function EditNotePageClient() {
           year: n.year ?? "",
           topic: n.topic ?? "",
           isPremium: !!n.isPremium,
-          content: n.content ?? n.notes ?? "",
+          content: contentToUse,
           attachments: Array.isArray(n.attachments) ? n.attachments : [],
           ...n,
         });
-        setHistory([(n.content ?? "")]);
+        setHistory([(incomingContent ?? "")]);
         setMsg(null);
       } catch (err: any) {
         console.error("Load note error:", err);
@@ -267,6 +292,19 @@ export default function EditNotePageClient() {
       mounted = false;
     };
   }, [id]);
+
+  // autosave draft locally (lightweight)
+  useEffect(() => {
+    if (!id) return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, note.content ?? "");
+      } catch (e) {
+        // ignore storage errors
+      }
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [note.content, id]);
 
   async function saveNote(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -292,6 +330,8 @@ export default function EditNotePageClient() {
       }
       setMsg("Note updated successfully.");
       setHistory((h) => [note.content ?? "", ...h].slice(0, 20));
+      // remove draft on successful save
+      try { localStorage.removeItem(draftKey); } catch (e) {}
     } catch (err: any) {
       console.error("Save error:", err);
       setMsg(String(err.message ?? "Save failed"));
@@ -300,6 +340,7 @@ export default function EditNotePageClient() {
     }
   }
 
+  // Manual apply auto-format (Option C: formatting only via button)
   function applyAutoFormat() {
     const formatted = autoFormatMarkdown(note.content || "");
     setFormattedPreview(formatted);
@@ -312,6 +353,7 @@ export default function EditNotePageClient() {
       setNote({ ...note, content: formattedPreview });
       setMsg("Auto-format accepted. Please save to persist.");
     }
+    setFormattedPreview("");
     setDiffOpen(false);
   }
   function rejectFormatted() {
@@ -344,7 +386,6 @@ export default function EditNotePageClient() {
   }
 
   function stripMarkdown(md: string) {
-    // naive stripper for quick plain text export
     return md
       .replace(/^##\s+/gm, "")
       .replace(/\*\*(.+?)\*\*/g, "$1")
@@ -398,6 +439,7 @@ export default function EditNotePageClient() {
           <div className="flex items-center justify-between mb-2">
             <label className="block font-semibold text-sm">Content</label>
             <div className="flex items-center gap-2">
+              {/* Option C: manual button only for auto-format */}
               <Button type="button" variant="outline" size="sm" onClick={() => applyAutoFormat()}>
                 Auto-format (non-AI)
               </Button>
@@ -412,7 +454,7 @@ export default function EditNotePageClient() {
           </div>
         </div>
 
-        <aside style={{ width: 320 }} className="hidden md:block">
+        <aside style={{ width: 320 }} className="hidden md:block sticky top-6">
           <div className="p-4 border rounded bg-white shadow-sm">
             <h3 className="font-semibold mb-2">Quick Actions</h3>
             <div className="flex flex-col gap-2">
@@ -431,6 +473,9 @@ export default function EditNotePageClient() {
               <Button type="button" onClick={undoVersion}>
                 Undo (last)
               </Button>
+              <Button type="button" variant="destructive" onClick={() => { if (confirm('Clear content? This will remove local draft and editor content.')) { setNote({ ...note, content: '' }); try { localStorage.removeItem(draftKey); } catch(e){} setMsg('Content cleared (local)'); } }}>
+                <Trash className="w-4 h-4 mr-2" /> Clear
+              </Button>
             </div>
 
             <div className="mt-4">
@@ -438,7 +483,7 @@ export default function EditNotePageClient() {
               <div className="mt-2 max-h-64 overflow-auto text-sm">
                 {toc.length === 0 ? <div className="text-muted">No headings found.</div> : (
                   <ol className="list-decimal list-inside">
-                    {toc.map((t) => <li key={t.anchor}><a href={`#${t.anchor}`}>{t.text}</a></li>)}
+                    {toc.map((t) => <li key={t.anchor}><a href={`#${t.anchor}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(t.anchor); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>{t.text}</a></li>)}
                   </ol>
                 )}
               </div>
@@ -495,7 +540,6 @@ export default function EditNotePageClient() {
               <Button type="button" variant="ghost" onClick={() => setReaderOpen(false)}>Close</Button>
             </div>
             <div className="prose max-w-none">
-              {/* Use the MD editor's preview component raw or simple replace of headings */}
               <div dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(note.content || "") }} />
             </div>
           </div>
@@ -504,32 +548,4 @@ export default function EditNotePageClient() {
 
     </form>
   );
-}
-
-// lightweight markdown -> html renderer for preview (keeps dependencies out)
-function renderMarkdownToHtml(md: string) {
-  if (!md) return "";
-  // minimal conversions: headings, lists, paragraphs, bold
-  let html = md
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
-  // headings
-  html = html.replace(/^##\s+(.+)$/gm, (_, h) => `<h2 id="${h.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g,'-')}">${h}</h2>`);
-  // numbered list -> wrap later
-  // bullets
-  html = html.replace(/^\-\s+(.+)$/gm, (_, t) => `<li>${t}</li>`);
-  // wrap list items into <ul>
-  html = html.replace(/(<li>.*?<\/li>\s*)+/gms, (m) => `<ul>${m}</ul>`);
-  // numbered
-  html = html.replace(/^(\d+)\.\s+(.+)$/gm, (_, n, t) => `<li>${t}</li>`);
-  // ordered lists
-  html = html.replace(/(<li>.*?<\/li>\s*)+/gms, (m) => `<ol>${m}</ol>`);
-  // bold
-  html = html.replace(/\*\*(.+?)\*\*/g, (_, b) => `<strong>${b}</strong>`);
-  // paragraphs: any line not wrapped
-  const lines = html.split(/\n/).map(l => l.trim()).filter(Boolean);
-  html = lines.join("\n").replace(/(<h2>.*?<\/h2>|<ul>.*?<\/ul>|<ol>.*?<\/ol>)/gms, (m) => m + "\n");
-  return html;
 }
