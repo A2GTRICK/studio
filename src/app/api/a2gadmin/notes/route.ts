@@ -1,4 +1,6 @@
 // src/app/api/a2gadmin/notes/route.ts
+'use server';
+
 import { NextResponse, type NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { isAdminAuthenticated } from "@/lib/verifyAdminSession";
