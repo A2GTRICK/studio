@@ -1,4 +1,3 @@
-
 // src/app/a2gadmin/mcq/edit/[id]/page.tsx
 "use client";
 
@@ -123,7 +122,6 @@ export default function EditMcqSetPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-        credentials: "include",
       });
 
       const data = await res.json();
@@ -131,7 +129,6 @@ export default function EditMcqSetPage() {
         setMsg(data.error || "Failed to update MCQ set.");
       } else {
         setMsg("MCQ set updated successfully!");
-        // Optionally, refetch or update local state if needed after save
       }
     } catch (err: any) {
       setMsg("A network or server error occurred.");

@@ -1,4 +1,3 @@
-
 // src/app/a2gadmin/blog/edit/[id]/page.tsx
 "use client";
 
@@ -91,6 +90,7 @@ export default function EditBlogPage() {
       const payload = {
         ...post,
         tags: post.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        slug: slugify(post.slug)
       };
 
       const res = await fetch(`/api/a2gadmin/blog?id=${id}`, {
@@ -169,7 +169,7 @@ export default function EditBlogPage() {
         
         <div className="p-6 bg-white/10 rounded-lg border border-white/20">
           <h2 className="text-lg font-semibold mb-2">Content (Markdown)</h2>
-          <div className="bg-white/5 p-2 rounded">
+          <div className="bg-white/5 p-2 rounded" data-color-mode="dark">
             <MDEditor value={post.content} onChange={(v = "") => setPost(p => ({ ...p, content: v }))} height={500} />
           </div>
         </div>

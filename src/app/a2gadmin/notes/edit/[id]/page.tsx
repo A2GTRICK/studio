@@ -5,6 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Loader2, Save } from "lucide-react";
 
 // Load MDEditor CLIENT-SIDE ONLY
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
@@ -14,6 +17,8 @@ export default function EditNotePage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
   const [note, setNote] = useState<any>({
     title: "",
     subject: "",
@@ -45,9 +50,12 @@ export default function EditNotePage() {
             isPremium: data.note.isPremium || false,
             content: data.note.content || "",
           });
+        } else {
+            setMsg(data.error || "Failed to load note");
         }
       } catch (err) {
         console.error("Failed to load note", err);
+        setMsg("Network error loading note.");
       }
 
       setLoading(false);
@@ -59,49 +67,50 @@ export default function EditNotePage() {
   // ----------------------------------------------------
   // SAVE/UPDATE NOTE
   // ----------------------------------------------------
-  async function saveNote() {
-    const formData = new FormData();
+  async function saveNote(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setMsg("");
+    
+    try {
+        const res = await fetch(`/api/a2gadmin/notes?id=${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(note),
+        });
 
-    formData.append("title", note.title);
-    formData.append("subject", note.subject);
-    formData.append("course", note.course);
-    formData.append("year", note.year);
-    formData.append("topic", note.topic);
-    formData.append("content", note.content);
-    formData.append("isPremium", note.isPremium ? "true" : "false");
-
-    const res = await fetch(`/api/a2gadmin/notes?id=${id}`, {
-      method: "PUT",
-      body: formData,
-    });
-
-    if (res.ok) {
-      alert("Note updated successfully!");
-      router.push("/a2gadmin/notes");
-    } else {
-      alert("Update failed!");
+        if (res.ok) {
+            setMsg("Note updated successfully!");
+        } else {
+            const data = await res.json();
+            setMsg(`Update failed: ${data.error}`);
+        }
+    } catch (err) {
+        setMsg("A network error occurred.");
+    } finally {
+        setSaving(false);
     }
   }
   
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-6 text-center"><Loader2 className="animate-spin w-8 h-8" /></div>;
 
   return (
-    <div className="text-white max-w-5xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Edit Note</h1>
+    <form onSubmit={saveNote} className="text-white max-w-5xl mx-auto p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Edit Note</h1>
 
-      <div className="grid md:grid-cols-2 gap-4 mb-4">
-        <input value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" className="p-3 rounded bg-white/10 w-full" required />
-        <input value={note.subject} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" className="p-3 rounded bg-white/10 w-full" />
-        <input value={note.course} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" className="p-3 rounded bg-white/10 w-full" />
-        <input value={note.year} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" className="p-3 rounded bg-white/10 w-full" />
+      <div className="grid md:grid-cols-2 gap-4">
+        <Input value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" required />
+        <Input value={note.subject} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" />
+        <Input value={note.course} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" />
+        <Input value={note.year} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" />
       </div>
 
        <div className="mb-4">
-          <input value={note.topic} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" className="p-3 rounded bg-white/10 w-full" />
+          <Input value={note.topic} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" />
        </div>
 
 
-      <label className="flex items-center gap-3 mb-4">
+      <label className="flex items-center gap-3">
         <input
           type="checkbox"
           checked={note.isPremium}
@@ -113,21 +122,28 @@ export default function EditNotePage() {
       </label>
 
       {/* Content Editor */}
-      <label className="block mb-2 font-semibold">Content</label>
-      <div className="bg-white/5 p-2 rounded mb-6">
-        <MDEditor
-          value={note.content}
-          onChange={(v = "") => setNote({ ...note, content: String(v) })}
-          height={400}
-        />
+      <div>
+        <label className="block mb-2 font-semibold">Content</label>
+        <div className="bg-white/5 p-2 rounded">
+            <MDEditor
+            value={note.content}
+            onChange={(v = "") => setNote({ ...note, content: String(v) })}
+            height={400}
+            />
+        </div>
       </div>
-
-      <button
-        onClick={saveNote}
-        className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700"
-      >
-        Save Changes
-      </button>
-    </div>
+      
+      <div className="flex items-center gap-4">
+        <Button
+            type="submit"
+            disabled={saving}
+            className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700"
+        >
+            {saving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
+            {saving ? "Saving..." : "Save Changes"}
+        </Button>
+        {msg && <span className="text-sm">{msg}</span>}
+      </div>
+    </form>
   );
 }

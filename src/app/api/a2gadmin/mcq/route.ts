@@ -1,42 +1,32 @@
 // src/app/api/a2gadmin/mcq/route.ts
-export const dynamic = "force-dynamic";
-
 import { NextResponse, type NextRequest } from "next/server";
-import { db } from "@/firebase/config";
-import {
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  orderBy,
-  query,
-  serverTimestamp,
-} from "firebase/firestore";
+import { adminDb } from "@/lib/firebaseAdmin";
+import { isAdminAuthenticated } from "@/lib/verifyAdminSession";
+import { Timestamp } from "firebase-admin/firestore";
 
-const COLLECTION_NAME = "mcqSets";
+export const dynamic = "force-dynamic";
 
 // GET all or a single MCQ set
 export async function GET(req: NextRequest) {
+  if (!isAdminAuthenticated()) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
     if (id) {
       // Get single document
-      const docRef = doc(db, COLLECTION_NAME, id);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) {
+      const docRef = adminDb.collection("mcqSets").doc(id);
+      const docSnap = await docRef.get();
+      if (!docSnap.exists) {
         return NextResponse.json({ error: "MCQ set not found" }, { status: 404 });
       }
       return NextResponse.json({ set: { id: docSnap.id, ...docSnap.data() } });
     }
 
     // Get all documents
-    const q = query(collection(db, COLLECTION_NAME), orderBy("updatedAt", "desc"));
-    const snapshot = await getDocs(q);
+    const snapshot = await adminDb.collection("mcqSets").orderBy("createdAt", "desc").get();
     const sets = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     return NextResponse.json({ sets });
 
@@ -48,6 +38,9 @@ export async function GET(req: NextRequest) {
 
 // CREATE a new MCQ set
 export async function POST(req: NextRequest) {
+    if (!isAdminAuthenticated()) {
+        return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
   try {
     const body = await req.json();
     const { title, course, subject, questions, isPublished } = body;
@@ -64,11 +57,11 @@ export async function POST(req: NextRequest) {
       isPublished: isPublished === true, // Ensure it's a boolean, default to false
       questions: processedQuestions,
       questionCount: processedQuestions.length,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
     };
 
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), newSet);
+    const docRef = await adminDb.collection("mcqSets").add(newSet);
     return NextResponse.json({ id: docRef.id }, { status: 201 });
 
   } catch (err: any) {
@@ -79,6 +72,9 @@ export async function POST(req: NextRequest) {
 
 // UPDATE an existing MCQ set
 export async function PUT(req: NextRequest) {
+    if (!isAdminAuthenticated()) {
+        return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
     try {
         const url = new URL(req.url);
         const id = url.searchParams.get("id");
@@ -94,15 +90,15 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "Title, Course, and Subject are required." }, { status: 400 });
         }
         
-        const docRef = doc(db, COLLECTION_NAME, id);
+        const docRef = adminDb.collection("mcqSets").doc(id);
 
         const updatedData = {
             ...body,
             questionCount: body.questions?.length || 0,
-            updatedAt: serverTimestamp(),
+            updatedAt: Timestamp.now(),
         };
 
-        await updateDoc(docRef, updatedData);
+        await docRef.update(updatedData);
 
         return NextResponse.json({ ok: true });
 
@@ -115,6 +111,9 @@ export async function PUT(req: NextRequest) {
 
 // DELETE an MCQ set
 export async function DELETE(req: NextRequest) {
+    if (!isAdminAuthenticated()) {
+        return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
@@ -123,7 +122,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "MCQ set ID is required for deletion." }, { status: 400 });
     }
 
-    await deleteDoc(doc(db, COLLECTION_NAME, id));
+    await adminDb.collection("mcqSets").doc(id).delete();
     return NextResponse.json({ ok: true });
 
   } catch (err: any) {

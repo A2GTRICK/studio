@@ -1,293 +1,114 @@
-
 // src/app/api/a2gadmin/notes/route.ts
+import { NextResponse, type NextRequest } from "next/server";
+import { adminDb } from "@/lib/firebaseAdmin";
+import { isAdminAuthenticated } from "@/lib/verifyAdminSession";
+import { Timestamp } from "firebase-admin/firestore";
+
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { v4 as uuidv4 } from "uuid";
-import { db, storage } from "@/firebase/config";
-import {
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  orderBy,
-  query,
-  serverTimestamp,
-} from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-
-
-// -------------------------
-// FILE UPLOAD HELPER
-// -------------------------
-async function uploadFileToStorage(path: string, file: File) {
-  const fileRef = ref(storage, path);
-  const arrayBuffer = await file.arrayBuffer();
-  await uploadBytes(fileRef, arrayBuffer, {
-    contentType: file.type,
-  });
-  return getDownloadURL(fileRef);
-}
-
-function sanitizeString(v: any) {
-  if (v === undefined || v === null) return "";
-  return typeof v === "string" ? v : String(v);
-}
-
-// -------------------------
-// GET ALL NOTES
-// -------------------------
+// GET all or a single note
 export async function GET(req: NextRequest) {
+  if (!isAdminAuthenticated()) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
-    // GET SINGLE NOTE
     if (id) {
-      const docRef = doc(db, "notes", id);
-      const docSnap = await getDoc(docRef);
-
-      if (!docSnap.exists()) {
+      // Get single document
+      const docRef = adminDb.collection("notes").doc(id);
+      const docSnap = await docRef.get();
+      if (!docSnap.exists) {
         return NextResponse.json({ error: "Note not found" }, { status: 404 });
       }
-
-      const data = docSnap.data();
-      return NextResponse.json({
-        note: {
-          id: docSnap.id,
-          ...data,
-          createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : null,
-        },
-      });
+      return NextResponse.json({ note: { id: docSnap.id, ...docSnap.data() } });
     }
 
-    // GET ALL NOTES
-    const q = query(collection(db, "notes"), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-
-    const notes = snapshot.docs.map((d) => {
-      const data = d.data();
-      return {
-        id: d.id,
-        ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : null,
-      };
-    });
-
+    // Get all documents
+    const snapshot = await adminDb.collection("notes").orderBy("createdAt", "desc").get();
+    const notes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     return NextResponse.json({ notes });
 
   } catch (err: any) {
     console.error("Admin GET notes error:", err);
-    return NextResponse.json(
-      { error: err.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Server error occurred while fetching notes" }, { status: 500 });
   }
 }
 
-// -------------------------
-// CREATE NOTE
-// -------------------------
-export async function POST(req: NextRequest) {
+// CREATE a new note
+export async function POST(req: Request) {
+  if (!isAdminAuthenticated()) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+
   try {
-    const form = await req.formData();
+    const payload = await req.json();
 
-    const title = sanitizeString(form.get("title"));
-    const subject = sanitizeString(form.get("subject"));
-    const course = sanitizeString(form.get("course"));
-    const year = sanitizeString(form.get("year"));
-    const topic = sanitizeString(form.get("topic"));
-    const universitySyllabus = sanitizeString(
-      form.get("universitySyllabus")
-    );
-    const short = sanitizeString(form.get("short"));
-    const isPremium =
-      form.get("isPremium") === "true" || form.get("isPremium") === "on";
-    const content = sanitizeString(
-      form.get("content") || form.get("notes") || ""
-    );
-
-    let externalLinks: any[] = [];
-    const ext = form.get("externalLinks");
-    if (ext) {
-      try {
-        externalLinks =
-          typeof ext === "string" ? JSON.parse(ext) : JSON.parse(String(ext));
-      } catch {
-        externalLinks = [];
-      }
-    }
-
-    const docRef = await addDoc(collection(db, "notes"), {
-      title,
-      subject,
-      course,
-      year,
-      topic,
-      universitySyllabus,
-      short,
-      isPremium,
-      content,
-      notes: content,
-      attachments: [],
-      externalLinks,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+    const newDoc = await adminDb.collection("notes").add({
+      ...payload,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
     });
 
-    const noteId = docRef.id;
-    const attachments: string[] = [];
-
-    for (const [, value] of (form as any).entries()) {
-      if (value instanceof File && value.size > 0) {
-        const filename = `${Date.now()}-${uuidv4()}-${value.name}`;
-        const path = `notes/${noteId}/${filename}`;
-        const url = await uploadFileToStorage(path, value);
-        attachments.push(url);
-      }
-    }
-
-    if (attachments.length) {
-      await updateDoc(docRef, { attachments });
-    }
-
-    return NextResponse.json({ id: noteId }, { status: 201 });
+    return NextResponse.json({ id: newDoc.id }, { status: 201 });
   } catch (err: any) {
     console.error("Admin POST notes error:", err);
-    return NextResponse.json(
-      { error: err.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
   }
 }
 
-// -------------------------
-// UPDATE NOTE
-// -------------------------
+// UPDATE an existing note
 export async function PUT(req: NextRequest) {
+  if (!isAdminAuthenticated()) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+  
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    if (!id)
-      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: "Note ID is required for update." }, { status: 400 });
+    }
 
-    const form = await req.formData();
+    const payload = await req.json();
+    
+    const docRef = adminDb.collection("notes").doc(id);
 
-    const docRef = doc(db, "notes", id);
-    const snap = await getDoc(docRef);
-    if (!snap.exists)
-      return NextResponse.json({ error: "Note not found" }, { status: 404 });
-
-    const updates: any = {};
-
-    const fields = [
-      "title",
-      "subject",
-      "course",
-      "year",
-      "topic",
-      "universitySyllabus",
-      "short",
-    ];
-
-    fields.forEach((f) => {
-      if (form.get(f) !== null) updates[f] = sanitizeString(form.get(f));
+    await docRef.update({
+      ...payload,
+      updatedAt: Timestamp.now(),
     });
 
-    if (form.get("isPremium") !== null)
-      updates.isPremium =
-        form.get("isPremium") === "true" || form.get("isPremium") === "on";
+    return NextResponse.json({ id, message: "Note updated successfully" });
 
-    if (form.get("content") !== null) {
-      updates.content = sanitizeString(form.get("content"));
-      updates.notes = updates.content;
-    }
-
-    if (form.get("externalLinks") !== null) {
-      try {
-        updates.externalLinks = JSON.parse(String(form.get("externalLinks")));
-      } catch {
-        updates.externalLinks = [];
-      }
-    }
-
-    const existing = snap.data() || {};
-    const existingAttachments: string[] = Array.isArray(existing.attachments)
-      ? existing.attachments
-      : [];
-
-    const newAttachments: string[] = [];
-
-    for (const [, value] of (form as any).entries()) {
-      if (value instanceof File && value.size > 0) {
-        const filename = `${Date.now()}-${uuidv4()}-${value.name}`;
-        const path = `notes/${id}/${filename}`;
-        const url = await uploadFileToStorage(path, value);
-        newAttachments.push(url);
-      }
-    }
-
-    if (newAttachments.length)
-      updates.attachments = [...existingAttachments, ...newAttachments];
-
-    updates.updatedAt = serverTimestamp();
-
-    await updateDoc(docRef, updates);
-
-    return NextResponse.json({ ok: true });
   } catch (err: any) {
     console.error("Admin PUT notes error:", err);
-    return NextResponse.json(
-      { error: err.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Server error during note update." }, { status: 500 });
   }
 }
 
-// -------------------------
-// DELETE NOTE
-// -------------------------
+
+// DELETE a note
 export async function DELETE(req: NextRequest) {
+  if (!isAdminAuthenticated()) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    if (!id)
-      return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    const docRef = doc(db, "notes", id);
-    const snap = await getDoc(docRef);
-    if (!snap.exists())
-      return NextResponse.json({ error: "Note not found" }, { status: 404 });
-
-    const data = snap.data() || {};
-    const attachments: string[] = Array.isArray(data.attachments)
-      ? data.attachments
-      : [];
-
-    for (const fileUrl of attachments) {
-      try {
-        const fileRef = ref(storage, fileUrl);
-        await deleteObject(fileRef);
-      } catch (e: any) {
-        if (e.code !== 'storage/object-not-found') {
-          console.warn("Failed to delete file:", fileUrl, e);
-        }
-      }
+    if (!id) {
+      return NextResponse.json({ error: "Note ID is required for deletion." }, { status: 400 });
     }
 
-    await deleteDoc(docRef);
+    await adminDb.collection("notes").doc(id).delete();
+    return NextResponse.json({ message: "Note deleted successfully" });
 
-    return NextResponse.json({ ok: true });
   } catch (err: any) {
     console.error("Admin DELETE notes error:", err);
-    return NextResponse.json(
-      { error: err.message || "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Server error during note deletion." }, { status: 500 });
   }
 }
