@@ -44,12 +44,6 @@ export default function DashboardLayout({
                         ))}
                     </div>
                 </nav>
-                 <div className="mt-auto p-4 border-t">
-                    <Button variant="ghost" className="w-full justify-start">
-                        <UserCircle className="mr-2 h-4 w-4" />
-                        Profile
-                    </Button>
-                </div>
             </aside>
             
             {/* Main Content */}
