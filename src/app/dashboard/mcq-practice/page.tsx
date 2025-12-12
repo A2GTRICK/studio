@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -123,7 +124,7 @@ export default function MCQPracticePage() {
           {filtered.map((s) => (
             <MCQCard
               key={s.id}
-              data={s}
+              set={s}
               onStart={() => openPlayer(s)}
             />
           ))}
