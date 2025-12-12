@@ -24,32 +24,32 @@ export default function DashboardLayout({
              <SidebarMenu>
                  <SidebarMenuItem>
                     <Link href="/dashboard" passHref>
-                      <SidebarMenuButton left={<LayoutDashboard />}>Dashboard</SidebarMenuButton>
+                      <SidebarMenuButton asChild left={<LayoutDashboard />}>Dashboard</SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                     <Link href="/dashboard/notes" passHref>
-                      <SidebarMenuButton left={<BookOpen />}>Notes</SidebarMenuButton>
+                      <SidebarMenuButton asChild left={<BookOpen />}>Notes</SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                     <Link href="/dashboard/mcq-practice" passHref>
-                      <SidebarMenuButton left={<DraftingCompass />}>MCQ Practice</SidebarMenuButton>
+                      <SidebarMenuButton asChild left={<DraftingCompass />}>MCQ Practice</SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                     <Link href="/dashboard/mock-test" passHref>
-                      <SidebarMenuButton left={<BarChart3 />}>Mock Test</SidebarMenuButton>
+                      <SidebarMenuButton asChild left={<BarChart3 />}>Mock Test</SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                     <Link href="/dashboard/services" passHref>
-                      <SidebarMenuButton left={<HelpingHand />}>Services</SidebarMenuButton>
+                      <SidebarMenuButton asChild left={<HelpingHand />}>Services</SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <Link href="/dashboard/settings" passHref>
-                      <SidebarMenuButton left={<Settings />}>Settings</SidebarMenuButton>
+                      <SidebarMenuButton asChild left={<Settings />}>Settings</SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
             </SidebarMenu>
