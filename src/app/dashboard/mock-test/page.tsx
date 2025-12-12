@@ -189,18 +189,15 @@ export default function PremiumMCQPracticePage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((s: MCQSet) => (
-            <div
+              <div
                 key={s.id}
                 onClick={() => setPreview(s)}
-                className="p-4 bg-white border rounded shadow hover:shadow-lg transition cursor-pointer"
-            >
-                <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-lg">{s.title}</h3>
-                {s.isPremium && <Star className="w-5 h-5 text-amber-500" />}
-                </div>
-                <p className="text-sm text-gray-600">{s.subject} • {s.course}</p>
-                <p className="text-sm mt-2">Questions: {s.questions.length}</p>
-            </div>
+                className="p-4 bg-white border rounded shadow-sm hover:shadow-md transition cursor-pointer"
+              >
+                  <h3 className="font-semibold text-gray-800">{s.title}</h3>
+                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">{s.description || `${s.subject} • ${s.course}`}</p>
+                  <p className="text-xs text-gray-400 mt-2">Questions: {s.questions?.length || 0}</p>
+              </div>
             ))}
         </div>
       )}
