@@ -1,4 +1,6 @@
-// src/app/a2gadmin/mcq/create/page.tsx
+// Combined MCQ Create + Edit (Premium) — upgraded with auto-validated correct-answer dropdown (Option C UI) and improved validation
+
+// File: src/app/a2gadmin/mcq/create/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -12,8 +14,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 type Question = {
   id: string;
@@ -73,9 +79,7 @@ export default function CreateMcqSetPage() {
     ]);
   };
 
-  const removeQuestion = (id: string) => {
-    setQuestions(questions.filter((q) => q.id !== id));
-  };
+  const removeQuestion = (id: string) => setQuestions(questions.filter((q) => q.id !== id));
 
   const handleQuestionChange = (id: string, field: keyof Question, value: any) => {
     setQuestions(
@@ -88,79 +92,92 @@ export default function CreateMcqSetPage() {
           if (q.id === qId) {
               const newOptions = [...q.options];
               newOptions[optIndex] = value;
+              // if the option changed and it no longer matches the stored correctAnswer, clear correctAnswer
+              const currentCorrect = q.correctAnswer?.trim();
+              if (currentCorrect && !newOptions.map(o => o.trim()).includes(currentCorrect)) {
+                return { ...q, options: newOptions, correctAnswer: "" };
+              }
               return { ...q, options: newOptions };
           }
           return q;
       }));
   };
 
+  // Bulk parse (existing logic) — returns array of questions
   const handleBulkParse = () => {
     const blocks = bulkText.trim().split(/\n\s*\n/);
     const newQuestions: Question[] = [];
     let errors = 0;
 
     blocks.forEach(block => {
-        const lines = block.split('\n').filter(line => line.trim() !== '');
-        if (lines.length < 7) {
-            errors++;
-            return;
-        }
+        const lines = block.split('\n').map(l=>l.trim()).filter(l=>l);
+        if (lines.length < 3) { errors++; return; }
 
-        const questionLine = lines.find(l => l.startsWith('Q:'));
-        const optionA = lines.find(l => l.startsWith('A:'));
-        const optionB = lines.find(l => l.startsWith('B:'));
-        const optionC = lines.find(l => l.startsWith('C:'));
-        const optionD = lines.find(l => l.startsWith('D:'));
-        const answerLine = lines.find(l => l.startsWith('ANSWER:'));
-        const explainLine = lines.find(l => l.startsWith('EXPLAIN:'));
+        const questionLine = lines.find(l => /^Q[:\.]/i.test(l));
+        const optionA = lines.find(l => /^A[:\.]/i.test(l));
+        const optionB = lines.find(l => /^B[:\.]/i.test(l));
+        const optionC = lines.find(l => /^C[:\.]/i.test(l));
+        const optionD = lines.find(l => /^D[:\.]/i.test(l));
+        const answerLine = lines.find(l => /^(?:ANSWER|Correct)[:\.]/i.test(l));
+        const explainLine = lines.find(l => /^(?:EXPLAIN|Explanation)[:\.]/i.test(l));
 
-        if (!questionLine || !optionA || !optionB || !optionC || !optionD || !answerLine || !explainLine) {
-            errors++;
-            return;
-        }
+        if (!questionLine || !optionA || !optionB || !optionC || !optionD || !answerLine) { errors++; return; }
 
         const optionsMap: { [key: string]: string } = {
-            'A': optionA.substring(2).trim(),
-            'B': optionB.substring(2).trim(),
-            'C': optionC.substring(2).trim(),
-            'D': optionD.substring(2).trim(),
+            'A': optionA.replace(/^A[:\.]\s*/i,'').trim(),
+            'B': optionB.replace(/^B[:\.]\s*/i,'').trim(),
+            'C': optionC.replace(/^C[:\.]\s*/i,'').trim(),
+            'D': optionD.replace(/^D[:\.]\s*/i,'').trim(),
         };
 
-        const answerKey = answerLine.substring(7).trim();
+        const answerKey = answerLine.replace(/^(?:ANSWER|Correct)[:\.]\s*/i,'').trim().charAt(0).toUpperCase();
         const correctAnswer = optionsMap[answerKey];
-        
-        if (!correctAnswer) {
-            errors++;
-            return;
-        }
+
+        if (!correctAnswer) { errors++; return; }
 
         newQuestions.push({
             id: uuidv4(),
-            question: questionLine.substring(2).trim(),
+            question: questionLine.replace(/^Q[:\.]\s*/i,'').trim(),
             options: Object.values(optionsMap),
             correctAnswer: correctAnswer,
-            explanation: explainLine.substring(8).trim(),
+            explanation: explainLine ? explainLine.replace(/^(?:EXPLAIN|Explanation)[:\.]\s*/i,'').trim() : '',
             topic: "",
             difficulty: "Medium",
         });
     });
     
-    if (newQuestions.length > 0) {
-        setQuestions(prev => [...prev, ...newQuestions]);
-    }
+    if (newQuestions.length > 0) setQuestions(prev => [...prev, ...newQuestions]);
 
     setBulkText("");
     alert(`${newQuestions.length} questions added successfully. ${errors > 0 ? `${errors} blocks had incorrect format and were skipped.` : ''}`);
   };
 
+  function isQuestionValid(q: Question) {
+    if (!q.question.trim()) return false;
+    const hasOption = q.options.some(o => o && o.trim());
+    if (!hasOption) return false;
+    if (!q.correctAnswer || !q.options.map(o=>o.trim()).includes(q.correctAnswer.trim())) return false;
+    return true;
+  }
+
+  function isAllValid() {
+    if (!title || !course || !subject) return false;
+    if (questions.length === 0) return true; // allow empty set creation if desired
+    return questions.every(isQuestionValid);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setMsg("");
-    
     if (!title || !course || !subject) {
       setMsg("Title, Course, and Subject are required.");
+      setLoading(false);
+      return;
+    }
+
+    if (!isAllValid()) {
+      setMsg('Some questions are invalid. Please complete all questions and select correct answers.');
       setLoading(false);
       return;
     }
@@ -169,29 +186,19 @@ export default function CreateMcqSetPage() {
       title, course, subject, year, description, isPremium, isPublished,
       questionCount: questions.length,
       questions,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
     try {
-        const res = await fetch('/api/a2gadmin/mcq', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || 'Failed to create MCQ set');
-        }
-
-        const { id } = await res.json();
-        setMsg("MCQ set created successfully!");
-        router.push(`/a2gadmin/mcq/edit/${id}`);
-
-    } catch (err: any) {
-        setMsg(`An error occurred: ${err.message}`);
-    } finally {
-        setLoading(false);
-    }
+      const docRef = await addDoc(collection(db, "mcqSets"), payload);
+      setMsg("MCQ set created successfully!");
+      router.push(`/a2gadmin/mcq/edit/${docRef.id}`);
+    } catch (serverError) {
+      const permissionError = new FirestorePermissionError({ path: 'mcqSets', operation: 'create', requestResourceData: payload });
+      errorEmitter.emit('permission-error', permissionError);
+      setMsg("A permission error occurred. Check the console.");
+    } finally { setLoading(false); }
   }
 
   return (
@@ -266,7 +273,27 @@ export default function CreateMcqSetPage() {
                            <Input key={i} value={opt} onChange={(e) => handleOptionChange(q.id, i, e.target.value)} placeholder={`Option ${i+1}`} />
                        ))}
                    </div>
-                   <Input value={q.correctAnswer} onChange={(e) => handleQuestionChange(q.id, 'correctAnswer', e.target.value)} placeholder="Correct Answer (must match an option)" />
+                   {/* CORRECT ANSWER DROPDOWN - Option C UI; stores actual option text */}
+                   <div>
+                     <label className="text-sm font-medium">Correct answer</label>
+                     <select
+                       value={q.correctAnswer}
+                       onChange={(e) => handleQuestionChange(q.id, 'correctAnswer', e.target.value)}
+                       className="w-full p-2 rounded-md border bg-card mt-1"
+                     >
+                       <option value="">Select correct answer</option>
+                       {q.options.map((opt, idx) => (
+                         <option key={idx} value={opt} disabled={!opt.trim()}>{String.fromCharCode(65 + idx)}) {opt || '— Not available —'}</option>
+                       ))}
+                     </select>
+                     <div className="mt-1 text-xs">
+                       {q.correctAnswer && q.options.map(o=>o.trim()).includes(q.correctAnswer.trim()) ? (
+                         <span className="text-green-600">Correct answer selected</span>
+                       ) : (
+                         <span className="text-red-600">No valid correct answer selected</span>
+                       )}
+                     </div>
+                   </div>
                    <Textarea value={q.explanation} onChange={(e) => handleQuestionChange(q.id, 'explanation', e.target.value)} placeholder="Explanation" className="h-24" />
                    <div className="grid grid-cols-2 gap-2">
                       <Input value={q.topic} onChange={(e) => handleQuestionChange(q.id, 'topic', e.target.value)} placeholder="Topic (e.g. Diuretics)" />
@@ -283,8 +310,13 @@ export default function CreateMcqSetPage() {
         </div>
         
         <div className="flex items-center gap-4 mt-6">
-          <Button type="submit" disabled={loading} size="lg" className="bg-green-600 hover:bg-green-700">
+          <Button type="submit" disabled={loading || !isAllValid()} size="lg" className="bg-green-600 hover:bg-green-700">
             {loading ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
             {loading ? "Saving..." : "Save MCQ Set"}
           </Button>
-          {msg && <span className="text
+          {msg && <span className="text-sm">{msg}</span>}
+        </div>
+      </form>
+    </div>
+  );
+}
