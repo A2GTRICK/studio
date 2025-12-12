@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Layers, GraduationCap, Sparkles } from 'lucide-react';
+import { BookOpen, Layers, GraduationCap, Sparkles, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import clsx from 'clsx';
 
@@ -17,6 +17,12 @@ const dashboardFeatures = [
     desc: 'Practice MCQs for GPAT, NIPER & D.Pharm.',
     href: '/dashboard/mcq-practice',
     icon: <Layers size={28} />,
+  },
+  {
+    title: 'Mock Test',
+    desc: 'Premium exam-style practice tests.',
+    href: '/dashboard/mock-test',
+    icon: <BarChart3 size={28} />,
   },
   {
     title: 'Academic Services',
@@ -119,7 +125,7 @@ export default function DashboardPage() {
 
       {/* Features Section */}
       <section>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {dashboardFeatures.map(f => (
                 <FeatureCard key={f.title} item={f} />
             ))}
