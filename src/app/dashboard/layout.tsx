@@ -1,57 +1,150 @@
 
+"use client";
+
 import { FirebaseClientProvider } from "@/firebase/client-provider";
-import { BookOpen, DraftingCompass, LayoutDashboard, HelpingHand, BarChart3, Settings, UserCircle } from "lucide-react";
-import Link from 'next/link';
-import { Button } from "@/components/ui/button";
-import Header from "@/components/Header";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarTrigger,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+  useSidebar,
+} from "@/components/ui/sidebar";
+
+import {
+  BookOpen,
+  DraftingCompass,
+  LayoutDashboard,
+  HelpingHand,
+  BarChart3,
+  Settings,
+} from "lucide-react";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 
+// --------------------------------------------
+// Utility: Auto-Active Menu Button
+// --------------------------------------------
+function NavItem({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string;
+  icon: any;
+  label: string;
+}) {
+  const pathname = usePathname();
+  const { setOpenMobile } = useSidebar(); 
+
+  const active =
+    (href === "/dashboard" && pathname === href) ||
+    (href !== "/dashboard" && pathname.startsWith(href));
+
+
+  return (
+    <SidebarMenuItem>
+      <Link href={href} passHref onClick={() => setOpenMobile(false)}>
+        <SidebarMenuButton
+          isActive={active}
+          leftIcon={<Icon className="w-5 h-5" />}
+        >
+          {label}
+        </SidebarMenuButton>
+      </Link>
+    </SidebarMenuItem>
+  );
+}
+
+
+// --------------------------------------------
+// MAIN LAYOUT
+// --------------------------------------------
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
-    const navItems = [
-        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/dashboard/notes', label: 'Notes', icon: BookOpen },
-        { href: '/dashboard/mcq-practice', label: 'MCQ Practice', icon: DraftingCompass },
-        { href: '/dashboard/mock-test', label: 'Mock Test', icon: BarChart3 },
-        { href: '/dashboard/services', label: 'Services', icon: HelpingHand },
-        { href: '/dashboard/settings', label: 'Settings', icon: Settings },
-    ];
+  const pathname = usePathname();
+  
+  const getHeaderTitle = () => {
+    if (pathname === '/dashboard') return 'Dashboard';
+    if (pathname.startsWith('/dashboard/notes')) return 'Notes Library';
+    if (pathname.startsWith('/dashboard/mcq-practice')) return 'MCQ Practice';
+    if (pathname.startsWith('/dashboard/mock-test')) return 'Mock Test';
+    if (pathname.startsWith('/dashboard/services')) return 'Academic Services';
+    if (pathname.startsWith('/dashboard/settings')) return 'Settings';
+    return 'Dashboard';
+  }
 
   return (
     <FirebaseClientProvider>
-        <div className="flex min-h-screen w-full">
-            {/* Sidebar */}
-            <aside className="hidden w-64 flex-col border-r bg-background sm:flex">
-                <div className="flex h-16 items-center border-b px-6">
-                    <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-                        <span className="text-xl font-bold text-primary">pharmA2G</span>
-                    </Link>
-                </div>
-                <nav className="flex-1 overflow-auto py-4">
-                    <div className="grid items-start px-4 text-sm font-medium">
-                        {navItems.map(({ href, label, icon: Icon }) => (
-                            <Link key={href} href={href} className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-                                <Icon className="h-4 w-4" />
-                                {label}
-                            </Link>
-                        ))}
-                    </div>
-                </nav>
-            </aside>
-            
-            {/* Main Content */}
-            <div className="flex flex-col flex-1">
-                <Header />
-                <main className="flex-1 p-6 bg-secondary/30">{children}</main>
+      <SidebarProvider>
+        <div className="flex min-h-screen">
+          <Sidebar>
+            <div className="flex h-16 items-center px-4">
+              <Link
+                href="/dashboard"
+                className="font-bold text-lg text-primary"
+              >
+                pharmA2G
+              </Link>
             </div>
+
+            <SidebarMenu>
+              <NavItem
+                href="/dashboard"
+                icon={LayoutDashboard}
+                label="Dashboard"
+              />
+
+              <NavItem href="/dashboard/notes" icon={BookOpen} label="Notes" />
+
+              <NavItem
+                href="/dashboard/mcq-practice"
+                icon={DraftingCompass}
+                label="MCQ Practice"
+              />
+
+              <NavItem
+                href="/dashboard/mock-test"
+                icon={BarChart3}
+                label="Mock Test"
+              />
+
+              <NavItem
+                href="/dashboard/services"
+                icon={HelpingHand}
+                label="Services"
+              />
+
+              <NavItem
+                href="/dashboard/settings"
+                icon={Settings}
+                label="Settings"
+              />
+            </SidebarMenu>
+          </Sidebar>
+
+          <SidebarInset>
+            <header className="flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+              <SidebarTrigger className="md:hidden"/>
+              <h1 className="text-lg font-semibold md:text-xl">
+                {getHeaderTitle()}
+              </h1>
+            </header>
+
+            <main className="flex-1 p-4 md:p-6 bg-secondary/40">{children}</main>
+          </SidebarInset>
         </div>
+      </SidebarProvider>
     </FirebaseClientProvider>
   );
 }
