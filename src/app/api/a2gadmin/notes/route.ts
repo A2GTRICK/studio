@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 // GET all or a single note
 export async function GET(req: NextRequest) {
-  if (!isAdminAuthenticated()) {
+  if (!isAdminAuthenticated(req)) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
 
@@ -38,8 +38,8 @@ export async function GET(req: NextRequest) {
 }
 
 // CREATE a new note
-export async function POST(req: Request) {
-  if (!isAdminAuthenticated()) {
+export async function POST(req: NextRequest) {
+  if (!isAdminAuthenticated(req)) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
 
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
 
 // UPDATE an existing note
 export async function PUT(req: NextRequest) {
-  if (!isAdminAuthenticated()) {
+  if (!isAdminAuthenticated(req)) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
   
@@ -92,7 +92,7 @@ export async function PUT(req: NextRequest) {
 
 // DELETE a note
 export async function DELETE(req: NextRequest) {
-  if (!isAdminAuthenticated()) {
+  if (!isAdminAuthenticated(req)) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
 
