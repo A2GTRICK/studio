@@ -1,8 +1,9 @@
 
 import { FirebaseClientProvider } from "@/firebase/client-provider";
-import { SidebarProvider, Sidebar, SidebarTrigger, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from "@/components/ui/sidebar";
-import { BookOpen, DraftingCompass, LayoutDashboard, HelpingHand, BarChart3, Settings } from "lucide-react";
+import { BookOpen, DraftingCompass, LayoutDashboard, HelpingHand, BarChart3, Settings, UserCircle } from "lucide-react";
 import Link from 'next/link';
+import { Button } from "@/components/ui/button";
+import Header from "@/components/Header";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -13,56 +14,50 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+
+    const navItems = [
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/dashboard/notes', label: 'Notes', icon: BookOpen },
+        { href: '/dashboard/mcq-practice', label: 'MCQ Practice', icon: DraftingCompass },
+        { href: '/dashboard/mock-test', label: 'Mock Test', icon: BarChart3 },
+        { href: '/dashboard/services', label: 'Services', icon: HelpingHand },
+        { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+    ];
+
   return (
     <FirebaseClientProvider>
-      <SidebarProvider>
-        <div className="flex min-h-screen">
-          <Sidebar>
-            <div className="flex h-16 items-center px-4">
-               <Link href="/dashboard" className="font-bold text-lg text-primary">pharmA2G</Link>
+        <div className="flex min-h-screen w-full">
+            {/* Sidebar */}
+            <aside className="hidden w-64 flex-col border-r bg-background sm:flex">
+                <div className="flex h-16 items-center border-b px-6">
+                    <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+                        <span className="text-xl font-bold text-primary">pharmA2G</span>
+                    </Link>
+                </div>
+                <nav className="flex-1 overflow-auto py-4">
+                    <div className="grid items-start px-4 text-sm font-medium">
+                        {navItems.map(({ href, label, icon: Icon }) => (
+                            <Link key={href} href={href} className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+                                <Icon className="h-4 w-4" />
+                                {label}
+                            </Link>
+                        ))}
+                    </div>
+                </nav>
+                 <div className="mt-auto p-4 border-t">
+                    <Button variant="ghost" className="w-full justify-start">
+                        <UserCircle className="mr-2 h-4 w-4" />
+                        Profile
+                    </Button>
+                </div>
+            </aside>
+            
+            {/* Main Content */}
+            <div className="flex flex-col flex-1">
+                <Header />
+                <main className="flex-1 p-6 bg-secondary/30">{children}</main>
             </div>
-             <SidebarMenu>
-                 <SidebarMenuItem>
-                    <Link href="/dashboard" passHref>
-                      <SidebarMenuButton asChild left={<LayoutDashboard />}>Dashboard</SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <Link href="/dashboard/notes" passHref>
-                      <SidebarMenuButton asChild left={<BookOpen />}>Notes</SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <Link href="/dashboard/mcq-practice" passHref>
-                      <SidebarMenuButton asChild left={<DraftingCompass />}>MCQ Practice</SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <Link href="/dashboard/mock-test" passHref>
-                      <SidebarMenuButton asChild left={<BarChart3 />}>Mock Test</SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <Link href="/dashboard/services" passHref>
-                      <SidebarMenuButton asChild left={<HelpingHand />}>Services</SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <Link href="/dashboard/settings" passHref>
-                      <SidebarMenuButton asChild left={<Settings />}>Settings</SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-            </SidebarMenu>
-          </Sidebar>
-          <SidebarInset>
-            <header className="flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-                <SidebarTrigger />
-                <h1 className="text-lg font-semibold md:text-xl">Dashboard</h1>
-            </header>
-            <main className="flex-1 p-6">{children}</main>
-          </SidebarInset>
         </div>
-      </SidebarProvider>
     </FirebaseClientProvider>
   );
 }
