@@ -398,13 +398,8 @@ export default function EditNotePageClient() {
           <div className="flex items-center justify-between mb-2">
             <label className="block font-semibold text-sm">Content</label>
             <div className="flex items-center gap-2">
-              <select value={String(formatLevel)} onChange={(e) => setFormatLevel(Number(e.target.value) as 0 | 1 | 2)} className="px-2 py-1 border rounded">
-                <option value={2}>Conservative</option>
-                <option value={1}>Balanced</option>
-                <option value={0}>Aggressive</option>
-              </select>
               <Button type="button" variant="outline" size="sm" onClick={() => applyAutoFormat()}>
-                Auto-format (preview)
+                Auto-format
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setReaderOpen(true)}>
                 <Eye className="w-4 h-4 mr-2" /> Preview
@@ -521,14 +516,14 @@ function renderMarkdownToHtml(md: string) {
     .replace(/>/g, "&gt;");
 
   // headings
-  html = html.replace(/^##\s+(.+)$/gmu, (_, h) => `<h2 id="${h.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g,'-')}">${h}</h2>`);
+  html = html.replace(/^##\s+(.+)$/gm, (_, h) => `<h2 id="${h.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g,'-')}">${h}</h2>`);
   // numbered list -> wrap later
   // bullets
-  html = html.replace(/^- \s+(.+)$/gmu, (_, t) => `<li>${t}</li>`);
+  html = html.replace(/^\-\s+(.+)$/gm, (_, t) => `<li>${t}</li>`);
   // wrap list items into <ul>
   html = html.replace(/(<li>.*?<\/li>\s*)+/gms, (m) => `<ul>${m}</ul>`);
   // numbered
-  html = html.replace(/^(\d+)\.\s+(.+)$/gmu, (_, n, t) => `<li>${t}</li>`);
+  html = html.replace(/^(\d+)\.\s+(.+)$/gm, (_, n, t) => `<li>${t}</li>`);
   // ordered lists
   html = html.replace(/(<li>.*?<\/li>\s*)+/gms, (m) => `<ol>${m}</ol>`);
   // bold
