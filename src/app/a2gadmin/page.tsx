@@ -29,17 +29,17 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="text-white">
+    <div className="text-foreground">
 
       {/* Analytics Cards */}
       <div className="grid md:grid-cols-4 gap-6 mb-8">
         {stats.map((item, idx) => (
           <div
             key={idx}
-            className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 shadow-xl hover:bg-white/20 transition-all"
+            className="bg-secondary/30 border rounded-2xl p-6 shadow-sm hover:bg-secondary/50 transition-all"
           >
-            <div className="text-3xl font-bold mb-2">{item.value}</div>
-            <div className="text-sm opacity-80 tracking-wide">{item.label}</div>
+            <div className="text-3xl font-bold mb-2 text-primary">{item.value}</div>
+            <div className="text-sm text-muted-foreground tracking-wide">{item.label}</div>
           </div>
         ))}
       </div>
@@ -52,9 +52,9 @@ export default function AdminDashboard() {
           <a
             key={idx}
             href={action.href}
-            className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-xl hover:bg-white/20 transition-all block text-center"
+            className="bg-card border rounded-2xl p-5 shadow-sm hover:bg-secondary transition-all block text-center"
           >
-            <span className="text-md font-medium tracking-wide">{action.label}</span>
+            <span className="text-md font-medium tracking-wide text-foreground">{action.label}</span>
           </a>
         ))}
       </div>

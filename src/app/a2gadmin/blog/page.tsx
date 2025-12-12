@@ -1,3 +1,4 @@
+
 // src/app/a2gadmin/blog/page.tsx
 "use client";
 
@@ -78,37 +79,37 @@ export default function BlogAdminPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-10">
-        <Loader2 className="h-10 w-10 animate-spin text-purple-300" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto text-white">
+    <div className="p-4 md:p-0 max-w-7xl mx-auto text-foreground">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Blog Manager</h1>
-          <p className="text-sm text-gray-400">Create, edit, and manage all your articles.</p>
+          <p className="text-sm text-muted-foreground">Create, edit, and manage all your articles.</p>
         </div>
-        <Link href="/a2gadmin/blog/create" className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition">
+        <Link href="/a2gadmin/blog/create" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow hover:bg-primary/90 transition">
           <PlusCircle className="w-5 h-5" />
           Write New Post
         </Link>
       </div>
 
-       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white/10 rounded-xl border border-white/20">
+       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-secondary/50 rounded-xl border">
         <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300"/>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
             <input
             type="text"
             placeholder="Search posts by title..."
-            className="border p-2 rounded-lg w-full sm:w-auto flex-grow pl-9 bg-white/10 text-white"
+            className="border p-2 rounded-lg w-full sm:w-auto flex-grow pl-9 bg-card text-foreground"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             />
         </div>
         <select
-          className="border p-2 rounded-lg bg-white/10 text-white"
+          className="border p-2 rounded-lg bg-card text-foreground"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -118,9 +119,9 @@ export default function BlogAdminPage() {
         </select>
       </div>
 
-      <div className="bg-white/10 rounded-xl border border-white/20 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
         <table className="w-full text-left">
-            <thead className="bg-white/20 border-b border-white/30">
+            <thead className="bg-secondary/50 border-b">
                 <tr>
                     <th className="p-4 font-semibold">Title</th>
                     <th className="p-4 font-semibold hidden md:table-cell">Category</th>
@@ -131,18 +132,18 @@ export default function BlogAdminPage() {
             </thead>
             <tbody>
                 {filteredPosts.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center p-8 text-gray-400">No posts found.</td></tr>
+                    <tr><td colSpan={5} className="text-center p-8 text-muted-foreground">No posts found.</td></tr>
                 ) : (
                     filteredPosts.map(post => (
-                        <tr key={post.id} className="border-b last:border-b-0 border-white/20">
+                        <tr key={post.id} className="border-b last:border-b-0">
                             <td className="p-4 font-medium">{post.title}</td>
-                            <td className="p-4 hidden md:table-cell">{post.category || '—'}</td>
+                            <td className="p-4 hidden md:table-cell text-muted-foreground">{post.category || '—'}</td>
                             <td className="p-4 hidden sm:table-cell">
-                                <span className={`px-2 py-1 text-xs rounded-full ${post.isPublished ? 'bg-green-600/50 text-green-100' : 'bg-amber-600/50 text-amber-100'}`}>
+                                <span className={`px-2 py-1 text-xs rounded-full ${post.isPublished ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
                                     {post.isPublished ? 'Published' : 'Draft'}
                                 </span>
                             </td>
-                            <td className="p-4 hidden md:table-cell text-sm text-gray-400">{formatDate(post.updatedAt)}</td>
+                            <td className="p-4 hidden md:table-cell text-sm text-muted-foreground">{formatDate(post.updatedAt)}</td>
                             <td className="p-4 text-right">
                                 <div className="flex justify-end gap-2">
                                      <Link href={`/a2gadmin/blog/edit/${post.id}`} className="px-3 py-1 rounded-md text-sm bg-blue-600 text-white hover:bg-blue-700">Edit</Link>

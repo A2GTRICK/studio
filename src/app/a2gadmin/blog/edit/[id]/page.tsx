@@ -1,3 +1,4 @@
+
 // src/app/a2gadmin/blog/edit/[id]/page.tsx
 "use client";
 
@@ -127,13 +128,13 @@ export default function EditBlogPage() {
   if (loading) return <div className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
-    <div className="text-white max-w-4xl mx-auto">
+    <div className="text-foreground max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-4">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm hover:underline">
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm hover:underline text-primary">
             <ArrowLeft className="w-4 h-4" /> Back to Blog Manager
         </button>
         <div className="flex gap-2">
-            <Link href={`/blog/${post.slug}`} target="_blank" className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-md bg-white/20 hover:bg-white/30">
+            <Link href={`/blog/${post.slug}`} target="_blank" className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80">
                 <Eye className="w-4 h-4" /> Preview
             </Link>
              <Button variant="destructive" size="sm" onClick={handleDelete} disabled={saving}>
@@ -145,7 +146,7 @@ export default function EditBlogPage() {
       <h1 className="text-2xl font-semibold mb-6">Edit Blog Post</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="p-6 bg-white/10 rounded-lg border border-white/20 space-y-4">
+        <div className="p-6 bg-secondary/30 rounded-lg border space-y-4">
           <Input value={post.title} onChange={handleTitleChange} placeholder="* Post Title" required />
           <Input value={post.slug} onChange={(e) => setPost(p => ({ ...p, slug: e.target.value }))} placeholder="* URL Slug" required />
           <Textarea value={post.summary} onChange={(e) => setPost(p => ({ ...p, summary: e.target.value }))} placeholder="Short Summary / Meta Description" />
@@ -154,14 +155,14 @@ export default function EditBlogPage() {
             <Input value={post.tags} onChange={(e) => setPost(p => ({ ...p, tags: e.target.value }))} placeholder="Tags (comma-separated)" />
           </div>
           <Input value={post.banner} onChange={(e) => setPost(p => ({ ...p, banner: e.target.value }))} placeholder="Banner Image URL" />
-           <label className="flex items-center gap-2 cursor-pointer pt-2">
+           <label className="flex items-center gap-2 cursor-pointer pt-2 text-sm">
               <input type="checkbox" checked={post.isPublished} onChange={(e) => setPost(p => ({ ...p, isPublished: e.target.checked }))} /> Published
           </label>
         </div>
         
-        <div className="p-6 bg-white/10 rounded-lg border border-white/20">
+        <div className="p-6 bg-secondary/30 rounded-lg border">
           <h2 className="text-lg font-semibold mb-2">Content (Markdown)</h2>
-          <div className="bg-white/5 p-2 rounded" data-color-mode="dark">
+          <div data-color-mode="dark">
             <MDEditor value={post.content} onChange={(v = "") => setPost(p => ({ ...p, content: v }))} height={500} />
           </div>
         </div>

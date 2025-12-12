@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, PlusCircle } from "lucide-react";
+import { ChevronDown, PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { collection, getDocs, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import { db } from "@/firebase/config";
@@ -15,7 +16,7 @@ interface Note {
   course?: string;
   year?: string;
   isPremium?: boolean;
-  updatedAt: any; // Can be a number or a Firestore timestamp object
+  updatedAt: any; 
 }
 
 export default function NotesDashboard() {
@@ -24,15 +25,13 @@ export default function NotesDashboard() {
   const [allNotes, setAllNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Search + Filter states
   const [search, setSearch] = useState("");
   const [premiumFilter, setPremiumFilter] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
 
-  // Load notes
-  useEffect(() => {
-    async function loadNotes() {
+  async function loadNotes() {
+      setLoading(true);
       try {
         const notesRef = collection(db, "notes");
         const q = query(notesRef, orderBy("createdAt", "desc"));
@@ -41,7 +40,6 @@ export default function NotesDashboard() {
         const notes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Note));
         setAllNotes(notes);
 
-        // By default, expand all subject groups
         if (Array.isArray(notes)) {
             const subjects = Array.from(new Set(notes.map((n: Note) => n.subject || "General")));
             const initialExpansion: Record<string, boolean> = {};
@@ -54,6 +52,7 @@ export default function NotesDashboard() {
       setLoading(false);
     }
 
+  useEffect(() => {
     loadNotes();
   }, []);
   
@@ -61,7 +60,6 @@ export default function NotesDashboard() {
     setExpandedSubjects(prev => ({ ...prev, [subject]: !prev[subject] }));
   };
 
-  // Filter, Sort, and Group Logic
   const groupedAndSortedNotes = useMemo(() => {
     let filtered = [...allNotes];
 
@@ -79,7 +77,6 @@ export default function NotesDashboard() {
       filtered = filtered.filter((n) => !n.isPremium);
     }
 
-    // Group notes by subject
     const grouped = filtered.reduce((acc, note) => {
       const subject = note.subject || "General";
       if (!acc[subject]) {
@@ -89,7 +86,6 @@ export default function NotesDashboard() {
       return acc;
     }, {} as Record<string, Note[]>);
 
-    // Sort within each group
     Object.keys(grouped).forEach(subject => {
       grouped[subject].sort((a, b) => {
         const dateA = a.updatedAt?.seconds ? a.updatedAt.seconds * 1000 : new Date(a.updatedAt).getTime();
@@ -121,32 +117,32 @@ export default function NotesDashboard() {
     return dateValue.toLocaleDateString('en-IN');
   };
 
-  if (loading) return <div className="p-6 text-center">Loading your notes library...</div>;
+  if (loading) return <div className="p-6 text-center flex items-center justify-center gap-2"><Loader2 className="w-6 h-6 animate-spin" />Loading your notes library...</div>;
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto text-white">
+    <div className="p-4 md:p-0 max-w-7xl mx-auto text-foreground">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Notes Manager</h1>
-           <p className="text-sm text-gray-400">Create, edit, and manage all your notes.</p>
+           <p className="text-sm text-muted-foreground">Create, edit, and manage all your notes.</p>
         </div>
-        <Link href="/a2gadmin/notes/create" className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition">
+        <Link href="/a2gadmin/notes/create" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow hover:bg-primary/90 transition">
           <PlusCircle className="w-5 h-5" />
           Create New Note
         </Link>
       </div>
 
 
-      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white/10 rounded-xl border border-white/20">
+      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-secondary/50 rounded-xl border">
         <input
           type="text"
           placeholder="Search notes..."
-          className="border p-2 rounded-lg w-full sm:w-auto flex-grow bg-white/10"
+          className="border p-2 rounded-lg w-full sm:w-auto flex-grow bg-card"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
-          className="border p-2 rounded-lg bg-white/10"
+          className="border p-2 rounded-lg bg-card"
           value={premiumFilter}
           onChange={(e) => setPremiumFilter(e.target.value)}
         >
@@ -155,7 +151,7 @@ export default function NotesDashboard() {
           <option value="free">Free Only</option>
         </select>
         <select
-          className="border p-2 rounded-lg bg-white/10"
+          className="border p-2 rounded-lg bg-card"
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
         >
@@ -167,19 +163,19 @@ export default function NotesDashboard() {
 
       <div className="space-y-6">
         {orderedSubjects.length === 0 && (
-          <p className="text-center text-gray-500 mt-10">No notes found matching your criteria.</p>
+          <p className="text-center text-muted-foreground mt-10">No notes found matching your criteria.</p>
         )}
         
         {orderedSubjects.map(subject => (
-           <section key={subject} className="bg-white/10 rounded-xl border border-white/20 shadow-sm overflow-hidden">
+           <section key={subject} className="bg-card rounded-xl border shadow-sm overflow-hidden">
                 <button 
-                  className="w-full flex items-center justify-between p-4 bg-white/20 border-b border-white/30"
+                  className="w-full flex items-center justify-between p-4 bg-secondary/50 border-b"
                   onClick={() => toggleSubjectExpansion(subject)}
                 >
                     <h3 className="text-lg font-bold">{subject}</h3>
                     <div className="flex items-center gap-4">
-                        <span className="text-sm bg-purple-600 px-2 py-1 rounded-full">{groupedAndSortedNotes[subject].length} notes</span>
-                        <ChevronDown className={`h-5 w-5 text-purple-300 transition-transform ${expandedSubjects[subject] ? 'rotate-180' : ''}`} />
+                        <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">{groupedAndSortedNotes[subject].length} notes</span>
+                        <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${expandedSubjects[subject] ? 'rotate-180' : ''}`} />
                     </div>
                 </button>
 
@@ -188,7 +184,7 @@ export default function NotesDashboard() {
                     {groupedAndSortedNotes[subject].map((note) => (
                       <div
                         key={note.id}
-                        className="border rounded-xl shadow-sm hover:shadow-lg transition bg-white/5 p-4 flex flex-col cursor-pointer"
+                        className="border rounded-xl shadow-sm hover:shadow-lg transition bg-background p-4 flex flex-col cursor-pointer"
                         onClick={() => router.push(`/a2gadmin/notes/edit/${note.id}`)}
                       >
                         <div className="flex-grow">
@@ -198,11 +194,11 @@ export default function NotesDashboard() {
                               <span className="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full font-medium">Premium</span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-300">{note.topic || note.course}</p>
+                          <p className="text-sm text-muted-foreground">{note.topic || note.course}</p>
                         </div>
                         
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                          <p className="text-xs text-gray-400 mb-3">
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-muted-foreground mb-3">
                             Updated: {formatDate(note.updatedAt)}
                           </p>
                           <div className="flex justify-end gap-2">

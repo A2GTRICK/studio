@@ -1,3 +1,4 @@
+
 // src/app/a2gadmin/notes/create/page.tsx
 "use client";
 
@@ -8,6 +9,9 @@ import "@uiw/react-markdown-preview/markdown.css";
 import { db } from "@/firebase/config";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -61,34 +65,34 @@ export default function CreateNoteAdminPage() {
   }
 
   return (
-    <div className="text-white">
+    <div className="text-foreground">
       <h1 className="text-2xl font-semibold mb-4">Create New Note</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="p-3 rounded bg-white/10 w-full" required />
-          <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" className="p-3 rounded bg-white/10 w-full" />
-          <input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Course (e.g. B.Pharm)" className="p-3 rounded bg-white/10 w-full" />
-          <input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year (e.g. 2nd Year)" className="p-3 rounded bg-white/10 w-full" />
-          <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Topic" className="p-3 rounded bg-white/10 w-full" />
-          <input value={universitySyllabus} onChange={(e) => setUniversitySyllabus(e.target.value)} placeholder="University / Syllabus (GPAT...)" className="p-3 rounded bg-white/10 w-full" />
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required />
+          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" />
+          <Input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Course (e.g. B.Pharm)" />
+          <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year (e.g. 2nd Year)" />
+          <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Topic" />
+          <Input value={universitySyllabus} onChange={(e) => setUniversitySyllabus(e.target.value)} placeholder="University / Syllabus (GPAT...)" />
         </div>
 
         <div>
-          <label className="block mb-2">Short summary</label>
-          <input value={shortText} onChange={(e) => setShortText(e.target.value)} placeholder="Short summary" className="p-3 rounded bg-white/10 w-full" />
+          <label className="block mb-2 text-sm font-medium">Short summary</label>
+          <Input value={shortText} onChange={(e) => setShortText(e.target.value)} placeholder="Short summary" />
         </div>
 
         <div>
-          <label className="block mb-2">Content (Markdown)</label>
-          <div className="bg-white/5 p-2 rounded" data-color-mode="dark">
+          <label className="block mb-2 text-sm font-medium">Content (Markdown)</label>
+          <div data-color-mode="dark">
             <MDEditor value={content} onChange={(v = "") => setContent(String(v))} height={400} />
           </div>
         </div>
 
         <div>
-          <label className="block mb-2">External links (JSON array)</label>
-          <textarea value={externalLinksJson} onChange={(e) => setExternalLinksJson(e.target.value)} className="w-full p-2 rounded bg-white/10 h-24" placeholder='[{"label":"YouTube","url":"https://..."}]' />
+          <label className="block mb-2 text-sm font-medium">External links (JSON array)</label>
+          <Textarea value={externalLinksJson} onChange={(e) => setExternalLinksJson(e.target.value)} className="h-24" placeholder='[{"label":"YouTube","url":"https://..."}]' />
         </div>
 
         <div className="flex items-center gap-4">
@@ -98,10 +102,10 @@ export default function CreateNoteAdminPage() {
         </div>
 
         <div>
-          <button disabled={loading} className="bg-purple-600 px-4 py-2 rounded">
+          <Button type="submit" disabled={loading}>
             {loading ? "Saving..." : "Save Note"}
-          </button>
-          {msg && <span className="ml-4">{msg}</span>}
+          </Button>
+          {msg && <span className="ml-4 text-sm">{msg}</span>}
         </div>
       </form>
     </div>

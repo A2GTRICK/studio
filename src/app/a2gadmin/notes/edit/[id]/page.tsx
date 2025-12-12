@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,7 +12,6 @@ import { Loader2, Save } from "lucide-react";
 import { db } from "@/firebase/config";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
-// Load MDEditor CLIENT-SIDE ONLY
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 export default function EditNotePage() {
@@ -31,9 +31,6 @@ export default function EditNotePage() {
     content: "",
   });
 
-  // ----------------------------------------------------
-  // LOAD NOTE DETAILS
-  // ----------------------------------------------------
   useEffect(() => {
     if (!id) return;
 
@@ -67,9 +64,6 @@ export default function EditNotePage() {
     loadNote();
   }, [id]);
 
-  // ----------------------------------------------------
-  // SAVE/UPDATE NOTE
-  // ----------------------------------------------------
   async function saveNote(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -93,18 +87,18 @@ export default function EditNotePage() {
   if (loading) return <div className="p-6 text-center"><Loader2 className="animate-spin w-8 h-8" /></div>;
 
   return (
-    <form onSubmit={saveNote} className="text-white max-w-5xl mx-auto p-6 space-y-6">
+    <form onSubmit={saveNote} className="text-foreground max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Edit Note</h1>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <Input className="bg-white/10" value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" required />
-        <Input className="bg-white/10" value={note.subject} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" />
-        <Input className="bg-white/10" value={note.course} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" />
-        <Input className="bg-white/10" value={note.year} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" />
+        <Input value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" required />
+        <Input value={note.subject} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" />
+        <Input value={note.course} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" />
+        <Input value={note.year} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" />
       </div>
 
        <div className="mb-4">
-          <Input className="bg-white/10" value={note.topic} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" />
+          <Input value={note.topic} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" />
        </div>
 
 
@@ -116,13 +110,12 @@ export default function EditNotePage() {
             setNote({ ...note, isPremium: e.target.checked })
           }
         />
-        <span className="font-semibold">Mark as Premium</span>
+        <span className="font-semibold text-sm">Mark as Premium</span>
       </label>
 
-      {/* Content Editor */}
       <div>
-        <label className="block mb-2 font-semibold">Content</label>
-        <div className="bg-white/5 p-2 rounded" data-color-mode="dark">
+        <label className="block mb-2 font-semibold text-sm">Content</label>
+        <div data-color-mode="dark">
             <MDEditor
             value={note.content}
             onChange={(v = "") => setNote({ ...note, content: String(v) })}
@@ -135,7 +128,6 @@ export default function EditNotePage() {
         <Button
             type="submit"
             disabled={saving}
-            className="px-6 py-3 bg-purple-600 text-white rounded hover:bg-purple-700"
         >
             {saving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
             {saving ? "Saving..." : "Save Changes"}

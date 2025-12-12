@@ -1,3 +1,4 @@
+
 // src/app/a2gadmin/mcq/page.tsx
 "use client";
 
@@ -7,6 +8,7 @@ import { Loader2, PlusCircle, ChevronDown } from "lucide-react";
 import { collection, getDocs, orderBy, query, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import type { McqSet } from "@/context/mcq-context";
+import { Button } from "@/components/ui/button";
 
 export default function McqAdminPage() {
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,6 @@ export default function McqAdminPage() {
           
           setAllMcqSets(sets);
 
-          // Auto-expand all subjects by default
           const subjects = Array.from(new Set(sets.map((n: McqSet) => n.subject || "General")));
           const initialExpansion: Record<string, boolean> = {};
           subjects.forEach(sub => { initialExpansion[sub] = true; });
@@ -108,34 +109,34 @@ export default function McqAdminPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-10">
-        <Loader2 className="h-10 w-10 animate-spin text-purple-300" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto text-white">
+    <div className="p-4 md:p-0 max-w-7xl mx-auto text-foreground">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">MCQ Sets Manager</h1>
-          <p className="text-sm text-gray-400">Manage your question banks and practice tests.</p>
+          <p className="text-sm text-muted-foreground">Manage your question banks and practice tests.</p>
         </div>
-        <Link href="/a2gadmin/mcq/create" className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition">
+        <Link href="/a2gadmin/mcq/create" className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow hover:bg-primary/90 transition">
           <PlusCircle className="w-5 h-5" />
           Create New Set
         </Link>
       </div>
 
-       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-white/10 rounded-xl border border-white/20">
+       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-secondary/50 rounded-xl border">
         <input
           type="text"
           placeholder="Search sets..."
-          className="border p-2 rounded-lg w-full sm:w-auto flex-grow bg-white/10"
+          className="border p-2 rounded-lg w-full sm:w-auto flex-grow bg-card"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
-          className="border p-2 rounded-lg bg-white/10"
+          className="border p-2 rounded-lg bg-card"
           value={premiumFilter}
           onChange={(e) => setPremiumFilter(e.target.value)}
         >
@@ -144,7 +145,7 @@ export default function McqAdminPage() {
           <option value="free">Free Only</option>
         </select>
         <select
-          className="border p-2 rounded-lg bg-white/10"
+          className="border p-2 rounded-lg bg-card"
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
         >
@@ -156,19 +157,19 @@ export default function McqAdminPage() {
 
       <div className="space-y-6">
         {orderedSubjects.length === 0 && (
-          <p className="text-center text-gray-400 mt-10">No MCQ sets found matching your criteria.</p>
+          <p className="text-center text-muted-foreground mt-10">No MCQ sets found matching your criteria.</p>
         )}
         
         {orderedSubjects.map(subject => (
-           <section key={subject} className="bg-white/10 rounded-xl border border-white/20 shadow-sm overflow-hidden">
+           <section key={subject} className="bg-card rounded-xl border shadow-sm overflow-hidden">
                 <button 
-                  className="w-full flex items-center justify-between p-4 bg-white/20 border-b border-white/30"
+                  className="w-full flex items-center justify-between p-4 bg-secondary/50 border-b"
                   onClick={() => toggleSubjectExpansion(subject)}
                 >
-                    <h3 className="text-lg font-bold text-white">{subject}</h3>
+                    <h3 className="text-lg font-bold">{subject}</h3>
                     <div className="flex items-center gap-4">
-                        <span className="text-sm bg-purple-600 text-white px-2 py-1 rounded-full">{groupedAndSortedSets[subject].length} sets</span>
-                        <ChevronDown className={`h-5 w-5 text-purple-300 transition-transform ${expandedSubjects[subject] ? 'rotate-180' : ''}`} />
+                        <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded-full">{groupedAndSortedSets[subject].length} sets</span>
+                        <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${expandedSubjects[subject] ? 'rotate-180' : ''}`} />
                     </div>
                 </button>
 
@@ -177,7 +178,7 @@ export default function McqAdminPage() {
                     {groupedAndSortedSets[subject].map((set) => (
                       <div
                         key={set.id}
-                        className="border rounded-xl shadow-sm hover:shadow-lg transition bg-white/5 p-4 flex flex-col"
+                        className="border rounded-xl shadow-sm hover:shadow-lg transition bg-background p-4 flex flex-col"
                       >
                         <div className="flex-grow">
                           <div className="flex justify-between items-start mb-2">
@@ -186,13 +187,13 @@ export default function McqAdminPage() {
                               <span className="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full font-medium">Premium</span>
                             )}
                           </div>
-                           <p className="text-sm text-gray-300 line-clamp-2">{set.description || "No description."}</p>
-                           <p className="text-xs text-gray-400 mt-2">{set.course} • {set.year}</p>
-                           <p className="text-xs font-semibold text-purple-300 mt-2">{set.questions?.length || 0} Questions</p>
+                           <p className="text-sm text-muted-foreground line-clamp-2">{set.description || "No description."}</p>
+                           <p className="text-xs text-muted-foreground mt-2">{set.course} • {set.year}</p>
+                           <p className="text-xs font-semibold text-primary mt-2">{set.questions?.length || 0} Questions</p>
                         </div>
                         
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                          <p className="text-xs text-gray-400 mb-3">
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="text-xs text-muted-foreground mb-3">
                             Updated: {formatDate(set.updatedAt)}
                           </p>
                           <div className="flex justify-end gap-2">
@@ -202,15 +203,16 @@ export default function McqAdminPage() {
                               >
                                 Edit
                               </Link>
-                              <button
-                                className="px-3 py-1 rounded-md text-sm bg-red-600 text-white hover:bg-red-700"
+                              <Button
+                                size="sm"
+                                variant="destructive"
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   handleDelete(set.id);
                                 }}
                               >
                                 Delete
-                              </button>
+                              </Button>
                           </div>
                         </div>
                       </div>
