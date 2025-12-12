@@ -23,22 +23,34 @@ export default function DashboardLayout({
             </div>
              <SidebarMenu>
                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard" left={<LayoutDashboard />}>Dashboard</SidebarMenuButton>
+                    <Link href="/dashboard" passHref>
+                      <SidebarMenuButton left={<LayoutDashboard />}>Dashboard</SidebarMenuButton>
+                    </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/notes" left={<BookOpen />}>Notes</SidebarMenuButton>
+                    <Link href="/dashboard/notes" passHref>
+                      <SidebarMenuButton left={<BookOpen />}>Notes</SidebarMenuButton>
+                    </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/mcq-practice" left={<DraftingCompass />}>MCQ Practice</SidebarMenuButton>
+                    <Link href="/dashboard/mcq-practice" passHref>
+                      <SidebarMenuButton left={<DraftingCompass />}>MCQ Practice</SidebarMenuButton>
+                    </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/mock-test" left={<BarChart3 />}>Mock Test</SidebarMenuButton>
+                    <Link href="/dashboard/mock-test" passHref>
+                      <SidebarMenuButton left={<BarChart3 />}>Mock Test</SidebarMenuButton>
+                    </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/services" left={<HelpingHand />}>Services</SidebarMenuButton>
+                    <Link href="/dashboard/services" passHref>
+                      <SidebarMenuButton left={<HelpingHand />}>Services</SidebarMenuButton>
+                    </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/settings" left={<Settings />}>Settings</SidebarMenuButton>
+                    <Link href="/dashboard/settings" passHref>
+                      <SidebarMenuButton left={<Settings />}>Settings</SidebarMenuButton>
+                    </Link>
                 </SidebarMenuItem>
             </SidebarMenu>
           </Sidebar>
