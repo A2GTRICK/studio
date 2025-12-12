@@ -45,17 +45,6 @@ export default function MCQCard({ set: data, onStart }: Props) {
           Start
         </button>
 
-        <button
-          onClick={() => {
-            // quick preview: open new window to view questions JSON for admin/dev
-            const w = window.open();
-            w?.document.write(`<pre>${JSON.stringify(data.questions || [], null, 2)}</pre>`);
-          }}
-          className="px-3 py-1 border rounded text-sm"
-        >
-          Preview
-        </button>
-
         <div className="ml-auto text-sm text-gray-500">
           {attempted ? <span>Last score: {attempted}</span> : <span>Not attempted</span>}
         </div>
