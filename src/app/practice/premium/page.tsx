@@ -1,10 +1,15 @@
-// --- PREMIUM MCQ PRACTICE PAGE (OPTION A - FULL FILE) ---
+// --- PREMIUM MCQ PRACTICE PAGE (OPTION A - FULL FILE BEGIN) ---
+
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchAllMCQSets, type MCQSet } from "@/services/mcq";
-import { Play, Star, X, Loader2, Timer, CheckCircle, XCircle, BookOpen } from "lucide-react";
+import { Play, Star, X, Loader2, Timer, ChevronRight, ChevronLeft, CheckCircle, XCircle, Eye, BookOpen } from "lucide-react";
+import { db } from "@/firebase/config";
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+
 
 //-----------------------------------------------------------
 // 1. ROOT COMPONENT STRUCTURE
@@ -27,9 +32,8 @@ export default function PremiumMCQPracticePage() {
 
   // State for Modals/Players
   const [preview, setPreview] = useState<MCQSet | null>(null);
-  const [activeExam, setActiveExam] = useState<MCQSet | null>(null);
-  const [resultsData, setResultsData] = useState<{ set: MCQSet; answers: any; } | null>(null);
-
+  const [examSet, setExamSet] = useState<MCQSet | null>(null);
+  const [resultsData, setResultsData] = useState<{ set: MCQSet; answers: any; result: any; } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -50,12 +54,12 @@ export default function PremiumMCQPracticePage() {
   // SUBJECTS / COURSES LIST
   //-----------------------------------------------------------
   const subjects = useMemo(
-    () => ["all", ...Array.from(new Set(sets.map((s) => s.subject))).filter(Boolean)],
+    () => ["all", ...Array.from(new Set(sets.map((s: MCQSet) => s.subject))).filter(Boolean)],
     [sets]
   );
 
   const courses = useMemo(
-    () => ["all", ...Array.from(new Set(sets.map((s) => s.course))).filter(Boolean)],
+    () => ["all", ...Array.from(new Set(sets.map((s: MCQSet) => s.course))).filter(Boolean)],
     [sets]
   );
 
@@ -63,7 +67,7 @@ export default function PremiumMCQPracticePage() {
   // FILTER SYSTEM
   //-----------------------------------------------------------
   useEffect(() => {
-    let f = [...sets];
+    let f: MCQSet[] = [...sets];
 
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -73,7 +77,7 @@ export default function PremiumMCQPracticePage() {
     if (course !== "all") f = f.filter((s) => s.course === course);
     if (premiumOnly) f = f.filter((s) => s.isPremium);
     if (withExplanation) f = f.filter((s) => s.questions.some((q) => q.explanation));
-    if (difficulty !== "all") f = f.filter((s) => s.questions.some((q) => q.difficulty === difficulty));
+    if (difficulty !== "all") f = f.filter((s) => s.questions.some((q: any) => q.difficulty === difficulty));
     if (onlyUnattempted) f = f.filter((s) => !localStorage.getItem(`mcq_attempt_${s.id}`));
 
     if (sortBy === "latest") f.sort((a, b) => ((b.updatedAt as any)?.seconds || 0) - ((a.updatedAt as any)?.seconds || 0));
@@ -84,27 +88,16 @@ export default function PremiumMCQPracticePage() {
     setFiltered(f);
   }, [sets, query, subject, course, premiumOnly, withExplanation, difficulty, onlyUnattempted, sortBy]);
 
+  const handleFinishExam = (setData: MCQSet, answers: any, result: any) => {
+    setResultsData({ set: setData, answers, result });
+    setExamSet(null);
+  };
+  
   //-----------------------------------------------------------
   // RENDER
   //-----------------------------------------------------------
-  if (loading) return <div className="p-6 text-center"><Loader2 className="animate-spin w-8 h-8 mx-auto" /></div>;
+  if (loading) return <div className="p-6 text-center"><Loader2 className="animate-spin" /></div>;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
-
-  const handleStartExam = (set: MCQSet) => {
-    setPreview(null);
-    setActiveExam(set);
-  };
-  
-  const handleFinishExam = (answers: any) => {
-      if (activeExam) {
-        setResultsData({ set: activeExam, answers });
-      }
-      setActiveExam(null);
-  }
-  
-  const handleCloseResults = () => {
-      setResultsData(null);
-  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -189,7 +182,7 @@ export default function PremiumMCQPracticePage() {
 
       {/* SET CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((s) => (
+        {filtered.map((s: MCQSet) => (
           <div
             key={s.id}
             onClick={() => setPreview(s)}
@@ -206,40 +199,46 @@ export default function PremiumMCQPracticePage() {
       </div>
       
       <AnimatePresence>
-        {preview && <PreviewDrawer set={preview} onClose={() => setPreview(null)} onStart={handleStartExam} />}
-        {activeExam && <ExamPlayer setData={activeExam} onClose={() => setActiveExam(null)} onFinish={handleFinishExam} />}
-        {resultsData && <ExamResults setData={resultsData.set} answers={resultsData.answers} onClose={handleCloseResults} />}
+        {preview && (
+          <PreviewDrawer
+            set={preview}
+            onClose={() => setPreview(null)}
+            onStart={(set) => {
+              setExamSet(set);
+              setPreview(null);
+            }}
+          />
+        )}
+        {examSet && (
+          <ExamPlayer
+            setData={examSet}
+            onClose={() => setExamSet(null)}
+            onFinish={handleFinishExam}
+          />
+        )}
+        {resultsData && (
+          <ExamResults
+            setData={resultsData.set}
+            answers={resultsData.answers}
+            result={resultsData.result}
+            onClose={() => setResultsData(null)}
+          />
+        )}
       </AnimatePresence>
-
     </div>
   );
 }
-
 
 // ==========================
 // BLOCK 2 — PREVIEW DRAWER
 // ==========================
 
-// Right‑side preview drawer that slides in when a user clicks on an MCQ set.
-// Shows title, metadata, first few questions, difficulty indicators, and CTA button.
-
-function PreviewDrawer({ set, onClose, onStart }: { set: MCQSet, onClose: () => void, onStart: (set: MCQSet) => void }) {
+function PreviewDrawer({ set, onClose, onStart }: { set: MCQSet; onClose: () => void; onStart: (set: MCQSet) => void; }) {
   if (!set) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-end"
-    >
-      <motion.div
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full max-w-xl h-full bg-white shadow-xl p-6 overflow-y-auto relative"
-      >
+    <motion.div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="w-full max-w-xl h-full bg-white shadow-xl p-6 overflow-y-auto relative" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 300, damping: 30 }}>
         <button
           onClick={onClose}
           className="text-sm underline absolute right-4 top-4 text-gray-600 hover:text-black"
@@ -276,52 +275,37 @@ function PreviewDrawer({ set, onClose, onStart }: { set: MCQSet, onClose: () => 
   );
 }
 
-// END BLOCK 2 — PREVIEW DRAWER
-
-
 // ==============================================
 // BLOCK 3 — FULL EXAM PLAYER (NTA‑STYLE ENGINE)
 // ==============================================
-// Includes:
-// • Full-screen exam UI
-// • Sidebar palette
-// • Save & Next / Mark / Clear
-// • Timer with auto-submit
-// • Attempt tracking
-// • LocalStorage sync
-// ==============================================
 
-function ExamPlayer({ setData, onClose, onFinish }: { setData: MCQSet, onClose: () => void, onFinish: (answers: any) => void }) {
+function ExamPlayer({ setData, onClose, onFinish }: { setData: MCQSet; onClose: () => void; onFinish: (setData: MCQSet, answers: any, result: any) => void; }) {
   const questions = setData?.questions || [];
   const total = questions.length;
 
   const [index, setIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<any>({}); // { qid: "OptionText" }
   const [marked, setMarked] = React.useState<any>({}); // flagged questions
-  const [remainingTime, setRemainingTime] = React.useState(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem(`timer_${setData.id}`) : null;
-    return stored ? Number(stored) : (setData.timeLimit || 20) * 60; // default 20 min
-  });
-
+  const [remainingTime, setRemainingTime] = React.useState(() => 60 * 20); // default 20 min
+  
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
   const q = questions[index];
 
-  // ===========================
-  // TIMER
-  // ===========================
   React.useEffect(() => {
-    const t = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setRemainingTime((s: number) => {
         const v = s - 1;
-        localStorage.setItem(`timer_${setData.id}`, String(v));
         if (v <= 0) {
-          clearInterval(t);
+          if (timerRef.current) clearInterval(timerRef.current);
           handleSubmit();
         }
         return v;
       });
     }, 1000);
-    return () => clearInterval(t);
-  }, [setData.id]);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -329,9 +313,6 @@ function ExamPlayer({ setData, onClose, onFinish }: { setData: MCQSet, onClose: 
     return `${m}:${ss < 10 ? "0" : ""}${ss}`;
   };
 
-  // ===========================
-  // ACTIONS
-  // ===========================
   const selectAnswer = (opt: string) => {
     setAnswers((a: any) => ({ ...a, [q.id]: opt }));
   };
@@ -345,8 +326,14 @@ function ExamPlayer({ setData, onClose, onFinish }: { setData: MCQSet, onClose: 
   };
 
   const handleSubmit = () => {
-    localStorage.setItem(`mcq_attempt_${setData.id}`, JSON.stringify(answers));
-    onFinish?.(answers);
+    if (timerRef.current) clearInterval(timerRef.current);
+    const result = {
+      total: questions.length,
+      attempted: Object.keys(answers).length,
+      correct: questions.filter((q: any) => answers[q.id] && answers[q.id].trim() === q.correctAnswer.trim()).length,
+    };
+    saveAttemptToFirestore(setData, answers, result);
+    onFinish?.(setData, answers, result);
   };
 
   const paletteColor = (qid: string) => {
@@ -355,14 +342,8 @@ function ExamPlayer({ setData, onClose, onFinish }: { setData: MCQSet, onClose: 
     return "bg-gray-100";
   };
 
-  // ===========================
-  // UI
-  // ===========================
-
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex overflow-hidden">
-
-      {/* LEFT PALETTE */}
+    <motion.div className="fixed inset-0 bg-white z-[60] flex overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="w-48 border-r p-4 overflow-y-auto bg-gray-50">        
         <h3 className="font-bold mb-3">Questions</h3>
         <div className="grid grid-cols-5 gap-2">
@@ -377,23 +358,16 @@ function ExamPlayer({ setData, onClose, onFinish }: { setData: MCQSet, onClose: 
           ))}
         </div>
       </div>
-
-      {/* MAIN AREA */}
       <div className="flex-1 flex flex-col">
-
-        {/* HEADER */}
         <div className="flex justify-between items-center px-6 py-4 border-b sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold">{setData.title}</h2>
           <div className="flex items-center gap-6">
-            <span className="text-red-600 font-bold text-lg">⏱ {formatTime(remainingTime)}</span>
+            <span className="text-red-600 font-bold text-lg"><Timer className="inline w-5 h-5" /> {formatTime(remainingTime)}</span>
             <button onClick={onClose} className="underline text-gray-600">Exit</button>
           </div>
         </div>
-
-        {/* QUESTION */}
         <div className="p-6 overflow-y-auto flex-1">
           <h3 className="font-semibold text-lg mb-4">{index + 1}. {q.question}</h3>
-
           <div className="space-y-3">
             {q.options.map((opt: string, i: number) => (
               <button
@@ -405,55 +379,24 @@ function ExamPlayer({ setData, onClose, onFinish }: { setData: MCQSet, onClose: 
               </button>
             ))}
           </div>
-
           <div className="mt-6 flex gap-3">
-              <button onClick={handleMark} className="px-4 py-2 rounded border bg-gray-200">Mark</button>
-              <button onClick={handleSaveNext} className="px-4 py-2 rounded bg-blue-600 text-white">Save & Next</button>
-              <button onClick={handleSubmit} className="ml-auto px-4 py-2 rounded bg-green-600 text-white">Submit</button>
+            <button onClick={handleMark} className="px-4 py-2 rounded border bg-gray-200">Mark</button>
+            <button onClick={handleSaveNext} className="px-4 py-2 rounded bg-blue-600 text-white">Save & Next</button>
+            <button onClick={handleSubmit} className="ml-auto px-4 py-2 rounded bg-green-600 text-white">Submit</button>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
-
-// END BLOCK 3 — EXAM PLAYER ENGINE
-
 
 
 // ==============================================
 // BLOCK 4 — RESULTS + REVIEW ENGINE
 // ==============================================
-// Provides:
-// • Score calculation
-// • Detailed review (correct/incorrect)
-// • Explanation, topic, difficulty badges
-// • Sidebar palette preserved for review
-// • Analytics base layer (accuracy, attempted count)
-// ==============================================
 
-function ExamResults({ setData, answers, onClose }: { setData: MCQSet, answers: any, onClose: () => void }) {
-  const questions = setData.questions;
-
-  const result = React.useMemo(() => {
-    let correct = 0;
-    let attempted = 0;
-
-    questions.forEach((q: any) => {
-      const ans = answers[q.id];
-      if (ans) attempted++;
-      if (ans && ans.trim() === q.correctAnswer.trim()) correct++;
-    });
-
-    return {
-      total: questions.length,
-      attempted,
-      correct,
-      incorrect: attempted - correct,
-      accuracy: attempted > 0 ? Math.round((correct / attempted) * 100) : 0,
-    };
-  }, [answers, questions]);
-
+function ExamResults({ setData, answers, result, onClose }: { setData: MCQSet; answers: any; result: any; onClose: () => void; }) {
+  const questions: Question[] = setData.questions;
   const [index, setIndex] = React.useState(0);
   const q = questions[index];
   const userAns = answers[q.id];
@@ -467,9 +410,7 @@ function ExamResults({ setData, answers, onClose }: { setData: MCQSet, answers: 
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-[70] flex overflow-hidden">
-
-      {/* LEFT REVIEW PALETTE */}
+    <motion.div className="fixed inset-0 bg-white z-[70] flex overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="w-48 border-r p-4 overflow-y-auto bg-gray-50">        
         <h3 className="font-bold mb-3">Review</h3>
         <div className="grid grid-cols-5 gap-2">
@@ -483,63 +424,199 @@ function ExamResults({ setData, answers, onClose }: { setData: MCQSet, answers: 
             </button>
           ))}
         </div>
-
         <button onClick={onClose} className="mt-6 underline text-sm text-gray-600">Close</button>
       </div>
-
-      {/* RIGHT SIDE CONTENT */}
       <div className="flex-1 overflow-y-auto">
-
-        {/* SUMMARY HEADER */}
         <div className="border-b p-6 bg-white sticky top-0 z-10">
           <h2 className="text-2xl font-bold">Results</h2>
           <div className="flex gap-6 mt-3 text-sm">
             <span>Total: <strong>{result.total}</strong></span>
             <span>Attempted: <strong>{result.attempted}</strong></span>
             <span>Correct: <strong className="text-green-700">{result.correct}</strong></span>
-            <span>Incorrect: <strong className="text-red-700">{result.incorrect}</strong></span>
-            <span>Accuracy: <strong>{result.accuracy}%</strong></span>
+            <span>Incorrect: <strong className="text-red-700">{result.total - result.attempted + (result.attempted - result.correct)}</strong></span>
+            <span>Accuracy: <strong>{result.attempted > 0 ? Math.round((result.correct / result.attempted) * 100) : 0}%</strong></span>
           </div>
         </div>
-
-        {/* REVIEW AREA */}
         <div className="p-6">
           <h3 className="text-xl font-semibold mb-4">{index + 1}. {q.question}</h3>
-
           <div className="space-y-3">
             {q.options.map((opt: string, i: number) => {
               const isCorrectOpt = opt.trim() === q.correctAnswer.trim();
               const isUserOpt = opt.trim() === (userAns || "").trim();
-
               return (
-                <div
-                  key={i}
-                  className={`p-3 rounded border ${
-                    isCorrectOpt ? "bg-green-100 border-green-400" :
-                    isUserOpt && !isCorrectOpt ? "bg-red-100 border-red-400" : "bg-white"
-                  }`}
-                >
+                <div key={i} className={`p-3 rounded border ${ isCorrectOpt ? "bg-green-100 border-green-400" : isUserOpt && !isCorrectOpt ? "bg-red-100 border-red-400" : "bg-white" }`}>
                   {opt}
                 </div>
               );
             })}
           </div>
-
-          {/* Explanation */}
           {q.explanation && (
             <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400">
               <h4 className="font-semibold mb-1">Explanation</h4>
               <p>{q.explanation}</p>
             </div>
           )}
-
-          {/* Topic & Difficulty */}
           <div className="mt-4 flex gap-3 text-sm">
             {q.topic && <span className="bg-blue-100 px-3 py-1 rounded">Topic: {q.topic}</span>}
             {q.difficulty && <span className="bg-gray-200 px-3 py-1 rounded">{q.difficulty}</span>}
           </div>
         </div>
       </div>
+    </motion.div>
+  );
+}
+
+// ==============================================
+// BLOCK 5 — FIRESTORE ATTEMPT HISTORY SAVER
+// ==============================================
+async function saveAttemptToFirestore(setData: any, answers: any, result: any) {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) return; // user not logged in → skip silently
+
+    const attemptId = `${setData.id}_${Date.now()}`;
+    const topicStats: any = {};
+    setData.questions.forEach((q: any) => {
+      const ua = answers[q.id];
+      const correct = ua && ua.trim() === q.correctAnswer.trim();
+      if (!topicStats[q.topic || "General"]) topicStats[q.topic || "General"] = { total: 0, wrong: 0 };
+      topicStats[q.topic || "General"].total++;
+      if (!correct) topicStats[q.topic || "General"].wrong++;
+    });
+
+    const payload = {
+      userId: user.uid,
+      mcqSetId: setData.id,
+      title: setData.title,
+      course: setData.course,
+      subject: setData.subject,
+      attemptedAt: serverTimestamp(),
+      answers,
+      score: result.correct,
+      incorrect: result.incorrect,
+      attempted: result.attempted,
+      accuracy: result.accuracy,
+      total: result.total,
+      topicStats,
+    };
+
+    await setDoc(doc(db, "mcqAttempts", attemptId), payload);
+  } catch (err) {
+    console.error("Failed to save attempt:", err);
+  }
+}
+
+// ==============================================
+// BLOCK 6 — ANALYTICS ENGINE + DASHBOARD WIDGETS
+// ==============================================
+export function computeAnalytics(attempts: any[]) {
+  if (!attempts || attempts.length === 0) return null;
+
+  const totalAttempts = attempts.length;
+  const avgAccuracy = Math.round(
+    attempts.reduce((sum, a) => sum + (a.accuracy || 0), 0) / totalAttempts
+  );
+
+  const scoreTrend = attempts.map((a, i) => ({
+    index: i + 1,
+    accuracy: a.accuracy,
+    score: a.score,
+    timestamp: a.attemptedAt?.seconds || null,
+  }));
+
+  const topicHeatmap: any = {};
+  attempts.forEach((attempt) => {
+    const stats = attempt.topicStats || {};
+    Object.keys(stats).forEach((topic) => {
+      if (!topicHeatmap[topic]) topicHeatmap[topic] = { total: 0, wrong: 0 };
+      topicHeatmap[topic].total += stats[topic].total;
+      topicHeatmap[topic].wrong += stats[topic].wrong;
+    });
+  });
+
+  const weakTopics = Object.entries(topicHeatmap)
+    .map(([topic, data]: any) => ({
+      topic,
+      accuracy: data.total > 0 ? Math.round(((data.total - d.wrong) / d.total) * 100) : 0,
+    }))
+    .sort((a, b) => a.accuracy - b.accuracy)
+    .slice(0, 5);
+
+  return {
+    totalAttempts,
+    avgAccuracy,
+    weakTopics,
+    topicHeatmap,
+    scoreTrend,
+  };
+}
+
+export async function fetchUserAttempts() {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) return [];
+
+  const q = query(
+    collection(db, "mcqAttempts"),
+    where("userId", "==", user.uid)
+  );
+
+  const snap = await getDocs(q);
+  const arr: any[] = [];
+  snap.forEach((doc) => arr.push(doc.data()));
+  return arr.sort((a, b) => (b.attemptedAt?.seconds || 0) - (a.attemptedAt?.seconds || 0));
+}
+
+export function AnalyticsSummary({ summary }: any) {
+  if (!summary) return null;
+
+  return (
+    <div className="p-4 bg-white border rounded shadow-sm mb-4">
+      <h2 className="text-xl font-bold mb-3">Performance Summary</h2>
+      <div className="flex flex-wrap gap-6 text-sm">
+        <div>Attempts: <strong>{summary.totalAttempts}</strong></div>
+        <div>Average Accuracy: <strong>{summary.avgAccuracy}%</strong></div>
+        <div>Weak Topics: <strong>{summary.weakTopics.map((t:any) => t.topic).join(', ') || 'None'}</strong></div>
+      </div>
+    </div>
+  );
+}
+
+export function TopicHeatmapList({ heatmap }: any) {
+  if (!heatmap) return null;
+
+  return (
+    <div className="p-4 bg-white border rounded shadow-sm space-y-2 mb-4">
+      <h3 className="font-semibold">Topic Performance</h3>
+      {Object.entries(heatmap).map(([topic, d]: any) => {
+        const accuracy = d.total > 0 ? Math.round(((d.total - d.wrong) / d.total) * 100) : 0;
+        return (
+          <div key={topic} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+            <span>{topic}</span>
+            <span className={accuracy < 50 ? "text-red-600" : accuracy < 75 ? "text-yellow-600" : "text-green-700"}>
+              {accuracy}%
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ScoreTrendList({ trend }: any) {
+  if (!trend) return null;
+
+  return (
+    <div className="p-4 bg-white border rounded shadow-sm space-y-2">
+      <h3 className="font-semibold">Progress Over Time</h3>
+      {trend.map((t: any, i: number) => (
+        <div key={i} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+          <span>Attempt {i + 1}</span>
+          <span>{t.accuracy}% accuracy</span>
+        </div>
+      ))}
     </div>
   );
 }
