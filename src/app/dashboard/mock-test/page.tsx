@@ -1,4 +1,3 @@
-
 // --- PREMIUM MCQ PRACTICE PAGE (OPTION A - FULL FILE BEGIN) ---
 
 "use client";
@@ -187,17 +186,9 @@ export default function PremiumMCQPracticePage() {
       {isInitialLoadAndEmpty ? (
         <FallbackUI />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((s: MCQSet) => (
-              <div
-                key={s.id}
-                onClick={() => setPreview(s)}
-                className="p-4 bg-white border rounded shadow-sm hover:shadow-md transition cursor-pointer"
-              >
-                  <h3 className="font-semibold text-gray-800">{s.title}</h3>
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">{s.description || `${s.subject} • ${s.course}`}</p>
-                  <p className="text-xs text-gray-400 mt-2">Questions: {s.questions?.length || 0}</p>
-              </div>
+              <PremiumCard key={s.id} set={s} onClick={() => setPreview(s)} />
             ))}
         </div>
       )}
@@ -230,6 +221,63 @@ export default function PremiumMCQPracticePage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function PremiumCard({ set, onClick }: { set: MCQSet; onClick: () => void }) {
+  return (
+    <motion.div
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClick}
+      className="cursor-pointer bg-white border rounded-xl shadow-sm hover:shadow-lg p-5 flex flex-col justify-between group"
+    >
+      <div>
+        {/* Header Row */}
+        <div className="flex justify-between items-start">
+          <h3 className="font-bold text-lg text-gray-800 leading-snug group-hover:text-purple-700 transition">
+            {set.title}
+          </h3>
+
+          {set.isPremium && (
+            <span className="text-amber-500">
+              <Star className="w-5 h-5 fill-amber-500" />
+            </span>
+          )}
+        </div>
+
+        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+          {set.description || `${set.subject} • ${set.course}`}
+        </p>
+      </div>
+
+      {/* Info Group */}
+      <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-600">
+        
+        <div className="flex items-center gap-1">
+          <BookOpen className="w-4 h-4 text-purple-600" />
+          {set.subject}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Timer className="w-4 h-4 text-blue-600" />
+          {set.questions?.length || 0} Q
+        </div>
+
+        {set.questions.some((q: any) => q.explanation) && (
+          <div className="flex items-center gap-1">
+            <Eye className="w-4 h-4 text-green-600" />
+            Explanation
+          </div>
+        )}
+      </div>
+
+      {/* CTA Button */}
+      <button className="mt-5 w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 transition">
+        <Play className="w-4 h-4" />
+        Practice Now
+      </button>
+    </motion.div>
   );
 }
 
