@@ -399,7 +399,7 @@ export default function EditNotePageClient() {
             <label className="block font-semibold text-sm">Content</label>
             <div className="flex items-center gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => applyAutoFormat()}>
-                Auto-format
+                Auto-format (non-AI)
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setReaderOpen(true)}>
                 <Eye className="w-4 h-4 mr-2" /> Preview
