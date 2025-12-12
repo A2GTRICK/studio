@@ -41,7 +41,6 @@ function autoFormatMarkdown(input: string) {
 
   const looksLikeNumbered = (ln: string) => /^\s*\d{1,3}\.\s+/.test(ln);
   const looksLikeBullet = (ln: string) => /^\s*[\*\u2022\u25E6\u25CF\-]\s+/.test(ln);
-  const looksLikeHeading = (ln: string) => /^\s*##?#?\s+/.test(ln);
   const looksLikeAllCaps = (ln: string) => {
     const t = ln.trim();
     if (!t) return false;
@@ -62,28 +61,25 @@ function autoFormatMarkdown(input: string) {
   for (let i = 0; i < rawLines.length; i++) {
     let line = rawLines[i];
     if (line !== "") line = line.replace(/^\s+/, "");
-    
-    // If it's already a heading, just normalize its spacing and continue
-    if (looksLikeHeading(line)) {
-        outLines.push(line.replace(/^\s*##?#?\s+/, '## '));
-        continue;
-    }
 
     // bold-only lines -> heading
     const boldHeadingMatch = line.match(/^\s*\*\*(.+?)\*\*\s*$/);
     if (boldHeadingMatch) {
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
       push(`## ${boldHeadingMatch[1].trim()}`);
       continue;
     }
 
     // lines that end with colon -> heading
     if (/:\s*$/.test(line)) {
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
       push(`## ${line.replace(/:\s*$/, "").trim()}`);
       continue;
     }
 
     // capitalized/title heuristics
     if (looksLikeAllCaps(line) || looksLikeTitleCase(line)) {
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
       push(`## ${line.trim()}`);
       continue;
     }
@@ -110,14 +106,17 @@ function autoFormatMarkdown(input: string) {
   for (let i = 0; i < outLines.length; i++) {
     const line = outLines[i];
     const prev = withSpacing.length ? withSpacing[withSpacing.length - 1] : null;
+    const next = (() => {
+      for (let j = i + 1; j < outLines.length; j++) if (outLines[j].trim() !== "") return outLines[j];
+      return null;
+    })();
 
-    // Add a blank line before a heading if the previous line isn't blank
-    if (looksLikeHeading(line)) {
-      if (prev !== null && prev.trim() !== "") {
-        withSpacing.push("");
-      }
+    if (/^##\s+/.test(line)) {
+      if (prev !== null && prev.trim() !== "") withSpacing.push("");
+      withSpacing.push(line.trim());
+      if (next && !/^##\s+/.test(next) && next.trim() !== "") withSpacing.push("");
+      continue;
     }
-    
     withSpacing.push(line);
   }
 
@@ -126,7 +125,7 @@ function autoFormatMarkdown(input: string) {
   for (const ln of withSpacing) {
     if (ln.trim() === "") {
       blankRun++;
-      if (blankRun <= 1) collapsed.push("");
+      if (blankRun <= 2) collapsed.push("");
     } else {
       blankRun = 0;
       collapsed.push(ln);
@@ -136,7 +135,7 @@ function autoFormatMarkdown(input: string) {
   while (collapsed.length && collapsed[0].trim() === "") collapsed.shift();
   while (collapsed.length && collapsed[collapsed.length - 1].trim() === "") collapsed.pop();
 
-  return collapsed.join("\n").replace(/\n{2,}/g, "\n\n") + "\n";
+  return collapsed.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
 }
 
 // Generate TOC from formatted markdown (only lines starting with ## )
@@ -201,7 +200,7 @@ function renderMarkdownToHtml(md: string) {
   html = html.replace(/(<li>.*?<\/li>\s*)+/gms, (m) => `<ol>${m}</ol>`);
 
   // paragraphs: any line not wrapped
-  const lines = html.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = html.split("\n").map((l) => l.trim()).filter(Boolean);
   html = lines.join("\n").replace(/(<h2>.*?<\/h2>|<ul>.*?<\/ul>|<ol>.*?<\/ol>)/gms, (m) => m + "\n");
   return html;
 }
@@ -210,7 +209,7 @@ function renderMarkdownToHtml(md: string) {
 export default function EditNotePageClient() {
   const params = useParams() as any;
   const rawId = params?.id;
-  const id = Array.isArray(rawId) ? rawId[0] : rawId[0];
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -550,5 +549,3 @@ export default function EditNotePageClient() {
     </form>
   );
 }
-
-    
