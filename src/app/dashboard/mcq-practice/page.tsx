@@ -67,8 +67,11 @@ export default function MCQPracticePage() {
       f = f.filter((s) => {
         try {
           const key = `mcq_attempt_${s.id}`;
-          const raw = localStorage.getItem(key);
-          return !raw;
+          if (typeof window !== 'undefined') {
+            const raw = localStorage.getItem(key);
+            return !raw;
+          }
+          return true;
         } catch {
           return true;
         }
