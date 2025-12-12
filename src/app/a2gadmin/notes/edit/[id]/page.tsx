@@ -114,19 +114,19 @@ export default function EditNotePageClient() {
     try {
       if (!id) throw new Error("Missing id");
 
-      // send JSON to your server-side API (PUT accepted)
+      const formData = new FormData();
+      formData.append("title", note.title ?? "");
+      formData.append("subject", note.subject ?? "");
+      formData.append("course", note.course ?? "");
+      formData.append("year", note.year ?? "");
+      formData.append("topic", note.topic ?? "");
+      formData.append("isPremium", String(!!note.isPremium));
+      formData.append("content", note.content ?? "");
+
+      // send FormData to your server-side API (PUT accepted)
       const res = await fetch(`/api/a2gadmin/notes?id=${encodeURIComponent(id)}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: note.title,
-          subject: note.subject,
-          course: note.course,
-          year: note.year,
-          topic: note.topic,
-          isPremium: !!note.isPremium,
-          content: note.content,
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
