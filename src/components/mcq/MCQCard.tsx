@@ -1,22 +1,17 @@
+
 import React from "react";
+import type { MCQSet } from "@/services/mcq";
 
 type Props = {
-  data: {
-    id: string;
-    title: string;
-    subject?: string;
-    course?: string;
-    questions?: any[]; // array of question objects
-    timeLimit?: number; // seconds or minutes
-    description?: string;
-  };
+  set: MCQSet;
   onStart?: () => void;
 };
 
-export default function MCQCard({ data, onStart }: Props) {
+export default function MCQCard({ set: data, onStart }: Props) {
   const total = Array.isArray(data.questions) ? data.questions.length : 0;
   const attempted = (() => {
     try {
+      if (typeof window === 'undefined') return 0;
       const raw = localStorage.getItem(`mcq_attempt_${data.id}`);
       if (!raw) return 0;
       const st = JSON.parse(raw);
