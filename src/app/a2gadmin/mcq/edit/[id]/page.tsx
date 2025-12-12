@@ -1,29 +1,25 @@
+// Premium Upgraded MCQ Editor with Bulk Upload
+// src/app/a2gadmin/mcq/edit/[id]/page.tsx
 
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { Loader2, Plus, Trash2, Save, ArrowLeft, Upload, Eye, FilePlus, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { db } from "@/firebase/config";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
 
-// Premium MCQ editor: bulk upload (text/CSV/JSON), preview, validation, save, local draft
-
+// ------------------ Types ------------------
 type Question = {
   id: string;
   question: string;
   options: string[];
   correctAnswer: string;
-  explanation?: string;
-  topic?: string;
-  difficulty?: "Easy" | "Medium" | "Hard";
+  explanation: string;
+  topic: string;
+  difficulty: "Easy" | "Medium" | "Hard";
 };
 
 export default function EditMcqSetPagePremium() {
@@ -60,14 +56,16 @@ export default function EditMcqSetPagePremium() {
     (async () => {
       setLoading(true);
       try {
-        const ref = doc(db, "mcqSets", id);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
+        const res = await fetch(`/api/a2gadmin/mcq?id=${id}`);
+        if (!res.ok) throw new Error('Failed to fetch MCQ set');
+        const { set: payload } = await res.json();
+        
+        if (!payload) {
           setMsg("MCQ set not found");
           setLoading(false);
           return;
         }
-        const payload = snap.data();
+
         if (!mounted) return;
         setTitle(payload.title || "");
         setCourse(payload.course || "");
@@ -86,7 +84,6 @@ export default function EditMcqSetPagePremium() {
           difficulty: q.difficulty || "Medium",
         }));
 
-        // load draft if exists
         const local = typeof window !== 'undefined' ? localStorage.getItem(draftKey) : null;
         if (local) {
           try {
@@ -99,15 +96,15 @@ export default function EditMcqSetPagePremium() {
 
         setHistory([incoming]);
         setMsg(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setMsg("Network error loading MCQ set");
+        setMsg(`Network error: ${err.message}`);
       } finally {
         if (mounted) setLoading(false);
       }
     })();
     return () => { mounted = false; };
-  }, [id]);
+  }, [id, draftKey]);
 
   // autosave local draft
   useEffect(() => {
@@ -116,7 +113,7 @@ export default function EditMcqSetPagePremium() {
       try { localStorage.setItem(draftKey, JSON.stringify(questions)); } catch {}
     }, 1200);
     return () => clearTimeout(t);
-  }, [questions, id]);
+  }, [questions, id, draftKey]);
 
   function pushHistory() {
     setHistory((h) => [JSON.parse(JSON.stringify(questions)), ...h].slice(0, 20));
@@ -137,12 +134,11 @@ export default function EditMcqSetPagePremium() {
   }
 
   function undo() {
-    setHistory((h) => {
-      if (h.length === 0) return h;
-      const [latest, ...rest] = h;
-      setQuestions(latest);
-      return rest;
-    });
+    if (history.length > 1) {
+       const [current, ...rest] = history;
+       setQuestions(rest[0]);
+       setHistory(rest);
+    }
   }
 
   // Bulk parsing: supports structured text and simple CSV
@@ -158,19 +154,16 @@ export default function EditMcqSetPagePremium() {
         if (/^Q[:\.]\s*/i.test(ln)) q.question = ln.replace(/^Q[:\.]\s*/i, "").trim();
         else if (/^[A-D][)\.]\s*/.test(ln)) {
           const idx = ln.charCodeAt(0) - 65;
-          q.options[idx] = ln.replace(/^[A-D][)\.]\s*/, "").trim();
+          if(idx >= 0 && idx < 4) q.options[idx] = ln.replace(/^[A-D][)\.]\s*/, "").trim();
         } else if (/^Correct[:\.]\s*/i.test(ln)) q.correctAnswer = ln.replace(/^Correct[:\.]\s*/i, "").trim();
         else if (/^Explanation[:\.]\s*/i.test(ln)) q.explanation = ln.replace(/^Explanation[:\.]\s*/i, "").trim();
         else if (/^Topic[:\.]\s*/i.test(ln)) q.topic = ln.replace(/^Topic[:\.]\s*/i, "").trim();
         else if (/^Difficulty[:\.]\s*/i.test(ln)) {
           const d = ln.replace(/^Difficulty[:\.]\s*/i, "").trim();
           if (d === "Easy" || d === "Medium" || d === "Hard") q.difficulty = d as any;
-        } else {
-          // fallbacks: if first non-empty and q.question empty, treat as question
-          if (!q.question) q.question = ln;
         }
       }
-      parsed.push(q);
+      if (q.question && q.options.some(o => o)) parsed.push(q);
     }
     return parsed;
   }
@@ -194,7 +187,6 @@ export default function EditMcqSetPagePremium() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const txt = String(e.target?.result ?? "");
-      // naive CSV: header optional. Expect columns: question, option1, option2, option3, option4, correct, explanation, topic, difficulty
       const lines = txt.split(/\r?\n/).filter(Boolean);
       const parsed: Question[] = [];
       const header = lines[0].split(/,|\t/).map(h => h.trim().toLowerCase());
@@ -219,13 +211,12 @@ export default function EditMcqSetPagePremium() {
             else if (/difficulty/.test(h)) q.difficulty = (v || 'Medium') as any;
           }
         } else {
-          // fallback mapping
           q.question = cols[0];
-          for (let k = 1; k <= 4; k++) q.options[k-1] = cols[k] ?? '';
-          q.correctAnswer = cols[5] ?? '';
-          q.explanation = cols[6] ?? '';
+          q.options = [cols[1] || '', cols[2] || '', cols[3] || '', cols[4] || ''];
+          q.correctAnswer = cols[5] || '';
+          q.explanation = cols[6] || '';
         }
-        parsed.push(q);
+        if (q.question) parsed.push(q);
       }
       if (parsed.length) {
         pushHistory();
@@ -245,47 +236,51 @@ export default function EditMcqSetPagePremium() {
       reader.onload = () => {
         try {
           const parsed = JSON.parse(String(reader.result ?? ''));
-          if (Array.isArray(parsed)) { pushHistory(); setQuestions((q) => [...q, ...parsed.map((it:any)=>({ id: uuidv4(), question: it.question||'', options: it.options||['','','',''], correctAnswer: it.correctAnswer||'', explanation: it.explanation||'', topic: it.topic||'', difficulty: it.difficulty||'Medium' }))]); setMsg('Imported JSON questions'); }
-          else setMsg('JSON must be an array of questions');
+          if (Array.isArray(parsed)) { 
+              pushHistory(); 
+              setQuestions((q) => [...q, ...parsed.map((it:any)=>({ id: uuidv4(), question: it.question||'', options: it.options||['','','',''], correctAnswer: it.correctAnswer||'', explanation: it.explanation||'', topic: it.topic||'', difficulty: it.difficulty||'Medium' }))]); 
+              setMsg('Imported JSON questions');
+          } else setMsg('JSON must be an array of questions');
         } catch (err) { setMsg('Invalid JSON file'); }
       };
       reader.readAsText(f);
       return;
     }
-    // assume CSV or text
     handleCsvFile(f);
   }
 
   async function handleSave(e?: React.FormEvent) {
     if (e) e.preventDefault();
     setSaving(true); setMsg(null);
-    // basic validation: ensure each question has at least one option and correctAnswer matching one option
+    
     for (const [i,q] of questions.entries()) {
-      if (!q.question.trim()) { setMsg(`Question ${i+1} is empty`); setSaving(false); return; }
-      if (!q.options.some(o=>o && o.trim())) { setMsg(`Question ${i+1} has no options`); setSaving(false); return; }
-      if (!q.correctAnswer || !q.options.map(o=>o.trim()).includes(q.correctAnswer.trim())) { setMsg(`Question ${i+1} has invalid correct answer`); setSaving(false); return; }
+      if (!q.question.trim()) { setMsg(`Validation Error: Question ${i+1} is empty.`); setSaving(false); return; }
+      if (!q.options.some(o=>o && o.trim())) { setMsg(`Validation Error: Question ${i+1} has no options.`); setSaving(false); return; }
+      if (!q.correctAnswer || !q.options.map(o=>o.trim()).includes(q.correctAnswer.trim())) { setMsg(`Validation Error: Question ${i+1} has an invalid correct answer. It must exactly match one of the options.`); setSaving(false); return; }
     }
 
-    const ref = doc(db, 'mcqSets', id);
-    const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length, updatedAt: serverTimestamp() };
+    const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length };
     
-    updateDoc(ref, payload)
-      .then(() => {
+    try {
+        const res = await fetch(`/api/a2gadmin/mcq?id=${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Failed to save MCQ set');
+        }
+        
         setMsg('Saved successfully');
         try { localStorage.removeItem(draftKey); } catch {}
-      })
-      .catch(serverError => {
-          const permissionError = new FirestorePermissionError({
-              path: ref.path,
-              operation: 'update',
-              requestResourceData: payload,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-          setMsg('A permission error occurred. Check the console.');
-      })
-      .finally(() => {
-          setSaving(false);
-      });
+
+    } catch (err: any) {
+        setMsg(`An error occurred: ${err.message}`);
+    } finally {
+        setSaving(false);
+    }
   }
 
   function exportJson() {
@@ -313,7 +308,7 @@ export default function EditMcqSetPagePremium() {
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="p-4 bg-white rounded shadow-sm border">
+        <div className="p-4 bg-card rounded-lg shadow-sm border">
           <h2 className="font-semibold mb-2">Set Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="* Title" required />
@@ -328,18 +323,18 @@ export default function EditMcqSetPagePremium() {
           </div>
         </div>
 
-        <div className="p-4 bg-white rounded shadow-sm border">
+        <div className="p-4 bg-card rounded-lg shadow-sm border">
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-semibold">Questions ({questions.length})</h2>
             <div className="flex gap-2">
               <Button type="button" onClick={addBlankQuestion}><Plus className="w-4 h-4 mr-2"/>Add</Button>
-              <Button type="button" variant="outline" onClick={undo}>Undo</Button>
+              <Button type="button" variant="outline" onClick={undo} disabled={history.length <= 1}>Undo</Button>
             </div>
           </div>
 
           <div className="space-y-4">
             {questions.map((q, idx) => (
-              <div key={q.id} className="p-3 border rounded bg-gray-50">
+              <div key={q.id} className="p-3 border rounded bg-secondary/20">
                 <div className="flex justify-between items-center mb-2">
                   <div className="font-semibold">Question {idx+1}</div>
                   <div className="flex items-center gap-2">
@@ -356,7 +351,7 @@ export default function EditMcqSetPagePremium() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <Input value={q.correctAnswer} onChange={(e)=>updateQuestion(q.id,{ correctAnswer: e.target.value })} placeholder="Correct answer (must exactly match an option)" />
                     <Input value={q.topic||''} onChange={(e)=>updateQuestion(q.id,{ topic: e.target.value })} placeholder="Topic" />
-                    <select value={q.difficulty||'Medium'} onChange={(e)=>updateQuestion(q.id,{ difficulty: e.target.value as any })} className="p-2 border rounded">
+                    <select value={q.difficulty||'Medium'} onChange={(e)=>updateQuestion(q.id,{ difficulty: e.target.value as any })} className="p-2 border rounded bg-card">
                       <option>Easy</option>
                       <option>Medium</option>
                       <option>Hard</option>
@@ -379,16 +374,16 @@ export default function EditMcqSetPagePremium() {
       {/* Bulk modal */}
       {bulkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40">
-          <div className="bg-white rounded shadow-lg w-full max-w-3xl p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="font-semibold">Bulk Upload MCQs</div>
               <div className="flex items-center gap-2">
-                <Button onClick={()=>{ setBulkText('Q: Example?\nA) Opt1\nB) Opt2\nC) Opt3\nD) Opt4\nCorrect: A\nExplanation: ...\nTopic: ...\nDifficulty: Medium'); }}>Insert Example</Button>
+                <Button onClick={()=>{ setBulkText('Q: Example?\nA) Opt1\nB) Opt2\nC) Opt3\nD) Opt4\nCorrect: Opt1\nExplanation: ...\nTopic: ...\nDifficulty: Medium'); }}>Insert Example</Button>
                 <Button variant="ghost" onClick={()=>setBulkModalOpen(false)}>Close</Button>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="text-sm text-muted">Paste text blocks separated by empty line. Supports simple CSV/JSON via Import button on page.</div>
+              <div className="text-sm text-muted-foreground">Paste text blocks separated by empty line. Supports simple CSV/JSON via Import button on page.</div>
               <Textarea value={bulkText} onChange={(e)=>setBulkText(e.target.value)} className="h-64" />
               <div className="flex gap-2">
                 <Button onClick={handleBulkPasteApply}>Parse & Add</Button>
@@ -402,7 +397,7 @@ export default function EditMcqSetPagePremium() {
       {/* Preview modal */}
       {previewOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/40 overflow-auto">
-          <div className="bg-white rounded shadow-lg w-full max-w-4xl p-6">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">Preview: {title || 'Untitled'}</h3>
               <Button variant="ghost" onClick={()=>setPreviewOpen(false)}>Close</Button>
@@ -416,7 +411,7 @@ export default function EditMcqSetPagePremium() {
                       <li key={idx} className={o.trim()===q.correctAnswer.trim() ? 'font-semibold text-green-700' : ''}>{o || <em>—</em>}</li>
                     ))}
                   </ol>
-                  {q.explanation && <div className="text-sm text-muted">Explanation: {q.explanation}</div>}
+                  {q.explanation && <div className="text-sm text-muted-foreground">Explanation: {q.explanation}</div>}
                   {q.topic && <div className="text-sm">Topic: {q.topic}</div>}
                   {q.difficulty && <div className="text-sm">Difficulty: {q.difficulty}</div>}
                 </div>
