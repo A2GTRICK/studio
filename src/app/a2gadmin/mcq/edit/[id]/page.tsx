@@ -1,32 +1,37 @@
-// Premium Upgraded MCQ Editor with Bulk Upload
-// src/app/a2gadmin/mcq/edit/[id]/page.tsx
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Plus, Trash2, Save, ArrowLeft, Upload } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, ArrowLeft, Upload, Eye, FilePlus, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { db } from "@/firebase/config";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { db } from "@/firebase/config";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
-// ------------------ Types ------------------
+// Premium MCQ editor: bulk upload (text/CSV/JSON), preview, validation, save, local draft
+
 type Question = {
   id: string;
   question: string;
   options: string[];
   correctAnswer: string;
-  explanation: string;
-  topic: string;
-  difficulty: "Easy" | "Medium" | "Hard";
+  explanation?: string;
+  topic?: string;
+  difficulty?: "Easy" | "Medium" | "Hard";
 };
 
-export default function EditMcqSetPage() {
-  const { id } = useParams();
+export default function EditMcqSetPagePremium() {
+  const params = useParams() as any;
+  const rawId = params?.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [course, setCourse] = useState("");
@@ -37,323 +42,377 @@ export default function EditMcqSetPage() {
   const [isPublished, setIsPublished] = useState(false);
 
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [history, setHistory] = useState<Question[][]>([]);
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
+  // UI state
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const draftKey = `a2g:mcq:draft:${id}`;
 
-  const bulkRef = useRef<HTMLTextAreaElement | null>(null);
-  const [bulkModal, setBulkModal] = useState(false);
-
-  // ------------------ Load MCQ Set ------------------
   useEffect(() => {
     if (!id) return;
-    async function loadSet() {
+    let mounted = true;
+    (async () => {
       setLoading(true);
       try {
-        const docRef = doc(db, "mcqSets", Array.isArray(id) ? id[0] : id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const set = docSnap.data();
-          setTitle(set.title || "");
-          setCourse(set.course || "");
-          setSubject(set.subject || "");
-          setYear(set.year || "");
-          setDescription(set.description || "");
-          setIsPremium(set.isPremium || false);
-          setIsPublished(set.isPublished || false);
-          setQuestions((set.questions || []).map((q: any) => ({ ...q, id: q.id || uuidv4() })));
-        } else {
-          setMsg("MCQ set not found.");
+        const ref = doc(db, "mcqSets", id);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          setMsg("MCQ set not found");
+          setLoading(false);
+          return;
         }
+        const payload = snap.data();
+        if (!mounted) return;
+        setTitle(payload.title || "");
+        setCourse(payload.course || "");
+        setSubject(payload.subject || "");
+        setYear(payload.year || "");
+        setDescription(payload.description || "");
+        setIsPremium(!!payload.isPremium);
+        setIsPublished(!!payload.isPublished);
+        const incoming = (payload.questions || []).map((q: any) => ({
+          id: q.id || uuidv4(),
+          question: q.question || "",
+          options: Array.isArray(q.options) ? q.options : ["", "", "", ""],
+          correctAnswer: q.correctAnswer || "",
+          explanation: q.explanation || "",
+          topic: q.topic || "",
+          difficulty: q.difficulty || "Medium",
+        }));
+
+        // load draft if exists
+        const local = typeof window !== 'undefined' ? localStorage.getItem(draftKey) : null;
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            setQuestions(Array.isArray(parsed) ? parsed : incoming);
+          } catch {
+            setQuestions(incoming);
+          }
+        } else setQuestions(incoming);
+
+        setHistory([incoming]);
+        setMsg(null);
       } catch (err) {
-        setMsg("Network error.");
+        console.error(err);
+        setMsg("Network error loading MCQ set");
+      } finally {
+        if (mounted) setLoading(false);
       }
-      setLoading(false);
-    }
-    loadSet();
+    })();
+    return () => { mounted = false; };
   }, [id]);
 
-  // ------------------ Add Question ------------------
-  const addQuestion = () => {
-    setQuestions([
-      ...questions,
-      {
-        id: uuidv4(),
-        question: "",
-        options: ["", "", "", ""],
-        correctAnswer: "",
-        explanation: "",
-        topic: "",
-        difficulty: "Medium",
-      },
-    ]);
-  };
+  // autosave local draft
+  useEffect(() => {
+    if (!id) return;
+    const t = setTimeout(() => {
+      try { localStorage.setItem(draftKey, JSON.stringify(questions)); } catch {}
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [questions, id]);
 
-  const removeQuestion = (qId: string) => {
-    setQuestions(questions.filter((q) => q.id !== qId));
-  };
+  function pushHistory() {
+    setHistory((h) => [JSON.parse(JSON.stringify(questions)), ...h].slice(0, 20));
+  }
 
-  const handleQuestionChange = (qId: string, field: keyof Question, value: any) => {
-    setQuestions(questions.map((q) => (q.id === qId ? { ...q, [field]: value } : q)));
-  };
+  function addBlankQuestion() {
+    pushHistory();
+    setQuestions((q) => [...q, { id: uuidv4(), question: "", options: ["", "", "", ""], correctAnswer: "", explanation: "", topic: "", difficulty: "Medium" }]);
+  }
 
-  const handleOptionChange = (qId: string, idx: number, value: string) => {
-    setQuestions(
-      questions.map((q) => {
-        if (q.id === qId) {
-          const newOpts = [...q.options];
-          newOpts[idx] = value;
-          return { ...q, options: newOpts };
+  function removeQuestion(qid: string) {
+    pushHistory();
+    setQuestions((q) => q.filter((x) => x.id !== qid));
+  }
+
+  function updateQuestion(qid: string, patch: Partial<Question>) {
+    setQuestions((q) => q.map((it) => (it.id === qid ? { ...it, ...patch } : it)));
+  }
+
+  function undo() {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const [latest, ...rest] = h;
+      setQuestions(latest);
+      return rest;
+    });
+  }
+
+  // Bulk parsing: supports structured text and simple CSV
+  function parseBulkText(raw: string) {
+    // Split blocks by blank line
+    const blocks = raw.split(/\n\s*\n+/).map((b) => b.trim()).filter(Boolean);
+    const parsed: Question[] = [];
+    for (const block of blocks) {
+      // Look for lines starting with Q:, A), B), C), D), Correct:, Explanation:, Topic:, Difficulty:
+      const lines = block.split(/\n/).map((l) => l.trim());
+      const q: Question = { id: uuidv4(), question: "", options: ["", "", "", ""], correctAnswer: "", explanation: "", topic: "", difficulty: "Medium" };
+      for (const ln of lines) {
+        if (/^Q[:\.]\s*/i.test(ln)) q.question = ln.replace(/^Q[:\.]\s*/i, "").trim();
+        else if (/^[A-D][)\.]\s*/.test(ln)) {
+          const idx = ln.charCodeAt(0) - 65;
+          q.options[idx] = ln.replace(/^[A-D][)\.]\s*/, "").trim();
+        } else if (/^Correct[:\.]\s*/i.test(ln)) q.correctAnswer = ln.replace(/^Correct[:\.]\s*/i, "").trim();
+        else if (/^Explanation[:\.]\s*/i.test(ln)) q.explanation = ln.replace(/^Explanation[:\.]\s*/i, "").trim();
+        else if (/^Topic[:\.]\s*/i.test(ln)) q.topic = ln.replace(/^Topic[:\.]\s*/i, "").trim();
+        else if (/^Difficulty[:\.]\s*/i.test(ln)) {
+          const d = ln.replace(/^Difficulty[:\.]\s*/i, "").trim();
+          if (d === "Easy" || d === "Medium" || d === "Hard") q.difficulty = d as any;
+        } else {
+          // fallbacks: if first non-empty and q.question empty, treat as question
+          if (!q.question) q.question = ln;
         }
-        return q;
-      })
-    );
-  };
+      }
+      parsed.push(q);
+    }
+    return parsed;
+  }
 
-  // ------------------ Save MCQ Set ------------------
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setMsg("");
+  function handleBulkPasteApply() {
+    try {
+      const parsed = parseBulkText(bulkText);
+      if (parsed.length === 0) { setMsg('No valid questions parsed from bulk text'); return; }
+      pushHistory();
+      setQuestions((q) => [...q, ...parsed]);
+      setBulkModalOpen(false);
+      setBulkText("");
+      setMsg(`${parsed.length} questions added from bulk input`);
+    } catch (err) {
+      console.error(err);
+      setMsg('Failed to parse bulk input');
+    }
+  }
 
-    if (!title || !course || !subject) {
-      setMsg("Title, Course, and Subject are required.");
-      setSaving(false);
+  function handleCsvFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const txt = String(e.target?.result ?? "");
+      // naive CSV: header optional. Expect columns: question, option1, option2, option3, option4, correct, explanation, topic, difficulty
+      const lines = txt.split(/\r?\n/).filter(Boolean);
+      const parsed: Question[] = [];
+      const header = lines[0].split(/,|\t/).map(h => h.trim().toLowerCase());
+      const hasHeader = /question/.test(header.join(' '));
+      const start = hasHeader ? 1 : 0;
+      for (let i = start; i < lines.length; i++) {
+        const cols = lines[i].split(/,|\t/).map(c => c.trim());
+        if (cols.length < 2) continue;
+        const q: Question = { id: uuidv4(), question: '', options: ["", "", "", ""], correctAnswer: '', explanation: '', topic: '', difficulty: 'Medium' };
+        if (hasHeader) {
+          for (let k = 0; k < header.length; k++) {
+            const h = header[k];
+            const v = cols[k] ?? '';
+            if (/question/.test(h)) q.question = v;
+            else if (/option1|a/.test(h)) q.options[0] = v;
+            else if (/option2|b/.test(h)) q.options[1] = v;
+            else if (/option3|c/.test(h)) q.options[2] = v;
+            else if (/option4|d/.test(h)) q.options[3] = v;
+            else if (/correct/.test(h)) q.correctAnswer = v;
+            else if (/explanation/.test(h)) q.explanation = v;
+            else if (/topic/.test(h)) q.topic = v;
+            else if (/difficulty/.test(h)) q.difficulty = (v || 'Medium') as any;
+          }
+        } else {
+          // fallback mapping
+          q.question = cols[0];
+          for (let k = 1; k <= 4; k++) q.options[k-1] = cols[k] ?? '';
+          q.correctAnswer = cols[5] ?? '';
+          q.explanation = cols[6] ?? '';
+        }
+        parsed.push(q);
+      }
+      if (parsed.length) {
+        pushHistory();
+        setQuestions((q) => [...q, ...parsed]);
+        setBulkModalOpen(false);
+        setMsg(`${parsed.length} questions added from CSV`);
+      } else setMsg('No rows parsed from CSV');
+    };
+    reader.readAsText(file);
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.type === 'application/json' || f.name.endsWith('.json')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result ?? ''));
+          if (Array.isArray(parsed)) { pushHistory(); setQuestions((q) => [...q, ...parsed.map((it:any)=>({ id: uuidv4(), question: it.question||'', options: it.options||['','','',''], correctAnswer: it.correctAnswer||'', explanation: it.explanation||'', topic: it.topic||'', difficulty: it.difficulty||'Medium' }))]); setMsg('Imported JSON questions'); }
+          else setMsg('JSON must be an array of questions');
+        } catch (err) { setMsg('Invalid JSON file'); }
+      };
+      reader.readAsText(f);
       return;
+    }
+    // assume CSV or text
+    handleCsvFile(f);
+  }
+
+  async function handleSave(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    setSaving(true); setMsg(null);
+    // basic validation: ensure each question has at least one option and correctAnswer matching one option
+    for (const [i,q] of questions.entries()) {
+      if (!q.question.trim()) { setMsg(`Question ${i+1} is empty`); setSaving(false); return; }
+      if (!q.options.some(o=>o && o.trim())) { setMsg(`Question ${i+1} has no options`); setSaving(false); return; }
+      if (!q.correctAnswer || !q.options.map(o=>o.trim()).includes(q.correctAnswer.trim())) { setMsg(`Question ${i+1} has invalid correct answer`); setSaving(false); return; }
     }
 
     try {
-      const docRef = doc(db, "mcqSets", Array.isArray(id) ? id[0] : id);
-      const payload = {
-        title,
-        course,
-        subject,
-        year,
-        description,
-        isPremium,
-        isPublished,
-        questionCount: questions.length,
-        questions,
-        updatedAt: serverTimestamp(),
-      };
-
-      await updateDoc(docRef, payload);
-      setMsg("MCQ set updated successfully!");
+      const ref = doc(db, 'mcqSets', id);
+      const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length, updatedAt: serverTimestamp() };
+      await updateDoc(ref, payload);
+      setMsg('Saved successfully');
+      try { localStorage.removeItem(draftKey); } catch {}
     } catch (err) {
-      setMsg("A network or server error occurred.");
-    } finally {
-      setSaving(false);
-    }
+      console.error(err);
+      setMsg('Failed to save to server');
+    } finally { setSaving(false); }
   }
 
-  // ------------------ BULK MCQ IMPORT (Premium Feature) ------------------
-  // Expected Format (one block per question):
-  // Q: What is pharmacology?
-  // A) Option1
-  // B) Option2
-  // C) Option3
-  // D) Option4
-  // Correct: B
-  // Explanation: ...
-  // Topic: ...
-  // Difficulty: Medium
-
-  const processBulkUpload = () => {
-    if (!bulkRef.current) return;
-    const raw = bulkRef.current.value.trim();
-    if (!raw) return;
-
-    const blocks = raw.split(/\n\s*\n/); // separated by blank lines
-    const parsed: Question[] = [];
-
-    blocks.forEach((block) => {
-      const lines = block.split("\n").map((l) => l.trim());
-      if (lines.length < 3) return;
-
-      const q: Question = {
-        id: uuidv4(),
-        question: "",
-        options: ["", "", "", ""],
-        correctAnswer: "",
-        explanation: "",
-        topic: "",
-        difficulty: "Medium",
-      };
-
-      lines.forEach((l) => {
-        if (l.startsWith("Q:")) q.question = l.replace("Q:", "").trim();
-        else if (/^[A-D]\)/.test(l)) {
-          const idx = l.charCodeAt(0) - 65;
-          q.options[idx] = l.substring(2).trim();
-        }
-        else if (l.startsWith("Correct:")) q.correctAnswer = l.replace("Correct:", "").trim();
-        else if (l.startsWith("Explanation:")) q.explanation = l.replace("Explanation:", "").trim();
-        else if (l.startsWith("Topic:")) q.topic = l.replace("Topic:", "").trim();
-        else if (l.startsWith("Difficulty:")) q.difficulty = l.replace("Difficulty:", "").trim() as any;
-      });
-
-      parsed.push(q);
-    });
-
-    setQuestions([...questions, ...parsed]);
-    setBulkModal(false);
-  };
-
-  // ------------------ UI Rendering ------------------
-  if (loading) {
-    return (
-      <div className="p-6 text-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+  function exportJson() {
+    const blob = new Blob([JSON.stringify(questions, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `${(title||'mcq-set').replace(/[^a-z0-9]/gi,'_').slice(0,60)}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   }
+
+  if (loading) return <div className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
-    <div className="text-foreground max-w-5xl mx-auto pb-20">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm mb-4 hover:underline text-primary"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back to MCQ Manager
-      </button>
-
+    <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Edit MCQ Set</h1>
-
-        <Button variant="outline" onClick={() => setBulkModal(true)}>
-          <Upload className="w-4 h-4 mr-2" /> Bulk Upload MCQs
-        </Button>
+        <div>
+          <button onClick={() => router.back()} className="text-sm text-primary hover:underline flex items-center gap-2"><ArrowLeft className="w-4 h-4"/> Back</button>
+          <h1 className="text-2xl font-semibold">Edit MCQ Set (Premium)</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => exportJson()}><Download className="w-4 h-4 mr-2"/>Export JSON</Button>
+          <input ref={fileInputRef} type="file" accept=".csv,application/json,text/*" onChange={handleFileInput} className="hidden" />
+          <Button onClick={() => fileInputRef.current?.click()} variant="outline"><FilePlus className="w-4 h-4 mr-2"/>Import (CSV/JSON)</Button>
+          <Button onClick={() => setBulkModalOpen(true)}><Upload className="w-4 h-4 mr-2"/>Bulk</Button>
+          <Button onClick={() => setPreviewOpen(true)} variant="outline"><Eye className="w-4 h-4 mr-2"/>Preview</Button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="p-6 bg-secondary/30 rounded-lg border space-y-4">
-          <h2 className="text-lg font-semibold">Set Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="* Title" required />
-            <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="* Subject" required />
-            <Input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="* Course" required />
-            <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" />
-          </div>
-          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="h-24" />
-          <div className="flex gap-6 pt-2">
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
-              <input type="checkbox" checked={isPremium} onChange={(e) => setIsPremium(e.target.checked)} /> Is Premium
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
-              <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} /> Published
-            </label>
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="p-4 bg-white rounded shadow-sm border">
+          <h2 className="font-semibold mb-2">Set Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="* Title" required />
+            <Input value={subject} onChange={(e)=>setSubject(e.target.value)} placeholder="* Subject" required />
+            <Input value={course} onChange={(e)=>setCourse(e.target.value)} placeholder="* Course" required />
+            <Input value={year} onChange={(e)=>setYear(e.target.value)} placeholder="Year" />
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2"><input type="checkbox" checked={isPremium} onChange={(e)=>setIsPremium(e.target.checked)} /> Premium</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={isPublished} onChange={(e)=>setIsPublished(e.target.checked)} /> Published</label>
+            </div>
+            <div className="md:col-span-3"><Textarea value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Description" className="h-20"/></div>
           </div>
         </div>
 
-        <div className="p-6 bg-secondary/30 rounded-lg border">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Questions ({questions.length})</h2>
-            <Button type="button" onClick={addQuestion}>
-              <Plus className="w-4 h-4 mr-2" /> Add Question
-            </Button>
+        <div className="p-4 bg-white rounded shadow-sm border">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-semibold">Questions ({questions.length})</h2>
+            <div className="flex gap-2">
+              <Button type="button" onClick={addBlankQuestion}><Plus className="w-4 h-4 mr-2"/>Add</Button>
+              <Button type="button" variant="outline" onClick={undo}>Undo</Button>
+            </div>
           </div>
 
           <div className="space-y-4">
-            {questions.map((q, qIndex) => (
-              <div key={q.id} className="p-4 bg-card rounded-md border">
-                <div className="flex justify-between items-center mb-3">
-                  <p className="font-bold">Question {qIndex + 1}</p>
-                  <Button type="button" size="sm" variant="destructive" onClick={() => removeQuestion(q.id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+            {questions.map((q, idx) => (
+              <div key={q.id} className="p-3 border rounded bg-gray-50">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="font-semibold">Question {idx+1}</div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="destructive" onClick={()=>removeQuestion(q.id)}><Trash2 className="w-4 h-4"/></Button>
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  <Textarea
-                    value={q.question}
-                    onChange={(e) => handleQuestionChange(q.id, "question", e.target.value)}
-                    placeholder="Question text"
-                    className="h-20"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Textarea value={q.question} onChange={(e)=>updateQuestion(q.id, { question: e.target.value })} className="h-20" placeholder="Question text" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {q.options.map((opt, i) => (
-                      <Input
-                        key={i}
-                        value={opt}
-                        onChange={(e) => handleOptionChange(q.id, i, e.target.value)}
-                        placeholder={`Option ${i + 1}`}
-                      />
+                      <Input key={i} value={opt} onChange={(e)=>{ const newOpts=[...q.options]; newOpts[i]=e.target.value; updateQuestion(q.id,{ options:newOpts }); }} placeholder={`Option ${i+1}`} />
                     ))}
                   </div>
-                  <Input
-                    value={q.correctAnswer}
-                    onChange={(e) => handleQuestionChange(q.id, "correctAnswer", e.target.value)}
-                    placeholder="Correct Answer (must match an option)"
-                  />
-                  <Textarea
-                    value={q.explanation}
-                    onChange={(e) => handleQuestionChange(q.id, "explanation", e.target.value)}
-                    placeholder="Explanation"
-                    className="h-24"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      value={q.topic}
-                      onChange={(e) => handleQuestionChange(q.id, "topic", e.target.value)}
-                      placeholder="Topic (e.g. Diuretics)"
-                    />
-                    <select
-                      value={q.difficulty}
-                      onChange={(e) => handleQuestionChange(q.id, "difficulty", e.target.value)}
-                      className="w-full p-2 rounded-lg border bg-card"
-                    >
-                      <option value="Easy">Easy</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Hard">Hard</option>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <Input value={q.correctAnswer} onChange={(e)=>updateQuestion(q.id,{ correctAnswer: e.target.value })} placeholder="Correct answer (must exactly match an option)" />
+                    <Input value={q.topic||''} onChange={(e)=>updateQuestion(q.id,{ topic: e.target.value })} placeholder="Topic" />
+                    <select value={q.difficulty||'Medium'} onChange={(e)=>updateQuestion(q.id,{ difficulty: e.target.value as any })} className="p-2 border rounded">
+                      <option>Easy</option>
+                      <option>Medium</option>
+                      <option>Hard</option>
                     </select>
                   </div>
+                  <Textarea value={q.explanation||''} onChange={(e)=>updateQuestion(q.id,{ explanation: e.target.value })} className="h-20" placeholder="Explanation (optional)" />
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-6">
-          <Button type="submit" disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
-            {saving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-          {msg && <span className="text-sm">{msg}</span>}
+        <div className="flex items-center gap-3">
+          <Button type="submit" disabled={saving} size="lg"><Save className="w-5 h-5 mr-2"/>{saving? 'Saving...':'Save Changes'}</Button>
+          <Button type="button" variant="ghost" onClick={()=>{ setQuestions([]); setMsg('Cleared all questions (local)'); }}>Clear All</Button>
+          <div className="ml-auto text-sm">{msg}</div>
         </div>
       </form>
 
-      {/* Bulk Upload Modal */}
-      {bulkModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg shadow-xl w-full max-w-2xl">
-            <div className="p-4 border-b">
-              <h3 className="text-lg font-semibold">Bulk Upload Questions</h3>
+      {/* Bulk modal */}
+      {bulkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40">
+          <div className="bg-white rounded shadow-lg w-full max-w-3xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Bulk Upload MCQs</div>
+              <div className="flex items-center gap-2">
+                <Button onClick={()=>{ setBulkText('Q: Example?\nA) Opt1\nB) Opt2\nC) Opt3\nD) Opt4\nCorrect: A\nExplanation: ...\nTopic: ...\nDifficulty: Medium'); }}>Insert Example</Button>
+                <Button variant="ghost" onClick={()=>setBulkModalOpen(false)}>Close</Button>
+              </div>
             </div>
-            <div className="p-4">
-              <Textarea
-                ref={bulkRef}
-                className="h-64"
-                placeholder={`Paste questions here, separated by a blank line.
-Example:
-Q: What is pharmacology?
-A) Option1
-B) Option2
-Correct: Option1
-Explanation: ...
-Topic: Intro
-Difficulty: Easy`}
-              />
-            </div>
-            <div className="p-4 border-t flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setBulkModal(false)}>
-                Cancel
-              </Button>
-              <Button onClick={processBulkUpload}>Add to Question List</Button>
+            <div className="space-y-2">
+              <div className="text-sm text-muted">Paste text blocks separated by empty line. Supports simple CSV/JSON via Import button on page.</div>
+              <Textarea value={bulkText} onChange={(e)=>setBulkText(e.target.value)} className="h-64" />
+              <div className="flex gap-2">
+                <Button onClick={handleBulkPasteApply}>Parse & Add</Button>
+                <Button variant="outline" onClick={()=>{ setBulkText(''); }}>Clear</Button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Preview modal */}
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-6 bg-black/40 overflow-auto">
+          <div className="bg-white rounded shadow-lg w-full max-w-4xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Preview: {title || 'Untitled'}</h3>
+              <Button variant="ghost" onClick={()=>setPreviewOpen(false)}>Close</Button>
+            </div>
+            <div className="space-y-4">
+              {questions.map((q, i) => (
+                <div key={q.id} className="p-3 border rounded">
+                  <div className="font-semibold mb-1">{i+1}. {q.question}</div>
+                  <ol className="list-decimal pl-6 mb-1">
+                    {q.options.map((o, idx) => (
+                      <li key={idx} className={o.trim()===q.correctAnswer.trim() ? 'font-semibold text-green-700' : ''}>{o || <em>—</em>}</li>
+                    ))}
+                  </ol>
+                  {q.explanation && <div className="text-sm text-muted">Explanation: {q.explanation}</div>}
+                  {q.topic && <div className="text-sm">Topic: {q.topic}</div>}
+                  {q.difficulty && <div className="text-sm">Difficulty: {q.difficulty}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
