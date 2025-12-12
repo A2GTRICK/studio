@@ -3,8 +3,9 @@
 import Link from "next/link";
 import React from "react";
 import type { McqSet } from "@/types/mcq-set";
+import { Button } from "./ui/button";
 
-export default function McqSetCard({ set }: { set: McqSet }) {
+export default function McqSetCard({ set, onStart }: { set: McqSet, onStart?: () => void; }) {
   const locked = set.isPremium;
   return (
     <article className="group bg-white rounded-2xl p-5 shadow-lg border border-purple-200/80 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:border-purple-300 hover:-translate-y-1">
@@ -27,9 +28,9 @@ export default function McqSetCard({ set }: { set: McqSet }) {
       <div className="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center">
         <div className="text-sm text-purple-600 font-semibold">#{set.subject}</div>
         {locked ? (
-          <div className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gray-200 text-gray-500 cursor-not-allowed">Premium</div>
+          <Button disabled variant="secondary" size="sm">Premium</Button>
         ) : (
-          <Link href={`/dashboard/mcq-practice/${set.id}`} className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-md hover:opacity-90 transition-opacity">Start Practice</Link>
+          <Button onClick={onStart} size="sm">Start Practice</Button>
         )}
       </div>
     </article>

@@ -1,58 +1,47 @@
+
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import type { McqSet } from "@/types/mcq-set";
+import { Button } from "../ui/button";
+import { X, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Progress } from "../ui/progress";
 
 type Question = {
   id?: string;
-  q: string;
+  question: string;
   options: string[]; // options text array
-  answer: number; // index of correct option
+  correctAnswer: string; // index of correct option
   explanation?: string;
 };
 
 type Props = {
-  setData: {
-    id: string;
-    title: string;
-    questions: Question[];
-    timeLimit?: number; // minutes
-  };
+  setData: McqSet;
   onClose?: () => void;
 };
 
 export default function MCQPlayer({ setData, onClose }: Props) {
-  const questions = setData.questions || [];
+  const questions = (setData.questions || []).filter(q => q.question && q.options?.length > 0 && q.correctAnswer);
   const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<number[]>(
-    () => JSON.parse(localStorage.getItem(`mcq_progress_${setData.id}`) || "[]")
-  );
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(() =>
     setData.timeLimit ? setData.timeLimit * 60 : null
   );
 
   useEffect(() => {
-    // persist progress
-    localStorage.setItem(`mcq_progress_${setData.id}`, JSON.stringify(answers));
-  }, [answers, setData.id]);
-
-  useEffect(() => {
-    if (!timeLeft) return;
-    const t = setInterval(() => setTimeLeft((s) => (s !== null ? s - 1 : null)), 1000);
-    return () => clearInterval(t);
-  }, [timeLeft]);
-
-  useEffect(() => {
-    if (timeLeft !== null && timeLeft <= 0) {
-      // auto-submit
+    if (timeLeft === null) return;
+    if (timeLeft <= 0) {
       handleSubmit();
+      return;
     }
+    const timer = setInterval(() => setTimeLeft(t => (t !== null ? t - 1 : null)), 1000);
+    return () => clearInterval(timer);
   }, [timeLeft]);
 
-  function chooseOption(optIndex: number) {
-    const copy = answers.slice();
-    copy[index] = optIndex;
-    setAnswers(copy);
+  function chooseOption(opt: string) {
+    if (answers[index] !== undefined) return; // Already answered
+    setAnswers(prev => ({...prev, [index]: opt}));
   }
 
   function goto(i: number) {
@@ -61,31 +50,11 @@ export default function MCQPlayer({ setData, onClose }: Props) {
   }
 
   function handleSubmit() {
-    // calculate score
-    const correct = questions.reduce((acc, q, i) => {
-      const a = answers[i];
-      if (typeof a === "number" && a === q.answer) return acc + 1;
-      return acc;
-    }, 0);
-
-    // Save attempt summary in localStorage
-    const scorePercent = Math.round((correct / questions.length) * 100);
-    const store = {
-      score: correct,
-      total: questions.length,
-      scoreCount: `${correct}/${questions.length} (${scorePercent}%)`,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(`mcq_attempt_${setData.id}`, JSON.stringify(store));
-    // clear progress key
-    localStorage.removeItem(`mcq_progress_${setData.id}`);
-
     setShowResult(true);
   }
 
   function handleReset() {
-    setAnswers([]);
-    localStorage.removeItem(`mcq_progress_${setData.id}`);
+    setAnswers({});
     setShowResult(false);
     setIndex(0);
     if (setData.timeLimit) setTimeLeft(setData.timeLimit * 60);
@@ -93,159 +62,137 @@ export default function MCQPlayer({ setData, onClose }: Props) {
 
   const current = questions[index] || null;
 
+  const { score, total } = useMemo(() => {
+    if (!showResult) return { score: 0, total: questions.length };
+    const correctAnswers = questions.reduce((acc, q, i) => {
+      if (answers[i] === q.correctAnswer) return acc + 1;
+      return acc;
+    }, 0);
+    return { score: correctAnswers, total: questions.length };
+  }, [showResult, questions, answers]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/40 p-6">
-      <div className="bg-white w-full max-w-4xl rounded-lg shadow-lg overflow-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <div>
             <h2 className="text-lg font-semibold">{setData.title}</h2>
-            <div className="text-sm text-gray-500">{questions.length} questions</div>
+            <p className="text-sm text-gray-500">{setData.subject}</p>
           </div>
-
-          <div className="flex items-center gap-3">
-            {timeLeft !== null && <div className="text-sm font-mono">{formatTime(timeLeft)}</div>}
-            <button onClick={() => { onClose?.(); }} className="px-3 py-1 border rounded">Close</button>
+          <div className="flex items-center gap-4">
+            {timeLeft !== null && <div className="text-sm font-mono p-2 rounded-lg bg-red-100 text-red-700">{formatTime(timeLeft)}</div>}
+            <Button variant="ghost" size="icon" onClick={onClose}><X /></Button>
           </div>
         </div>
 
-        <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            {!showResult ? (
-              <>
-                <div className="mb-4">
-                  <div className="text-sm text-gray-500">Question {index + 1} / {questions.length}</div>
-                  <div className="mt-2 text-base font-medium" dangerouslySetInnerHTML={{ __html: sanitizeHTML(current?.q || "") }} />
-                </div>
-
-                <div className="space-y-3">
-                  {current?.options?.map((opt, i) => {
-                    const selected = answers[index] === i;
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => chooseOption(i)}
-                        className={`w-full text-left border rounded p-3 ${selected ? "border-purple-600 bg-purple-50" : ""}`}
-                      >
-                        <span className="inline-block w-6 text-sm font-mono mr-2">{String.fromCharCode(65 + i)}</span>
-                        <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(opt) }} />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center gap-3 mt-4">
-                  <button className="px-3 py-1 border rounded" onClick={() => goto(index - 1)} disabled={index === 0}>Prev</button>
-                  <button className="px-3 py-1 border rounded" onClick={() => goto(index + 1)} disabled={index === questions.length - 1}>Next</button>
-
-                  <div className="ml-auto flex items-center gap-2">
-                    <button className="px-3 py-1 rounded bg-gray-100" onClick={() => setIndex(0)}>First</button>
-                    <button className="px-3 py-1 rounded bg-gray-100" onClick={() => setIndex(questions.length - 1)}>Last</button>
-                    <button className="px-3 py-1 rounded bg-green-600 text-white" onClick={handleSubmit}>Submit</button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="mb-4">
-                  <h3 className="text-xl font-semibold">Result</h3>
-                </div>
-
-                <ResultView questions={questions} answers={answers} />
-
-                <div className="flex gap-2 mt-4">
-                  <button onClick={handleReset} className="px-3 py-1 border rounded">Retry</button>
-                  <button onClick={() => onClose?.()} className="px-3 py-1 border rounded">Close</button>
-                </div>
-              </>
-            )}
-          </div>
-
-          <aside className="bg-gray-50 p-3 rounded lg:col-span-1">
-            <h4 className="font-medium mb-2">Navigation</h4>
-            <div className="grid grid-cols-6 gap-2">
-              {questions.map((q, i) => {
-                const answered = typeof answers[i] === "number";
-                return (
-                  <button
-                    key={i}
-                    onClick={() => setIndex(i)}
-                    className={`p-2 text-sm rounded ${i === index ? "bg-purple-600 text-white" : answered ? "bg-green-100" : "bg-white border"}`}
-                    title={`Go to Q ${i + 1}`}
-                  >
-                    {i + 1}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 text-sm text-gray-600">
-              <div><strong>Answered:</strong> {answers.filter((a) => typeof a === "number").length}/{questions.length}</div>
-              <div className="mt-2"><strong>Saved to:</strong> browser storage</div>
-            </div>
-          </aside>
+        <div className="flex-grow p-6 overflow-y-auto">
+          {!showResult ? (
+            <QuestionView current={current} index={index} total={questions.length} answers={answers} chooseOption={chooseOption} />
+          ) : (
+            <ResultView questions={questions} answers={answers} score={score} total={total} onReset={handleReset} />
+          )}
         </div>
+
+        {!showResult && (
+             <div className="p-4 border-t bg-gray-50 rounded-b-2xl">
+                <div className="flex items-center justify-between mb-2">
+                    <Button variant="outline" onClick={() => goto(index - 1)} disabled={index === 0}><ArrowLeft className="mr-2"/> Prev</Button>
+                    <div className="text-sm text-gray-600">Question {index + 1} of {questions.length}</div>
+                    <Button variant="outline" onClick={() => goto(index + 1)} disabled={index === questions.length - 1}>Next <ArrowRight className="ml-2"/></Button>
+                </div>
+                <Progress value={(index + 1) / questions.length * 100} className="w-full h-2" />
+                 <div className="mt-4 text-center">
+                    <Button onClick={handleSubmit} size="lg" className="bg-green-600 hover:bg-green-700">Submit Test</Button>
+                </div>
+            </div>
+        )}
       </div>
     </div>
   );
 }
 
-/* small utilities */
+function QuestionView({ current, index, total, answers, chooseOption }: any) {
+    if (!current) return <div>Question not found.</div>;
+    const selectedOption = answers[index];
+
+    return (
+        <div>
+            <p className="text-lg font-medium mb-6">{current.question}</p>
+            <div className="space-y-3">
+            {current.options.map((opt: string, i: number) => (
+                <button
+                key={i}
+                onClick={() => chooseOption(opt)}
+                disabled={!!selectedOption}
+                className={`p-4 w-full text-left rounded-lg border-2 transition text-base flex items-center gap-4
+                    ${selectedOption
+                        ? opt === current.correctAnswer
+                            ? 'bg-green-100 border-green-400 font-semibold'
+                            : opt === selectedOption
+                            ? 'bg-red-100 border-red-400'
+                            : 'bg-gray-100 border-gray-200'
+                        : "bg-white hover:bg-purple-50 hover:border-purple-300 border-gray-200"
+                    }
+                `}
+                >
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${selectedOption ? (opt === current.correctAnswer ? 'bg-green-500' : 'bg-red-500') : 'bg-gray-400'}`}>
+                    {String.fromCharCode(65 + i)}
+                </div>
+                <span>{opt}</span>
+                {selectedOption && opt === current.correctAnswer && <Check className="ml-auto text-green-600" />}
+                {selectedOption && opt !== current.correctAnswer && opt === selectedOption && <X className="ml-auto text-red-600" />}
+
+                </button>
+            ))}
+            </div>
+            {selectedOption && current.explanation && (
+                <div className="mt-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                    <h4 className="font-bold">Explanation</h4>
+                    <p className="text-sm mt-1">{current.explanation}</p>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ResultView({ questions, answers, score, total, onReset }: any) {
+    const percentage = Math.round((score/total) * 100);
+    return (
+        <div className="text-center">
+            <h2 className="text-3xl font-bold">Test Complete!</h2>
+            <p className="text-gray-600 mt-2">You have completed the test.</p>
+
+            <div className="my-8">
+                <div className="text-5xl font-extrabold text-primary">{percentage}%</div>
+                <div className="text-xl text-gray-700">You answered {score} out of {total} questions correctly.</div>
+            </div>
+
+            <Button onClick={onReset} size="lg">Try Again</Button>
+
+             <div className="mt-10 text-left">
+                <h3 className="text-xl font-bold mb-4">Review Answers</h3>
+                <div className="space-y-4">
+                {questions.map((q: any, i: number) => {
+                    const userAnswer = answers[i];
+                    const isCorrect = userAnswer === q.correctAnswer;
+                    return (
+                        <div key={i} className={`p-4 rounded-lg border-2 ${isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                            <p className="font-semibold">{i+1}. {q.question}</p>
+                            <p className="text-sm mt-2">Your answer: <span className={!isCorrect ? 'font-bold text-red-700' : ''}>{userAnswer || 'Not answered'}</span></p>
+                            <p className="text-sm">Correct answer: <span className="font-bold text-green-700">{q.correctAnswer}</span></p>
+                            {q.explanation && <p className="text-xs text-gray-600 mt-2">Explanation: {q.explanation}</p>}
+                        </div>
+                    )
+                })}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function formatTime(sec: number) {
+  if (sec < 0) sec = 0;
   const m = Math.floor(sec / 60).toString().padStart(2, "0");
   const s = Math.floor(sec % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
-}
-
-function sanitizeHTML(s: string) {
-  // minimal sanitization (no external libs). If you already include DOMPurify on page-level, prefer that.
-  if (!s) return "";
-  // allow basic tags; escape angle brackets otherwise
-  return s
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\n/g, "<br/>");
-}
-
-function ResultView({ questions, answers }: { questions: any[]; answers: number[] }) {
-  const total = questions.length;
-  const correct = questions.reduce((acc, q, i) => {
-    if (typeof answers[i] === "number" && answers[i] === q.answer) return acc + 1;
-    return acc;
-  }, 0);
-
-  return (
-    <div>
-      <div className="text-lg mb-4">Score: <strong>{correct}</strong> / {total} ({Math.round((correct / total) * 100)}%)</div>
-
-      <div className="space-y-3">
-        {questions.map((q, i) => {
-          const sel = answers[i];
-          const isCorrect = typeof sel === "number" && sel === q.answer;
-          return (
-            <div key={i} className="p-3 bg-white border rounded">
-              <div className="text-sm text-gray-600 mb-2">Q {i + 1}</div>
-              <div className="mb-2" dangerouslySetInnerHTML={{ __html: sanitizeHTML(q.q) }} />
-              <div className="grid gap-2">
-                {q.options.map((opt: string, idx: number) => {
-                  const correctOpt = idx === q.answer;
-                  const selectedOpt = idx === sel;
-                  return (
-                    <div key={idx} className={`p-2 rounded ${correctOpt ? "bg-green-50 border-green-200" : selectedOpt ? "bg-red-50 border-red-200" : "bg-white border"}`}>
-                      <div className="font-mono inline-block w-6 mr-2">{String.fromCharCode(65 + idx)}</div>
-                      <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(opt) }} />
-                      {correctOpt && <span className="ml-2 text-xs text-green-800"> (Correct)</span>}
-                      {selectedOpt && !correctOpt && <span className="ml-2 text-xs text-red-800"> (Your answer)</span>}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {q.explanation && <div className="mt-2 text-sm text-gray-600">Explanation: <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(q.explanation) }} /></div>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 }

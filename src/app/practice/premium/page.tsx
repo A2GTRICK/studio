@@ -1,93 +1,29 @@
 
-// src/app/practice/premium/page.tsx
-import React from "react";
-import Link from "next/link";
-import { db } from "@/firebase/config"; // existing client config used for server reads
-import { collection, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
-import MCQCard from "@/components/practice-premium/MCQCard";
-import FilterBar from "@/components/practice-premium/FilterBar";
-import HistoryWidget from "@/components/practice-premium/HistoryWidget";
-
-// CLEAN FIRESTORE DOCUMENTS
-function cleanData(obj: any): any {
-  if (!obj || typeof obj !== "object") return obj;
-
-  const out: any = {};
-  for (const key in obj) {
-    const value = obj[key];
-
-    // Firestore Timestamp → convert to millis
-    if (value?.seconds !== undefined && value?.nanoseconds !== undefined) {
-      out[key] = value.seconds * 1000;
-      continue;
-    }
-
-    // Arrays
-    if (Array.isArray(value)) {
-      out[key] = value.map((v) => cleanData(v));
-      continue;
-    }
-
-    // Objects
-    if (typeof value === "object") {
-      out[key] = cleanData(value);
-      continue;
-    }
-
-    out[key] = value;
-  }
-  return out;
-}
-
+// src/app/practice/premium/page.tsx (Server Component)
+import React from 'react';
+import { fetchAllMCQSets, type MCQSet } from '@/services/mcq';
+import McqPracticeClient from '@/components/McqPracticeClient';
+import { BookCopy } from 'lucide-react';
 
 export default async function PremiumPracticePage() {
-  // server-side read: only metadata, avoid answers
-  const ref = collection(db, "mcqSets");
-  const q = query(ref, where("isPublished", "==", true), orderBy("createdAt", "desc"));
-  const snap = await getDocs(q);
+  const sets = await fetchAllMCQSets();
   
-  const rawSets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  const sets = rawSets.map(cleanData);
-
-
   return (
-    <div className="min-h-screen bg-[#F5F1FF] pb-20">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <header className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-extrabold text-[#6B21A8]">A2G — MCQ Practice (Premium)</h1>
-          <div className="space-x-3">
-            <Link href="/practice" className="px-4 py-2 border rounded-lg">Classic Practice</Link>
-            <Link href="/dashboard" className="px-4 py-2 bg-[#6B21A8] text-white rounded-lg">Dashboard</Link>
-          </div>
+    <div className="bg-[#F8F5FF] min-h-screen">
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <header className="mb-8 text-center">
+            <div className="inline-flex items-center justify-center bg-primary/10 text-primary p-4 rounded-full mb-4">
+                <BookCopy className="w-10 h-10" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-extrabold font-headline tracking-tight text-gray-900">
+                Premium MCQ Practice
+            </h1>
+            <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+                Challenge yourself with our collection of high-yield question sets designed for competitive exams.
+            </p>
         </header>
 
-        <div className="lg:flex gap-8">
-          {/* main */}
-          <main className="flex-1">
-            <FilterBar />
-
-            <div className="grid md:grid-cols-2 gap-6 mt-6">
-              {sets.map((s:any) => (
-                <MCQCard key={s.id} set={s} />
-              ))}
-            </div>
-          </main>
-
-          {/* right sidebar */}
-          <aside className="w-80 hidden lg:block">
-            <div className="sticky top-20 space-y-6">
-              <HistoryWidget />
-              <div className="p-4 bg-white rounded-2xl shadow border">
-                <h4 className="font-bold text-[#6B21A8]">Premium Perks</h4>
-                <ul className="mt-2 text-sm text-gray-700 space-y-2">
-                  <li>• Sample questions preview</li>
-                  <li>• Test insights & analytics</li>
-                  <li>• Resume unfinished tests</li>
-                </ul>
-              </div>
-            </div>
-          </aside>
-        </div>
+        <McqPracticeClient initialSets={sets} />
       </div>
     </div>
   );
