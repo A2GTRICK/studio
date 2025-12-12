@@ -1,3 +1,4 @@
+
 // --- PREMIUM MCQ PRACTICE PAGE (OPTION A - FULL FILE BEGIN) ---
 
 "use client";
@@ -99,6 +100,8 @@ export default function PremiumMCQPracticePage() {
   if (loading) return <div className="p-6 text-center"><Loader2 className="animate-spin" /></div>;
   if (error) return <div className="text-red-600 p-6">{error}</div>;
 
+  const isInitialLoadAndEmpty = sets.length === 0 && !loading;
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold">Premium MCQ Practice</h1>
@@ -181,22 +184,26 @@ export default function PremiumMCQPracticePage() {
       </div>
 
       {/* SET CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((s: MCQSet) => (
-          <div
-            key={s.id}
-            onClick={() => setPreview(s)}
-            className="p-4 bg-white border rounded shadow hover:shadow-lg transition cursor-pointer"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-lg">{s.title}</h3>
-              {s.isPremium && <Star className="w-5 h-5 text-amber-500" />}
+      {isInitialLoadAndEmpty ? (
+        <FallbackUI />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((s: MCQSet) => (
+            <div
+                key={s.id}
+                onClick={() => setPreview(s)}
+                className="p-4 bg-white border rounded shadow hover:shadow-lg transition cursor-pointer"
+            >
+                <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-lg">{s.title}</h3>
+                {s.isPremium && <Star className="w-5 h-5 text-amber-500" />}
+                </div>
+                <p className="text-sm text-gray-600">{s.subject} • {s.course}</p>
+                <p className="text-sm mt-2">Questions: {s.questions.length}</p>
             </div>
-            <p className="text-sm text-gray-600">{s.subject} • {s.course}</p>
-            <p className="text-sm mt-2">Questions: {s.questions.length}</p>
-          </div>
-        ))}
-      </div>
+            ))}
+        </div>
+      )}
       
       <AnimatePresence>
         {preview && (
@@ -228,6 +235,54 @@ export default function PremiumMCQPracticePage() {
     </div>
   );
 }
+
+// ==========================
+// FALLBACK UI COMPONENTS
+// ==========================
+
+const placeholderCategories = [
+    "GPAT Mock Test",
+    "RRB Pharmacist Exam",
+    "NIPER Model Test",
+    "D.Pharm Board Test",
+    "Mini Test (25 Q)",
+    "Speed Test (10 Q)",
+];
+
+const PlaceholderCard = () => (
+    <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg shadow-sm animate-pulse">
+        <div className="h-5 bg-gray-300 rounded w-3/4 mb-3"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div className="flex justify-between items-center">
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
+        </div>
+    </div>
+);
+
+
+const FallbackUI = () => (
+    <div>
+        {placeholderCategories.map(category => (
+            <div key={category} className="mb-8">
+                <h2 className="text-xl font-bold mb-4">{category}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="p-4 bg-white border rounded shadow">
+                        <h3 className="font-bold text-lg text-gray-400">Coming Soon</h3>
+                        <p className="text-sm text-gray-500 mt-1">Mock test will be available soon.</p>
+                        <div className="flex justify-between text-sm text-gray-400 mt-3">
+                            <span>Questions: —</span>
+                            <span>Time: —</span>
+                        </div>
+                    </div>
+                   <PlaceholderCard />
+                   <PlaceholderCard />
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
 
 // ==========================
 // BLOCK 2 — PREVIEW DRAWER
