@@ -1,3 +1,4 @@
+
 // src/app/a2gadmin/notes/edit/[id]/page.tsx
 "use client";
 
@@ -26,14 +27,134 @@ type NoteShape = {
 };
 
 function autoFormatMarkdown(input: string) {
-  let s = input || "";
-  s = s.replace(/\r\n/g, "\n");
-  s = s.replace(/^\s*\*\*(.+?)\*\*\s*$/gm, (_m, g1) => `## ${g1.trim()}`);
-  s = s.replace(/^\s*([A-Z0-9][A-Za-z0-9\s\-\u00A0]{3,})\s*:\s*$/gm, (_m, g1) => `## ${g1.trim()}`);
-  s = s.replace(/\n{3,}/g, "\n\n");
-  s = s.replace(/^\s*[\*\u2022]\s+/gm, "- ");
-  s = s.split("\n").map((l) => l.replace(/\s+$/g, "")).join("\n");
-  return s;
+  if (!input) return "";
+
+  // normalize CRLF and NFKC (keeps unicode consistent)
+  let s = input.replace(/\r\n/g, "\n").replace(/\r/g, "\n").normalize();
+
+  // split into lines and trim right-side whitespace
+  const rawLines = s.split("\n").map((l) => l.replace(/\s+$/g, ""));
+
+  const outLines: string[] = [];
+  const push = (ln: string) => outLines.push(ln);
+
+  // helper tests
+  const looksLikeNumbered = (ln: string) => /^\s*\d{1,3}\.\s+/.test(ln);
+  const looksLikeBullet   = (ln: string) => /^\s*[\*\u2022\u25E6\u25CF\-]\s+/.test(ln);
+  const looksLikeAllCaps  = (ln: string) => {
+    // treat short-ish ALL CAPS (or starts with letter+dot like "E. Title") as heading
+    const t = ln.trim();
+    if (!t) return false;
+    // ignore lines with many punctuation or digits (likely content)
+    if (/[^A-Z0-9\s\.\,&\-\/:()]/.test(t)) return false;
+    // length heuristic  > 3 chars and < 80
+    return /^[A-Z0-9\.\s\-\&\,\/\(\)]+$/.test(t) && t.replace(/[^A-Z0-9]/g, "").length >= 2 && t.length <= 120;
+  };
+  const looksLikeTitleCase = (ln: string) => {
+    // Title case: many words start with uppercase letter followed by lowercase
+    const t = ln.trim();
+    if (t.length < 4 || t.length > 120) return false;
+    const words = t.split(/\s+/);
+    let countTitle = 0;
+    for (const w of words) {
+      if (/^[A-Z][a-z0-9\-\']+$/.test(w)) countTitle++;
+    }
+    return countTitle >= Math.max(1, Math.floor(words.length / 2));
+  };
+
+  // iterate and transform
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+
+    // trim overall, but keep intentional leading numbering or bullets
+    if (line !== "") line = line.replace(/^\s+/, "");
+
+    // convert common bold headings: **Heading** -> heading
+    const boldHeadingMatch = line.match(/^\s*\*\*(.+?)\*\*\s*$/);
+    if (boldHeadingMatch) {
+      // ensure blank line before heading
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
+      push(`## ${boldHeadingMatch[1].trim()}`);
+      // ensure blank line after heading (we'll add later if next non-empty isn't blank)
+      continue;
+    }
+
+    // lines that end with colon -> heading
+    if (/:\s*$/.test(line)) {
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
+      push(`## ${line.replace(/:\s*$/, "").trim()}`);
+      continue;
+    }
+
+    // lines that look like section titles (E. ... or ALL CAPS) -> heading
+    if (looksLikeAllCaps(line) || looksLikeTitleCase(line)) {
+      // but avoid turning short list item labels like "ALL THE BEST" when it appears in context as a footer --
+      // we use a simple heuristic: if next non-empty line is a list/number or empty, still convert.
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
+      push(`## ${line.trim()}`);
+      continue;
+    }
+
+    // normalize bullets -> "- "
+    if (looksLikeBullet(line)) {
+      line = line.replace(/^\s*[\*\u2022\u25E6\u25CF]\s+/, "- ");
+      push(line);
+      continue;
+    }
+
+    // normalize numbered lists: ensure "N. text" with single space
+    if (looksLikeNumbered(line)) {
+      line = line.replace(/^\s*(\d{1,3})\.\s+/, (_m, n) => `${n}. `);
+      push(line);
+      continue;
+    }
+
+    // keep blank lines but collapse later
+    push(line);
+  }
+
+  // Post-process: ensure blank line above and below headings and collapse multiple blanks
+  const withSpacing: string[] = [];
+  for (let i = 0; i < outLines.length; i++) {
+    const line = outLines[i];
+    const prev = withSpacing.length ? withSpacing[withSpacing.length - 1] : null;
+    const next = (() => {
+      for (let j = i + 1; j < outLines.length; j++) if (outLines[j].trim() !== "") return outLines[j];
+      return null;
+    })();
+
+    if (/^##\s+/.test(line)) {
+      // ensure blank line before heading
+      if (prev !== null && prev.trim() !== "") withSpacing.push("");
+      withSpacing.push(line.trim());
+      // ensure blank line after heading (but don't add double if next is already blank or heading)
+      if (next && !/^##\s+/.test(next) && next.trim() !== "") withSpacing.push("");
+      continue;
+    }
+
+    // normalize any line with excessive internal spaces
+    withSpacing.push(line);
+  }
+
+  // collapse runs of >2 blank lines to exactly 2
+  let collapsed: string[] = [];
+  let blankRun = 0;
+  for (const ln of withSpacing) {
+    if (ln.trim() === "") {
+      blankRun++;
+      if (blankRun <= 2) collapsed.push("");
+    } else {
+      blankRun = 0;
+      collapsed.push(ln);
+    }
+  }
+
+  // final trim of leading/trailing blank lines
+  while (collapsed.length && collapsed[0].trim() === "") collapsed.shift();
+  while (collapsed.length && collapsed[collapsed.length - 1].trim() === "") collapsed.pop();
+
+  // join and final cleanup: ensure single trailing newline
+  return collapsed.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
 }
 
 
