@@ -11,19 +11,6 @@ import { Loader2, Save, FileText, Repeat, Eye, Download } from "lucide-react";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
-/*
-  Enhanced admin editor for notes.
-  - Smart auto-format (3 levels)
-  - Preview diff modal (original vs formatted)
-  - Table of contents (generated from section headings)
-  - Export (markdown / plain text)
-  - Version history (in-memory) and undo
-  - Preview reader mode for how users will see note
-  - Controls to accept/reject auto-format changes
-
-  Drop-in: Replace your existing page.tsx contents with this file (or adapt the helpers/functions).
-*/
-
 type NoteShape = {
   id?: string;
   title?: string;
@@ -37,101 +24,138 @@ type NoteShape = {
   [k: string]: any;
 };
 
-// -------------- Smart formatter (3 levels) --------------
-function smartAutoFormat(input: string, level: 2 | 1 | 0 = 2) {
-  // level 2 = conservative (only section headings A./B.), bullets, numbering, spacing
-  // level 1 = also convert bold-lines to headings and title-case heuristics
-  // level 0 = aggressive: try to convert ALL-CAPS to headings, normalize separators
-
+// -------------- Smart formatter (from user) --------------
+function autoFormatMarkdown(input: string) {
   if (!input) return "";
-  let s = input.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const lines = s.split("\n").map((l) => l.replace(/\s+$/g, ""));
 
-  const out: string[] = [];
+  // normalize CRLF and NFKC (keeps unicode consistent)
+  let s = input.replace(/\r\n/g, "\n").replace(/\r/g, "\n").normalize();
 
-  const isSectionHeading = (line: string) => {
-    return /^[A-Z]\.\s+.+/.test(line.trim());
+  // split into lines and trim right-side whitespace
+  const rawLines = s.split("\n").map((l) => l.replace(/\s+$/g, ""));
+
+  const outLines: string[] = [];
+  const push = (ln: string) => outLines.push(ln);
+
+  // helper tests
+  const looksLikeNumbered = (ln: string) => /^\s*\d{1,3}\.\s+/.test(ln);
+  const looksLikeBullet   = (ln: string) => /^\s*[\*\u2022\u25E6\u25CF\-]\s+/.test(ln);
+  const looksLikeAllCaps  = (ln: string) => {
+    // treat short-ish ALL CAPS (or starts with letter+dot like "E. Title") as heading
+    const t = ln.trim();
+    if (!t) return false;
+    // ignore lines with many punctuation or digits (likely content)
+    if (/[^A-Z0-9\s\.\,&\-\/:()]/.test(t)) return false;
+    // length heuristic  > 3 chars and < 80
+    return /^[A-Z0-9\.\s\-\&\,\/\(\)]+$/.test(t) && t.replace(/[^A-Z0-9]/g, "").length >= 2 && t.length <= 120;
   };
-  const isBullet = (line: string) => /^\s*[\*\-\u2022]\s+/.test(line);
-  const isNumbered = (line: string) => /^\s*\d+\.\s+/.test(line);
-  const isBoldOnly = (line: string) => /^\s*\*\*(.+?)\*\*\s*$/.test(line);
-  const isAllCaps = (line: string) => {
-    const t = line.trim();
-    if (t.length < 3 || t.length > 120) return false;
-    // avoid lines that contain many punctuation / digits
-    if (/[^A-Z0-9\s\.,:\-()\/\&\u2013\u2014]/.test(t)) return false;
-    // majority of letters uppercase
-    const letters = t.replace(/[^A-Z]/g, "");
-    return letters.length >= Math.max(2, Math.floor(t.length * 0.4));
+  const looksLikeTitleCase = (ln: string) => {
+    // Title case: many words start with uppercase letter followed by lowercase
+    const t = ln.trim();
+    if (t.length < 4 || t.length > 120) return false;
+    const words = t.split(/\s+/);
+    let countTitle = 0;
+    for (const w of words) {
+      if (/^[A-Z][a-z0-9\-\']+$/.test(w)) countTitle++;
+    }
+    return countTitle >= Math.max(1, Math.floor(words.length / 2));
   };
 
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
-    if (line === "") {
-      out.push("");
+  // iterate and transform
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+
+    // trim overall, but keep intentional leading numbering or bullets
+    if (line !== "") line = line.replace(/^\s+/, "");
+
+    // convert common bold headings: **Heading** -> heading
+    const boldHeadingMatch = line.match(/^\s*\*\*(.+?)\*\*\s*$/);
+    if (boldHeadingMatch) {
+      // ensure blank line before heading
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
+      push(`## ${boldHeadingMatch[1].trim()}`);
+      // ensure blank line after heading (we'll add later if next non-empty isn't blank)
       continue;
     }
 
-    // Section headings (always safe)
-    if (isSectionHeading(line)) {
-      if (out.length && out[out.length - 1].trim() !== "") out.push("");
-      out.push("## " + line.trim());
-      if (i + 1 < lines.length && lines[i + 1].trim() !== "") out.push("");
+    // lines that end with colon -> heading
+    if (/:\s*$/.test(line)) {
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
+      push(`## ${line.replace(/:\s*$/, "").trim()}`);
       continue;
     }
 
-    // level 1 additional: bold-only -> heading
-    if (level <= 1 && isBoldOnly(line)) {
-      const m = line.match(/^\s*\*\*(.+?)\*\*\s*$/);
-      if (m) {
-        if (out.length && out[out.length - 1].trim() !== "") out.push("");
-        out.push("## " + m[1].trim());
-        if (i + 1 < lines.length && lines[i + 1].trim() !== "") out.push("");
-        continue;
-      }
-    }
-
-    // level 0 additional: convert ALL CAPS lines to heading (careful)
-    if (level === 0 && isAllCaps(line)) {
-      if (out.length && out[out.length - 1].trim() !== "") out.push("");
-      out.push("## " + line.trim());
-      if (i + 1 < lines.length && lines[i + 1].trim() !== "") out.push("");
+    // lines that look like section titles (E. ... or ALL CAPS) -> heading
+    if (looksLikeAllCaps(line) || looksLikeTitleCase(line)) {
+      // but avoid turning short list item labels like "ALL THE BEST" when it appears in context as a footer --
+      // we use a simple heuristic: if next non-empty line is a list/number or empty, still convert.
+      if (outLines.length && outLines[outLines.length - 1].trim() !== "") push("");
+      push(`## ${line.trim()}`);
       continue;
     }
 
-    // bullets
-    if (isBullet(line)) {
-      out.push(line.replace(/^\s*[\*\u2022]\s+/, "- ").replace(/^\s*\-\s+/, "- "));
+    // normalize bullets -> "- "
+    if (looksLikeBullet(line)) {
+      line = line.replace(/^\s*[\*\u2022\u25E6\u25CF]\s+/, "- ");
+      push(line);
       continue;
     }
 
-    // numbered list
-    if (isNumbered(line)) {
-      out.push(line.replace(/^\s*(\d+)\.\s+/, "$1. "));
+    // normalize numbered lists: ensure "N. text" with single space
+    if (looksLikeNumbered(line)) {
+      line = line.replace(/^\s*(\d{1,3})\.\s+/, (_m, n) => `${n}. `);
+      push(line);
       continue;
     }
 
-    // otherwise keep as-is
-    out.push(line);
+    // keep blank lines but collapse later
+    push(line);
   }
 
-  // Post-process spacing: ensure single blank between blocks, and one trailing newline
-  const collapsed: string[] = [];
+  // Post-process: ensure blank line above and below headings and collapse multiple blanks
+  const withSpacing: string[] = [];
+  for (let i = 0; i < outLines.length; i++) {
+    const line = outLines[i];
+    const prev = withSpacing.length ? withSpacing[withSpacing.length - 1] : null;
+    const next = (() => {
+      for (let j = i + 1; j < outLines.length; j++) if (outLines[j].trim() !== "") return outLines[j];
+      return null;
+    })();
+
+    if (/^##\s+/.test(line)) {
+      // ensure blank line before heading
+      if (prev !== null && prev.trim() !== "") withSpacing.push("");
+      withSpacing.push(line.trim());
+      // ensure blank line after heading (but don't add double if next is already blank or heading)
+      if (next && !/^##\s+/.test(next) && next.trim() !== "") withSpacing.push("");
+      continue;
+    }
+
+    // normalize any line with excessive internal spaces
+    withSpacing.push(line);
+  }
+
+  // collapse runs of >2 blank lines to exactly 2
+  let collapsed: string[] = [];
   let blankRun = 0;
-  for (const ln of out) {
+  for (const ln of withSpacing) {
     if (ln.trim() === "") {
       blankRun++;
-      if (blankRun <= 1) collapsed.push("");
+      if (blankRun <= 2) collapsed.push("");
     } else {
       blankRun = 0;
       collapsed.push(ln);
     }
   }
+
+  // final trim of leading/trailing blank lines
   while (collapsed.length && collapsed[0].trim() === "") collapsed.shift();
   while (collapsed.length && collapsed[collapsed.length - 1].trim() === "") collapsed.pop();
 
-  return collapsed.join("\n") + (collapsed.length ? "\n" : "");
+  // join and final cleanup: ensure single trailing newline
+  return collapsed.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
 }
+
 
 // Generate TOC from formatted markdown (only lines starting with ## )
 function generateTOC(markdown: string) {
@@ -276,9 +300,8 @@ export default function EditNotePageClient() {
     }
   }
 
-  function applyAutoFormat(levelParam?: 0 | 1 | 2) {
-    const levelToUse = levelParam ?? formatLevel;
-    const formatted = smartAutoFormat(note.content || "", levelToUse === 2 ? 2 : levelToUse === 1 ? 1 : 0);
+  function applyAutoFormat() {
+    const formatted = autoFormatMarkdown(note.content || "");
     setFormattedPreview(formatted);
     setDiffOpen(true);
   }
@@ -376,7 +399,7 @@ export default function EditNotePageClient() {
             <label className="block font-semibold text-sm">Content</label>
             <div className="flex items-center gap-2">
               <select value={String(formatLevel)} onChange={(e) => setFormatLevel(Number(e.target.value) as 0 | 1 | 2)} className="px-2 py-1 border rounded">
-                <option value={2}>Conservative (recommended)</option>
+                <option value={2}>Conservative</option>
                 <option value={1}>Balanced</option>
                 <option value={0}>Aggressive</option>
               </select>
@@ -398,7 +421,7 @@ export default function EditNotePageClient() {
           <div className="p-4 border rounded bg-white shadow-sm">
             <h3 className="font-semibold mb-2">Quick Actions</h3>
             <div className="flex flex-col gap-2">
-              <Button type="button" onClick={() => { const f = smartAutoFormat(note.content||"", 2); setNote({ ...note, content: f }); setMsg('Applied conservative auto-format.'); setHistory(h=>[note.content||"",...h].slice(0,20)); }}>
+              <Button type="button" onClick={() => { const f = autoFormatMarkdown(note.content||""); setNote({ ...note, content: f }); setMsg('Applied auto-format.'); setHistory(h=>[note.content||"",...h].slice(0,20)); }}>
                 <FileText className="w-4 h-4 mr-2" /> Apply Format
               </Button>
               <Button type="button" onClick={exportMarkdown}>
