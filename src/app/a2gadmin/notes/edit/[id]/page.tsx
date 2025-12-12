@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -502,7 +501,7 @@ function renderMarkdownToHtml(md: string) {
   html = html.replace(/^##\s+(.+)$/gmu, (_, h) => `<h2 id="${h.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g,'-')}">${h}</h2>`);
   // numbered list -> wrap later
   // bullets
-  html = html.replace(/^\-\s+(.+)$/gmu, (_, t) => `<li>${t}</li>`);
+  html = html.replace(/^- \s+(.+)$/gmu, (_, t) => `<li>${t}</li>`);
   // wrap list items into <ul>
   html = html.replace(/(<li>.*?<\/li>\s*)+/gms, (m) => `<ul>${m}</ul>`);
   // numbered
@@ -516,5 +515,3 @@ function renderMarkdownToHtml(md: string) {
   html = lines.join("\n").replace(/(<h2>.*?<\/h2>|<ul>.*?<\/ul>|<ol>.*?<\/ol>)/gms, (m) => m + "\n");
   return html;
 }
-
-    
