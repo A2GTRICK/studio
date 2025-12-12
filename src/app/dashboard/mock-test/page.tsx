@@ -396,7 +396,7 @@ function ExamPlayer({ setData, onClose, onFinish }: { setData: MCQSet; onClose: 
 // ==============================================
 
 function ExamResults({ setData, answers, result, onClose }: { setData: MCQSet; answers: any; result: any; onClose: () => void; }) {
-  const questions: Question[] = setData.questions;
+  const questions: any[] = setData.questions;
   const [index, setIndex] = React.useState(0);
   const q = questions[index];
   const userAns = answers[q.id];
@@ -539,7 +539,7 @@ export function computeAnalytics(attempts: any[]) {
   const weakTopics = Object.entries(topicHeatmap)
     .map(([topic, data]: any) => ({
       topic,
-      accuracy: data.total > 0 ? Math.round(((data.total - d.wrong) / d.total) * 100) : 0,
+      accuracy: data.total > 0 ? Math.round(((data.total - data.wrong) / data.total) * 100) : 0,
     }))
     .sort((a, b) => a.accuracy - b.accuracy)
     .slice(0, 5);
