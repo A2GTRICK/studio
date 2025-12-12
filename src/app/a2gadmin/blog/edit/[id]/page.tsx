@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, ArrowLeft, Save, Trash2, Eye } from "lucide-react";
 import Link from "next/link";
+import { db } from "@/firebase/config";
+import { doc, getDoc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -52,15 +54,17 @@ export default function EditBlogPage() {
     async function loadPost() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/a2gadmin/blog?id=${id}`);
-        const data = await res.json();
-        if (res.ok && data.post) {
-          setPost({
-              ...data.post,
-              tags: Array.isArray(data.post.tags) ? data.post.tags.join(', ') : '',
-          });
+        const docRef = doc(db, 'posts', Array.isArray(id) ? id[0] : id);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            setPost({
+              ...data,
+              tags: Array.isArray(data.tags) ? data.tags.join(', ') : '',
+            } as Post);
         } else {
-          setMsg(data.error || "Failed to load post.");
+          setMsg("Post not found.");
         }
       } catch (err) {
         setMsg("Network error.");
@@ -87,24 +91,16 @@ export default function EditBlogPage() {
     }
 
     try {
+      const docRef = doc(db, 'posts', Array.isArray(id) ? id[0] : id);
       const payload = {
         ...post,
         tags: post.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        slug: slugify(post.slug)
+        slug: slugify(post.slug),
+        updatedAt: serverTimestamp(),
       };
+      await updateDoc(docRef, payload);
+      setMsg("Post updated successfully!");
 
-      const res = await fetch(`/api/a2gadmin/blog?id=${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setMsg(data.error || "Failed to update post.");
-      } else {
-        setMsg("Post updated successfully!");
-      }
     } catch (err: any) {
       setMsg("A network or server error occurred.");
     } finally {
@@ -118,14 +114,10 @@ export default function EditBlogPage() {
     }
     setSaving(true);
     try {
-        const res = await fetch(`/api/a2gadmin/blog?id=${id}`, { method: "DELETE" });
-        if (res.ok) {
-            alert("Post deleted.");
-            router.push('/a2gadmin/blog');
-        } else {
-            const data = await res.json();
-            alert(`Failed to delete: ${data.error}`);
-        }
+        const docRef = doc(db, 'posts', Array.isArray(id) ? id[0] : id);
+        await deleteDoc(docRef);
+        alert("Post deleted.");
+        router.push('/a2gadmin/blog');
     } catch (err) {
         alert("Deletion failed due to a network error.");
     }

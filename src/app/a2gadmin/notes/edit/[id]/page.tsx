@@ -8,6 +8,8 @@ import "@uiw/react-markdown-preview/markdown.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Save } from "lucide-react";
+import { db } from "@/firebase/config";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 // Load MDEditor CLIENT-SIDE ONLY
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
@@ -37,21 +39,22 @@ export default function EditNotePage() {
 
     async function loadNote() {
       try {
-        const res = await fetch(`/api/a2gadmin/notes?id=${id}`);
-        const data = await res.json();
+        const docRef = doc(db, 'notes', Array.isArray(id) ? id[0] : id);
+        const docSnap = await getDoc(docRef);
 
-        if (data?.note) {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
           setNote({
-            title: data.note.title || "",
-            subject: data.note.subject || "",
-            course: data.note.course || "",
-            year: data.note.year || "",
-            topic: data.note.topic || "",
-            isPremium: data.note.isPremium || false,
-            content: data.note.content || "",
+            title: data.title || "",
+            subject: data.subject || "",
+            course: data.course || "",
+            year: data.year || "",
+            topic: data.topic || "",
+            isPremium: data.isPremium || false,
+            content: data.content || "",
           });
         } else {
-            setMsg(data.error || "Failed to load note");
+            setMsg("Failed to load note");
         }
       } catch (err) {
         console.error("Failed to load note", err);
@@ -73,18 +76,13 @@ export default function EditNotePage() {
     setMsg("");
     
     try {
-        const res = await fetch(`/api/a2gadmin/notes?id=${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(note),
+        const docRef = doc(db, 'notes', Array.isArray(id) ? id[0] : id);
+        await updateDoc(docRef, {
+            ...note,
+            updatedAt: serverTimestamp(),
         });
+        setMsg("Note updated successfully!");
 
-        if (res.ok) {
-            setMsg("Note updated successfully!");
-        } else {
-            const data = await res.json();
-            setMsg(`Update failed: ${data.error}`);
-        }
     } catch (err) {
         setMsg("A network error occurred.");
     } finally {
@@ -124,7 +122,7 @@ export default function EditNotePage() {
       {/* Content Editor */}
       <div>
         <label className="block mb-2 font-semibold">Content</label>
-        <div className="bg-white/5 p-2 rounded">
+        <div className="bg-white/5 p-2 rounded" data-color-mode="dark">
             <MDEditor
             value={note.content}
             onChange={(v = "") => setNote({ ...note, content: String(v) })}

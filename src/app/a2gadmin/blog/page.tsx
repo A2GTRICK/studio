@@ -1,4 +1,3 @@
-
 // src/app/a2gadmin/blog/page.tsx
 "use client";
 
@@ -6,6 +5,9 @@ import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Loader2, PlusCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { collection, getDocs, orderBy, query, deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/firebase/config";
+
 
 interface Post {
     id: string;
@@ -25,9 +27,11 @@ export default function BlogAdminPage() {
   async function loadPosts() {
       setLoading(true);
       try {
-          const res = await fetch('/api/a2gadmin/blog');
-          const data = await res.json();
-          setAllPosts(data.posts || []);
+          const postsRef = collection(db, "posts");
+          const q = query(postsRef, orderBy("createdAt", "desc"));
+          const querySnapshot = await getDocs(q);
+          const posts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+          setAllPosts(posts);
       } catch (error) {
           console.error("Error loading posts:", error);
       }
@@ -55,7 +59,7 @@ export default function BlogAdminPage() {
     if (!confirm("Are you sure you want to delete this post permanently?")) return;
     
     try {
-        await fetch(`/api/a2gadmin/blog?id=${postId}`, { method: "DELETE" });
+        await deleteDoc(doc(db, "posts", postId));
         setAllPosts(allPosts.filter(p => p.id !== postId));
         alert("Post deleted successfully!");
     } catch(err) {

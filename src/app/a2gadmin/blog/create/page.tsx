@@ -1,4 +1,3 @@
-
 // src/app/a2gadmin/blog/create/page.tsx
 "use client";
 
@@ -21,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebase/config";
 
 SyntaxHighlighter.registerLanguage("javascript", js);
 SyntaxHighlighter.registerLanguage("bash", bash);
@@ -234,22 +235,14 @@ export default function CreateBlogPage() {
         author: "A2G Admin",
         isPublished: true,
         readingTimeMinutes: readingTimeMinutes(content),
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       };
 
-      const res = await fetch("/api/a2gadmin/blog", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const docRef = await addDoc(collection(db, "posts"), payload);
+      setMsg("Post created successfully!");
+      router.push(`/a2gadmin/blog/edit/${docRef.id}`);
 
-      const data = await res.json();
-      if (!res.ok) {
-        setMsg(data.error || "Failed to create post.");
-      } else {
-        setMsg("Post created successfully!");
-        router.push(`/a2gadmin/blog/edit/${data.id}`);
-      }
     } catch (err) {
       setMsg("A network or server error occurred.");
     } finally {

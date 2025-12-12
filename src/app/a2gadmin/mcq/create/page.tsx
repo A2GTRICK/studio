@@ -1,4 +1,3 @@
-
 // src/app/a2gadmin/mcq/create/page.tsx
 "use client";
 
@@ -13,6 +12,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebase/config";
 
 type Question = {
   id: string;
@@ -169,22 +170,14 @@ export default function CreateMcqSetPage() {
         title, course, subject, year, description, isPremium, isPublished,
         questionCount: questions.length,
         questions,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
-      const res = await fetch("/api/a2gadmin/mcq", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
+      const docRef = await addDoc(collection(db, "mcqSets"), payload);
+      setMsg("MCQ set created successfully!");
+      router.push(`/a2gadmin/mcq/edit/${docRef.id}`);
 
-      const data = await res.json();
-      if (!res.ok) {
-        setMsg(data.error || "Failed to create MCQ set.");
-      } else {
-        setMsg("MCQ set created successfully!");
-        router.push(`/a2gadmin/mcq/edit/${data.id}`);
-      }
     } catch (err: any) {
       setMsg("A network or server error occurred.");
     } finally {

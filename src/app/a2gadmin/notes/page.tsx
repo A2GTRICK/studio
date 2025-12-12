@@ -1,10 +1,11 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, PlusCircle } from "lucide-react";
 import Link from "next/link";
+import { collection, getDocs, deleteDoc, doc, query, orderBy } from "firebase/firestore";
+import { db } from "@/firebase/config";
 
 interface Note {
   id: string;
@@ -33,10 +34,13 @@ export default function NotesDashboard() {
   useEffect(() => {
     async function loadNotes() {
       try {
-        const res = await fetch("/api/a2gadmin/notes");
-        const data = await res.json();
-        const notes = data.notes || [];
+        const notesRef = collection(db, "notes");
+        const q = query(notesRef, orderBy("updatedAt", "desc"));
+        const snapshot = await getDocs(q);
+
+        const notes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Note));
         setAllNotes(notes);
+
         // By default, expand all subject groups
         if (Array.isArray(notes)) {
             const subjects = Array.from(new Set(notes.map((n: Note) => n.subject || "General")));
@@ -105,7 +109,7 @@ export default function NotesDashboard() {
 
   async function handleDelete(noteId: string) {
     if (!confirm("Are you sure you want to delete this note permanently?")) return;
-    await fetch(`/api/a2gadmin/notes?id=${noteId}`, { method: "DELETE" });
+    await deleteDoc(doc(db, "notes", noteId));
     setAllNotes(allNotes.filter(n => n.id !== noteId));
     alert("Note deleted successfully!");
   }

@@ -6,6 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { Loader2, Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { db } from "@/firebase/config";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 type Question = {
   id: string;
@@ -40,10 +42,11 @@ export default function EditMcqSetPage() {
     async function loadSet() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/a2gadmin/mcq?id=${id}`);
-        const data = await res.json();
-        if (res.ok) {
-          const set = data.set;
+        const docRef = doc(db, 'mcqSets', Array.isArray(id) ? id[0] : id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const set = docSnap.data();
           setTitle(set.title || "");
           setCourse(set.course || "");
           setSubject(set.subject || "");
@@ -54,7 +57,7 @@ export default function EditMcqSetPage() {
           // Ensure every question has a unique ID for React keys
           setQuestions((set.questions || []).map((q: any) => ({ ...q, id: q.id || uuidv4() })));
         } else {
-          setMsg(data.error || "Failed to load MCQ set.");
+          setMsg("MCQ set not found.");
         }
       } catch (err) {
         setMsg("Network error.");
@@ -112,24 +115,16 @@ export default function EditMcqSetPage() {
     }
 
     try {
+      const docRef = doc(db, 'mcqSets', Array.isArray(id) ? id[0] : id);
       const payload = {
         title, course, subject, year, description, isPremium, isPublished,
         questionCount: questions.length,
         questions,
+        updatedAt: serverTimestamp(),
       };
-
-      const res = await fetch(`/api/a2gadmin/mcq?id=${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setMsg(data.error || "Failed to update MCQ set.");
-      } else {
-        setMsg("MCQ set updated successfully!");
-      }
+      
+      await updateDoc(docRef, payload);
+      setMsg("MCQ set updated successfully!");
     } catch (err: any) {
       setMsg("A network or server error occurred.");
     } finally {

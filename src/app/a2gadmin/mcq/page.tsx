@@ -1,10 +1,11 @@
-
 // src/app/a2gadmin/mcq/page.tsx
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Loader2, PlusCircle, ChevronDown } from "lucide-react";
+import { collection, getDocs, orderBy, query, deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/firebase/config";
 import type { McqSet } from "@/context/mcq-context";
 
 export default function McqAdminPage() {
@@ -19,21 +20,21 @@ export default function McqAdminPage() {
   async function loadSets() {
       setLoading(true);
       try {
-          const res = await fetch('/api/a2gadmin/mcq');
-          const data = await res.json();
-          if (res.ok) {
-              const sets = data.sets || [];
-              setAllMcqSets(sets);
-              // Auto-expand all subjects by default
-              const subjects = Array.from(new Set(sets.map((n: McqSet) => n.subject || "General")));
-              const initialExpansion: Record<string, boolean> = {};
-              subjects.forEach(sub => { initialExpansion[sub] = true; });
-              setExpandedSubjects(initialExpansion);
-          } else {
-              console.error("Failed to fetch MCQ sets:", data.error);
-          }
+          const setsRef = collection(db, "mcqSets");
+          const q = query(setsRef, orderBy("createdAt", "desc"));
+          const querySnapshot = await getDocs(q);
+          const sets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as McqSet));
+          
+          setAllMcqSets(sets);
+
+          // Auto-expand all subjects by default
+          const subjects = Array.from(new Set(sets.map((n: McqSet) => n.subject || "General")));
+          const initialExpansion: Record<string, boolean> = {};
+          subjects.forEach(sub => { initialExpansion[sub] = true; });
+          setExpandedSubjects(initialExpansion);
+
       } catch (error) {
-          console.error("Error calling API route:", error);
+          console.error("Failed to fetch MCQ sets:", error);
       }
       setLoading(false);
   }
@@ -88,7 +89,7 @@ export default function McqAdminPage() {
     if (!confirm("Are you sure you want to delete this MCQ set permanently?")) return;
     
     try {
-        await fetch(`/api/a2gadmin/mcq?id=${setId}`, { method: "DELETE" });
+        await deleteDoc(doc(db, "mcqSets", setId));
         setAllMcqSets(allMcqSets.filter(s => s.id !== setId));
         alert("MCQ set deleted successfully!");
     } catch(err) {
