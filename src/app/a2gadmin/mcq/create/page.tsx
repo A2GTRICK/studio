@@ -14,12 +14,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
 
 type Question = {
   id: string;
@@ -186,19 +182,30 @@ export default function CreateMcqSetPage() {
       title, course, subject, year, description, isPremium, isPublished,
       questionCount: questions.length,
       questions,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
     };
 
     try {
-      const docRef = await addDoc(collection(db, "mcqSets"), payload);
+       const res = await fetch('/api/a2gadmin/mcq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to create MCQ set');
+      }
+
+      const { id } = await res.json();
       setMsg("MCQ set created successfully!");
-      router.push(`/a2gadmin/mcq/edit/${docRef.id}`);
-    } catch (serverError) {
-      const permissionError = new FirestorePermissionError({ path: 'mcqSets', operation: 'create', requestResourceData: payload });
-      errorEmitter.emit('permission-error', permissionError);
-      setMsg("A permission error occurred. Check the console.");
-    } finally { setLoading(false); }
+      router.push(`/a2gadmin/mcq/edit/${id}`);
+
+    } catch (err: any) {
+      console.error("Admin create mcq error:", err);
+      setMsg(err.message || "A permission or server error occurred.");
+    } finally { 
+      setLoading(false); 
+    }
   }
 
   return (
