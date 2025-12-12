@@ -1,27 +1,41 @@
-
+// src/app/a2gadmin/notes/edit/[id]/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useParams, useRouter } from "next/navigation";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Save } from "lucide-react";
-import { db } from "@/firebase/config";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
-export default function EditNotePage() {
-  const { id } = useParams();
-  const router = useRouter();
+type NoteShape = {
+  id?: string;
+  title?: string;
+  subject?: string;
+  course?: string;
+  year?: string;
+  topic?: string;
+  isPremium?: boolean;
+  content?: string;
+  attachments?: string[];
+  [k: string]: any;
+};
 
+export default function EditNotePageClient() {
+  const params = useParams() as any;
+  // next/navigation useParams() may return string or array (edge cases); normalize:
+  const rawId = params?.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [note, setNote] = useState<any>({
+  const [msg, setMsg] = useState<string | null>(null);
+  const [note, setNote] = useState<NoteShape>({
     title: "",
     subject: "",
     course: "",
@@ -32,83 +46,127 @@ export default function EditNotePage() {
   });
 
   useEffect(() => {
-    if (!id) return;
-
-    async function loadNote() {
-      try {
-        const docRef = doc(db, 'notes', Array.isArray(id) ? id[0] : id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setNote({
-            title: data.title || "",
-            subject: data.subject || "",
-            course: data.course || "",
-            year: data.year || "",
-            topic: data.topic || "",
-            isPremium: data.isPremium || false,
-            content: data.content || "",
-          });
-        } else {
-            setMsg("Failed to load note");
-        }
-      } catch (err) {
-        console.error("Failed to load note", err);
-        setMsg("Network error loading note.");
-      }
-
+    if (!id) {
+      setMsg("Missing note id");
       setLoading(false);
+      return;
     }
 
-    loadNote();
+    let mounted = true;
+
+    (async () => {
+      try {
+        // API returns { notes: [...] } — find the note by id
+        const res = await fetch(`/api/a2gadmin/notes?id=${encodeURIComponent(id)}`, { cache: "no-store" });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(`Failed to load: ${res.status} ${txt}`);
+        }
+        const payload = await res.json().catch(() => ({}));
+        let n: NoteShape | undefined;
+
+        if (Array.isArray(payload?.notes)) {
+          n = payload.notes.find((x: any) => x.id === id) ?? payload.notes[0];
+        } else if (payload?.note) {
+          n = payload.note;
+        } else if (payload?.id) {
+          n = payload;
+        }
+
+        if (!n) {
+          // fallback: try fetch single doc via client firestore? (we avoid that)
+          throw new Error("Note not found from API");
+        }
+
+        if (!mounted) return;
+        // normalize a few fields
+        setNote({
+          id: n.id,
+          title: n.title ?? "",
+          subject: n.subject ?? "",
+          course: n.course ?? "",
+          year: n.year ?? "",
+          topic: n.topic ?? "",
+          isPremium: !!n.isPremium,
+          content: n.content ?? n.notes ?? "",
+          attachments: Array.isArray(n.attachments) ? n.attachments : [],
+          ...n,
+        });
+        setMsg(null);
+      } catch (err: any) {
+        console.error("Load note error:", err);
+        if (mounted) setMsg(String(err.message ?? "Network error loading note."));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
-  async function saveNote(e: React.FormEvent) {
-    e.preventDefault();
+  async function saveNote(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     setSaving(true);
-    setMsg("");
-    
-    try {
-        const docRef = doc(db, 'notes', Array.isArray(id) ? id[0] : id);
-        await updateDoc(docRef, {
-            ...note,
-            updatedAt: serverTimestamp(),
-        });
-        setMsg("Note updated successfully!");
+    setMsg(null);
 
-    } catch (err) {
-        setMsg("A network error occurred.");
+    try {
+      if (!id) throw new Error("Missing id");
+
+      // send JSON to your server-side API (PUT accepted)
+      const res = await fetch(`/api/a2gadmin/notes?id=${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: note.title,
+          subject: note.subject,
+          course: note.course,
+          year: note.year,
+          topic: note.topic,
+          isPremium: !!note.isPremium,
+          content: note.content,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`Save failed: ${res.status} ${body}`);
+      }
+
+      setMsg("Note updated successfully.");
+      // optional: refresh list or navigate back
+      // router.refresh();
+    } catch (err: any) {
+      console.error("Save error:", err);
+      setMsg(String(err.message ?? "Save failed"));
     } finally {
-        setSaving(false);
+      setSaving(false);
     }
   }
-  
+
   if (loading) return <div className="p-6 text-center"><Loader2 className="animate-spin w-8 h-8" /></div>;
 
   return (
-    <form onSubmit={saveNote} className="text-foreground max-w-5xl mx-auto space-y-6">
+    <form onSubmit={saveNote} className="text-foreground max-w-5xl mx-auto space-y-6 p-4">
       <h1 className="text-2xl font-bold">Edit Note</h1>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <Input value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" required />
-        <Input value={note.subject} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" />
-        <Input value={note.course} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" />
-        <Input value={note.year} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" />
+        <Input value={note.title ?? ""} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" required />
+        <Input value={note.subject ?? ""} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" />
+        <Input value={note.course ?? ""} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" />
+        <Input value={note.year ?? ""} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" />
       </div>
 
-       <div className="mb-4">
-          <Input value={note.topic} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" />
-       </div>
-
+      <div className="mb-4">
+        <Input value={note.topic ?? ""} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" />
+      </div>
 
       <label className="flex items-center gap-3">
         <input
           type="checkbox"
-          checked={note.isPremium}
-          onChange={(e) =>
-            setNote({ ...note, isPremium: e.target.checked })
-          }
+          checked={!!note.isPremium}
+          onChange={(e) => setNote({ ...note, isPremium: e.target.checked })}
         />
         <span className="font-semibold text-sm">Mark as Premium</span>
       </label>
@@ -116,23 +174,21 @@ export default function EditNotePage() {
       <div>
         <label className="block mb-2 font-semibold text-sm">Content</label>
         <div data-color-mode="dark">
-            <MDEditor
-            value={note.content}
-            onChange={(v = "") => setNote({ ...note, content: String(v) })}
-            height={400}
-            />
+          <MDEditor value={note.content ?? ""} onChange={(v = "") => setNote({ ...note, content: String(v) })} height={400} />
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4">
-        <Button
-            type="submit"
-            disabled={saving}
-        >
-            {saving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
-            {saving ? "Saving..." : "Save Changes"}
+        <Button type="submit" disabled={saving}>
+          {saving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
+          {saving ? "Saving..." : "Save Changes"}
         </Button>
-        {msg && <span className="text-sm">{msg}</span>}
+
+        <button type="button" className="px-3 py-2 border rounded" onClick={() => router.back()}>
+          Cancel
+        </button>
+
+        {msg && <span className="text-sm text-foreground/80">{msg}</span>}
       </div>
     </form>
   );
