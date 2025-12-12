@@ -1,6 +1,4 @@
-
-// FULL OPTION-A ULTRA-PREMIUM MCQ SYSTEM
-// src/app/practice/premium/page.tsx
+// Ultra-Premium MCQ Practice Page (Option C) - Full Implementation
 
 "use client";
 
@@ -11,11 +9,8 @@ import {
   Star,
   Play,
   Timer,
-  ChevronRight,
-  ChevronLeft,
   CheckCircle,
   XCircle,
-  Eye,
   BookOpen,
 } from "lucide-react";
 import { fetchAllMCQSets, type MCQSet } from "@/services/mcq";
@@ -72,8 +67,8 @@ export default function PremiumPracticePage() {
     load();
   }, []);
 
-  const subjects = useMemo(() => ["all", ...new Set(sets.map(s => s.subject).filter(Boolean))], [sets]);
-  const courses = useMemo(() => ["all", ...new Set(sets.map(s => s.course).filter(Boolean))], [sets]);
+  const subjects = useMemo(() => ["all", ...Array.from(new Set(sets.map(s => s.subject).filter(Boolean)))], [sets]);
+  const courses = useMemo(() => ["all", ...Array.from(new Set(sets.map(s => s.course).filter(Boolean)))], [sets]);
 
   // ------------------------------------------------------------
   // Filtering Logic
@@ -239,7 +234,7 @@ function ExamPlayer({ setData, onClose }: { setData: MCQSet; onClose: () => void
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
-          clearInterval(timerRef.current!);
+          if(timerRef.current) clearInterval(timerRef.current);
           handleSubmit();
           return 0;
         }
