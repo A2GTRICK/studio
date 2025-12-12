@@ -25,6 +25,18 @@ type NoteShape = {
   [k: string]: any;
 };
 
+function autoFormatMarkdown(input: string) {
+  let s = input || "";
+  s = s.replace(/\r\n/g, "\n");
+  s = s.replace(/^\s*\*\*(.+?)\*\*\s*$/gm, (_m, g1) => `## ${g1.trim()}`);
+  s = s.replace(/^\s*([A-Z0-9][A-Za-z0-9\s\-\u00A0]{3,})\s*:\s*$/gm, (_m, g1) => `## ${g1.trim()}`);
+  s = s.replace(/\n{3,}/g, "\n\n");
+  s = s.replace(/^\s*[\*\u2022]\s+/gm, "- ");
+  s = s.split("\n").map((l) => l.replace(/\s+$/g, "")).join("\n");
+  return s;
+}
+
+
 export default function EditNotePageClient() {
   const params = useParams() as any;
   // next/navigation useParams() may return string or array (edge cases); normalize:
@@ -145,6 +157,13 @@ export default function EditNotePageClient() {
     }
   }
 
+  function runAutoFormat() {
+    const formatted = autoFormatMarkdown(note.content || "");
+    setNote({ ...note, content: formatted });
+    setMsg("Auto-format applied (non-AI). Please review before saving.");
+  }
+
+
   if (loading) return <div className="p-6 text-center"><Loader2 className="animate-spin w-8 h-8" /></div>;
 
   return (
@@ -172,7 +191,12 @@ export default function EditNotePageClient() {
       </label>
 
       <div>
-        <label className="block mb-2 font-semibold text-sm">Content</label>
+        <div className="flex items-center justify-between mb-2">
+            <label className="block font-semibold text-sm">Content</label>
+             <Button type="button" onClick={runAutoFormat} variant="outline" size="sm">
+              Auto-format (non-AI)
+            </Button>
+        </div>
         <div data-color-mode="dark">
           <MDEditor value={note.content ?? ""} onChange={(v = "") => setNote({ ...note, content: String(v) })} height={400} />
         </div>
