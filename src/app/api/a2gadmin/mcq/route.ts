@@ -130,4 +130,6 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ ok: true });
     } catch (err: any) {
         console.error("Admin DELETE mcqSets error:", err);
-        return NextResponse.json({ error: err.message || "Server error" }, { status:
+        return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
+    }
+}
