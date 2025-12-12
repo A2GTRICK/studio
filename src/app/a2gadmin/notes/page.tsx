@@ -35,7 +35,7 @@ export default function NotesDashboard() {
     async function loadNotes() {
       try {
         const notesRef = collection(db, "notes");
-        const q = query(notesRef, orderBy("updatedAt", "desc"));
+        const q = query(notesRef, orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
 
         const notes = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Note));
