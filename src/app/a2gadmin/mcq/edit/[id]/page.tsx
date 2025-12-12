@@ -7,8 +7,6 @@ import { Loader2, Plus, Trash2, Save, ArrowLeft, Upload, Eye, FilePlus, Download
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { db } from "@/firebase/config";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 // Premium MCQ editor: bulk upload (text/CSV/JSON), preview, validation, save, local draft
 
@@ -56,14 +54,19 @@ export default function EditMcqSetPagePremium() {
     (async () => {
       setLoading(true);
       try {
-        const ref = doc(db, "mcqSets", id);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
+        const res = await fetch(`/api/a2gadmin/mcq?id=${id}`);
+        if (!res.ok) {
+            throw new Error(`Failed to load MCQ set: ${res.statusText}`);
+        }
+        const data = await res.json();
+        const payload = data.set;
+        
+        if (!payload) {
           setMsg("MCQ set not found");
           setLoading(false);
           return;
         }
-        const payload = snap.data();
+
         if (!mounted) return;
         setTitle(payload.title || "");
         setCourse(payload.course || "");
@@ -263,14 +266,24 @@ export default function EditMcqSetPagePremium() {
     }
 
     try {
-      const ref = doc(db, 'mcqSets', id);
-      const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length, updatedAt: serverTimestamp() };
-      await updateDoc(ref, payload);
+      const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length };
+      
+      const res = await fetch(`/api/a2gadmin/mcq?id=${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to save MCQ set');
+      }
+
       setMsg('Saved successfully');
       try { localStorage.removeItem(draftKey); } catch {}
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setMsg('Failed to save to server');
+      setMsg(err.message || 'Failed to save to server');
     } finally { setSaving(false); }
   }
 
@@ -415,3 +428,5 @@ export default function EditMcqSetPagePremium() {
     </div>
   );
 }
+
+    
