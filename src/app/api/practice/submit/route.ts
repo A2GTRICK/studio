@@ -1,30 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebase/config";
+
 
 export async function POST(req: NextRequest) {
   try {
-    const { getAdminDb, getAdmin } = await import("@/lib/firebaseAdmin");
-
-    const adminDb = getAdminDb();
-    const admin = getAdmin();
     const payload = await req.json();
 
-    if (!payload || !payload.userId || !payload.answers) {
+    if (!payload || !payload.testId || !payload.answers) {
       return NextResponse.json(
         { error: "Missing required data" },
         { status: 400 }
       );
     }
 
-    const result = {
-      userId: payload.userId,
-      answers: payload.answers,
-      submittedAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
-
-    await adminDb.collection("practiceSubmissions").add(result);
+    const docRef = await addDoc(collection(db, "testAttempts"), {
+        testId: payload.testId,
+        answers: payload.answers,
+        timeTakenSeconds: payload.timeTakenSeconds,
+        warnings: payload.warnings,
+        submittedAt: serverTimestamp(),
+    });
 
     return NextResponse.json(
-      { message: "Submission successful" },
+      { message: "Submission successful", resultId: docRef.id },
       { status: 200 }
     );
 
