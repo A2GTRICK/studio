@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -5,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { fetchMockTestById } from "@/services/mock-test";
 import { Loader2, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { calculateMockResult } from "@/utils/mockTestResult";
 
 type AnswerMap = Record<number, string>;
 
@@ -103,38 +105,20 @@ export default function MockTestPlayerPage() {
   // =============================
   // SUBMIT
   // =============================
-  async function handleSubmit() {
-    if (submitting) return;
-    setSubmitting(true);
-    stopTimer();
-
-    const payload = {
-      testId,
+  function handleSubmit() {
+    const result = calculateMockResult(
+      test.questions,
       answers,
-      timeTakenSeconds: (test.duration * 60) - timeLeft,
-      warnings,
-    };
-    
-    try {
-        const res = await fetch("/api/mock-test/submit", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        });
+      1,     // marks per question
+      0.25   // negative marks
+    );
 
-        if (!res.ok) throw new Error("Submission failed on server");
-        
-        alert("Mock test submitted successfully!");
-        router.push("/dashboard/mock-test");
+    sessionStorage.setItem(
+      "mockTestResult",
+      JSON.stringify(result)
+    );
 
-    } catch(err) {
-        console.error("MOCK TEST SUBMIT FAILED:", err);
-        alert("Mock test submission failed.");
-    } finally {
-        setSubmitting(false);
-    }
+    router.push("/dashboard/mock-test/result");
   }
 
   if (loading) {
@@ -148,22 +132,23 @@ export default function MockTestPlayerPage() {
   if (!test || !test.questions || test.questions.length === 0) {
     return (
       <div className="p-10 text-center text-red-600">
-        Mock test not found or has no questions.
+        Mock test not found or is empty.
       </div>
     );
   }
 
   const question = test.questions[curIndex];
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
   
   if (!question) {
      return (
       <div className="p-10 text-center">
-        <p>End of test. Preparing to submit...</p>
+        Loading question...
       </div>
     );
   }
+
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
 
   return (
     <div className="min-h-screen bg-white p-4">
