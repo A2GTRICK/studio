@@ -138,7 +138,7 @@ export default function MockTestPlayerPage() {
     );
   }
 
-  const question = test.questions[curIndex];
+  const question = test.questions?.[curIndex];
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
 
@@ -158,37 +158,44 @@ export default function MockTestPlayerPage() {
           </div>
 
           <div className="border rounded p-6">
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">
-                Q {curIndex + 1} / {test.questions.length}
-              </div>
-              <div className="mt-2 font-medium">
-                {question.questionText}
-              </div>
-            </div>
+            {!question ? (
+              <div className="p-6 text-center">Loading question...</div>
+            ) : (
+             <>
+                <div className="mb-4">
+                  <div className="text-sm text-gray-600">
+                    Q {curIndex + 1} / {test.questions.length}
+                  </div>
+                  <div className="mt-2 font-medium">
+                    {question.questionText}
+                  </div>
+                </div>
 
-            <div className="space-y-3">
-              {question.options.map((opt: any, idx: number) => {
-                const selected = answers[curIndex] === opt.text;
-                return (
-                  <label
-                    key={idx}
-                    className={`flex items-center gap-3 p-3 border rounded cursor-pointer ${
-                      selected
-                        ? "border-purple-600 bg-purple-50"
-                        : "hover:bg-slate-50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      checked={selected}
-                      onChange={() => selectAnswer(opt.text)}
-                    />
-                    <span>{opt.text}</span>
-                  </label>
-                );
-              })}
-            </div>
+                <div className="space-y-3">
+                  {question.options.map((opt: any, idx: number) => {
+                    const selected = answers[curIndex] === opt.text;
+                    return (
+                      <label
+                        key={idx}
+                        className={`flex items-center gap-3 p-3 border rounded cursor-pointer ${
+                          selected
+                            ? "border-purple-600 bg-purple-50"
+                            : "hover:bg-slate-50"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          checked={selected}
+                          onChange={() => selectAnswer(opt.text)}
+                        />
+                        <span>{opt.text}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
 
             <div className="flex items-center gap-3 mt-6">
               <Button
