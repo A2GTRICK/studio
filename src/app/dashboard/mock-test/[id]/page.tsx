@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -20,6 +21,25 @@ type MockTest = {
   questions: Question[];
 };
 
+function Stat({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="bg-slate-50 rounded-xl p-4">
+      <div className="text-sm text-gray-500">
+        {label}
+      </div>
+      <div className="text-2xl font-bold text-gray-800">
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export default function MockTestPlayerPage() {
   const params = useParams();
   const testId = params.id as string;
@@ -29,6 +49,7 @@ export default function MockTestPlayerPage() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeLeft, setTimeLeft] = useState(0);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const timerRef = useRef<number | null>(null);
 
@@ -143,71 +164,114 @@ export default function MockTestPlayerPage() {
   const q = test.questions[index];
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="flex justify-between mb-4">
-        <h1 className="text-xl font-bold">{test.title}</h1>
-        <div className="font-mono text-red-600">
-          {Math.floor(timeLeft / 60)
-            .toString()
-            .padStart(2, "0")}
-          :
-          {(timeLeft % 60)
-            .toString()
-            .padStart(2, "0")}
-        </div>
-      </div>
-
-      <div className="bg-white border rounded-xl p-6">
-        <div className="text-sm text-gray-500 mb-2">
-          Question {index + 1} / {test.questions.length}
+    <div className="min-h-screen flex justify-center items-start pt-10 bg-slate-50">
+      <div className="w-full max-w-3xl px-4">
+        <div className="flex justify-between mb-4">
+          <h1 className="text-xl font-bold">{test.title}</h1>
+          <div className="font-mono text-red-600">
+            {Math.floor(timeLeft / 60)
+              .toString()
+              .padStart(2, "0")}
+            :
+            {(timeLeft % 60)
+              .toString()
+              .padStart(2, "0")}
+          </div>
         </div>
 
-        <div className="font-medium mb-4">
-          {q.questionText}
-        </div>
+        <div className="bg-white border rounded-xl p-6">
+          <div className="text-sm text-gray-500 mb-2">
+            Question {index + 1} / {test.questions.length}
+          </div>
 
-        <div className="space-y-2">
-          {q.options.map((opt, i) => (
-            <label
-              key={i}
-              className="flex items-center gap-3 p-3 border rounded cursor-pointer"
+          <div className="font-medium mb-4">
+            {q.questionText}
+          </div>
+
+          <div className="space-y-2">
+            {q.options.map((opt, i) => (
+              <label
+                key={i}
+                className="flex items-center gap-3 p-3 border rounded cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  checked={answers[index] === opt.text}
+                  onChange={() => selectAnswer(opt.text)}
+                />
+                {opt.text}
+              </label>
+            ))}
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <Button
+              variant="outline"
+              disabled={index === 0}
+              onClick={() => setIndex(i => i - 1)}
             >
-              <input
-                type="radio"
-                checked={answers[index] === opt.text}
-                onChange={() => selectAnswer(opt.text)}
-              />
-              {opt.text}
-            </label>
-          ))}
+              Prev
+            </Button>
+
+            <Button
+              onClick={() =>
+                setIndex(i =>
+                  Math.min(test.questions.length - 1, i + 1)
+                )
+              }
+            >
+              Next
+            </Button>
+
+            <Button
+              className="ml-auto bg-green-600"
+              onClick={() => setShowConfirm(true)}
+            >
+              Submit Test
+            </Button>
+          </div>
         </div>
 
-        <div className="flex gap-3 mt-6">
-          <Button
-            variant="outline"
-            disabled={index === 0}
-            onClick={() => setIndex(i => i - 1)}
-          >
-            Prev
-          </Button>
+        {showConfirm && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4">
+              <h2 className="text-xl font-bold text-center">
+                Confirm Submission
+              </h2>
 
-          <Button
-            onClick={() =>
-              setIndex(i =>
-                Math.min(test.questions.length - 1, i + 1)
-              )
-            }
-          >
-            Next
-          </Button>
+              {(() => {
+                const total = test.questions.length;
+                const attempted = Object.keys(answers).length;
+                const skipped = total - attempted;
 
-          <Button
-            className="ml-auto bg-green-600"
-            onClick={handleSubmit}
-          >
-            Submit Test
-          </Button>
-        </div>
+                return (
+                  <div className="grid grid-cols-3 text-center">
+                    <Stat label="Total" value={total} />
+                    <Stat label="Attempted" value={attempted} />
+                    <Stat label="Skipped" value={skipped} />
+                  </div>
+                );
+              })()}
+
+              <div className="flex gap-3 mt-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowConfirm(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  className="w-full bg-green-600"
+                  onClick={handleSubmit}
+                >
+                  Confirm Submit
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
