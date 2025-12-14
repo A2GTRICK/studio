@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -20,7 +19,6 @@ export default function MockTestPlayerPage() {
   const [curIndex, setCurIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [warnings, setWarnings] = useState(0);
   const timerRef = useRef<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,11 +35,6 @@ export default function MockTestPlayerPage() {
         setTest(data);
         setTimeLeft((data.duration || 0) * 60);
         startTimer();
-
-        // try fullscreen (optional)
-        try {
-          document.documentElement.requestFullscreen?.();
-        } catch {}
       } catch (err) {
         console.error(err);
       } finally {
@@ -51,19 +44,7 @@ export default function MockTestPlayerPage() {
 
     load();
 
-    // Anti-cheat: tab / window switch
-    function handleVisibility() {
-      if (document.visibilityState !== "visible") {
-        setWarnings((w) => w + 1);
-      }
-    }
-
-    document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("blur", handleVisibility);
-
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("blur", handleVisibility);
       stopTimer();
     };
   }, [testId]);
@@ -125,7 +106,7 @@ export default function MockTestPlayerPage() {
           testId,
           answers,
           timeTakenSeconds: (test.duration || 0) * 60 - timeLeft,
-          warnings,
+          warnings: 0,
         }),
     }).catch(err => {
         // Log error but don't block the user
@@ -288,15 +269,6 @@ export default function MockTestPlayerPage() {
                   {idx + 1}
                 </button>
               ))}
-            </div>
-
-            <div className="mt-4 text-sm">
-              Warnings: {warnings}
-              {warnings >= 3 && (
-                <div className="text-red-600 mt-2">
-                  Multiple tab switches detected.
-                </div>
-              )}
             </div>
           </div>
         </aside>
