@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -115,11 +114,27 @@ export default function MockTestPlayerPage() {
       timeTakenSeconds: (test.duration * 60) - timeLeft,
       warnings,
     };
+    
+    try {
+        const res = await fetch("/api/mock-test/submit", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
 
-    console.log("MOCK TEST SUBMIT:", payload);
+        if (!res.ok) throw new Error("Submission failed on server");
+        
+        alert("Mock test submitted successfully!");
+        router.push("/dashboard/mock-test");
 
-    alert("Mock test submitted (result logic next step)");
-    router.push("/dashboard/mock-test");
+    } catch(err) {
+        console.error("MOCK TEST SUBMIT FAILED:", err);
+        alert("Mock test submission failed.");
+    } finally {
+        setSubmitting(false);
+    }
   }
 
   if (loading) {
@@ -130,17 +145,25 @@ export default function MockTestPlayerPage() {
     );
   }
 
-  if (!test) {
+  if (!test || !test.questions || test.questions.length === 0) {
     return (
       <div className="p-10 text-center text-red-600">
-        Mock test not found
+        Mock test not found or has no questions.
       </div>
     );
   }
 
-  const question = test.questions?.[curIndex];
+  const question = test.questions[curIndex];
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
+  
+  if (!question) {
+     return (
+      <div className="p-10 text-center">
+        <p>End of test. Preparing to submit...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white p-4">
@@ -158,44 +181,37 @@ export default function MockTestPlayerPage() {
           </div>
 
           <div className="border rounded p-6">
-            {!question ? (
-              <div className="p-6 text-center">Loading question...</div>
-            ) : (
-             <>
-                <div className="mb-4">
-                  <div className="text-sm text-gray-600">
-                    Q {curIndex + 1} / {test.questions.length}
-                  </div>
-                  <div className="mt-2 font-medium">
-                    {question.questionText}
-                  </div>
-                </div>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">
+                Q {curIndex + 1} / {test.questions.length}
+              </div>
+              <div className="mt-2 font-medium">
+                {question.questionText}
+              </div>
+            </div>
 
-                <div className="space-y-3">
-                  {question.options.map((opt: any, idx: number) => {
-                    const selected = answers[curIndex] === opt.text;
-                    return (
-                      <label
-                        key={idx}
-                        className={`flex items-center gap-3 p-3 border rounded cursor-pointer ${
-                          selected
-                            ? "border-purple-600 bg-purple-50"
-                            : "hover:bg-slate-50"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          checked={selected}
-                          onChange={() => selectAnswer(opt.text)}
-                        />
-                        <span>{opt.text}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
+            <div className="space-y-3">
+              {question.options.map((opt: any, idx: number) => {
+                const selected = answers[curIndex] === opt.text;
+                return (
+                  <label
+                    key={idx}
+                    className={`flex items-center gap-3 p-3 border rounded cursor-pointer ${
+                      selected
+                        ? "border-purple-600 bg-purple-50"
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      checked={selected}
+                      onChange={() => selectAnswer(opt.text)}
+                    />
+                    <span>{opt.text}</span>
+                  </label>
+                );
+              })}
+            </div>
 
             <div className="flex items-center gap-3 mt-6">
               <Button
