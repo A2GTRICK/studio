@@ -1,6 +1,6 @@
+
 import { NextResponse } from "next/server";
-import { db } from "@/firebase/config";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { adminDb } from "@/lib/firebaseAdmin";
 
 export async function POST(req: Request) {
   try {
@@ -20,12 +20,12 @@ export async function POST(req: Request) {
       );
     }
 
-    await addDoc(collection(db, "testAttempts"), {
+    await adminDb.collection("testAttempts").add({
       testId,
       answers,
       timeTakenSeconds,
       warnings,
-      submittedAt: serverTimestamp(),
+      submittedAt: new Date(),
       source: "mock-test",
     });
 
