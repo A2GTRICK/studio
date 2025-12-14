@@ -1,4 +1,3 @@
-// src/services/mock-test.ts
 import { db } from "@/firebase/config";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 
