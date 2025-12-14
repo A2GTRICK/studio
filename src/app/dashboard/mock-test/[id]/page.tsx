@@ -132,7 +132,6 @@ export default function MockTestPlayerPage() {
         console.error("Failed to save test attempt to server:", err);
     });
 
-    // Immediately calculate results and navigate
     const result = calculateMockResult(
       test.questions,
       answers,
@@ -140,14 +139,25 @@ export default function MockTestPlayerPage() {
       0.25   // negative marks
     );
 
+    // Store a single object for both results and review to prevent race conditions
+    sessionStorage.setItem(
+      "mockTestResult",
+      JSON.stringify({
+        result,
+        questions: test.questions,
+        answers,
+      })
+    );
+    
+    // Also set the review-specific key for the review page, pointing to the same data structure
     sessionStorage.setItem(
       "mockTestReview",
       JSON.stringify({
         questions: test.questions,
         answers,
-        result,
       })
     );
+
 
     router.push("/dashboard/mock-test/result");
   }
@@ -295,5 +305,3 @@ export default function MockTestPlayerPage() {
     </div>
   );
 }
-
-    

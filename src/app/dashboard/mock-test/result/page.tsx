@@ -4,31 +4,40 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-type Result = {
+type ResultData = {
   totalQuestions: number;
   attempted: number;
   correct: number;
   wrong: number;
   skipped: number;
-  score: number;
+  score: string;
 };
 
 export default function MockTestResultPage() {
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<ResultData | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("mockTestReview");
-    if (raw) {
-      const data = JSON.parse(raw);
-      setResult(data.result);
+    // Read the consolidated result object
+    const raw = sessionStorage.getItem("mockTestResult");
+    if (!raw) return;
+    try {
+        // The result data is now nested inside a 'result' property
+        const data = JSON.parse(raw);
+        setResult(data.result || data); // Fallback for old structure
+    } catch(e) {
+        console.error("Failed to parse result data", e);
     }
   }, []);
 
   if (!result) {
-    return <div className="p-10">Result not found.</div>;
+    return (
+      <div className="p-10 text-center text-gray-600">
+        Result not found or is loading...
+      </div>
+    );
   }
 
-  const percentage = parseFloat(((result.score / result.totalQuestions) * 100).toFixed(2));
+  const percentage = parseFloat(((Number(result.score) / result.totalQuestions) * 100).toFixed(2));
   
   let performance = "Needs Improvement";
   if (percentage >= 75) {
@@ -50,7 +59,7 @@ export default function MockTestResultPage() {
         <Stat label="Correct" value={result.correct} />
         <Stat label="Wrong" value={result.wrong} />
         <Stat label="Skipped" value={result.skipped} />
-        <Stat label="Final Score" value={result.score} highlight />
+        <Stat label="Final Score" value={Number(result.score)} highlight />
         <div className="p-4 rounded-lg bg-slate-50">
           <div className="text-sm text-gray-500">Score Percentage</div>
           <div className="text-2xl font-bold">{percentage}%</div>
@@ -61,12 +70,11 @@ export default function MockTestResultPage() {
         </div>
       </div>
 
-      <div className="text-center">
+      <div className="text-center flex flex-col gap-3">
         <Button onClick={() => location.href = "/dashboard/mock-test"}>
           Back to Mock Tests
         </Button>
         <Button
-          className="ml-3"
           variant="outline"
           onClick={() =>
             location.href = "/dashboard/mock-test/review"
