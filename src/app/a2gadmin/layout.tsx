@@ -26,6 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             { label: "Dashboard", href: "/a2gadmin" },
             { label: "Notes", href: "/a2gadmin/notes" },
             { label: "MCQs", href: "/a2gadmin/mcq" },
+            { label: "Tests", href: "/a2gadmin/tests" },
             { label: "Blog", href: "/a2gadmin/blog" },
             { label: "Jobs", href: "/a2gadmin/jobs" },
             { label: "Notifications", href: "/a2gadmin/notifications" },
