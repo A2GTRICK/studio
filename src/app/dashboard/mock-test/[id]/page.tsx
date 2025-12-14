@@ -128,20 +128,18 @@ export default function MockTestPlayerPage() {
     sessionStorage.setItem(
       "mockTestResult",
       JSON.stringify({
-        totalQuestions,
-        attempted: correct + wrong,
-        correct,
-        wrong,
-        skipped,
-        score: score.toFixed(2),
-      })
-    );
-
-    sessionStorage.setItem(
-      "mockTestReview",
-      JSON.stringify({
-        questions: test.questions,
-        answers,
+        result: {
+            totalQuestions,
+            attempted: correct + wrong,
+            correct,
+            wrong,
+            skipped,
+            score: score.toFixed(2),
+        },
+        review: {
+            questions: test.questions,
+            answers,
+        }
       })
     );
     
@@ -168,8 +166,17 @@ export default function MockTestPlayerPage() {
   const q = test.questions[index];
 
   return (
-    <div className="min-h-screen flex justify-center items-start pt-12 px-4 bg-slate-50">
-      <div className="w-full max-w-3xl">
+    <div className="min-h-screen w-full bg-slate-50 px-4 py-8 flex justify-center">
+      <div
+        className="
+          w-full
+          max-w-[95%]
+          sm:max-w-[90%]
+          md:max-w-[780px]
+          lg:max-w-[920px]
+          xl:max-w-[1024px]
+        "
+      >
         <div className="flex justify-between mb-4">
           <h1 className="text-xl font-bold">{test.title}</h1>
           <div className="font-mono text-red-600">
