@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -97,11 +96,15 @@ export default function MockTestDashboardPage() {
                     </div>
                   </div>
                 </div>
-                <Button className="w-full font-bold" asChild>
-                  <Link href={`/dashboard/mock-test/${t.id}`}>
-                    <Play className="w-4 h-4 mr-2" />
-                    Start Mock Test
-                  </Link>
+                <Button
+                  className="w-full font-bold"
+                  onClick={() =>
+                    (window.location.href =
+                      `/dashboard/mock-test/${t.id}/instruction`)
+                  }
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Start Mock Test
                 </Button>
               </div>
             </div>
