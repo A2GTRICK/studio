@@ -3,7 +3,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchTestById, fetchTestQuestions } from '@/services/practice';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Question } from '@/types/practice';
 import type { Test } from '@/types/practice';
 
@@ -12,8 +12,9 @@ interface AnswerPayload {
   given: any;
 }
 
-export default function Player({ params }: { params: { id: string }}) {
-  const testId = params.id;
+export default function Player() {
+  const params = useParams();
+  const testId = params.id as string;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [test, setTest] = useState<Test | null>(null);
@@ -28,6 +29,7 @@ export default function Player({ params }: { params: { id: string }}) {
 
   // load test & questions (client-side to keep timer on client)
   useEffect(() => {
+    if (!testId) return;
     async function load() {
       setLoading(true);
       const t = await fetchTestById(testId);
