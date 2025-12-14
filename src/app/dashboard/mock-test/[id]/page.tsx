@@ -106,6 +106,14 @@ export default function MockTestPlayerPage() {
   // SUBMIT
   // =============================
   function handleSubmit() {
+    const unattempted = test.questions.length - Object.keys(answers).length;
+    if (unattempted > 0) {
+      const confirmSubmit = confirm(
+        `You have ${unattempted} unattempted questions. Submit anyway?`
+      );
+      if (!confirmSubmit) return;
+    }
+
     const result = calculateMockResult(
       test.questions,
       answers,
@@ -114,8 +122,12 @@ export default function MockTestPlayerPage() {
     );
 
     sessionStorage.setItem(
-      "mockTestResult",
-      JSON.stringify(result)
+      "mockTestReview",
+      JSON.stringify({
+        questions: test.questions,
+        answers,
+        result,
+      })
     );
 
     router.push("/dashboard/mock-test/result");

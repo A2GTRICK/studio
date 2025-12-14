@@ -17,15 +17,26 @@ export default function MockTestResultPage() {
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("mockTestResult");
+    const raw = sessionStorage.getItem("mockTestReview");
     if (raw) {
-      setResult(JSON.parse(raw));
+      const data = JSON.parse(raw);
+      setResult(data.result);
     }
   }, []);
 
   if (!result) {
     return <div className="p-10">Result not found.</div>;
   }
+
+  const percentage = parseFloat(((result.score / result.totalQuestions) * 100).toFixed(2));
+  
+  let performance = "Needs Improvement";
+  if (percentage >= 75) {
+    performance = "Excellent";
+  } else if (percentage >= 60) {
+    performance = "Good";
+  }
+
 
   return (
     <div className="max-w-3xl mx-auto p-8 space-y-6">
@@ -40,11 +51,28 @@ export default function MockTestResultPage() {
         <Stat label="Wrong" value={result.wrong} />
         <Stat label="Skipped" value={result.skipped} />
         <Stat label="Final Score" value={result.score} highlight />
+        <div className="p-4 rounded-lg bg-slate-50">
+          <div className="text-sm text-gray-500">Score Percentage</div>
+          <div className="text-2xl font-bold">{percentage}%</div>
+        </div>
+        <div className="p-4 rounded-lg bg-slate-50">
+          <div className="text-sm text-gray-500">Performance</div>
+          <div className="text-2xl font-bold">{performance}</div>
+        </div>
       </div>
 
       <div className="text-center">
         <Button onClick={() => location.href = "/dashboard/mock-test"}>
           Back to Mock Tests
+        </Button>
+        <Button
+          className="ml-3"
+          variant="outline"
+          onClick={() =>
+            location.href = "/dashboard/mock-test/review"
+          }
+        >
+          Review Answers
         </Button>
       </div>
     </div>
