@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -55,40 +56,54 @@ export default function MockTestDashboardPage() {
           No mock tests available.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tests.map((t) => (
             <div
               key={t.id}
-              className="bg-white border rounded-lg shadow-sm p-5 flex flex-col justify-between"
+              className="bg-white border rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col"
             >
-              <div>
-                <div className="flex justify-between items-start">
-                  <h3 className="font-semibold text-lg">{t.title}</h3>
+              <div className="p-5">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold text-lg text-gray-800 leading-tight">{t.title}</h3>
                   {t.isPremium && (
-                    <Star className="w-4 h-4 text-amber-500" />
+                    <div className="flex-shrink-0 ml-2">
+                      <span className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                        <Star className="w-3.5 h-3.5" />
+                        Premium
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm font-semibold text-primary/90">
                   {t.subject}
                 </p>
 
-                <div className="mt-4 text-sm text-gray-600 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    {t.questions?.length || 0} Questions
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Timer className="w-4 h-4" />
-                    {t.duration ?? "—"} Minutes
-                  </div>
-                </div>
               </div>
 
-              <Button className="mt-5" disabled>
-                <Play className="w-4 h-4 mr-2" />
-                Start Mock Test
-              </Button>
+              <div className="mt-auto bg-slate-50/70 p-5 border-t">
+                 <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-5">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary/70" />
+                    <div>
+                        <p className="font-semibold text-gray-800">{t.questions?.length || 0}</p>
+                        <p className="text-xs">Questions</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Timer className="w-5 h-5 text-primary/70" />
+                     <div>
+                        <p className="font-semibold text-gray-800">{t.duration ?? "—"}</p>
+                        <p className="text-xs">Minutes</p>
+                    </div>
+                  </div>
+                </div>
+                <Button className="w-full font-bold" disabled>
+                  <Play className="w-4 h-4 mr-2" />
+                  Start Mock Test
+                </Button>
+              </div>
+
             </div>
           ))}
         </div>
