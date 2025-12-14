@@ -1,16 +1,21 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { fetchMockTests, type MockTest } from "@/services/mock-test";
-import { Loader2, Play, Star, Timer, BookOpen } from "lucide-react";
+import { Loader2, Play, Star, Timer, BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from 'next/link';
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function MockTestDashboardPage() {
   const [tests, setTests] = useState<MockTest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // State for filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [premiumFilter, setPremiumFilter] = useState("all");
 
   useEffect(() => {
     async function load() {
@@ -26,6 +31,39 @@ export default function MockTestDashboardPage() {
     }
     load();
   }, []);
+  
+  const filteredAndSortedTests = useMemo(() => {
+    let filtered = tests;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const lowercasedQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(test => 
+        test.title.toLowerCase().includes(lowercasedQuery) ||
+        (test.subject && test.subject.toLowerCase().includes(lowercasedQuery))
+      );
+    }
+
+    // Apply premium filter
+    if (premiumFilter === 'premium') {
+      filtered = filtered.filter(test => test.isPremium);
+    } else if (premiumFilter === 'free') {
+      filtered = filtered.filter(test => !test.isPremium);
+    }
+
+    // Sort to show tests with questions first
+    filtered.sort((a, b) => {
+        const aHasQuestions = (a.questions?.length || 0) > 0;
+        const bHasQuestions = (b.questions?.length || 0) > 0;
+
+        if (aHasQuestions && !bHasQuestions) return -1;
+        if (!aHasQuestions && bHasQuestions) return 1;
+        return 0; // Keep original order for tests in the same category (e.g. by createdAt)
+    });
+    
+    return filtered;
+
+  }, [tests, searchQuery, premiumFilter]);
 
   if (loading) {
     return (
@@ -52,13 +90,39 @@ export default function MockTestDashboardPage() {
         </p>
       </div>
 
-      {tests.length === 0 ? (
-        <div className="bg-white border rounded p-6 text-center text-gray-500">
-          No mock tests available.
+       {/* Filter and Search Controls */}
+      <div className="bg-background/70 backdrop-blur-sm p-4 rounded-xl border shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by title or subject..."
+                    className="pl-9"
+                />
+            </div>
+             <Select value={premiumFilter} onValueChange={setPremiumFilter}>
+                <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Tests</SelectItem>
+                    <SelectItem value="premium">Premium Only</SelectItem>
+                    <SelectItem value="free">Free Only</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+      </div>
+
+      {filteredAndSortedTests.length === 0 ? (
+        <div className="bg-white border-2 border-dashed rounded-lg p-12 text-center text-gray-500">
+          <h3 className="text-xl font-semibold">No Mock Tests Found</h3>
+          <p>Try adjusting your search or filter criteria.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tests.map((t) => {
+          {filteredAndSortedTests.map((t) => {
             const questionCount = Array.isArray(t.questions) ? t.questions.length : 0;
             return (
               <div
@@ -125,4 +189,3 @@ export default function MockTestDashboardPage() {
     </div>
   );
 }
-
