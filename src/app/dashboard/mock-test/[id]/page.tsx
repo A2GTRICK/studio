@@ -102,6 +102,7 @@ export default function MockTestPlayerPage() {
     if (!test) return;
     stopTimer();
 
+    // 1. Calculate result
     const totalQuestions = test.questions.length;
     let correct = 0;
     let wrong = 0;
@@ -115,6 +116,7 @@ export default function MockTestPlayerPage() {
 
     const skipped = totalQuestions - (correct + wrong);
 
+    // Example marking scheme
     const marksPerQuestion = 1;
     const negativeMark = 0.25;
 
@@ -122,6 +124,7 @@ export default function MockTestPlayerPage() {
       correct * marksPerQuestion -
       wrong * negativeMark;
 
+    // 2. Store result for Result Page
     sessionStorage.setItem(
       "mockTestResult",
       JSON.stringify({
@@ -141,7 +144,8 @@ export default function MockTestPlayerPage() {
         answers,
       })
     );
-
+    
+    // 3. Redirect to Result Page
     window.location.href = "/dashboard/mock-test/result";
   }
 
@@ -164,8 +168,8 @@ export default function MockTestPlayerPage() {
   const q = test.questions[index];
 
   return (
-    <div className="min-h-screen flex justify-center items-start pt-10 bg-slate-50">
-      <div className="w-full max-w-3xl px-4">
+    <div className="min-h-screen flex justify-center items-start pt-12 px-4 bg-slate-50">
+      <div className="w-full max-w-3xl">
         <div className="flex justify-between mb-4">
           <h1 className="text-xl font-bold">{test.title}</h1>
           <div className="font-mono text-red-600">
