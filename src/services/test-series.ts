@@ -35,7 +35,7 @@ const COL = "test_series";
 export async function fetchPublishedTestSeries(): Promise<TestSeries[]> {
   const q = query(
     collection(db, COL),
-    where("testType", "==", "Mock Test"),
+    where("testType", "==", "Mock test"),
     orderBy("createdAt", "desc")
   );
 
