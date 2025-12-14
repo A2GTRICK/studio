@@ -37,8 +37,15 @@ service cloud.firestore {
       allow list, read: if true;
     }
 
-    match /test_series/{id} {
+    // =============================
+    // TEST SERIES (MOCK TESTS)
+    // =============================
+    match /test_series/{testId} {
+      // Allow all users to read mock tests
       allow list, read: if true;
+
+      // Only admin can write
+      allow write: if isAdmin();
     }
     
     // Specific rules for non-admin users
