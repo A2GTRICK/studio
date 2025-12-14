@@ -10,10 +10,16 @@ export async function fetchAllTests() {
 }
 
 export async function fetchTestById(id: string) {
-    const docRef = doc(db, "tests", id);
+    const docRef = doc(db, "test_series", id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        const data = docSnap.data();
+        return { 
+            id: docSnap.id,
+            ...data,
+            durationMinutes: data.duration, // map duration to durationMinutes
+            totalQuestions: data.questions?.length || 0,
+        };
     } else {
         return null;
     }
