@@ -114,6 +114,25 @@ export default function MockTestPlayerPage() {
       if (!confirmSubmit) return;
     }
 
+    setSubmitting(true);
+    stopTimer();
+    
+    // Fire-and-forget the API call to save the attempt
+    fetch("/api/mock-test/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          testId,
+          answers,
+          timeTakenSeconds: (test.duration || 0) * 60 - timeLeft,
+          warnings,
+        }),
+    }).catch(err => {
+        // Log error but don't block the user
+        console.error("Failed to save test attempt to server:", err);
+    });
+
+    // Immediately calculate results and navigate
     const result = calculateMockResult(
       test.questions,
       answers,
