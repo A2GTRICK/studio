@@ -1,41 +1,27 @@
 // src/services/mock-test.ts
-"use client";
-
 import { db } from "@/firebase/config";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-} from "firebase/firestore";
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
 
 export type MockTest = {
   id: string;
   title: string;
   description?: string;
   subject?: string;
-  course?: string;
-  totalQuestions?: number;
-  totalTime?: number; // minutes
-  isPublished: boolean;
-  createdAt?: any;
+  duration?: number;
+  isPremium?: boolean;
+  questions?: any[];
 };
 
-// USER SIDE — READ ONLY PUBLISHED MOCK TESTS
-export async function fetchPublishedMockTests(): Promise<MockTest[]> {
+export async function fetchMockTests(): Promise<MockTest[]> {
   const q = query(
-    collection(db, "mockTests"),
-    where("isPublished", "==", true),
+    collection(db, "test_series"),
     orderBy("createdAt", "desc")
   );
 
   const snap = await getDocs(q);
-  const arr: MockTest[] = [];
 
-  snap.forEach((doc) => {
-    arr.push(doc.data() as MockTest);
-  });
-
-  return arr;
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as any),
+  }));
 }
