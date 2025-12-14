@@ -85,7 +85,7 @@ export default function MockTestDashboardPage() {
                   <div className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5 text-primary/70" />
                     <div>
-                        <p className="font-semibold text-gray-800">{t.questions?.length || 0}</p>
+                        <p className="font-semibold text-gray-800">{t.questionCount || 0}</p>
                         <p className="text-xs">Questions</p>
                     </div>
                   </div>
@@ -98,7 +98,7 @@ export default function MockTestDashboardPage() {
                   </div>
                 </div>
                 <Button className="w-full font-bold" asChild>
-                  <Link href={`/practice/test/${t.id}/instructions`}>
+                  <Link href={`/dashboard/mock-test/${t.id}`}>
                     <Play className="w-4 h-4 mr-2" />
                     Start Mock Test
                   </Link>

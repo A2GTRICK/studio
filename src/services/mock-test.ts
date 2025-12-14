@@ -1,3 +1,4 @@
+
 import { db } from "@/firebase/config";
 import { collection, getDocs, orderBy, query, doc, getDoc } from "firebase/firestore";
 
@@ -9,6 +10,7 @@ export type MockTest = {
   duration?: number;
   isPremium?: boolean;
   questions?: any[];
+  questionCount?: number; // Added field
 };
 
 export async function fetchMockTests(): Promise<MockTest[]> {
@@ -19,10 +21,14 @@ export async function fetchMockTests(): Promise<MockTest[]> {
 
   const snap = await getDocs(q);
 
-  return snap.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as any),
-  }));
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        questionCount: data.questions?.length || 0, // Calculate question count
+        ...(data as any),
+    };
+  });
 }
 
 export async function fetchMockTestById(id: string) {
