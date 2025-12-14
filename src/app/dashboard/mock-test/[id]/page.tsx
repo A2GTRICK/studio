@@ -1,51 +1,126 @@
+
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchMockTestById } from "@/services/mock-test";
+import { Loader2, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Timer, ChevronLeft, ChevronRight } from "lucide-react";
 
 type AnswerMap = Record<number, string>;
 
 export default function MockTestPlayerPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const testId = params.id as string;
   const router = useRouter();
 
-  const [test, setTest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [current, setCurrent] = useState(0);
+  const [test, setTest] = useState<any>(null);
+  const [curIndex, setCurIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [warnings, setWarnings] = useState(0);
+  const timerRef = useRef<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // =============================
-  // LOAD TEST
+  // LOAD MOCK TEST
   // =============================
   useEffect(() => {
+    if (!testId) return;
+
     async function load() {
+      setLoading(true);
       try {
-        const data = await fetchMockTestById(id);
+        const data = await fetchMockTestById(testId);
         setTest(data);
         setTimeLeft((data.duration || 0) * 60);
-      } catch (e) {
-        console.error(e);
+        startTimer();
+
+        // try fullscreen (optional)
+        try {
+          document.documentElement.requestFullscreen?.();
+        } catch {}
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
+
     load();
-  }, [id]);
+
+    // Anti-cheat: tab / window switch
+    function handleVisibility() {
+      if (document.visibilityState !== "visible") {
+        setWarnings((w) => w + 1);
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleVisibility);
+      stopTimer();
+    };
+  }, [testId]);
 
   // =============================
   // TIMER
   // =============================
-  useEffect(() => {
-    if (!timeLeft) return;
-    const timer = setInterval(() => {
-      setTimeLeft((t) => t - 1);
+  function startTimer() {
+    if (timerRef.current) return;
+    timerRef.current = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          stopTimer();
+          handleSubmit();
+          return 0;
+        }
+        return t - 1;
+      });
     }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
+  }
+
+  function stopTimer() {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }
+
+  // =============================
+  // ANSWERS
+  // =============================
+  function selectAnswer(value: string) {
+    setAnswers((prev) => ({
+      ...prev,
+      [curIndex]: value,
+    }));
+  }
+
+  // =============================
+  // SUBMIT
+  // =============================
+  async function handleSubmit() {
+    if (submitting) return;
+    setSubmitting(true);
+    stopTimer();
+
+    const payload = {
+      testId,
+      answers,
+      timeTakenSeconds: (test.duration * 60) - timeLeft,
+      warnings,
+    };
+
+    console.log("MOCK TEST SUBMIT:", payload);
+
+    alert("Mock test submitted (result logic next step)");
+    router.push("/dashboard/mock-test");
+  }
 
   if (loading) {
     return (
@@ -58,90 +133,125 @@ export default function MockTestPlayerPage() {
   if (!test) {
     return (
       <div className="p-10 text-center text-red-600">
-        Mock test not found.
+        Mock test not found
       </div>
     );
   }
 
-  const question = test.questions[current];
-
+  const question = test.questions[curIndex];
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
 
-  function selectAnswer(option: string) {
-    setAnswers((prev) => ({
-      ...prev,
-      [current]: option,
-    }));
-  }
-
-  function submitTest() {
-    console.log("ANSWERS:", answers);
-    alert("Test submitted (logic coming next)");
-    router.push("/dashboard/mock-test");
-  }
-
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center border-b pb-4">
-        <div>
-          <h1 className="text-xl font-bold">{test.title}</h1>
-          <p className="text-sm text-gray-500">
-            Question {current + 1} of {test.questions.length}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-red-600 font-semibold">
-          <Timer className="w-4 h-4" />
-          {mins}:{secs.toString().padStart(2, "0")}
-        </div>
-      </div>
+    <div className="min-h-screen bg-white p-4">
+      <div className="max-w-6xl mx-auto lg:flex gap-6">
 
-      {/* QUESTION */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">
-          {question.questionText}
-        </h2>
+        {/* MAIN PANEL */}
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">{test.title}</h2>
+            <div className="flex items-center gap-2 text-red-600 font-mono">
+              <Timer className="w-4 h-4" />
+              {mins.toString().padStart(2, "0")}:
+              {secs.toString().padStart(2, "0")}
+            </div>
+          </div>
 
-        <div className="space-y-3">
-          {question.options.map((opt: any, idx: number) => {
-            const selected = answers[current] === opt.text;
-            return (
-              <button
-                key={idx}
-                onClick={() => selectAnswer(opt.text)}
-                className={`w-full text-left p-4 border rounded-lg transition ${
-                  selected
-                    ? "border-primary bg-primary/10"
-                    : "hover:bg-slate-50"
-                }`}
+          <div className="border rounded p-6">
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">
+                Q {curIndex + 1} / {test.questions.length}
+              </div>
+              <div className="mt-2 font-medium">
+                {question.questionText}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {question.options.map((opt: any, idx: number) => {
+                const selected = answers[curIndex] === opt.text;
+                return (
+                  <label
+                    key={idx}
+                    className={`flex items-center gap-3 p-3 border rounded cursor-pointer ${
+                      selected
+                        ? "border-purple-600 bg-purple-50"
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      checked={selected}
+                      onChange={() => selectAnswer(opt.text)}
+                    />
+                    <span>{opt.text}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-3 mt-6">
+              <Button
+                variant="outline"
+                disabled={curIndex === 0}
+                onClick={() => setCurIndex((i) => Math.max(0, i - 1))}
               >
-                {opt.text}
-              </button>
-            );
-          })}
+                Prev
+              </Button>
+
+              <Button
+                onClick={() =>
+                  setCurIndex((i) =>
+                    Math.min(test.questions.length - 1, i + 1)
+                  )
+                }
+              >
+                Next
+              </Button>
+
+              <Button
+                className="ml-auto bg-green-600 hover:bg-green-700"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                Submit Test
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* NAVIGATION */}
-      <div className="flex justify-between pt-6 border-t">
-        <Button
-          variant="outline"
-          disabled={current === 0}
-          onClick={() => setCurrent((c) => c - 1)}
-        >
-          <ChevronLeft className="w-4 h-4 mr-1" />
-          Previous
-        </Button>
+        {/* QUESTION PALETTE */}
+        <aside className="w-64 hidden lg:block">
+          <div className="p-4 border rounded">
+            <h4 className="font-bold">Question Palette</h4>
 
-        {current === test.questions.length - 1 ? (
-          <Button onClick={submitTest}>Submit Test</Button>
-        ) : (
-          <Button onClick={() => setCurrent((c) => c + 1)}>
-            Next
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        )}
+            <div className="grid grid-cols-5 gap-2 mt-3">
+              {test.questions.map((_: any, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurIndex(idx)}
+                  className={`p-2 rounded text-sm ${
+                    answers[idx]
+                      ? "bg-green-200"
+                      : "bg-gray-100"
+                  }`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 text-sm">
+              Warnings: {warnings}
+              {warnings >= 3 && (
+                <div className="text-red-600 mt-2">
+                  Multiple tab switches detected.
+                </div>
+              )}
+            </div>
+          </div>
+        </aside>
+
       </div>
     </div>
   );
