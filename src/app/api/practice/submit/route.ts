@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebase/config";
