@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -98,11 +97,10 @@ export default function MockTestPlayerPage() {
     setAnswers(prev => ({ ...prev, [index]: value }));
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!test) return;
     stopTimer();
 
-    // 1. Calculate result
     const totalQuestions = test.questions.length;
     let correct = 0;
     let wrong = 0;
@@ -116,7 +114,6 @@ export default function MockTestPlayerPage() {
 
     const skipped = totalQuestions - (correct + wrong);
 
-    // Example marking scheme
     const marksPerQuestion = 1;
     const negativeMark = 0.25;
 
@@ -124,7 +121,6 @@ export default function MockTestPlayerPage() {
       correct * marksPerQuestion -
       wrong * negativeMark;
 
-    // 2. Store result for Result Page
     sessionStorage.setItem(
       "mockTestResult",
       JSON.stringify({
@@ -143,7 +139,6 @@ export default function MockTestPlayerPage() {
       })
     );
     
-    // 3. Redirect to Result Page
     window.location.href = "/dashboard/mock-test/result";
   }
 
@@ -166,124 +161,140 @@ export default function MockTestPlayerPage() {
   const q = test.questions[index];
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 px-4 py-8 flex justify-center">
-      <div
-        className="
-          w-full
-          max-w-[95%]
-          sm:max-w-[90%]
-          md:max-w-[780px]
-          lg:max-w-[920px]
-          xl:max-w-[1024px]
-        "
-      >
-        <div className="flex justify-between mb-4">
-          <h1 className="text-xl font-bold">{test.title}</h1>
-          <div className="font-mono text-red-600">
-            {Math.floor(timeLeft / 60)
-              .toString()
-              .padStart(2, "0")}
-            :
-            {(timeLeft % 60)
-              .toString()
-              .padStart(2, "0")}
-          </div>
-        </div>
+    <div className="min-h-screen w-screen bg-slate-50 flex justify-center">
+        <div
+            className="
+            w-full
+            px-4
+            py-8
 
-        <div className="bg-white border rounded-xl p-6">
-          <div className="text-sm text-gray-500 mb-2">
-            Question {index + 1} / {test.questions.length}
-          </div>
+            sm:px-6
+            md:px-8
 
-          <div className="font-medium mb-4">
-            {q.questionText}
-          </div>
+            max-w-none
+            "
+        >
+            <div
+            className="
+                mx-auto
+                w-full
 
-          <div className="space-y-2">
-            {q.options.map((opt, i) => (
-              <label
-                key={i}
-                className="flex items-center gap-3 p-3 border rounded cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  checked={answers[index] === opt.text}
-                  onChange={() => selectAnswer(opt.text)}
-                />
-                {opt.text}
-              </label>
-            ))}
-          </div>
-
-          <div className="flex gap-3 mt-6">
-            <Button
-              variant="outline"
-              disabled={index === 0}
-              onClick={() => setIndex(i => i - 1)}
+                sm:max-w-[95%]
+                md:max-w-[85%]
+                lg:max-w-[75%]
+                xl:max-w-[68%]
+                2xl:max-w-[60%]
+            "
             >
-              Prev
-            </Button>
+                <div className="bg-white border rounded-xl shadow-sm p-6">
+                    <div className="flex justify-between mb-4">
+                        <h1 className="text-xl font-bold">{test.title}</h1>
+                        <div className="font-mono text-red-600">
+                        {Math.floor(timeLeft / 60)
+                            .toString()
+                            .padStart(2, "0")}
+                        :
+                        {(timeLeft % 60)
+                            .toString()
+                            .padStart(2, "0")}
+                        </div>
+                    </div>
+                
+                    <div className="text-sm text-gray-500 mb-2">
+                        Question {index + 1} / {test.questions.length}
+                    </div>
+            
+                    <div className="font-medium mb-4">
+                        {q.questionText}
+                    </div>
+            
+                    <div className="space-y-2">
+                        {q.options.map((opt, i) => (
+                        <label
+                            key={i}
+                            className="flex items-center gap-3 p-3 border rounded cursor-pointer"
+                        >
+                            <input
+                            type="radio"
+                            checked={answers[index] === opt.text}
+                            onChange={() => selectAnswer(opt.text)}
+                            />
+                            {opt.text}
+                        </label>
+                        ))}
+                    </div>
+            
+                    <div className="flex gap-3 mt-6">
+                        <Button
+                        variant="outline"
+                        disabled={index === 0}
+                        onClick={() => setIndex(i => i - 1)}
+                        >
+                        Prev
+                        </Button>
+            
+                        <Button
+                        onClick={() =>
+                            setIndex(i =>
+                            Math.min(test.questions.length - 1, i + 1)
+                            )
+                        }
+                        >
+                        Next
+                        </Button>
+            
+                        <Button
+                        className="ml-auto bg-green-600"
+                        onClick={() => setShowConfirm(true)}
+                        >
+                        Submit Test
+                        </Button>
+                    </div>
+                </div>
 
-            <Button
-              onClick={() =>
-                setIndex(i =>
-                  Math.min(test.questions.length - 1, i + 1)
-                )
-              }
-            >
-              Next
-            </Button>
+                {showConfirm && (
+                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4">
+                    <h2 className="text-xl font-bold text-center">
+                        Confirm Submission
+                    </h2>
+                
+                    {(() => {
+                        const total = test.questions.length;
+                        const attempted = Object.keys(answers).length;
+                        const skipped = total - attempted;
+                
+                        return (
+                        <div className="grid grid-cols-3 text-center">
+                            <Stat label="Total" value={total} />
+                            <Stat label="Attempted" value={attempted} />
+                            <Stat label="Skipped" value={skipped} />
+                        </div>
+                        );
+                    })()}
+                
+                    <div className="flex gap-3 mt-4">
+                        <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowConfirm(false)}
+                        >
+                        Cancel
+                        </Button>
+                
+                        <Button
+                        className="w-full bg-green-600"
+                        onClick={handleSubmit}
+                        >
+                        Confirm Submit
+                        </Button>
+                    </div>
+                    </div>
+                </div>
+                )}
 
-            <Button
-              className="ml-auto bg-green-600"
-              onClick={() => setShowConfirm(true)}
-            >
-              Submit Test
-            </Button>
-          </div>
-        </div>
-
-        {showConfirm && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4">
-              <h2 className="text-xl font-bold text-center">
-                Confirm Submission
-              </h2>
-
-              {(() => {
-                const total = test.questions.length;
-                const attempted = Object.keys(answers).length;
-                const skipped = total - attempted;
-
-                return (
-                  <div className="grid grid-cols-3 text-center">
-                    <Stat label="Total" value={total} />
-                    <Stat label="Attempted" value={attempted} />
-                    <Stat label="Skipped" value={skipped} />
-                  </div>
-                );
-              })()}
-
-              <div className="flex gap-3 mt-4">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowConfirm(false)}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  className="w-full bg-green-600"
-                  onClick={handleSubmit}
-                >
-                  Confirm Submit
-                </Button>
-              </div>
             </div>
-          </div>
-        )}
-      </div>
+        </div>
     </div>
-  );
+    );
 }

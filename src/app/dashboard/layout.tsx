@@ -1,7 +1,5 @@
-
 "use client";
 
-import { FirebaseClientProvider } from "@/firebase/client-provider";
 import {
   SidebarProvider,
   Sidebar,
@@ -24,6 +22,7 @@ import {
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FirebaseClientProvider } from "@/firebase/client-provider";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -74,17 +73,15 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   
-  const isExamMode =
-    pathname.startsWith("/dashboard/mock-test/") ||
-    pathname.startsWith("/dashboard/mcq-player/");
+  const isMockTest = pathname.startsWith("/dashboard/mock-test");
 
-  if (isExamMode) {
-    // 🔥 FULL SCREEN EXAM MODE
+  if (isMockTest) {
+    // FULL VIEWPORT – NO SIDEBAR – NO CONSTRAINTS
     return (
-       <FirebaseClientProvider>
-          <div className="min-h-screen w-full bg-slate-50">
-            {children}
-          </div>
+      <FirebaseClientProvider>
+        <div className="min-h-screen w-screen bg-slate-50">
+          {children}
+        </div>
       </FirebaseClientProvider>
     );
   }
