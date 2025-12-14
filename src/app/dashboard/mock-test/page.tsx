@@ -2,11 +2,29 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { fetchMockTests, type MockTest } from "@/services/mock-test";
-import { Loader2, Play, Star, Timer, BookOpen, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { fetchMockTests, type MockTest as RawMockTest } from "@/services/mock-test";
+import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MockTestCard from "@/components/mock-test-card";
+
+// Enriched type with a guaranteed 'exam' field
+export type MockTest = RawMockTest & {
+  exam: "GPAT" | "RRB" | "EXIT" | "GENERAL";
+};
+
+// Function to derive exam type from title/subject
+function getExamCategory(test: RawMockTest): MockTest['exam'] {
+    const title = test.title.toLowerCase();
+    const subject = (test.subject || '').toLowerCase();
+    
+    if (title.includes('gpat') || subject.includes('gpat')) return 'GPAT';
+    if (title.includes('rrb') || title.includes('railway')) return 'RRB';
+    if (title.includes('exit exam') || title.includes('exit')) return 'EXIT';
+    
+    return 'GENERAL';
+}
+
 
 export default function MockTestDashboardPage() {
   const [tests, setTests] = useState<MockTest[]>([]);
@@ -14,14 +32,20 @@ export default function MockTestDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   // State for filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [premiumFilter, setPremiumFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [examFilter, setExamFilter] = useState("ALL");
+  const [premiumFilter, setPremiumFilter] = useState("ALL");
 
   useEffect(() => {
     async function load() {
       try {
         const data = await fetchMockTests();
-        setTests(data);
+        // Normalize data on fetch
+        const normalizedData = data.map(t => ({
+            ...t,
+            exam: getExamCategory(t)
+        }));
+        setTests(normalizedData);
       } catch (err) {
         console.error("Mock test load failed:", err);
         setError("Failed to load mock tests.");
@@ -32,38 +56,40 @@ export default function MockTestDashboardPage() {
     load();
   }, []);
   
-  const filteredAndSortedTests = useMemo(() => {
-    let filtered = tests;
+  const filteredTests = useMemo(() => {
+     return tests.filter((t) => {
+        const qCount = t.questions?.length || 0;
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const lowercasedQuery = searchQuery.toLowerCase();
-      filtered = filtered.filter(test => 
-        test.title.toLowerCase().includes(lowercasedQuery) ||
-        (test.subject && test.subject.toLowerCase().includes(lowercasedQuery))
-      );
-    }
+        // Search
+        const matchesSearch =
+            t.title.toLowerCase().includes(search.toLowerCase()) ||
+            t.subject?.toLowerCase().includes(search.toLowerCase());
 
-    // Apply premium filter
-    if (premiumFilter === 'premium') {
-      filtered = filtered.filter(test => test.isPremium);
-    } else if (premiumFilter === 'free') {
-      filtered = filtered.filter(test => !test.isPremium);
-    }
+        // Exam filter
+        const matchesExam =
+            examFilter === "ALL" || t.exam === examFilter;
 
-    // Sort to show tests with questions first
-    filtered.sort((a, b) => {
-        const aHasQuestions = (a.questions?.length || 0) > 0;
-        const bHasQuestions = (b.questions?.length || 0) > 0;
+        // Premium filter
+        const matchesPremium =
+            premiumFilter === "ALL" ||
+            (premiumFilter === "FREE" && !t.isPremium) ||
+            (premiumFilter === "PREMIUM" && t.isPremium);
 
-        if (aHasQuestions && !bHasQuestions) return -1;
-        if (!aHasQuestions && bHasQuestions) return 1;
-        return 0; // Keep original order for tests in the same category (e.g. by createdAt)
+        return matchesSearch && matchesExam && matchesPremium && qCount > 0;
     });
-    
-    return filtered;
+  }, [tests, search, examFilter, premiumFilter]);
 
-  }, [tests, searchQuery, premiumFilter]);
+  const groupedTests = useMemo(() => {
+    return filteredTests.reduce((acc, test) => {
+        const examKey = test.exam;
+        if (!acc[examKey]) {
+            acc[examKey] = [];
+        }
+        acc[examKey].push(test);
+        return acc;
+    }, {} as Record<string, MockTest[]>);
+  }, [filteredTests]);
+
 
   if (loading) {
     return (
@@ -82,7 +108,7 @@ export default function MockTestDashboardPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Mock Tests</h1>
         <p className="text-gray-600">
@@ -92,98 +118,61 @@ export default function MockTestDashboardPage() {
 
        {/* Filter and Search Controls */}
       <div className="bg-background/70 backdrop-blur-sm p-4 rounded-xl border shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative md:col-span-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by title or subject..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search mock tests..."
                     className="pl-9"
                 />
             </div>
+             <Select value={examFilter} onValueChange={setExamFilter}>
+                <SelectTrigger>
+                    <SelectValue placeholder="All Exams" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="ALL">All Exams</SelectItem>
+                    <SelectItem value="GPAT">GPAT</SelectItem>
+                    <SelectItem value="RRB">RRB Pharmacist</SelectItem>
+                    <SelectItem value="EXIT">Exit Exam</SelectItem>
+                    <SelectItem value="GENERAL">General Practice</SelectItem>
+                </SelectContent>
+            </Select>
              <Select value={premiumFilter} onValueChange={setPremiumFilter}>
                 <SelectTrigger>
                     <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">All Tests</SelectItem>
-                    <SelectItem value="premium">Premium Only</SelectItem>
-                    <SelectItem value="free">Free Only</SelectItem>
+                    <SelectItem value="ALL">All Status</SelectItem>
+                    <SelectItem value="FREE">Free</SelectItem>
+                    <SelectItem value="PREMIUM">Premium</SelectItem>
                 </SelectContent>
             </Select>
         </div>
       </div>
 
-      {filteredAndSortedTests.length === 0 ? (
+      {filteredTests.length === 0 ? (
         <div className="bg-white border-2 border-dashed rounded-lg p-12 text-center text-gray-500">
           <h3 className="text-xl font-semibold">No Mock Tests Found</h3>
           <p>Try adjusting your search or filter criteria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedTests.map((t) => {
-            const questionCount = Array.isArray(t.questions) ? t.questions.length : 0;
-            return (
-              <div
-                key={t.id}
-                className="bg-gradient-to-br from-white to-purple-50/50 border border-purple-100 rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col"
-              >
-                <div className="p-5 flex-grow">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg text-gray-800 leading-tight">{t.title}</h3>
-                    <div className="flex-shrink-0 ml-2 space-x-2">
-                      {questionCount === 0 && (
-                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
-                          Coming Soon
-                        </span>
-                      )}
-                      {t.isPremium && (
-                       <span className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                          <Star className="w-3.5 h-3.5" />
-                          Premium
-                        </span>
-                      )}
-                    </div>
-                  </div>
+        <div className="space-y-8">
+            {Object.entries(groupedTests).map(([exam, examTests]) => (
+              <div key={exam} className="space-y-4">
+                <h2 className="text-xl font-bold text-gray-800 border-b pb-2">
+                  {exam === "RRB" ? "RRB Pharmacist" : exam.charAt(0).toUpperCase() + exam.slice(1).toLowerCase()} Mock Tests
+                </h2>
 
-                  <p className="text-sm font-semibold text-primary/90">
-                    {t.subject}
-                  </p>
-                </div>
-                <div className="mt-auto bg-purple-50/40 p-5 border-t border-purple-100">
-                   <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-5">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="w-5 h-5 text-primary/70" />
-                      <div>
-                          <p className="font-semibold text-gray-800">{questionCount}</p>
-                          <p className="text-xs">Questions</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Timer className="w-5 h-5 text-primary/70" />
-                       <div>
-                          <p className="font-semibold text-gray-800">{t.duration ?? "—"}</p>
-                          <p className="text-xs">Minutes</p>
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    className="w-full font-bold"
-                    disabled={questionCount === 0}
-                    onClick={() => {
-                        if (questionCount > 0) {
-                            window.location.href = `/dashboard/mock-test/${t.id}/instruction`;
-                        }
-                    }}
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    {questionCount === 0 ? "Coming Soon" : "Start Mock Test"}
-                  </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {examTests.map((t) => (
+                    <MockTestCard key={t.id} test={t} />
+                  ))}
                 </div>
               </div>
-            );
-          })}
+            ))}
         </div>
       )}
     </div>
