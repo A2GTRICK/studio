@@ -36,6 +36,10 @@ service cloud.firestore {
     match /tests/{id} {
       allow list, read: if true;
     }
+
+    match /test_series/{id} {
+      allow list, read: if true;
+    }
     
     // Specific rules for non-admin users
     match /testAttempts/{id} {
