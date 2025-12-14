@@ -1,5 +1,5 @@
 import { db } from "@/firebase/config";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
 export type MockTest = {
   id: string;
@@ -12,12 +12,7 @@ export type MockTest = {
 };
 
 export async function fetchMockTests(): Promise<MockTest[]> {
-  const q = query(
-    collection(db, "test_series"),
-    orderBy("createdAt", "desc")
-  );
-
-  const snap = await getDocs(q);
+  const snap = await getDocs(collection(db, "test_series"));
 
   return snap.docs.map((doc) => ({
     id: doc.id,

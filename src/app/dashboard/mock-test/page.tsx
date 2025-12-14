@@ -8,13 +8,19 @@ import { Button } from "@/components/ui/button";
 export default function MockTestDashboardPage() {
   const [tests, setTests] = useState<MockTest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
-      const data = await fetchMockTests();
-      setTests(data);
-      setLoading(false);
+      try {
+        const data = await fetchMockTests();
+        setTests(data);
+      } catch (err) {
+        console.error("Mock test load failed:", err);
+        setError("Failed to load mock tests.");
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -23,6 +29,14 @@ export default function MockTestDashboardPage() {
     return (
       <div className="p-8 text-center">
         <Loader2 className="w-6 h-6 animate-spin inline" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center text-red-600">
+        {error}
       </div>
     );
   }
@@ -45,7 +59,7 @@ export default function MockTestDashboardPage() {
           {tests.map((t) => (
             <div
               key={t.id}
-              className="bg-white border rounded-lg shadow-sm p-5 flex flex-col justify-between hover:shadow-md transition"
+              className="bg-white border rounded-lg shadow-sm p-5 flex flex-col justify-between"
             >
               <div>
                 <div className="flex justify-between items-start">
