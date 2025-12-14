@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // =============================
-    // PUBLIC READ COLLECTIONS
+    // PUBLIC READ DATA
     // =============================
 
     match /notes/{id} {
@@ -26,41 +26,26 @@ service cloud.firestore {
       allow list, read: if true;
     }
 
-    // =============================
-    // PRACTICE TESTS (MCQ PRACTICE)
-    // =============================
-
     match /tests/{testId} {
       allow list, read: if true;
 
-      match /questions/{questionId} {
+      match /questions/{qid} {
         allow list, read: if true;
       }
     }
-
-    // =============================
-    // MOCK TEST SERIES
-    // =============================
 
     match /test_series/{testId} {
       allow list, read: if true;
     }
 
     // =============================
-    // TEST ATTEMPTS (GUEST MODE)
+    // GUEST MOCK TEST ATTEMPTS
     // =============================
 
     match /testAttempts/{attemptId} {
-      // Allow anyone to submit
       allow create: if true;
-
-      // Disable reading attempts (privacy-safe)
       allow read, update, delete: if false;
     }
-
-    // =============================
-    // ADMIN CONFIG (READ ONLY)
-    // =============================
 
     match /adminConfig/{doc} {
       allow read: if true;
