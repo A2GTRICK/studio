@@ -45,17 +45,18 @@ service cloud.firestore {
 
       match /questions/{questionId} {
         allow read: if true;
-
-        allow create, update: if isAdmin()
-          && request.resource.data.question is map
+      
+        allow create, update: if
+          request.auth != null
           && request.resource.data.question.text is string
           && request.resource.data.question.text.size() > 0
           && request.resource.data.options is list
           && request.resource.data.options.size() >= 2
-          && request.resource.data.options[0].text is string
-          && request.resource.data.correctAnswer is int;
-
-        allow delete: if isAdmin();
+          && request.resource.data.correctAnswer is int
+          && request.resource.data.correctAnswer >= 0
+          && request.resource.data.correctAnswer < request.resource.data.options.size();
+      
+        allow delete: if request.auth != null;
       }
     }
     
