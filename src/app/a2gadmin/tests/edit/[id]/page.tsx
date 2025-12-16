@@ -27,6 +27,7 @@ export default function EditTestPage() {
   const [newQuestionText, setNewQuestionText] = useState("");
   const [newOptions, setNewOptions] = useState(["", "", "", ""]);
   const [newCorrectIndex, setNewCorrectIndex] = useState(0);
+  const [newExplanation, setNewExplanation] = useState("");
 
   useEffect(() => {
     load();
@@ -46,24 +47,31 @@ export default function EditTestPage() {
   }
 
   async function addQuestion() {
-    if (!newQuestionText.trim()) return;
+    if (!newQuestionText.trim()) {
+        alert("Question text cannot be empty.");
+        return;
+    };
 
     await addDoc(
       collection(db, "test_series", id, "questions"),
       {
-        question: { text: newQuestionText }, // ✅ STANDARD
-        options: newOptions.map((o) => ({ text: o })),
+        question: { text: newQuestionText.trim() },
+        options: newOptions.map((o) => ({ text: o.trim() })),
         correctAnswer: newCorrectIndex,
+        explanation: newExplanation.trim() || "",
         createdAt: serverTimestamp(),
       }
     );
 
     setNewQuestionText("");
     setNewOptions(["", "", "", ""]);
+    setNewCorrectIndex(0);
+    setNewExplanation("");
     load(); // Refresh
   }
 
   async function deleteQuestion(qid: string) {
+    if (!confirm("Are you sure you want to delete this question?")) return;
     await deleteDoc(doc(db, "test_series", id, "questions", qid));
     load();
   }
@@ -77,7 +85,7 @@ export default function EditTestPage() {
       <div className="mt-4">
         {questions.map((q) => (
           <div key={q.id} className="p-2 border my-2">
-            <p>{q.question.text}</p>
+            <p>{q.question?.text || q.question}</p>
             <Button onClick={() => deleteQuestion(q.id)} variant="destructive">
               Delete
             </Button>
@@ -109,6 +117,11 @@ export default function EditTestPage() {
           value={newCorrectIndex}
           onChange={(e) => setNewCorrectIndex(Number(e.target.value))}
           placeholder="Correct (0-3)"
+        />
+        <Textarea
+            value={newExplanation}
+            onChange={(e) => setNewExplanation(e.target.value)}
+            placeholder="Explanation (optional)"
         />
         <Button onClick={addQuestion}>Add Question</Button>
       </div>
