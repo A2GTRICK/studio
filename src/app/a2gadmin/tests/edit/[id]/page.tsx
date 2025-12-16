@@ -47,24 +47,42 @@ export default function EditTestPage() {
   }
 
   async function addQuestion() {
+    // ---------------- VALIDATION (ADMIN-FINAL) ----------------
+
+    // Trim and normalize options
+    const cleanedOptions = newOptions
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0);
+
+    // 1️⃣ Question text must exist
     if (!newQuestionText.trim()) {
-        alert("Question text cannot be empty.");
-        return;
-    };
-    if (newOptions.some(opt => !opt.trim())) {
-        alert("All option fields must be filled out.");
-        return;
+      alert("Question text is required.");
+      return;
     }
-    if (newCorrectIndex < 0 || newCorrectIndex >= newOptions.length) {
-        alert("Correct Answer index is invalid. Please select a value from 0 to 3.");
-        return;
+
+    // 2️⃣ Minimum 2 valid options required
+    if (cleanedOptions.length < 2) {
+      alert("At least two non-empty options are required.");
+      return;
+    }
+
+    // 3️⃣ Correct answer must be within range
+    if (
+      newCorrectIndex == null ||
+      newCorrectIndex < 0 ||
+      newCorrectIndex >= cleanedOptions.length
+    ) {
+      alert(
+        "Correct answer index is invalid. Please select a valid option."
+      );
+      return;
     }
 
     await addDoc(
       collection(db, "test_series", id, "questions"),
       {
         question: { text: newQuestionText.trim() },
-        options: newOptions.map((o) => ({ text: o.trim() })),
+        options: cleanedOptions.map((o) => ({ text: o })),
         correctAnswer: newCorrectIndex,
         explanation: newExplanation.trim() || "",
         createdAt: serverTimestamp(),
