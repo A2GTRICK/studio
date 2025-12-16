@@ -38,6 +38,7 @@ export default function CBTMockTestPage() {
   const [marked, setMarked] = useState<boolean[]>([]);
   const [visited, setVisited] = useState<boolean[]>([]);
   const [timeLeft, setTimeLeft] = useState(3600);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /* 🚨 CBT WARNINGS */
   const [warnings, setWarnings] = useState(0);
@@ -48,19 +49,16 @@ export default function CBTMockTestPage() {
   const [submitted, setSubmitted] = useState(false);
 
   function violation(reason: string) {
-    setWarnings((w) => {
-      const next = w + 1;
-      alert(
-        `⚠ CBT WARNING ${next}/${MAX_WARNINGS}\n\n${reason}\n\n` +
-          (next >= MAX_WARNINGS
-            ? "Test will be submitted now."
-            : "Further violations will auto-submit.")
+    if (warnings + 1 >= 3) {
+      alert("CBT WARNING 3/3\n\nTest will be submitted now.");
+      submitTestSafe();
+    } else {
+      setWarnings(w => w + 1);
+       alert(
+        `⚠ CBT WARNING ${warnings + 1}/${MAX_WARNINGS}\n\n${reason}\n\n` +
+          "Further violations will auto-submit."
       );
-      if (next >= MAX_WARNINGS) {
-        setShouldSubmit(true); // ✅ FLAG ONLY
-      }
-      return next;
-    });
+    }
   }
 
   /* LOAD */
@@ -155,23 +153,22 @@ export default function CBTMockTestPage() {
     }
   }, [current, questions, visited]);
 
-  /* CONTROLLED SUBMIT EFFECT */
-  useEffect(() => {
-    if (!shouldSubmit || submitted) return;
-
-    setSubmitted(true); // prevent double fire
-
+  function submitTestSafe() {
+    if (isSubmitting) return;
+  
+    setIsSubmitting(true);
+  
     let correct = 0;
     let wrong = 0;
-
+  
     questions.forEach((q, i) => {
       if (answers[i] == null) return;
       if (answers[i] === q.correctAnswer) correct++;
       else wrong++;
     });
-
+  
     const score = correct - wrong * 0.25;
-
+  
     sessionStorage.setItem(
       "mockTestResult",
       JSON.stringify({
@@ -191,10 +188,18 @@ export default function CBTMockTestPage() {
         })),
       })
     );
+  
+    // IMPORTANT: defer navigation
+    setTimeout(() => {
+      router.replace("/dashboard/mock-test/result");
+    }, 0);
+  }
 
-    // ✅ ROUTER PUSH ONLY HERE
-    router.push("/dashboard/mock-test/result");
-  }, [shouldSubmit, submitted, questions, answers, router]);
+  /* CONTROLLED SUBMIT EFFECT */
+  useEffect(() => {
+    if (!shouldSubmit || submitted) return;
+    submitTestSafe();
+  }, [shouldSubmit, submitted]);
 
   if (loading) {
     return (
@@ -235,7 +240,7 @@ export default function CBTMockTestPage() {
           </span>
           <Button variant="destructive" onClick={() => {
             if (confirm("Are you sure you want to submit the test?")) {
-              setShouldSubmit(true);
+              submitTestSafe();
             }
           }}>
             Submit Test
@@ -244,71 +249,73 @@ export default function CBTMockTestPage() {
       </div>
 
       {/* BODY */}
-      <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
         {/* QUESTION */}
-        <div className="md:col-span-3 space-y-4 max-w-3xl mx-auto">
-            <div className="bg-white border rounded p-5">
-                <p className="font-semibold mb-3">
-                Q{current + 1}. {q.text}
-                </p>
+        <div className="flex justify-center">
+            <div className="w-full max-w-3xl">
+                <div className="bg-white border rounded p-5">
+                    <p className="font-semibold mb-3">
+                    Q{current + 1}. {q.text}
+                    </p>
 
-                <div className="space-y-2">
-                {q.options.map((o, i) => {
-                    const label = typeof o === "string" ? o : o.text;
-                    return (
-                    <label key={i} className="flex items-center gap-2 border rounded p-2 cursor-pointer">
-                        <input
-                        type="radio"
-                        name={`q-${current}`}
-                        checked={answers[current] === i}
-                        onChange={() =>
-                            setAnswers({ ...answers, [current]: i })
-                        }
-                        />{" "}
-                        {label}
-                    </label>
-                    );
-                })}
+                    <div className="space-y-2">
+                    {q.options.map((o, i) => {
+                        const label = typeof o === "string" ? o : o.text;
+                        return (
+                        <label key={i} className="flex items-center gap-2 border rounded p-2 cursor-pointer">
+                            <input
+                            type="radio"
+                            name={`q-${current}`}
+                            checked={answers[current] === i}
+                            onChange={() =>
+                                setAnswers({ ...answers, [current]: i })
+                            }
+                            />{" "}
+                            {label}
+                        </label>
+                        );
+                    })}
+                    </div>
                 </div>
-            </div>
 
-            <div className="flex justify-between">
-                <Button
-                variant="outline"
-                disabled={current === 0}
-                onClick={() => setCurrent(current - 1)}
-                >
-                Previous
-                </Button>
+                <div className="flex justify-between mt-4">
+                    <Button
+                    variant="outline"
+                    disabled={current === 0}
+                    onClick={() => setCurrent(current - 1)}
+                    >
+                    Previous
+                    </Button>
 
-                 <div className="flex gap-2">
-                    <Button
-                        variant="secondary"
-                        onClick={() => {
-                        const m = [...marked];
-                        m[current] = !m[current];
-                        setMarked(m);
-                        }}
-                    >
-                        Mark for Review
-                    </Button>
-                    <Button
-                        onClick={() =>
-                        setCurrent(
-                            current === questions.length - 1
-                            ? current
-                            : current + 1
-                        )
-                        }
-                    >
-                        Save & Next
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                            const m = [...marked];
+                            m[current] = !m[current];
+                            setMarked(m);
+                            }}
+                        >
+                            Mark for Review
+                        </Button>
+                        <Button
+                            onClick={() =>
+                            setCurrent(
+                                current === questions.length - 1
+                                ? current
+                                : current + 1
+                            )
+                            }
+                        >
+                            Save & Next
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
 
         {/* PALETTE */}
-        <div className="bg-white border rounded p-4 h-fit md:sticky md:top-24">
+        <div className="bg-white border rounded p-4 h-fit md:sticky md:top-24 min-w-[260px]">
           <h2 className="font-semibold mb-3">Question Palette</h2>
           <div className="grid grid-cols-5 gap-2">
             {questions.map((_, i) => (
@@ -326,3 +333,5 @@ export default function CBTMockTestPage() {
     </div>
   );
 }
+
+    
