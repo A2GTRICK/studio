@@ -1,3 +1,4 @@
+
 // src/app/a2gadmin/tests/edit/[id]/page.tsx
 "use client";
 
@@ -31,6 +32,10 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 function SortableItem({ id, children }: any) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -81,15 +86,36 @@ export default function EditTestPage() {
   const [bulkErrors, setBulkErrors] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
 
+  // Instructions
+  const [instructions, setInstructions] = useState<string>("");
+  const [showInstructions, setShowInstructions] = useState<boolean>(true);
+
+
   useEffect(() => {
     load();
   }, [id]);
+
+  useEffect(() => {
+    // This useEffect will run once the `test` data is loaded
+    if (test) {
+      setInstructions(test?.instructions?.content || `GENERAL INSTRUCTIONS
+
+• Total questions: Auto-calculated
+• Each question carries equal marks
+• Negative marking may apply
+• No calculator allowed
+• Do not refresh the page during test
+`);
+      setShowInstructions(test?.instructions?.enabled ?? true);
+    }
+  }, [test]);
 
   async function load() {
     setLoading(true);
     const testSnap = await getDoc(doc(db, "test_series", id));
     if (testSnap.exists()) {
-      setTest(testSnap.data());
+      const testData = testSnap.data();
+      setTest(testData);
       const qSnap = await getDocs(
         query(
           collection(db, "test_series", id, "questions"),
@@ -100,7 +126,7 @@ export default function EditTestPage() {
         qSnap.docs.map((d, index) => ({
           ...d.data(),
           id: d.id,
-          order: d.data().order ?? index,
+          order: d.data().order ?? index, // fallback safety
         }))
       );
     }
@@ -286,6 +312,17 @@ export default function EditTestPage() {
     await batch.commit();
   }
 
+  async function saveInstructions() {
+    await updateDoc(doc(db, "test_series", id), {
+      instructions: {
+        content: instructions,
+        enabled: showInstructions,
+        updatedAt: serverTimestamp(),
+      },
+      updatedAt: serverTimestamp(),
+    });
+  }
+
   if (loading) return <div className="p-6">Loading...</div>;
   if (!test) return <div className="p-6">Test not found</div>;
 
@@ -294,6 +331,47 @@ export default function EditTestPage() {
       {/* MAIN CONTENT */}
       <div className="flex-1 space-y-4">
         <h1 className="text-2xl font-bold">{test.title}</h1>
+
+        <Card className="mb-6">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>CBT Instructions (Shown to Students)</CardTitle>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="show-instructions">Enable</Label>
+              <Switch
+                id="show-instructions"
+                checked={showInstructions}
+                onCheckedChange={setShowInstructions}
+              />
+            </div>
+          </CardHeader>
+
+          <CardContent>
+            <Tabs defaultValue="edit" className="w-full">
+              <TabsList>
+                <TabsTrigger value="edit">Edit</TabsTrigger>
+                <TabsTrigger value="preview">Student Preview</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="edit" className="mt-4">
+                <Textarea
+                  rows={10}
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  placeholder="Enter CBT instructions exactly as students will see"
+                />
+                <div className="mt-3 flex justify-end">
+                  <Button onClick={saveInstructions}>Save Instructions</Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="preview" className="mt-4">
+                <div className="border rounded-md p-4 bg-muted text-sm whitespace-pre-line">
+                  {instructions}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
 
         {/* Question List */}
         <DndContext
