@@ -29,6 +29,7 @@ interface Test {
 export default function TestAdminPage() {
   const [loading, setLoading] = useState(true);
   const [allTests, setAllTests] = useState<Test[]>([]);
+  const [confirmTest, setConfirmTest] = useState<Test | null>(null);
 
   async function loadTests() {
     setLoading(true);
@@ -202,7 +203,13 @@ export default function TestAdminPage() {
                   <Button
                     size="sm"
                     variant={test.isPublished ? "secondary" : "default"}
-                    onClick={() => togglePublish(test)}
+                    onClick={() => {
+                      if (test.isPublished) {
+                        togglePublish(test); // unpublish = no confirm
+                      } else {
+                        setConfirmTest(test); // publish = confirm
+                      }
+                    }}
                   >
                     {test.isPublished ? "Unpublish" : "Publish"}
                   </Button>
@@ -226,6 +233,55 @@ export default function TestAdminPage() {
           </tbody>
         </table>
       </div>
+      {confirmTest && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-2">
+              Confirm Publish
+            </h2>
+
+            <div className="space-y-2 text-sm">
+              <p><b>Title:</b> {confirmTest.title}</p>
+              <p>
+                <b>Questions:</b>{" "}
+                <span
+                  className={
+                    (confirmTest.questionCount ?? 0) < 5
+                      ? "text-red-600 font-semibold"
+                      : "text-green-600 font-semibold"
+                  }
+                >
+                  {confirmTest.questionCount ?? 0}
+                </span>
+              </p>
+
+              {(confirmTest.questionCount ?? 0) < 5 && (
+                <p className="text-red-600 text-xs">
+                  ⚠️ Warning: Very few questions. Are you sure?
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmTest(null)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                onClick={async () => {
+                  await togglePublish(confirmTest);
+                  setConfirmTest(null);
+                }}
+              >
+                Confirm Publish
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
