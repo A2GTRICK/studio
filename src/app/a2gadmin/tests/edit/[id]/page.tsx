@@ -1,3 +1,4 @@
+// src/app/a2gadmin/tests/edit/[id]/page.tsx
 "use client";
 
 import {
@@ -107,43 +108,29 @@ export default function EditTestPage() {
   }
 
   async function addQuestion() {
-    // ---------------- VALIDATION (ADMIN-FINAL) ----------------
-    
-    // Trim and normalize options
-    const cleanedOptions = newOptions
-      .map((o) => o.trim())
-      .filter((o) => o.length > 0);
-    
-    // 1️⃣ Question text must exist
-    if (!newQuestionText.trim()) {
-      alert("Question text is required.");
-      return;
-    }
-    
-    // 2️⃣ Minimum 2 valid options required
-    if (cleanedOptions.length < 2) {
-      alert("At least two non-empty options are required.");
-      return;
-    }
-    
-    // 3️⃣ Correct answer must be within range
-    if (
-      newCorrectIndex == null ||
-      newCorrectIndex < 0 ||
-      newCorrectIndex >= cleanedOptions.length
-    ) {
-      alert(
-        "Correct answer index is invalid. Please select a valid option."
-      );
-      return;
-    }
+    const cleanedOptions = newOptions.map((o) => o.trim()).filter(Boolean);
+    if (!newQuestionText.trim()) return alert("Question text is required");
+    if (cleanedOptions.length < 2) return alert("At least two options required");
+    if (newCorrectIndex < 0 || newCorrectIndex >= cleanedOptions.length)
+      return alert("Correct answer index invalid");
 
-    await addDoc(collection(db, "test_series", id, "questions"), {
-      question: { text: newQuestionText.trim() },
-      options: cleanedOptions.map((o) => ({ text: o })),
-      correctAnswer: newCorrectIndex,
-      explanation: newExplanation.trim() || "",
-      createdAt: serverTimestamp(),
+    const testRef = doc(db, "test_series", id);
+
+    await addDoc(
+      collection(db, "test_series", id, "questions"),
+      {
+        question: { text: newQuestionText.trim() },
+        options: cleanedOptions.map((o) => ({ text: o })),
+        correctAnswer: newCorrectIndex,
+        explanation: newExplanation.trim() || "",
+        createdAt: serverTimestamp(),
+      }
+    );
+
+    // 🔢 increment questionCount
+    await updateDoc(testRef, {
+      questionCount: (test.questionCount || 0) + 1,
+      updatedAt: serverTimestamp(),
     });
 
     setNewQuestionText("");
@@ -265,7 +252,16 @@ export default function EditTestPage() {
 
   async function deleteQuestion(qid: string) {
     if (!confirm("Delete this question permanently?")) return;
+    
+    const testRef = doc(db, "test_series", id);
+
     await deleteDoc(doc(db, "test_series", id, "questions", qid));
+
+    await updateDoc(testRef, {
+      questionCount: Math.max((test.questionCount || 1) - 1, 0),
+      updatedAt: serverTimestamp(),
+    });
+
     load();
   }
 
@@ -509,7 +505,7 @@ export default function EditTestPage() {
                 onClick={handleBulkImport}
                 className="bg-green-600 text-white"
               >
-                {importing ? 'Importing...' : 'Import All Questions'}
+                {importing ? 'Importing...' : `Import All ${bulkPreview.length} Questions`}
               </Button>
             </>
           )}

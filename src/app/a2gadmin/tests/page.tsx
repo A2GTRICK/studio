@@ -23,7 +23,7 @@ interface Test {
   subject?: string;
   isPublished?: boolean;
   updatedAt: any;
-  questions?: any[];
+  questionCount?: number;
 }
 
 export default function TestAdminPage() {
@@ -169,7 +169,7 @@ export default function TestAdminPage() {
                   {test.subject || "—"}
                 </td>
                 <td className="p-4 hidden sm:table-cell">
-                  {test.questions?.length || 0}
+                  {test.questionCount ?? 0}
                 </td>
                 <td className="p-4">
                   <span
