@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -124,8 +125,13 @@ export default function CBTResultPage() {
           Back to Mock Tests
         </Button>
 
-        <Button variant="outline" disabled>
-          Review Answers (Coming Soon)
+        <Button
+          variant="outline"
+          onClick={() =>
+            (location.href = "/dashboard/mock-test/review")
+          }
+        >
+          Review Answers
         </Button>
       </div>
     </div>
