@@ -51,6 +51,14 @@ export default function EditTestPage() {
         alert("Question text cannot be empty.");
         return;
     };
+    if (newOptions.some(opt => !opt.trim())) {
+        alert("All option fields must be filled out.");
+        return;
+    }
+    if (newCorrectIndex < 0 || newCorrectIndex >= newOptions.length) {
+        alert("Correct Answer index is invalid. Please select a value from 0 to 3.");
+        return;
+    }
 
     await addDoc(
       collection(db, "test_series", id, "questions"),
@@ -117,6 +125,8 @@ export default function EditTestPage() {
           value={newCorrectIndex}
           onChange={(e) => setNewCorrectIndex(Number(e.target.value))}
           placeholder="Correct (0-3)"
+          min="0"
+          max="3"
         />
         <Textarea
             value={newExplanation}
