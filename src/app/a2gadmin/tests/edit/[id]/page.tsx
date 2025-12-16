@@ -7,6 +7,7 @@ import {
   getDocs,
   addDoc,
   deleteDoc,
+  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/firebase/config";
@@ -15,7 +16,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Eye, X, Trash2 } from "lucide-react";
+import { Eye, X, Pencil, Save, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
 
@@ -26,14 +27,18 @@ export default function EditTestPage() {
   const [test, setTest] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
 
-  // Add Question State
+  // Add Question
   const [newQuestionText, setNewQuestionText] = useState("");
   const [newOptions, setNewOptions] = useState(["", "", "", ""]);
   const [newCorrectIndex, setNewCorrectIndex] = useState(0);
   const [newExplanation, setNewExplanation] = useState("");
 
-  // Preview Drawer State
+  // Preview
   const [previewQuestion, setPreviewQuestion] = useState<any | null>(null);
+
+  // Inline Edit
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<any>(null);
 
   useEffect(() => {
     load();
@@ -41,14 +46,10 @@ export default function EditTestPage() {
 
   async function load() {
     setLoading(true);
-    const testRef = doc(db, "test_series", id);
-    const testSnap = await getDoc(testRef);
-
+    const testSnap = await getDoc(doc(db, "test_series", id));
     if (testSnap.exists()) {
       setTest(testSnap.data());
-      const qSnap = await getDocs(
-        collection(db, "test_series", id, "questions")
-      );
+      const qSnap = await getDocs(collection(db, "test_series", id, "questions"));
       setQuestions(qSnap.docs.map((d, i) => ({ ...d.data(), id: d.id, order: i + 1 })));
     }
     setLoading(false);
@@ -101,65 +102,160 @@ export default function EditTestPage() {
     load();
   }
 
+  async function saveEdit() {
+    if (!editingId || !editData) return;
+
+    if (!editData?.question?.text?.trim()) {
+      alert("Question text required");
+      return;
+    }
+
+    await updateDoc(
+      doc(db, "test_series", id, "questions", editingId),
+      {
+        question: { text: editData.question.text.trim() },
+        options: editData.options,
+        correctAnswer: editData.correctAnswer,
+        explanation: editData.explanation || "",
+        updatedAt: serverTimestamp(),
+      }
+    );
+
+    setEditingId(null);
+    setEditData(null);
+    load();
+  }
+
   async function deleteQuestion(qid: string) {
     if (!confirm("Delete this question permanently?")) return;
     await deleteDoc(doc(db, "test_series", id, "questions", qid));
     load();
   }
 
-  if (loading) return <div className="p-6">Loading…</div>;
+  if (loading) return <div className="p-6">Loading...</div>;
   if (!test) return <div className="p-6">Test not found</div>;
 
   return (
     <div className="relative flex gap-6">
       {/* MAIN CONTENT */}
-      <div className="flex-1">
-        <h1 className="text-2xl font-bold mb-4">{test.title}</h1>
+      <div className="flex-1 space-y-4">
+        <h1 className="text-2xl font-bold">{test.title}</h1>
 
         {/* Question List */}
-        <div className="space-y-3">
-          {questions.map((q, idx) => (
-            <div
-              key={q.id}
-              className="border rounded-lg p-3 flex justify-between items-start"
-            >
-              <div className="flex gap-4">
-                 <Badge variant="secondary" className="h-fit">Q{idx + 1}</Badge>
-                 <div>
-                  <p className="font-medium line-clamp-2">
-                    {q.question?.text || "Question text missing"}
-                  </p>
-                  <div className="flex gap-2 mt-1 text-sm text-muted-foreground">
-                    <span>{q.options?.length || 0} options</span>
-                    {typeof q.correctAnswer === "number" && (
-                      <span className="flex items-center gap-1 text-green-600">
-                        <CheckCircle2 size={14} /> Correct set
-                      </span>
-                    )}
-                    {q.explanation && <span>Has explanation</span>}
+        {questions.map((q, idx) => {
+           const isEditing = editingId === q.id;
+           return (
+            <div key={q.id} className="border rounded-lg p-3">
+              {!isEditing ? (
+                <div className="flex justify-between items-start">
+                    <div className="flex gap-4">
+                        <Badge variant="secondary" className="h-fit">Q{idx + 1}</Badge>
+                        <div>
+                        <p className="font-medium line-clamp-2">
+                            {q.question?.text || "Question text missing"}
+                        </p>
+                        <div className="flex gap-2 mt-1 text-sm text-muted-foreground">
+                            <span>{q.options?.length || 0} options</span>
+                            {typeof q.correctAnswer === "number" && (
+                            <span className="flex items-center gap-1 text-green-600">
+                                <CheckCircle2 size={14} /> Correct set
+                            </span>
+                            )}
+                            {q.explanation && <span>Has explanation</span>}
+                        </div>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                                setPreviewQuestion(q);
+                                setEditingId(null);
+                            }}
+                        >
+                            <Eye size={14} className="mr-1" /> Preview
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                             onClick={() => {
+                                setEditingId(q.id);
+                                setEditData(JSON.parse(JSON.stringify(q)));
+                                setPreviewQuestion(null);
+                            }}
+                        >
+                            <Pencil size={14} className="mr-1" /> Edit
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteQuestion(q.id)}
+                        >
+                            <Trash2 size={14} />
+                        </Button>
+                    </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editData.question.text}
+                    onChange={e =>
+                      setEditData({
+                        ...editData,
+                        question: { text: e.target.value },
+                      })
+                    }
+                  />
+                  {editData.options.map((o: any, i: number) => (
+                    <Input
+                      key={i}
+                      value={o.text}
+                      onChange={e => {
+                        const opts = [...editData.options];
+                        opts[i].text = e.target.value;
+                        setEditData({ ...editData, options: opts });
+                      }}
+                    />
+                  ))}
+                  <Input
+                    type="number"
+                    value={editData.correctAnswer}
+                    onChange={e =>
+                      setEditData({
+                        ...editData,
+                        correctAnswer: Number(e.target.value),
+                      })
+                    }
+                    min={0}
+                    max={editData.options.length - 1}
+                  />
+                  <Textarea
+                    value={editData.explanation || ""}
+                    onChange={e =>
+                      setEditData({ ...editData, explanation: e.target.value })
+                    }
+                    placeholder="Explanation"
+                  />
+                  <div className="flex gap-2">
+                    <Button onClick={saveEdit}>
+                      <Save className="w-4 h-4 mr-1" /> Save
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditingId(null);
+                        setEditData(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setPreviewQuestion(q)}
-                >
-                  <Eye className="w-4 h-4 mr-1" /> Preview
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => deleteQuestion(q.id)}
-                >
-                  <Trash2 size={14}/>
-                </Button>
-              </div>
+              )}
             </div>
-          ))}
-        </div>
+           )
+        })}
 
         {/* Add Question */}
         <div className="mt-8 border rounded-lg p-4 space-y-3">
