@@ -3,8 +3,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { fetchMockTests } from "@/services/mock-test";
+import { Loader2, Timer } from "lucide-react";
+import { fetchMockTestById } from "@/services/mock-test";
+import { calculateMockResult } from "@/utils/mockTestResult";
 
 type Question = {
   questionText: string;
@@ -13,12 +14,7 @@ type Question = {
   explanation?: string;
 };
 
-type MockTest = {
-  id: string;
-  title: string;
-  duration?: number;
-  questions: Question[];
-};
+type AnswerMap = Record<number, string>;
 
 export default function MockTestPlayerPage() {
   const params = useParams();
@@ -26,37 +22,67 @@ export default function MockTestPlayerPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [test, setTest] = useState<MockTest | null>(null);
+  const [test, setTest] = useState<any>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<AnswerMap>({});
   const [timeLeft, setTimeLeft] = useState(0);
+  const [warnings, setWarnings] = useState(0);
 
   const timerRef = useRef<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // LOAD TEST
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const all = await fetchMockTests();
-      const found = all.find(t => t.id === testId) as MockTest | undefined;
-
-      if (found) {
-        setTest(found);
-        setTimeLeft((found.duration ?? 10) * 60);
-        startTimer();
+      try {
+        const data = await fetchMockTestById(testId);
+        if (data) {
+          setTest(data);
+          setQuestions(data.questions || []);
+          setTimeLeft((data.duration ?? 0) * 60);
+          startTimer();
+          // try fullscreen (optional)
+          try {
+            document.documentElement.requestFullscreen?.();
+          } catch {}
+        } else {
+            throw new Error("Test data not found");
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
-    load();
+    
+    if (testId) {
+      load();
+    }
+    
+    // Anti-cheat: tab / window switch
+    function handleVisibility() {
+      if (document.visibilityState !== "visible") {
+        setWarnings((w) => w + 1);
+      }
+    }
 
-    return () => stopTimer();
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleVisibility);
+      stopTimer();
+    };
   }, [testId]);
 
-  // TIMER (SAFE)
+  // TIMER
   function startTimer() {
     if (timerRef.current) return;
     timerRef.current = window.setInterval(() => {
-      setTimeLeft(t => {
+      setTimeLeft((t) => {
         if (t <= 1) {
           stopTimer();
           handleSubmit();
@@ -74,55 +100,43 @@ export default function MockTestPlayerPage() {
     }
   }
 
+  // ANSWERS
   function selectAnswer(value: string) {
-    setAnswers(prev => ({ ...prev, [index]: value }));
+    setAnswers((prev) => ({
+      ...prev,
+      [index]: value,
+    }));
   }
 
+  // SUBMIT
   function handleSubmit() {
-    if (!test) return;
     stopTimer();
+    if (!test || !questions || questions.length === 0) return;
 
-    const totalQuestions = test.questions.length;
-    let correct = 0;
-    let wrong = 0;
-
-    test.questions.forEach((q, i) => {
-      const given = answers[i];
-      if (!given) return;
-      if (given === q.correctAnswer) correct++;
-      else wrong++;
-    });
-
-    const skipped = totalQuestions - (correct + wrong);
-
-    const marksPerQuestion = 1;
-    const negativeMark = 0.25;
-
-    const score =
-      correct * marksPerQuestion -
-      wrong * negativeMark;
+    const result = calculateMockResult(
+      questions,
+      answers,
+      1, // marks per question
+      0.25 // negative marks
+    );
 
     sessionStorage.setItem(
       "mockTestResult",
       JSON.stringify({
-        totalQuestions,
-        attempted: correct + wrong,
-        correct,
-        wrong,
-        skipped,
-        score: score.toFixed(2),
+        result,
       })
     );
 
     sessionStorage.setItem(
       "mockTestReview",
       JSON.stringify({
-        questions: test.questions,
+        questions: questions,
         answers,
       })
     );
-
-    window.location.href = "/dashboard/mock-test/result";
+    
+    setSubmitting(true);
+    router.push("/dashboard/mock-test/result");
   }
 
   if (loading) {
@@ -135,82 +149,134 @@ export default function MockTestPlayerPage() {
 
   if (!test) {
     return (
-      <div className="p-10 text-center text-gray-600">
-        Test not found.
+      <div className="p-10 text-center text-red-600">
+        Mock test not found. It may have been moved or deleted.
       </div>
     );
   }
 
-  const q = test.questions[index];
+  if (!questions.length || !questions[index]) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        Loading question…
+      </div>
+    );
+  }
+
+  const q = questions[index];
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
 
   return (
-    <div className="min-h-screen flex justify-center items-start pt-12 px-4 bg-slate-50">
-      <div className="w-full max-w-3xl">
-        <div className="flex justify-between mb-4">
-          <h1 className="text-xl font-bold">{test.title}</h1>
-          <div className="font-mono text-red-600">
-            {Math.floor(timeLeft / 60)
-              .toString()
-              .padStart(2, "0")}
-            :
-            {(timeLeft % 60)
-              .toString()
-              .padStart(2, "0")}
-          </div>
-        </div>
+    <div className="min-h-screen bg-white p-4">
+      <div className="max-w-6xl mx-auto lg:flex gap-6">
 
-        <div className="bg-white border rounded-xl shadow-sm p-6 text-base md:text-[16px] lg:text-[17px] xl:text-[18px]">
-          <div className="text-sm text-gray-500 mb-2">
-            Question {index + 1} / {test.questions.length}
+        {/* MAIN PANEL */}
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">{test.title}</h2>
+            <div className="flex items-center gap-2 text-red-600 font-mono">
+              <Timer className="w-4 h-4" />
+              {mins.toString().padStart(2, "0")}:
+              {secs.toString().padStart(2, "0")}
+            </div>
           </div>
 
-          <div className="font-medium text-[1.05em] leading-relaxed mb-4">
-            {q.questionText}
-          </div>
+          <div className="border rounded p-6">
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">
+                Q {index + 1} / {questions.length}
+              </div>
+              <div className="mt-2 font-medium">
+                {q.questionText}
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            {q.options.map((opt, i) => (
-              <label
-                key={i}
-                className="flex items-center gap-3 p-3 border rounded cursor-pointer text-[1em] leading-relaxed"
+            <div className="space-y-3">
+              {q.options.map((opt: any, idx: number) => {
+                const selected = answers[index] === opt.text;
+                return (
+                  <label
+                    key={idx}
+                    className={`flex items-center gap-3 p-3 border rounded cursor-pointer ${
+                      selected
+                        ? "border-purple-600 bg-purple-50"
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      checked={selected}
+                      onChange={() => selectAnswer(opt.text)}
+                    />
+                    <span>{opt.text}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-3 mt-6">
+              <Button
+                variant="outline"
+                disabled={index === 0}
+                onClick={() => setIndex((i) => Math.max(0, i - 1))}
               >
-                <input
-                  type="radio"
-                  checked={answers[index] === opt.text}
-                  onChange={() => selectAnswer(opt.text)}
-                />
-                {opt.text}
-              </label>
-            ))}
-          </div>
+                Prev
+              </Button>
 
-          <div className="flex gap-3 mt-6">
-            <Button
-              variant="outline"
-              disabled={index === 0}
-              onClick={() => setIndex(i => i - 1)}
-            >
-              Prev
-            </Button>
+              <Button
+                onClick={() =>
+                  setIndex((i) =>
+                    Math.min(questions.length - 1, i + 1)
+                  )
+                }
+              >
+                Next
+              </Button>
 
-            <Button
-              onClick={() =>
-                setIndex(i =>
-                  Math.min(test.questions.length - 1, i + 1)
-                )
-              }
-            >
-              Next
-            </Button>
-
-            <Button
-              className="ml-auto bg-green-600"
-              onClick={handleSubmit}
-            >
-              Submit Test
-            </Button>
+              <Button
+                className="ml-auto bg-green-600 hover:bg-green-700"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Test"}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* QUESTION PALETTE */}
+        <aside className="w-64 hidden lg:block">
+          <div className="p-4 border rounded">
+            <h4 className="font-bold">Question Palette</h4>
+
+            <div className="grid grid-cols-5 gap-2 mt-3">
+              {questions.map((_: any, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => setIndex(idx)}
+                  className={`p-2 rounded text-sm ${
+                    answers[idx]
+                      ? "bg-green-200"
+                      : "bg-gray-100"
+                  }`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 text-sm">
+              Warnings: {warnings}
+              {warnings >= 3 && (
+                <div className="text-red-600 mt-2">
+                  Multiple tab switches detected.
+                </div>
+              )}
+            </div>
+          </div>
+        </aside>
+
       </div>
     </div>
   );
