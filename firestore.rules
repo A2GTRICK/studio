@@ -2,6 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.token.admin == true;
+    }
+    
     // =============================
     // PUBLIC READ DATA
     // =============================
@@ -26,18 +31,34 @@ service cloud.firestore {
       allow list, read: if true;
     }
 
-    match /tests/{testId} {
-      allow list, read: if true;
-
-      match /questions/{qid} {
-        allow list, read: if true;
-      }
+    match /adminConfig/{doc} {
+      allow read: if true;
     }
+
+    // =============================
+    // TEST SERIES (CBT)
+    // =============================
 
     match /test_series/{testId} {
-      allow list, read: if true;
-    }
+      allow read: if true;
+      allow write: if isAdmin(); // Admin can create/delete a test series document
 
+      match /questions/{questionId} {
+        allow read: if true;
+
+        allow create, update: if isAdmin()
+          && request.resource.data.question is map
+          && request.resource.data.question.text is string
+          && request.resource.data.question.text.size() > 0
+          && request.resource.data.options is list
+          && request.resource.data.options.size() >= 2
+          && request.resource.data.options[0].text is string
+          && request.resource.data.correctAnswer is int;
+
+        allow delete: if isAdmin();
+      }
+    }
+    
     // =============================
     // GUEST MOCK TEST ATTEMPTS
     // =============================
@@ -45,10 +66,6 @@ service cloud.firestore {
     match /testAttempts/{attemptId} {
       allow create: if true;
       allow read, update, delete: if false;
-    }
-
-    match /adminConfig/{doc} {
-      allow read: if true;
     }
   }
 }
