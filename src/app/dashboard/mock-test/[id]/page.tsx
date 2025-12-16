@@ -38,29 +38,107 @@ export default function CBTMockTestPage() {
   const [marked, setMarked] = useState<boolean[]>([]);
   const [visited, setVisited] = useState<boolean[]>([]);
   const [timeLeft, setTimeLeft] = useState(3600);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /* 🚨 CBT WARNINGS */
+  // Hard Locks & Submission State
   const [warnings, setWarnings] = useState(0);
-  const MAX_WARNINGS = 3;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitRequested, setSubmitRequested] = useState(false);
 
-  /* 🚩 SUBMIT FLAGS */
-  const [shouldSubmit, setShouldSubmit] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  // Single Safe Submit Function
+  function submitTestSafe(reason: string) {
+    if (isSubmitting) return;
 
-  function violation(reason: string) {
-    if (warnings + 1 >= 3) {
-      alert("CBT WARNING 3/3\n\nTest will be submitted now.");
-      submitTestSafe();
-    } else {
-      setWarnings(w => w + 1);
-       alert(
-        `⚠ CBT WARNING ${warnings + 1}/${MAX_WARNINGS}\n\n${reason}\n\n` +
-          "Further violations will auto-submit."
-      );
-    }
+    console.warn("CBT SUBMIT:", reason);
+    setIsSubmitting(true);
+
+    let correct = 0;
+    let wrong = 0;
+
+    questions.forEach((q, i) => {
+      if (answers[i] == null) return;
+      if (answers[i] === q.correctAnswer) correct++;
+      else wrong++;
+    });
+
+    const score = correct - wrong * 0.25;
+
+    sessionStorage.setItem(
+      "mockTestResult",
+      JSON.stringify({
+        totalQuestions: questions.length,
+        attempted: Object.keys(answers).length,
+        correct,
+        wrong,
+        skipped: questions.length - Object.keys(answers).length,
+        score,
+        answers,
+        questions: questions.map(q => ({
+          id: q.id,
+          text: q.text,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation ?? "",
+        })),
+      })
+    );
+
+    // defer navigation safely
+    setTimeout(() => {
+      router.replace("/dashboard/mock-test/result");
+    }, 100);
   }
 
+  // Central Submit Effect
+  useEffect(() => {
+    if (submitRequested && !isSubmitting) {
+      submitTestSafe("AUTO_SUBMIT");
+    }
+  }, [submitRequested, isSubmitting]);
+
+  // Clean Warning Handler
+  function handleWarning(reason: string) {
+    setWarnings(prev => {
+      const next = prev + 1;
+
+      if (next >= 3) {
+        alert(
+          "CBT WARNING 3/3\n\n" +
+          reason +
+          "\n\nTest will be submitted now."
+        );
+        setSubmitRequested(true);
+        return 3;
+      }
+
+      alert(
+        `CBT WARNING ${next}/3\n\n${reason}\n\nDo not repeat this action.`
+      );
+      return next;
+    });
+  }
+
+  // Visibility / Tab Switch Effect
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden && !isSubmitting) {
+        handleWarning("Tab switched or minimized");
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [isSubmitting]);
+
+  // Fullscreen Exit Effect
+  useEffect(() => {
+    const onFsChange = () => {
+      if (!document.fullscreenElement && !isSubmitting) {
+        handleWarning("Exited full screen");
+      }
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, [isSubmitting]);
+  
   /* LOAD */
   useEffect(() => {
     async function load() {
@@ -102,13 +180,13 @@ export default function CBTMockTestPage() {
 
   /* TIMER */
   useEffect(() => {
-    if (!questions.length || submitted) return;
+    if (!questions.length || isSubmitting) return;
 
     const t = setInterval(() => {
-      setTimeLeft((s) => {
+      setTimeLeft(s => {
         if (s <= 1) {
           clearInterval(t);
-          setShouldSubmit(true); // ✅ FLAG ONLY
+          setSubmitRequested(true);
           return 0;
         }
         return s - 1;
@@ -116,33 +194,7 @@ export default function CBTMockTestPage() {
     }, 1000);
 
     return () => clearInterval(t);
-  }, [questions, submitted]);
-
-
-  /* CHEAT DETECTION */
-  useEffect(() => {
-    const fs = () => {
-      if (!document.fullscreenElement) violation("Exited fullscreen mode");
-    };
-    const blur = () => violation("Tab switched or minimized");
-    const vis = () =>
-      document.visibilityState === "hidden" &&
-      violation("Tab visibility changed");
-
-    document.addEventListener("fullscreenchange", fs);
-    window.addEventListener("blur", blur);
-    document.addEventListener("visibilitychange", vis);
-
-    window.onbeforeunload = () =>
-      "Leaving will submit the test.";
-
-    return () => {
-      document.removeEventListener("fullscreenchange", fs);
-      window.removeEventListener("blur", blur);
-      document.removeEventListener("visibilitychange", vis);
-      window.onbeforeunload = null;
-    };
-  }, []);
+  }, [questions, isSubmitting]);
   
   /* VISIT TRACKER */
   useEffect(() => {
@@ -152,54 +204,6 @@ export default function CBTMockTestPage() {
       setVisited(newVisited);
     }
   }, [current, questions, visited]);
-
-  function submitTestSafe() {
-    if (isSubmitting) return;
-  
-    setIsSubmitting(true);
-  
-    let correct = 0;
-    let wrong = 0;
-  
-    questions.forEach((q, i) => {
-      if (answers[i] == null) return;
-      if (answers[i] === q.correctAnswer) correct++;
-      else wrong++;
-    });
-  
-    const score = correct - wrong * 0.25;
-  
-    sessionStorage.setItem(
-      "mockTestResult",
-      JSON.stringify({
-        totalQuestions: questions.length,
-        attempted: Object.keys(answers).length,
-        correct,
-        wrong,
-        skipped: questions.length - Object.keys(answers).length,
-        score,
-        answers,
-        questions: questions.map(q => ({
-          id: q.id,
-          text: q.text,
-          options: q.options,
-          correctAnswer: q.correctAnswer,
-          explanation: q.explanation ?? "",
-        })),
-      })
-    );
-  
-    // IMPORTANT: defer navigation
-    setTimeout(() => {
-      router.replace("/dashboard/mock-test/result");
-    }, 0);
-  }
-
-  /* CONTROLLED SUBMIT EFFECT */
-  useEffect(() => {
-    if (!shouldSubmit || submitted) return;
-    submitTestSafe();
-  }, [shouldSubmit, submitted]);
 
   if (loading) {
     return (
@@ -233,15 +237,15 @@ export default function CBTMockTestPage() {
         <h1 className="font-bold">{title}</h1>
         <div className="flex gap-4 items-center">
           <span className="text-red-600 font-semibold">
-            Warnings: {warnings}/{MAX_WARNINGS}
+            Warnings: {warnings}/3
           </span>
           <span>
             {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
           </span>
           <Button variant="destructive" onClick={() => {
-            if (confirm("Are you sure you want to submit the test?")) {
-              submitTestSafe();
-            }
+              if (confirm("Are you sure you want to submit the test?")) {
+                  setSubmitRequested(true);
+              }
           }}>
             Submit Test
           </Button>
@@ -267,9 +271,7 @@ export default function CBTMockTestPage() {
                             type="radio"
                             name={`q-${current}`}
                             checked={answers[current] === i}
-                            onChange={() =>
-                                setAnswers({ ...answers, [current]: i })
-                            }
+                            onChange={() => setAnswers({ ...answers, [current]: i })}
                             />{" "}
                             {label}
                         </label>
