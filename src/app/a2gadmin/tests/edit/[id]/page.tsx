@@ -24,6 +24,7 @@ export default function EditTestPage() {
   const [loading, setLoading] = useState(true);
   const [test, setTest] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
+  const [previewQuestion, setPreviewQuestion] = useState<any | null>(null);
 
   const [newQuestionText, setNewQuestionText] = useState("");
   const [newOptions, setNewOptions] = useState(["", "", "", ""]);
@@ -48,12 +49,36 @@ export default function EditTestPage() {
   }
 
   async function addQuestion() {
-    const cleanedOptions = newOptions.map((o) => o.trim()).filter(Boolean);
-
-    if (!newQuestionText.trim()) return alert("Question text is required");
-    if (cleanedOptions.length < 2) return alert("At least two options required");
-    if (newCorrectIndex < 0 || newCorrectIndex >= cleanedOptions.length)
-      return alert("Correct answer index invalid");
+    // ---------------- VALIDATION (ADMIN-FINAL) ----------------
+    
+    // Trim and normalize options
+    const cleanedOptions = newOptions
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0);
+    
+    // 1️⃣ Question text must exist
+    if (!newQuestionText.trim()) {
+      alert("Question text is required.");
+      return;
+    }
+    
+    // 2️⃣ Minimum 2 valid options required
+    if (cleanedOptions.length < 2) {
+      alert("At least two non-empty options are required.");
+      return;
+    }
+    
+    // 3️⃣ Correct answer must be within range
+    if (
+      newCorrectIndex == null ||
+      newCorrectIndex < 0 ||
+      newCorrectIndex >= cleanedOptions.length
+    ) {
+      alert(
+        "Correct answer index is invalid. Please select a valid option."
+      );
+      return;
+    }
 
     await addDoc(collection(db, "test_series", id, "questions"), {
       question: { text: newQuestionText.trim() },
@@ -109,7 +134,7 @@ export default function EditTestPage() {
               </div>
 
               <div className="flex gap-2">
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => setPreviewQuestion(q)}>
                   <Eye size={14} />
                 </Button>
                 <Button size="sm" variant="destructive" onClick={() => deleteQuestion(q.id)}>
@@ -147,6 +172,57 @@ export default function EditTestPage() {
         <Textarea value={newExplanation} onChange={(e) => setNewExplanation(e.target.value)} placeholder="Explanation (optional)" />
         <Button onClick={addQuestion}>Add Question</Button>
       </div>
+
+      {previewQuestion && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
+          <div className="w-full max-w-lg h-full bg-background shadow-xl p-6 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Question Preview</h2>
+              <Button variant="ghost" onClick={() => setPreviewQuestion(null)}>
+                Close
+              </Button>
+            </div>
+      
+            <div className="space-y-4">
+              <p className="font-semibold">
+                {previewQuestion.question?.text || "Question text missing"}
+              </p>
+      
+              <div className="space-y-2">
+                {previewQuestion.options?.map((opt: any, idx: number) => {
+                  const isCorrect = idx === previewQuestion.correctAnswer;
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-2 border rounded flex items-center gap-2 ${
+                        isCorrect ? "border-green-500 bg-green-50" : ""
+                      }`}
+                    >
+                      <input type="radio" disabled />
+                      <span>{opt.text}</span>
+                      {isCorrect && (
+                        <span className="ml-auto text-xs text-green-600 font-medium">
+                          Correct
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+      
+              {previewQuestion.explanation && (
+                <div className="mt-4 p-3 bg-secondary/50 rounded">
+                  <p className="text-sm font-semibold mb-1">Explanation</p>
+                  <p className="text-sm text-muted-foreground">
+                    {previewQuestion.explanation}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
