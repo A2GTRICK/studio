@@ -125,16 +125,23 @@ export default function ReviewPage() {
           </div>
 
           {/* ✅ SOLUTION / EXPLANATION */}
-          <div className="bg-white border rounded p-5">
-            <h3 className="font-semibold mb-2">
-              Solution / Explanation
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {q.explanation
-                ? q.explanation
-                : "Explanation not provided for this question."}
-            </p>
+           <div className="bg-white border rounded p-5">
+             {q.explanation ? (
+                <div>
+                  <h3 className="font-semibold mb-2">
+                    Solution / Explanation
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {q.explanation}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Explanation not provided for this question.
+                </div>
+              )}
           </div>
+
 
           <div className="flex justify-between">
             <Button
@@ -154,7 +161,7 @@ export default function ReviewPage() {
         </div>
 
         {/* PALETTE */}
-        <div className="bg-white border rounded p-4">
+        <div className="bg-white border rounded p-4 h-fit sticky top-24">
           <h2 className="font-semibold mb-3">
             Question Palette
           </h2>
@@ -172,15 +179,15 @@ export default function ReviewPage() {
 
           <div className="mt-4 space-y-2 text-sm">
             <p>
-              <span className="inline-block w-3 h-3 bg-green-500 mr-2"></span>
+              <span className="inline-block w-3 h-3 bg-green-500 mr-2 rounded-full"></span>
               Correct
             </p>
             <p>
-              <span className="inline-block w-3 h-3 bg-red-500 mr-2"></span>
+              <span className="inline-block w-3 h-3 bg-red-500 mr-2 rounded-full"></span>
               Wrong
             </p>
             <p>
-              <span className="inline-block w-3 h-3 bg-gray-300 mr-2"></span>
+              <span className="inline-block w-3 h-3 bg-gray-300 mr-2 rounded-full"></span>
               Skipped
             </p>
           </div>
