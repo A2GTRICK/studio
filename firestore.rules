@@ -41,7 +41,9 @@ service cloud.firestore {
 
     match /test_series/{testId} {
       allow read: if true;
-      allow write: if isAdmin(); // Admin can create/delete a test series document
+
+      // Admin panel (authenticated users)
+      allow create, update, delete: if request.auth != null;
 
       match /questions/{questionId} {
         allow read: if true;
