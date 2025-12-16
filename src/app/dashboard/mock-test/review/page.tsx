@@ -11,6 +11,7 @@ type Question = {
   text: string;
   options: Option[];
   correctAnswer: number;
+  explanation?: string;
 };
 
 type ReviewData = {
@@ -27,24 +28,16 @@ export default function ReviewPage() {
     if (raw) {
       const parsed = JSON.parse(raw);
       setData({
-        questions: parsed.questions,
+        questions: parsed.questions || [],
         answers: parsed.answers || {},
       });
     }
   }, []);
 
-  if (!data) {
+  if (!data || !data.questions.length) {
     return (
       <div className="p-10 text-center text-muted-foreground">
-        Review data not found.
-      </div>
-    );
-  }
-  
-  if (!data.questions || data.questions.length === 0) {
-    return (
-      <div className="p-10 text-center text-muted-foreground">
-        No questions to review.
+        Review data not available.
       </div>
     );
   }
@@ -53,7 +46,7 @@ export default function ReviewPage() {
   const selected = data.answers[current];
 
   function paletteColor(i: number) {
-    if (data.answers[i] == null) return "bg-gray-200";
+    if (data.answers[i] == null) return "bg-gray-300";
     if (data.answers[i] === data.questions[i].correctAnswer)
       return "bg-green-500 text-white";
     return "bg-red-500 text-white";
@@ -107,11 +100,13 @@ export default function ReviewPage() {
                       readOnly
                     />
                     <span>{label}</span>
+
                     {isCorrect && (
                       <span className="ml-auto text-green-700 text-sm font-semibold">
-                        Correct
+                        Correct Answer
                       </span>
                     )}
+
                     {isSelected && !isCorrect && (
                       <span className="ml-auto text-red-700 text-sm font-semibold">
                         Your Answer
@@ -127,6 +122,18 @@ export default function ReviewPage() {
                 You skipped this question.
               </p>
             )}
+          </div>
+
+          {/* ✅ SOLUTION / EXPLANATION */}
+          <div className="bg-white border rounded p-5">
+            <h3 className="font-semibold mb-2">
+              Solution / Explanation
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {q.explanation
+                ? q.explanation
+                : "Explanation not provided for this question."}
+            </p>
           </div>
 
           <div className="flex justify-between">
@@ -147,7 +154,7 @@ export default function ReviewPage() {
         </div>
 
         {/* PALETTE */}
-        <div className="bg-white border rounded p-4 h-fit sticky top-24">
+        <div className="bg-white border rounded p-4">
           <h2 className="font-semibold mb-3">
             Question Palette
           </h2>
@@ -165,15 +172,15 @@ export default function ReviewPage() {
 
           <div className="mt-4 space-y-2 text-sm">
             <p>
-              <span className="inline-block w-3 h-3 bg-green-500 mr-2 rounded-sm"></span>
+              <span className="inline-block w-3 h-3 bg-green-500 mr-2"></span>
               Correct
             </p>
             <p>
-              <span className="inline-block w-3 h-3 bg-red-500 mr-2 rounded-sm"></span>
+              <span className="inline-block w-3 h-3 bg-red-500 mr-2"></span>
               Wrong
             </p>
             <p>
-              <span className="inline-block w-3 h-3 bg-gray-300 mr-2 rounded-sm"></span>
+              <span className="inline-block w-3 h-3 bg-gray-300 mr-2"></span>
               Skipped
             </p>
           </div>
