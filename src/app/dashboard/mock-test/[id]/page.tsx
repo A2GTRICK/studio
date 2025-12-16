@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -26,6 +25,18 @@ interface Question {
 export default function CBTMockTestPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  
+  const [instructionAccepted, setInstructionAccepted] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const accepted = sessionStorage.getItem(`mocktest_${id}_accepted`);
+    if (!accepted) {
+      router.replace(`/dashboard/mock-test/${id}/instructions`);
+      setInstructionAccepted(false);
+    } else {
+      setInstructionAccepted(true);
+    }
+  }, [id, router]);
 
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -40,8 +51,9 @@ export default function CBTMockTestPage() {
 
   /* ---------------- LOAD TEST ---------------- */
   useEffect(() => {
+    if (instructionAccepted !== true) return;
     loadTest();
-  }, []);
+  }, [instructionAccepted]);
 
   async function loadTest() {
     try {
@@ -83,7 +95,7 @@ export default function CBTMockTestPage() {
 
   /* ---------------- TIMER ---------------- */
   useEffect(() => {
-    if (!questions.length) return;
+    if (!questions.length || instructionAccepted !== true) return;
 
     const t = setInterval(() => {
       setTimeLeft((s) => {
@@ -97,7 +109,7 @@ export default function CBTMockTestPage() {
     }, 1000);
 
     return () => clearInterval(t);
-  }, [questions]);
+  }, [questions, instructionAccepted]);
 
   /* ---------------- VISIT TRACK ---------------- */
   useEffect(() => {
@@ -142,6 +154,18 @@ export default function CBTMockTestPage() {
     );
 
     router.push("/dashboard/mock-test/result");
+  }
+
+  if (instructionAccepted === false) {
+    return null; // hard stop — no render
+  }
+
+  if (instructionAccepted === null) {
+    return (
+      <div className="flex justify-center p-10">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
   }
 
   if (loading) {
