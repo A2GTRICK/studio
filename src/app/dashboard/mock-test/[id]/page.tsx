@@ -20,6 +20,7 @@ interface Question {
   text: string;
   options: Option[];
   correctAnswer: number;
+  explanation?: string;
 }
 
 export default function CBTMockTestPage() {
@@ -47,7 +48,9 @@ export default function CBTMockTestPage() {
       const testSnap = await getDoc(doc(db, "test_series", id));
       if (!testSnap.exists()) throw new Error("Test not found");
 
-      setTitle(testSnap.data().title ?? "Mock Test");
+      const testData = testSnap.data();
+      setTitle(testData.title ?? "Mock Test");
+      setTimeLeft((testData.duration || 60) * 60);
 
       const qSnap = await getDocs(
         collection(db, "test_series", id, "questions")
@@ -64,6 +67,7 @@ export default function CBTMockTestPage() {
             "Question text missing",
           options: Array.isArray(q.options) ? q.options : [],
           correctAnswer: Number(q.correctAnswer ?? q.answer ?? 0),
+          explanation: q.explanation ?? ""
         };
       });
 
@@ -127,7 +131,13 @@ export default function CBTMockTestPage() {
         skipped: questions.length - Object.keys(answers).length,
         score,
         answers,
-        questions,
+        questions: questions.map(q => ({
+          id: q.id,
+          question: { text: q.text },
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation ?? "",
+        })),
       })
     );
 

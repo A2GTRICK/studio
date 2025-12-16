@@ -8,7 +8,7 @@ type Option = string | { text: string };
 
 type Question = {
   id: string;
-  text: string;
+  question: { text: string };
   options: Option[];
   correctAnswer: number;
   explanation?: string;
@@ -43,19 +43,23 @@ export default function ReviewPage() {
   }
 
   const q = data.questions[current];
-  const selected = data.answers[current];
+  const selectedAnswerIndex = data.answers[current];
+  const selectedOption = q.options[selectedAnswerIndex];
+
 
   function paletteColor(i: number) {
-    if (data.answers[i] == null) return "bg-gray-300";
-    if (data.answers[i] === data.questions[i].correctAnswer)
-      return "bg-green-500 text-white";
-    return "bg-red-500 text-white";
+    const question = data!.questions[i];
+    const userAnswerIndex = data!.answers[i];
+    if (userAnswerIndex == null) return "bg-gray-300"; // Skipped
+    if (userAnswerIndex === question.correctAnswer)
+      return "bg-green-500 text-white"; // Correct
+    return "bg-red-500 text-white"; // Incorrect
   }
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* HEADER */}
-      <div className="bg-white border-b px-6 py-4 flex justify-between items-center">
+      <div className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
         <h1 className="font-bold text-lg">Answer Review</h1>
         <Button
           variant="outline"
@@ -73,7 +77,7 @@ export default function ReviewPage() {
         <div className="md:col-span-3 space-y-4">
           <div className="bg-white border rounded p-5">
             <p className="font-semibold mb-3">
-              Q{current + 1}. {q.text}
+              Q{current + 1}. {q.question?.text}
             </p>
 
             <div className="space-y-2">
@@ -82,10 +86,10 @@ export default function ReviewPage() {
                   typeof opt === "string" ? opt : opt.text;
 
                 const isCorrect = i === q.correctAnswer;
-                const isSelected = i === selected;
+                const isSelected = i === selectedAnswerIndex;
 
                 let cls =
-                  "border rounded p-2 flex gap-2 items-center";
+                  "border rounded p-2 flex gap-2 items-center text-sm";
 
                 if (isCorrect)
                   cls += " bg-green-100 border-green-500";
@@ -98,17 +102,18 @@ export default function ReviewPage() {
                       type="radio"
                       checked={isSelected}
                       readOnly
+                      className="mt-1"
                     />
                     <span>{label}</span>
 
                     {isCorrect && (
-                      <span className="ml-auto text-green-700 text-sm font-semibold">
+                      <span className="ml-auto text-green-700 text-xs font-semibold">
                         Correct Answer
                       </span>
                     )}
 
                     {isSelected && !isCorrect && (
-                      <span className="ml-auto text-red-700 text-sm font-semibold">
+                      <span className="ml-auto text-red-700 text-xs font-semibold">
                         Your Answer
                       </span>
                     )}
@@ -117,7 +122,7 @@ export default function ReviewPage() {
               })}
             </div>
 
-            {selected == null && (
+            {selectedAnswerIndex == null && (
               <p className="mt-3 text-sm text-yellow-700">
                 You skipped this question.
               </p>
@@ -126,7 +131,7 @@ export default function ReviewPage() {
 
           {/* ✅ SOLUTION / EXPLANATION */}
            <div className="bg-white border rounded p-5">
-             {q.explanation ? (
+             {typeof q.explanation === "string" && q.explanation.trim() ? (
                 <div>
                   <h3 className="font-semibold mb-2">
                     Solution / Explanation
