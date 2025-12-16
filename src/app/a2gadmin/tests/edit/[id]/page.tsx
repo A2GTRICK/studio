@@ -74,6 +74,12 @@ export default function EditTestPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>(null);
 
+  // Bulk Import
+  const [bulkText, setBulkText] = useState("");
+  const [bulkPreview, setBulkPreview] = useState<any[]>([]);
+  const [bulkErrors, setBulkErrors] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+
   useEffect(() => {
     load();
   }, [id]);
@@ -146,6 +152,92 @@ export default function EditTestPage() {
     setNewExplanation("");
     load();
   }
+
+  function parseBulkQuestions(raw: string) {
+    const blocks = raw
+      .split(/\n\s*Q:/i)
+      .map(b => b.trim())
+      .filter(Boolean);
+  
+    const parsed: any[] = [];
+    const errors: string[] = [];
+  
+    blocks.forEach((block, idx) => {
+      try {
+        const text = block.replace(/^Q:/i, "").trim();
+  
+        const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+  
+        const qText = lines[0];
+        if (!qText) throw "Missing question text";
+  
+        const optionLines = lines.filter(l => /^[A-D]\)/i.test(l));
+        if (optionLines.length < 2) throw "Minimum 2 options required";
+  
+        const options = optionLines.map(l => ({
+          text: l.replace(/^[A-D]\)/i, "").trim(),
+        }));
+  
+        const answerLine = lines.find(l => /^ANSWER:/i.test(l));
+        if (!answerLine) throw "ANSWER missing";
+  
+        const answerLetter = answerLine.split(":")[1]?.trim()?.toUpperCase();
+        const correctIndex = ["A", "B", "C", "D"].indexOf(answerLetter!);
+        if (correctIndex < 0 || correctIndex >= options.length) {
+          throw "Invalid ANSWER";
+        }
+  
+        const explainLine = lines.find(l => /^EXPLAIN:/i.test(l));
+        const explanation = explainLine
+          ? explainLine.replace(/^EXPLAIN:/i, "").trim()
+          : "";
+  
+        parsed.push({
+          question: { text: qText },
+          options,
+          correctAnswer: correctIndex,
+          explanation,
+        });
+      } catch (e: any) {
+        errors.push(`Q${idx + 1}: ${e}`);
+      }
+    });
+  
+    return { parsed, errors };
+  }
+
+  function handleBulkPreview() {
+    const { parsed, errors } = parseBulkQuestions(bulkText);
+    setBulkPreview(parsed);
+    setBulkErrors(errors);
+  }
+
+  async function handleBulkImport() {
+    if (!bulkPreview.length || bulkErrors.length) return;
+  
+    setImporting(true);
+  
+    const batch = writeBatch(db);
+    const baseOrder = questions.length;
+  
+    bulkPreview.forEach((q, i) => {
+      const ref = doc(collection(db, "test_series", id, "questions"));
+      batch.set(ref, {
+        ...q,
+        order: baseOrder + i,
+        createdAt: serverTimestamp(),
+      });
+    });
+  
+    await batch.commit();
+  
+    setBulkText("");
+    setBulkPreview([]);
+    setBulkErrors([]);
+    setImporting(false);
+    load();
+  }
+
 
   async function saveEdit() {
     if (!editingId || !editData) return;
@@ -375,6 +467,52 @@ export default function EditTestPage() {
           />
 
           <Button onClick={addQuestion}>Add Question</Button>
+        </div>
+
+        {/* Bulk Import */}
+        <div className="mt-8 border p-4 space-y-3">
+          <h3 className="font-bold text-lg">Bulk Import Questions</h3>
+
+          <Textarea
+            rows={10}
+            value={bulkText}
+            onChange={e => setBulkText(e.target.value)}
+            placeholder="Paste questions here..."
+          />
+
+          <Button onClick={handleBulkPreview}>Parse & Preview</Button>
+
+          {bulkErrors.length > 0 && (
+            <div className="text-red-600 text-sm">
+              {bulkErrors.map((e, i) => (
+                <div key={i}>❌ {e}</div>
+              ))}
+            </div>
+          )}
+
+          {bulkPreview.length > 0 && bulkErrors.length === 0 && (
+            <>
+              <div className="text-sm text-muted-foreground">
+                Preview ({bulkPreview.length} questions)
+              </div>
+
+              <ul className="text-sm space-y-1 max-h-40 overflow-auto border p-2">
+                {bulkPreview.map((q, i) => (
+                  <li key={i}>
+                    {i + 1}. {q.question.text}
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                disabled={importing}
+                onClick={handleBulkImport}
+                className="bg-green-600 text-white"
+              >
+                {importing ? 'Importing...' : 'Import All Questions'}
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
