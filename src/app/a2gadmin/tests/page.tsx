@@ -43,10 +43,65 @@ export default function TestAdminPage() {
     loadTests();
   }, []);
 
+  async function validateBeforePublish(testId: string): Promise<string | null> {
+    const qSnap = await getDocs(
+      collection(db, "test_series", testId, "questions")
+    );
+  
+    if (qSnap.empty) {
+      return "Cannot publish: Test has no questions.";
+    }
+  
+    let index = 1;
+  
+    for (const docSnap of qSnap.docs) {
+      const q = docSnap.data();
+  
+      if (!q?.question?.text || !q.question.text.trim()) {
+        return `Question ${index}: Missing question text.`;
+      }
+  
+      if (!Array.isArray(q.options) || q.options.length < 2) {
+        return `Question ${index}: At least 2 options required.`;
+      }
+  
+      if (
+        typeof q.correctAnswer !== "number" ||
+        q.correctAnswer < 0 ||
+        q.correctAnswer >= q.options.length
+      ) {
+        return `Question ${index}: Invalid correct answer index.`;
+      }
+  
+      index++;
+    }
+  
+    return null; // ✅ All good
+  }
+
   async function togglePublish(test: Test) {
+    // Always allow unpublish
+    if (test.isPublished) {
+      await updateDoc(doc(db, "test_series", test.id), {
+        isPublished: false,
+      });
+      loadTests();
+      return;
+    }
+  
+    // Validate BEFORE publishing
+    const error = await validateBeforePublish(test.id);
+  
+    if (error) {
+      alert(`Publish blocked:\n\n${error}`);
+      return;
+    }
+  
     await updateDoc(doc(db, "test_series", test.id), {
-      isPublished: !test.isPublished,
+      isPublished: true,
+      updatedAt: new Date(),
     });
+  
     loadTests();
   }
 
