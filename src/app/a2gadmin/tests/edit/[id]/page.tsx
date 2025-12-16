@@ -5,7 +5,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  updateDoc,
   addDoc,
   deleteDoc,
   serverTimestamp,
@@ -16,6 +15,8 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Eye, Trash2, CheckCircle2 } from "lucide-react";
 
 export default function EditTestPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,116 +42,109 @@ export default function EditTestPage() {
     if (testSnap.exists()) {
       setTest(testSnap.data());
       const qSnap = await getDocs(collection(db, "test_series", id, "questions"));
-      setQuestions(qSnap.docs.map((d) => ({ ...d.data(), id: d.id })));
+      setQuestions(qSnap.docs.map((d, i) => ({ ...d.data(), id: d.id, order: i + 1 })));
     }
     setLoading(false);
   }
 
   async function addQuestion() {
-    // ---------------- VALIDATION (ADMIN-FINAL) ----------------
+    const cleanedOptions = newOptions.map((o) => o.trim()).filter(Boolean);
 
-    // Trim and normalize options
-    const cleanedOptions = newOptions
-      .map((o) => o.trim())
-      .filter((o) => o.length > 0);
+    if (!newQuestionText.trim()) return alert("Question text is required");
+    if (cleanedOptions.length < 2) return alert("At least two options required");
+    if (newCorrectIndex < 0 || newCorrectIndex >= cleanedOptions.length)
+      return alert("Correct answer index invalid");
 
-    // 1️⃣ Question text must exist
-    if (!newQuestionText.trim()) {
-      alert("Question text is required.");
-      return;
-    }
-
-    // 2️⃣ Minimum 2 valid options required
-    if (cleanedOptions.length < 2) {
-      alert("At least two non-empty options are required.");
-      return;
-    }
-
-    // 3️⃣ Correct answer must be within range
-    if (
-      newCorrectIndex == null ||
-      newCorrectIndex < 0 ||
-      newCorrectIndex >= cleanedOptions.length
-    ) {
-      alert(
-        "Correct answer index is invalid. Please select a valid option."
-      );
-      return;
-    }
-
-    await addDoc(
-      collection(db, "test_series", id, "questions"),
-      {
-        question: { text: newQuestionText.trim() },
-        options: cleanedOptions.map((o) => ({ text: o })),
-        correctAnswer: newCorrectIndex,
-        explanation: newExplanation.trim() || "",
-        createdAt: serverTimestamp(),
-      }
-    );
+    await addDoc(collection(db, "test_series", id, "questions"), {
+      question: { text: newQuestionText.trim() },
+      options: cleanedOptions.map((o) => ({ text: o })),
+      correctAnswer: newCorrectIndex,
+      explanation: newExplanation.trim() || "",
+      createdAt: serverTimestamp(),
+    });
 
     setNewQuestionText("");
     setNewOptions(["", "", "", ""]);
     setNewCorrectIndex(0);
     setNewExplanation("");
-    load(); // Refresh
+    load();
   }
 
   async function deleteQuestion(qid: string) {
-    if (!confirm("Are you sure you want to delete this question?")) return;
+    if (!confirm("Delete this question permanently?")) return;
     await deleteDoc(doc(db, "test_series", id, "questions", qid));
     load();
   }
 
-  if (loading) return <div>Loading...</div>;
-  if (!test) return <div>Test not found</div>;
+  if (loading) return <div className="p-6">Loading…</div>;
+  if (!test) return <div className="p-6">Test not found</div>;
 
   return (
-    <div>
+    <div className="space-y-6">
       <h1 className="text-2xl font-bold">{test.title}</h1>
-      <div className="mt-4">
-        {questions.map((q) => (
-          <div key={q.id} className="p-2 border my-2">
-            <p>{q.question?.text || q.question}</p>
-            <Button onClick={() => deleteQuestion(q.id)} variant="destructive">
-              Delete
-            </Button>
-          </div>
-        ))}
+
+      {/* QUESTION LIST – STEP 2.1 */}
+      <div className="border rounded-xl overflow-hidden">
+        {questions.length === 0 ? (
+          <div className="p-6 text-muted-foreground">No questions added yet.</div>
+        ) : (
+          questions.map((q, index) => (
+            <div key={q.id} className="border-b last:border-b-0 p-4 flex justify-between gap-4">
+              <div className="flex gap-4">
+                <Badge variant="secondary" className="h-fit">Q{index + 1}</Badge>
+                <div>
+                  <p className="font-medium line-clamp-2">
+                    {q.question?.text || "Question text missing"}
+                  </p>
+                  <div className="flex gap-2 mt-1 text-sm text-muted-foreground">
+                    <span>{q.options?.length || 0} options</span>
+                    {typeof q.correctAnswer === "number" && (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <CheckCircle2 size={14} /> Correct set
+                      </span>
+                    )}
+                    {q.explanation && <span>Has explanation</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline">
+                  <Eye size={14} />
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => deleteQuestion(q.id)}>
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      <div className="mt-6 border p-4 space-y-2">
-        <h3 className="font-bold">Add Question</h3>
-        <Textarea
-          value={newQuestionText}
-          onChange={(e) => setNewQuestionText(e.target.value)}
-          placeholder="Question"
-        />
+      {/* ADD QUESTION */}
+      <div className="border p-4 rounded-xl space-y-2">
+        <h3 className="font-semibold">Add Question</h3>
+        <Textarea value={newQuestionText} onChange={(e) => setNewQuestionText(e.target.value)} placeholder="Question text" />
         {newOptions.map((opt, i) => (
           <Input
             key={i}
             value={opt}
+            placeholder={`Option ${i + 1}`}
             onChange={(e) => {
               const o = [...newOptions];
               o[i] = e.target.value;
               setNewOptions(o);
             }}
-            placeholder={`Option ${i + 1}`}
           />
         ))}
         <Input
           type="number"
+          min={0}
           value={newCorrectIndex}
           onChange={(e) => setNewCorrectIndex(Number(e.target.value))}
-          placeholder="Correct (0-3)"
-          min="0"
-          max="3"
+          placeholder="Correct option index"
         />
-        <Textarea
-            value={newExplanation}
-            onChange={(e) => setNewExplanation(e.target.value)}
-            placeholder="Explanation (optional)"
-        />
+        <Textarea value={newExplanation} onChange={(e) => setNewExplanation(e.target.value)} placeholder="Explanation (optional)" />
         <Button onClick={addQuestion}>Add Question</Button>
       </div>
     </div>
