@@ -1,4 +1,3 @@
-
 // src/app/a2gadmin/tests/edit/[id]/page.tsx
 "use client";
 
@@ -59,6 +58,47 @@ function SortableItem({ id, children }: any) {
     </div>
   );
 }
+
+function parseBulkQuestions(raw: string) {
+  const blocks = raw.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+
+  const parsed: any[] = [];
+  const errors: string[] = [];
+
+  blocks.forEach((block, index) => {
+    try {
+      const lines = block.split("\n").map(l => l.trim());
+
+      const qLine = lines.find(l => l.startsWith("Q:"));
+      const options = lines.filter(l => /^[A-D]\)/.test(l));
+      const ansLine = lines.find(l => l.startsWith("ANSWER:"));
+      const expLine = lines.find(l => l.startsWith("EXPLAIN:"));
+
+      if (!qLine || options.length < 2 || !ansLine) {
+        throw new Error("Missing Q / options / ANSWER");
+      }
+
+      const answerChar = ansLine.replace("ANSWER:", "").trim();
+      const map = { A: 0, B: 1, C: 2, D: 3 } as any;
+
+      if (!(answerChar in map)) {
+        throw new Error("ANSWER must be A/B/C/D");
+      }
+
+      parsed.push({
+        question: { text: qLine.replace("Q:", "").trim() },
+        options: options.map(o => ({ text: o.slice(2).trim() })),
+        correctAnswer: map[answerChar],
+        explanation: expLine ? expLine.replace("EXPLAIN:", "").trim() : "",
+      });
+    } catch (e: any) {
+      errors.push(`Question ${index + 1}: ${e.message}`);
+    }
+  });
+
+  return { parsed, errors };
+}
+
 
 export default function EditTestPage() {
   const { id } = useParams<{ id: string }>();
@@ -164,59 +204,6 @@ export default function EditTestPage() {
     setNewCorrectIndex(0);
     setNewExplanation("");
     load();
-  }
-
-  function parseBulkQuestions(raw: string) {
-    const blocks = raw
-      .split(/\n\s*Q:/i)
-      .map(b => b.trim())
-      .filter(Boolean);
-  
-    const parsed: any[] = [];
-    const errors: string[] = [];
-  
-    blocks.forEach((block, idx) => {
-      try {
-        const text = block.replace(/^Q:/i, "").trim();
-  
-        const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-  
-        const qText = lines[0];
-        if (!qText) throw "Missing question text";
-  
-        const optionLines = lines.filter(l => /^[A-D]\)/i.test(l));
-        if (optionLines.length < 2) throw "Minimum 2 options required";
-  
-        const options = optionLines.map(l => ({
-          text: l.replace(/^[A-D]\)/i, "").trim(),
-        }));
-  
-        const answerLine = lines.find(l => /^ANSWER:/i.test(l));
-        if (!answerLine) throw "ANSWER missing";
-  
-        const answerLetter = answerLine.split(":")[1]?.trim()?.toUpperCase();
-        const correctIndex = ["A", "B", "C", "D"].indexOf(answerLetter!);
-        if (correctIndex < 0 || correctIndex >= options.length) {
-          throw "Invalid ANSWER";
-        }
-  
-        const explainLine = lines.find(l => /^EXPLAIN:/i.test(l));
-        const explanation = explainLine
-          ? explainLine.replace(/^EXPLAIN:/i, "").trim()
-          : "";
-  
-        parsed.push({
-          question: { text: qText },
-          options,
-          correctAnswer: correctIndex,
-          explanation,
-        });
-      } catch (e: any) {
-        errors.push(`Q${idx + 1}: ${e}`);
-      }
-    });
-  
-    return { parsed, errors };
   }
 
   function handleBulkPreview() {
@@ -551,13 +538,13 @@ export default function EditTestPage() {
             rows={10}
             value={bulkText}
             onChange={e => setBulkText(e.target.value)}
-            placeholder="Paste questions here..."
+            placeholder="Paste questions here in the format: Q: ..., A) ..., B) ..., ANSWER: A, EXPLAIN: ..."
           />
 
           <Button onClick={handleBulkPreview}>Parse & Preview</Button>
 
           {bulkErrors.length > 0 && (
-            <div className="text-red-600 text-sm">
+            <div className="text-red-600 text-sm bg-red-50 border border-red-200 p-3 rounded-md">
               {bulkErrors.map((e, i) => (
                 <div key={i}>❌ {e}</div>
               ))}
@@ -570,13 +557,20 @@ export default function EditTestPage() {
                 Preview ({bulkPreview.length} questions)
               </div>
 
-              <ul className="text-sm space-y-1 max-h-40 overflow-auto border p-2">
+               <div className="space-y-3 max-h-60 overflow-y-auto border p-3 rounded-md bg-muted/50">
                 {bulkPreview.map((q, i) => (
-                  <li key={i}>
-                    {i + 1}. {q.question.text}
-                  </li>
+                  <div key={i} className="border bg-white rounded p-2 text-sm">
+                    <p className="font-medium">Q{i + 1}. {q.question.text}</p>
+                    <ul className="ml-4 text-xs">
+                      {q.options.map((o: any, idx: number) => (
+                        <li key={idx} className={idx === q.correctAnswer ? "text-green-600 font-semibold" : ""}>
+                          {String.fromCharCode(65 + idx)}) {o.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
 
               <Button
                 disabled={importing}
