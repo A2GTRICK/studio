@@ -1,123 +1,149 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { fetchMockTestById } from "@/services/mock-test";
-import { Loader2, Timer } from "lucide-react";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { db } from "@/firebase/config";
 import { Button } from "@/components/ui/button";
-import { calculateMockResult } from "@/utils/mockTestResult";
+import { Loader2 } from "lucide-react";
 
-type AnswerMap = Record<number, string>;
+type Option = string | { text: string };
 
-export default function MockTestPlayerPage() {
-  const params = useParams();
-  const testId = params.id as string;
+interface Question {
+  id: string;
+  text: string;
+  options: Option[];
+  correctAnswer: number;
+  explanation?: string;
+}
+
+export default function CBTMockTestPage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [test, setTest] = useState<any>(null);
-  const [curIndex, setCurIndex] = useState(0);
-  const [answers, setAnswers] = useState<AnswerMap>({});
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [warnings, setWarnings] = useState(0);
-  const timerRef = useRef<number | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  // =============================
-  // LOAD MOCK TEST
-  // =============================
   useEffect(() => {
-    if (!testId) return;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const data = await fetchMockTestById(testId);
-        setTest(data);
-        setTimeLeft((data.duration || 0) * 60);
-        startTimer();
-
-        // try fullscreen (optional)
-        try {
-          document.documentElement.requestFullscreen?.();
-        } catch {}
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+    const accepted = sessionStorage.getItem(`mocktest_${id}_accepted`);
+    if (!accepted) {
+      router.replace(`/dashboard/mock-test/${id}/instructions`);
     }
+  }, [id, router]);
 
-    load();
+  const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState("");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [current, setCurrent] = useState(0);
 
-    // Anti-cheat: tab / window switch
-    function handleVisibility() {
-      if (document.visibilityState !== "visible") {
-        setWarnings((w) => w + 1);
-      }
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [visited, setVisited] = useState<boolean[]>([]);
+  const [marked, setMarked] = useState<boolean[]>([]);
+
+  const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 minutes
+
+  /* ---------------- LOAD TEST ---------------- */
+  useEffect(() => {
+    loadTest();
+  }, []);
+
+  async function loadTest() {
+    try {
+      const testSnap = await getDoc(doc(db, "test_series", id));
+      if (!testSnap.exists()) throw new Error("Test not found");
+
+      const testData = testSnap.data();
+      setTitle(testData.title ?? "Mock Test");
+      setTimeLeft((testData.duration || 60) * 60);
+
+      const qSnap = await getDocs(
+        collection(db, "test_series", id, "questions")
+      );
+
+      const resolved: Question[] = qSnap.docs.map((d) => {
+        const q = d.data();
+        return {
+          id: d.id,
+          text:
+            q.question?.text ??
+            q.text ??
+            q.question ??
+            "Question text missing",
+          options: Array.isArray(q.options) ? q.options : [],
+          correctAnswer: Number(q.correctAnswer ?? q.answer ?? 0),
+          explanation: q.explanation ?? ""
+        };
+      });
+
+      setQuestions(resolved);
+      setVisited(new Array(resolved.length).fill(false));
+      setMarked(new Array(resolved.length).fill(false));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("blur", handleVisibility);
+  /* ---------------- TIMER ---------------- */
+  useEffect(() => {
+    if (!questions.length) return;
 
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("blur", handleVisibility);
-      stopTimer();
-    };
-  }, [testId]);
-
-  // =============================
-  // TIMER
-  // =============================
-  function startTimer() {
-    if (timerRef.current) return;
-    timerRef.current = window.setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          stopTimer();
-          handleSubmit();
+    const t = setInterval(() => {
+      setTimeLeft((s) => {
+        if (s <= 1) {
+          clearInterval(t);
+          submitTest();
           return 0;
         }
-        return t - 1;
+        return s - 1;
       });
     }, 1000);
-  }
 
-  function stopTimer() {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+    return () => clearInterval(t);
+  }, [questions]);
+
+  /* ---------------- VISIT TRACK ---------------- */
+  useEffect(() => {
+    if (!visited[current]) {
+      const v = [...visited];
+      v[current] = true;
+      setVisited(v);
     }
-  }
+  }, [current]);
 
-  // =============================
-  // ANSWERS
-  // =============================
-  function selectAnswer(value: string) {
-    setAnswers((prev) => ({
-      ...prev,
-      [curIndex]: value,
-    }));
-  }
+  /* ---------------- SUBMIT ---------------- */
+  function submitTest() {
+    let correct = 0;
+    let wrong = 0;
 
-  // =============================
-  // SUBMIT
-  // =============================
-  function handleSubmit() {
-    const result = calculateMockResult(
-      test.questions,
-      answers,
-      1, // marks per question
-      0.25 // negative marks
-    );
+    questions.forEach((q, i) => {
+      if (answers[i] == null) return;
+      if (answers[i] === q.correctAnswer) correct++;
+      else wrong++;
+    });
+
+    const score = correct - wrong * 0.25;
 
     sessionStorage.setItem(
-      "mockTestReview",
+      "mockTestResult",
       JSON.stringify({
-        questions: test.questions,
+        totalQuestions: questions.length,
+        attempted: Object.keys(answers).length,
+        correct,
+        wrong,
+        skipped: questions.length - Object.keys(answers).length,
+        score,
         answers,
-        result,
+        questions: questions.map(q => ({
+          id: q.id,
+          question: { text: q.text },
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation ?? "",
+        })),
       })
     );
 
@@ -126,143 +152,150 @@ export default function MockTestPlayerPage() {
 
   if (loading) {
     return (
-      <div className="p-10 text-center">
-        <Loader2 className="w-6 h-6 animate-spin inline" />
+      <div className="flex justify-center p-10">
+        <Loader2 className="animate-spin" />
       </div>
     );
   }
 
-  if (!test) {
+  if (!questions || questions.length === 0) {
     return (
-      <div className="p-10 text-center text-red-600">
-        Mock test not found
+      <div className="p-10 text-center text-muted-foreground">
+        This test has no questions yet or failed to load.
+        <div className="mt-4">
+          <Button onClick={() => router.push("/dashboard/mock-test")}>
+            Back to Mock Tests
+          </Button>
+        </div>
       </div>
     );
   }
 
-  const question = test.questions?.[curIndex];
 
-  if (!question) {
-    return (
-     <div className="p-10 text-center">
-       Loading question...
-     </div>
-   );
+  const q = questions[current];
+  if (!q) {
+     return (
+      <div className="p-10 text-center text-muted-foreground">
+        Loading question...
+      </div>
+    );
   }
 
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
+  /* ---------------- PALETTE COLOR ---------------- */
+  function paletteColor(i: number) {
+    if (marked[i]) return "bg-blue-500 text-white";
+    if (answers[i] != null) return "bg-green-500 text-white";
+    if (visited[i]) return "bg-yellow-400";
+    return "bg-gray-200";
+  }
 
   return (
-    <div className="min-h-screen bg-white p-4">
-      <div className="max-w-6xl mx-auto lg:flex gap-6">
+    <div className="min-h-screen bg-slate-50">
+      {/* HEADER */}
+      <div className="bg-white border-b px-6 py-4 flex justify-between items-center">
+        <h1 className="font-bold text-lg">{title}</h1>
+        <div className="flex items-center gap-6">
+          <span className="font-semibold">
+            Time Left: {Math.floor(timeLeft / 60)}:
+            {String(timeLeft % 60).padStart(2, "0")}
+          </span>
+          <Button variant="destructive" onClick={() => {
+              if(confirm("Are you sure you want to submit the test?")) {
+                  submitTest();
+              }
+          }}>
+            Submit Test
+          </Button>
+        </div>
+      </div>
 
-        {/* MAIN PANEL */}
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">{test.title}</h2>
-            <div className="flex items-center gap-2 text-red-600 font-mono">
-              <Timer className="w-4 h-4" />
-              {mins.toString().padStart(2, "0")}:
-              {secs.toString().padStart(2, "0")}
-            </div>
-          </div>
+      {/* BODY */}
+      <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* QUESTION */}
+        <div className="md:col-span-3 space-y-4">
+          <div className="bg-white border rounded p-5">
+            <p className="font-semibold mb-3">
+              Q{current + 1}. {q.text}
+            </p>
 
-          <div className="border rounded p-6">
-            <div className="mb-4">
-              <div className="text-sm text-gray-600">
-                Q {curIndex + 1} / {test.questions.length}
-              </div>
-              <div className="mt-2 font-medium">
-                {question.questionText}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {question.options.map((opt: any, idx: number) => {
-                const selected = answers[curIndex] === opt.text;
+            <div className="space-y-2">
+              {q.options.map((opt, i) => {
+                const label =
+                  typeof opt === "string" ? opt : opt.text;
                 return (
                   <label
-                    key={idx}
-                    className={`flex items-center gap-3 p-3 border rounded cursor-pointer ${
-                      selected
-                        ? "border-purple-600 bg-purple-50"
-                        : "hover:bg-slate-50"
-                    }`}
+                    key={i}
+                    className="flex items-center gap-2 border rounded p-2 cursor-pointer"
                   >
                     <input
                       type="radio"
-                      checked={selected}
-                      onChange={() => selectAnswer(opt.text)}
+                      name={`q-${current}`}
+                      checked={answers[current] === i}
+                      onChange={() =>
+                        setAnswers({
+                          ...answers,
+                          [current]: i,
+                        })
+                      }
                     />
-                    <span>{opt.text}</span>
+                    {label}
                   </label>
                 );
               })}
             </div>
+          </div>
 
-            <div className="flex items-center gap-3 mt-6">
+          <div className="flex justify-between">
+            <Button
+              variant="outline"
+              disabled={current === 0}
+              onClick={() => setCurrent(current - 1)}
+            >
+              Previous
+            </Button>
+
+            <div className="flex gap-2">
               <Button
-                variant="outline"
-                disabled={curIndex === 0}
-                onClick={() => setCurIndex((i) => Math.max(0, i - 1))}
+                variant="secondary"
+                onClick={() => {
+                  const m = [...marked];
+                  m[current] = !m[current];
+                  setMarked(m);
+                }}
               >
-                Prev
+                Mark for Review
               </Button>
 
               <Button
                 onClick={() =>
-                  setCurIndex((i) =>
-                    Math.min(test.questions.length - 1, i + 1)
+                  setCurrent(
+                    current === questions.length - 1
+                      ? current
+                      : current + 1
                   )
                 }
               >
-                Next
-              </Button>
-
-              <Button
-                className="ml-auto bg-green-600 hover:bg-green-700"
-                onClick={handleSubmit}
-                disabled={submitting}
-              >
-                Submit Test
+                Save & Next
               </Button>
             </div>
           </div>
         </div>
 
-        {/* QUESTION PALETTE */}
-        <aside className="w-64 hidden lg:block">
-          <div className="p-4 border rounded">
-            <h4 className="font-bold">Question Palette</h4>
-
-            <div className="grid grid-cols-5 gap-2 mt-3">
-              {test.questions.map((_: any, idx: number) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurIndex(idx)}
-                  className={`p-2 rounded text-sm ${
-                    answers[idx]
-                      ? "bg-green-200"
-                      : "bg-gray-100"
-                  }`}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4 text-sm">
-              Warnings: {warnings}
-              {warnings >= 3 && (
-                <div className="text-red-600 mt-2">
-                  Multiple tab switches detected.
-                </div>
-              )}
-            </div>
+        {/* PALETTE */}
+        <div className="bg-white border rounded p-4 h-fit sticky top-24">
+          <h2 className="font-semibold mb-3">Question Palette</h2>
+          <div className="grid grid-cols-5 gap-2">
+            {questions.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`p-2 rounded text-sm ${paletteColor(i)}`}
+              >
+                {i + 1}
+              </button>
+            ))}
           </div>
-        </aside>
-
+        </div>
       </div>
     </div>
   );
