@@ -13,7 +13,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import js from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
 import bash from "react-syntax-highlighter/dist/esm/languages/hljs/bash";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark";
+import atomOneDark from "react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark";
 
 import { ArrowLeft } from "lucide-react";
 import ClientControls from "./client-controls";
