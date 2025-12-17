@@ -1,16 +1,16 @@
 
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
 
 type Option = string | { text: string };
 
 type Question = {
   id: string;
-  text: string; // Changed from question.text
+  text: string;
   options: Option[];
   correctAnswer: number;
   explanation?: string;
@@ -38,10 +38,10 @@ function ReviewQuestion({
 }) {
   const status =
     userAnswerIndex === undefined
-      ? "skipped"
+      ? 'skipped'
       : userAnswerIndex === question.correctAnswer
-      ? "correct"
-      : "wrong";
+      ? 'correct'
+      : 'wrong';
 
   return (
     <div className="space-y-6">
@@ -54,11 +54,11 @@ function ReviewQuestion({
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold
               ${
-                status === "correct"
-                  ? "bg-green-100 text-green-700"
-                  : status === "wrong"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-gray-100 text-gray-600"
+                status === 'correct'
+                  ? 'bg-green-100 text-green-700'
+                  : status === 'wrong'
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-gray-100 text-gray-600'
               }
             `}
           >
@@ -75,18 +75,18 @@ function ReviewQuestion({
         {question.options.map((option, idx) => {
           const isCorrect = idx === question.correctAnswer;
           const isUserAnswer = idx === userAnswerIndex;
-          const optionText = typeof option === "string" ? option : option.text;
+          const optionText = typeof option === 'string' ? option : option.text;
 
           return (
             <div
               key={idx}
               className={`flex items-start gap-3 rounded-lg border p-3
-                ${isCorrect ? "border-green-400 bg-green-50" : ""}
+                ${isCorrect ? 'border-green-400 bg-green-50' : ''}
                 ${
-                  isUserAnswer && !isCorrect ? "border-red-400 bg-red-50" : ""
+                  isUserAnswer && !isCorrect ? 'border-red-400 bg-red-50' : ''
                 }
                 ${
-                  !isCorrect && !isUserAnswer ? "border-gray-200 bg-white" : ""
+                  !isCorrect && !isUserAnswer ? 'border-gray-200 bg-white' : ''
                 }
               `}
             >
@@ -153,10 +153,9 @@ export default function ReviewPage() {
 
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem("mockTestResult");
+      const raw = sessionStorage.getItem('mockTestResult');
       if (raw) {
         const parsed = JSON.parse(raw);
-        // Normalize question structure
         const normalizedQuestions = parsed.questions.map((q: any) => ({
           ...q,
           text: q.text || q.question?.text,
@@ -167,26 +166,26 @@ export default function ReviewPage() {
         });
       }
     } catch (error) {
-      console.error("Failed to parse review data from sessionStorage", error);
+      console.error('Failed to parse review data from sessionStorage', error);
     }
   }, []);
 
   const paletteColor = (i: number) => {
-    if (!data) return "bg-gray-200";
+    if (!data) return 'bg-gray-200';
     const question = data.questions[i];
     const userAnswerIndex = data.answers[i];
-    if (userAnswerIndex == null) return "bg-gray-300"; // Skipped
+    if (userAnswerIndex == null) return 'bg-gray-200 text-gray-800'; // Skipped
     if (userAnswerIndex === question.correctAnswer)
-      return "bg-green-500 text-white"; // Correct
-    return "bg-red-500 text-white"; // Incorrect
+      return 'bg-green-500 text-white'; // Correct
+    return 'bg-red-500 text-white'; // Incorrect
   };
 
   if (!data) {
     return (
       <div className="flex h-screen items-center justify-center p-10 text-center text-muted-foreground">
         <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span>Loading review data...</span>
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span>Loading review data...</span>
         </div>
       </div>
     );
@@ -195,7 +194,7 @@ export default function ReviewPage() {
   const { questions, answers } = data;
 
   if (questions.length === 0) {
-      return (
+    return (
       <div className="p-10 text-center text-muted-foreground">
         Review data not available or test had no questions.
       </div>
@@ -209,9 +208,7 @@ export default function ReviewPage() {
       <div className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
         <h1 className="font-bold text-lg">Answer Review</h1>
         <Button asChild variant="outline">
-            <Link href="/dashboard/mock-test">
-                Back to Tests
-            </Link>
+          <Link href="/dashboard/mock-test">Back to Tests</Link>
         </Button>
       </div>
 
@@ -234,9 +231,11 @@ export default function ReviewPage() {
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
-                className={`p-2 rounded text-sm transition-transform hover:scale-110 ${paletteColor(
+                className={`p-2 rounded text-sm font-medium transition-transform hover:scale-110 ${paletteColor(
                   i
-                )} ${current === i ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                )} ${
+                  current === i ? 'ring-2 ring-offset-2 ring-primary' : ''
+                }`}
               >
                 {i + 1}
               </button>
