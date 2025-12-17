@@ -62,8 +62,13 @@ export default function TestAdminPage() {
         return `Question ${index}: Missing question text.`;
       }
   
-      if (!Array.isArray(q.options) || q.options.length < 2) {
-        return `Question ${index}: At least 2 options required.`;
+      // FIX: Check if options is an array of objects with a `text` property
+      if (
+        !Array.isArray(q.options) ||
+        q.options.length < 2 ||
+        q.options.some((opt: any) => typeof opt.text !== 'string' || !opt.text.trim())
+      ) {
+        return `Question ${index}: At least 2 non-empty options are required.`;
       }
   
       if (
