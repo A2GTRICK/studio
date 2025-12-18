@@ -10,179 +10,151 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Check,
-  CreditCard,
-  Sparkles,
-  Lock,
-} from "lucide-react";
+import { Check, CreditCard, Sparkles } from "lucide-react";
 import { useAuthSession } from "@/auth/AuthSessionProvider";
 
-/* =========================================================
-   PLAN CONFIG
-   (NO PAYMENT GATEWAY YET — SAFE)
-========================================================= */
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
-const plans = [
-  {
-    id: "free",
-    name: "Free",
-    price: "₹0",
-    period: "/month",
-    description:
-      "Best for students getting started with notes and practice.",
-    features: [
-      "Access to all free notes & MCQs",
-      "Basic dashboard & progress tracking",
-      "Community access",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "₹100",
-    period: "/month",
-    description:
-      "For serious aspirants who want full access and premium tools.",
-    features: [
-      "All Free plan features",
-      "Premium notes & mock tests",
-      "Advanced performance analytics",
-      "Priority support",
-      "Early access to new features",
-    ],
-  },
-];
-
-/* =========================================================
-   BILLING PAGE
-========================================================= */
+const PRO_PRICE = 100;
 
 export default function BillingPage() {
   const authSession = useAuthSession();
+  const user = authSession?.user;
 
-  // ⚠️ TEMP LOGIC
-  // Later this will come from Firestore (user.plan)
-  const currentPlanId = "free";
+  const handleUpgrade = async () => {
+    if (!user) {
+      alert("Please login first.");
+      return;
+    }
+
+    try {
+      // 1️⃣ Create order (server)
+      const res = await fetch("/api/razorpay/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: PRO_PRICE,
+          plan: "pro",
+        }),
+      });
+
+      const order = await res.json();
+
+      if (!order.id) {
+        throw new Error("Order creation failed");
+      }
+
+      // 2️⃣ Open Razorpay Checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "pharmA2G",
+        description: "Pro Plan Subscription",
+        order_id: order.id,
+        prefill: {
+          name: user.displayName || "",
+          email: user.email || "",
+        },
+        theme: {
+          color: "#6D28D9",
+        },
+        handler: function (response: any) {
+          console.log("Payment success:", response);
+
+          alert(
+            "Payment successful! Verification will be completed shortly."
+          );
+
+          // 🔒 DO NOT upgrade plan here
+          // This will be done after verification (STEP 4)
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (err) {
+      console.error(err);
+      alert("Unable to initiate payment. Try again.");
+    }
+  };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10">
-
-      {/* HEADER */}
+    <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Billing & Subscription
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your plan and view billing details.
+        <h1 className="text-3xl font-bold">Billing & Plans</h1>
+        <p className="text-muted-foreground">
+          Upgrade to unlock premium features.
         </p>
       </div>
 
-      {/* PLANS */}
       <div className="grid gap-6 md:grid-cols-2">
-        {plans.map((plan) => {
-          const isCurrent = plan.id === currentPlanId;
+        {/* FREE */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Free</CardTitle>
+            <Badge>Current Plan</Badge>
+            <p className="text-3xl font-bold">₹0</p>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li className="flex gap-2">
+                <Check className="text-green-500" /> Free notes & MCQs
+              </li>
+              <li className="flex gap-2">
+                <Check className="text-green-500" /> Basic progress tracking
+              </li>
+            </ul>
+          </CardContent>
+          <CardFooter>
+            <Button disabled className="w-full">
+              You’re on this plan
+            </Button>
+          </CardFooter>
+        </Card>
 
-          return (
-            <Card
-              key={plan.id}
-              className={`flex flex-col shadow-md ${
-                isCurrent
-                  ? "border-2 border-primary"
-                  : "border"
-              }`}
-            >
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-2xl">
-                    {plan.name}
-                  </CardTitle>
-                  {isCurrent && (
-                    <Badge className="bg-primary/10 text-primary">
-                      Current Plan
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="flex items-baseline mt-2">
-                  <span className="text-4xl font-bold">
-                    {plan.price}
-                  </span>
-                  <span className="text-sm text-muted-foreground ml-1">
-                    {plan.period}
-                  </span>
-                </div>
-
-                <CardDescription className="mt-2">
-                  {plan.description}
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="flex-grow">
-                <ul className="space-y-3">
-                  {plan.features.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-start gap-2"
-                    >
-                      <Check className="h-5 w-5 text-green-500 mt-0.5" />
-                      <span className="text-sm">
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-
-              <CardFooter>
-                {isCurrent ? (
-                  <Button
-                    className="w-full"
-                    disabled
-                    variant="secondary"
-                  >
-                    You’re on this plan
-                  </Button>
-                ) : (
-                  <Button
-                    className="w-full"
-                    onClick={() =>
-                      alert(
-                        "Payments coming soon. Stay tuned!"
-                      )
-                    }
-                  >
-                    Upgrade to Pro
-                    <Sparkles className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          );
-        })}
+        {/* PRO */}
+        <Card className="border-2 border-primary">
+          <CardHeader>
+            <CardTitle>Pro</CardTitle>
+            <p className="text-3xl font-bold">₹100 / month</p>
+            <CardDescription>
+              Unlock premium content & analytics.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li className="flex gap-2">
+                <Check className="text-green-500" /> Premium notes
+              </li>
+              <li className="flex gap-2">
+                <Check className="text-green-500" /> Mock tests
+              </li>
+              <li className="flex gap-2">
+                <Check className="text-green-500" /> Advanced analytics
+              </li>
+            </ul>
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" onClick={handleUpgrade}>
+              Upgrade to Pro <Sparkles className="ml-2 h-4 w-4" />
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
 
-      {/* PAYMENT HISTORY */}
-      <Card className="shadow-md">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5" />
-            Payment History
+            <CreditCard /> Payment History
           </CardTitle>
-          <CardDescription>
-            Your invoices and transactions will appear here.
-          </CardDescription>
         </CardHeader>
-
-        <CardContent>
-          <div className="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-lg bg-secondary/30 text-muted-foreground">
-            <Lock className="w-6 h-6" />
-            <p>No payments yet</p>
-            <p className="text-sm text-center">
-              Once you upgrade to Pro, your billing history
-              will be visible here.
-            </p>
-          </div>
+        <CardContent className="text-muted-foreground">
+          No payments yet.
         </CardContent>
       </Card>
     </div>

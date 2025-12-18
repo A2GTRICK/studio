@@ -22,6 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         "min-h-screen font-body text-foreground bg-gradient-to-br from-purple-50/50 via-white to-blue-50/50",
         fontBody.variable
       )}>
+        <script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          async
+        />
         <AppProviders>
             {children}
         </AppProviders>
