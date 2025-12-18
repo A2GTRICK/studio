@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuthSession } from "@/auth/AuthSessionProvider";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +12,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, Sparkles } from "lucide-react";
+import {
+  Check,
+  CreditCard,
+  Sparkles,
+  ShieldCheck,
+  IndianRupee,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 declare global {
@@ -21,26 +28,25 @@ declare global {
 }
 
 export default function BillingPage() {
-  const authSession = useAuthSession();
-  const user = authSession?.user;
+  const { user } = useAuthSession();
   const { toast } = useToast();
 
+  const [showPreview, setShowPreview] = useState(false);
   const isPro = (user as any)?.plan === "pro";
 
+  /* ===============================
+     RAZORPAY PAYMENT START
+  =============================== */
+
   const startPayment = async () => {
-    if (!user) return;
+    setShowPreview(false);
 
     try {
       const orderRes = await fetch("/api/razorpay/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: 100, plan: "pro" }), // Assuming amount is fixed for now
       });
 
       const order = await orderRes.json();
-      if (!order || !order.id) {
-        throw new Error("Order creation failed");
-      }
 
       const razorpay = new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -61,7 +67,7 @@ export default function BillingPage() {
                 razorpay_signature: response.razorpay_signature,
                 userId: user.uid,
                 plan: "pro",
-                amount: order.amount / 100, // Convert paise back to rupees for db
+                amount: order.amount,
               }),
             }
           );
@@ -73,21 +79,16 @@ export default function BillingPage() {
               title: "Payment successful 🎉",
               description: "Pro plan activated successfully.",
             });
-
             window.location.reload();
           } else {
             throw new Error("Verification failed");
           }
         },
-        prefill: {
-          name: user.displayName || "",
-          email: user.email || "",
-        },
         theme: { color: "#6D28D9" },
       });
 
       razorpay.open();
-    } catch (err) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Payment failed",
@@ -97,7 +98,9 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-8">
+
+      {/* HEADER */}
       <div>
         <h1 className="text-3xl font-bold">Billing & Plans</h1>
         <p className="text-muted-foreground">
@@ -105,57 +108,68 @@ export default function BillingPage() {
         </p>
       </div>
 
+      {/* PLANS */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* FREE PLAN */}
-        <Card className="shadow-md border">
+
+        {/* FREE */}
+        <Card>
           <CardHeader>
             <CardTitle>Free</CardTitle>
             <CardDescription>Basic access</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold mb-4">₹0</p>
-            <ul className="space-y-2">
+            <div className="text-4xl font-bold flex items-center">
+              <IndianRupee className="w-6 h-6" /> 0
+            </div>
+            <ul className="mt-4 space-y-2">
               <li className="flex gap-2">
                 <Check className="text-green-500" /> Free notes & MCQs
               </li>
             </ul>
           </CardContent>
           <CardFooter>
-            <Button disabled={!isPro} className="w-full">
-              {!isPro ? "Current Plan" : "Downgrade"}
+            <Button disabled className="w-full">
+              Current Plan
             </Button>
           </CardFooter>
         </Card>
 
-        {/* PRO PLAN */}
-        <Card
-          className={`shadow-md ${
-            isPro ? "border-2 border-primary" : ""
-          }`}
-        >
+        {/* PRO */}
+        <Card className={isPro ? "border-2 border-primary" : ""}>
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between">
               <CardTitle>Pro</CardTitle>
               {isPro && <Badge>Current</Badge>}
             </div>
-            <CardDescription>₹100 / month</CardDescription>
+            <CardDescription>Monthly subscription</CardDescription>
           </CardHeader>
+
           <CardContent>
-             <p className="text-3xl font-bold mb-4">₹100</p>
-            <ul className="space-y-2">
+            <div className="text-4xl font-bold flex items-center">
+              <IndianRupee className="w-6 h-6" /> 100
+              <span className="text-sm ml-1 text-muted-foreground">
+                / month
+              </span>
+            </div>
+
+            <ul className="mt-4 space-y-2">
               <li className="flex gap-2">
-                <Check className="text-green-500" /> Unlimited premium content
+                <Check className="text-green-500" /> Unlimited premium notes
+              </li>
+              <li className="flex gap-2">
+                <Check className="text-green-500" /> Mock tests & analytics
               </li>
               <li className="flex gap-2">
                 <Check className="text-green-500" /> Priority support
               </li>
             </ul>
           </CardContent>
+
           <CardFooter>
             <Button
               className="w-full"
               disabled={isPro}
-              onClick={startPayment}
+              onClick={() => setShowPreview(true)}
             >
               {isPro ? "You're Pro 🎉" : "Upgrade to Pro"}
               {!isPro && <Sparkles className="ml-2 h-4 w-4" />}
@@ -175,6 +189,48 @@ export default function BillingPage() {
           Coming soon.
         </CardContent>
       </Card>
+
+      {/* ==========================
+         PREVIEW / TRUST MODAL
+      ========================== */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+          <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-xl space-y-5">
+
+            <h2 className="text-2xl font-bold">
+              Confirm your Pro Plan
+            </h2>
+
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>✔ Access to all premium notes & mock tests</p>
+              <p>✔ Progress tracking & analytics</p>
+              <p>✔ Cancel anytime</p>
+            </div>
+
+            <div className="border rounded-lg p-4 flex justify-between items-center">
+              <span className="font-medium">Amount payable</span>
+              <span className="text-xl font-bold flex items-center">
+                <IndianRupee className="w-4 h-4" /> 100
+              </span>
+            </div>
+
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <ShieldCheck className="w-4 h-4 mt-0.5" />
+              Payments are securely processed by Razorpay.
+              We never store your card or UPI details.
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setShowPreview(false)}>
+                Cancel
+              </Button>
+              <Button onClick={startPayment}>
+                Proceed to Secure Payment
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
