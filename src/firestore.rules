@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.token.admin == true;
+    }
+    
+    // =============================
+    // PUBLIC READ DATA
+    // =============================
+
+    match /notes/{id} {
+      allow list, read: if true;
+    }
+
+    match /mcqSets/{id} {
+      allow list, read: if true;
+    }
+
+    match /posts/{id} {
+      allow list, read: if true;
+    }
+
+    match /blog/{id} {
+      allow list, read: if true;
+    }
+
+    match /custom_notifications/{id} {
+      allow list, read: if true;
+    }
+
+    match /adminConfig/{doc} {
+      allow read: if true;
+    }
+
+    // =============================
+    // USER-SPECIFIC DATA
+    // =============================
+
+    match /note_views/{viewId} {
+      // Allow a user to read their own view history.
+      // Deny list access to prevent users from seeing other's history.
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow users to create their own view history.
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // =============================
+    // TEST SERIES (CBT)
+    // =============================
+
+    match /test_series/{testId} {
+      // Anyone can read published tests
+      allow read: if true;
+    
+      // TEMP ADMIN ACCESS (NO AUTH YET)
+      allow create, update, delete: if true;
+    
+      match /questions/{questionId} {
+        allow read: if true;
+    
+        // Enforce schema safety
+        allow create, update: if
+          request.resource.data.question.text is string
+          && request.resource.data.question.text.size() > 0
+          && request.resource.data.options is list
+          && request.resource.data.options.size() >= 2
+          && request.resource.data.correctAnswer is int
+          && request.resource.data.correctAnswer >= 0
+          && request.resource.data.correctAnswer
+             < request.resource.data.options.size();
+    
+        allow delete: if true;
+      }
+    }
+    
+    // =============================
+    // GUEST MOCK TEST ATTEMPTS
+    // =============================
+
+    match /testAttempts/{attemptId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+  }
+}
