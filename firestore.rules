@@ -2,14 +2,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      return request.auth != null &&
-             request.auth.token.admin == true;
+    /* =============================
+       HELPERS
+    ============================= */
+
+    function isSignedIn() {
+      return request.auth != null;
     }
-    
-    // =============================
-    // PUBLIC READ DATA
-    // =============================
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    /* =============================
+       PUBLIC READ DATA
+    ============================= */
 
     match /notes/{id} {
       allow list, read: if true;
@@ -35,21 +46,48 @@ service cloud.firestore {
       allow read: if true;
     }
 
-    // =============================
-    // TEST SERIES (CBT)
-    // =============================
+    /* =============================
+       USER PROFILES
+       (future-proofed)
+    ============================= */
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    /* =============================
+       NOTE VIEW ANALYTICS
+       (CRITICAL FIX)
+    ============================= */
+
+    match /note_views/{viewId} {
+      // user can create their own view log
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid;
+
+      // user can read only their own history
+      allow read: if isSignedIn()
+                  && resource.data.userId == request.auth.uid;
+
+      // no updates or deletes allowed
+      allow update, delete: if false;
+    }
+
+    /* =============================
+       TEST SERIES (CBT)
+       (UNCHANGED BEHAVIOR)
+    ============================= */
 
     match /test_series/{testId} {
-      // Anyone can read published tests
+      // anyone can read tests
       allow read: if true;
-    
-      // TEMP ADMIN ACCESS (NO AUTH YET)
+
+      // TEMP ADMIN ACCESS (as you requested)
       allow create, update, delete: if true;
-    
+
       match /questions/{questionId} {
         allow read: if true;
-    
-        // Enforce schema safety
+
         allow create, update: if
           request.resource.data.question.text is string
           && request.resource.data.question.text.size() > 0
@@ -59,18 +97,26 @@ service cloud.firestore {
           && request.resource.data.correctAnswer >= 0
           && request.resource.data.correctAnswer
              < request.resource.data.options.size();
-    
+
         allow delete: if true;
       }
     }
-    
-    // =============================
-    // GUEST MOCK TEST ATTEMPTS
-    // =============================
+
+    /* =============================
+       GUEST MOCK TEST ATTEMPTS
+    ============================= */
 
     match /testAttempts/{attemptId} {
       allow create: if true;
       allow read, update, delete: if false;
+    }
+
+    /* =============================
+       DEFAULT DENY (SAFETY NET)
+    ============================= */
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
