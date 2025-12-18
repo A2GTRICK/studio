@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Layers, GraduationCap, Sparkles, BarChart3, History, Loader2 } from 'lucide-react';
+import { BookOpen, Layers, GraduationCap, Sparkles, BarChart3, History, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import clsx from 'clsx';
 import { useAuth } from '@/firebase/provider';
@@ -104,9 +104,31 @@ function RecentlyViewedSection() {
             });
     }, [user?.uid]);
 
-    if (!user || (!loadingRecent && recentlyViewed.length === 0)) {
+    if (loadingRecent) {
+        return (
+             <Card className="shadow-lg mt-8">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-headline text-2xl">
+                        <History />
+                        Recently Viewed Notes
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-center h-24 text-muted-foreground">
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <span>Loading your recent notes...</span>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    if (!user || recentlyViewed.length === 0) {
         return null;
     }
+
+    const lastOpenedNote = recentlyViewed[0];
+    const otherRecentNotes = recentlyViewed.slice(1);
 
     return (
         <Card className="shadow-lg mt-8">
@@ -116,15 +138,23 @@ function RecentlyViewedSection() {
                     Recently Viewed Notes
                 </CardTitle>
             </CardHeader>
-            <CardContent>
-                {loadingRecent ? (
-                    <div className="flex items-center justify-center h-24 text-muted-foreground">
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        <span>Loading your recent notes...</span>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {recentlyViewed.map(note => (
+            <CardContent className="space-y-4">
+                {/* Highlighted CTA for the most recent note */}
+                <div className="p-5 rounded-lg bg-gradient-to-r from-primary/90 to-purple-600 text-primary-foreground shadow-lg">
+                    <p className="text-sm font-medium opacity-80">Continue where you left off</p>
+                    <h4 className="text-lg font-bold mt-1">{lastOpenedNote.title}</h4>
+                    <Button asChild variant="secondary" className="mt-4 bg-white/20 hover:bg-white/30 text-white">
+                        <Link href={`/dashboard/notes/view/${lastOpenedNote.id}`}>
+                            Continue Reading
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                </div>
+
+                {/* List of other recent notes */}
+                {otherRecentNotes.length > 0 && (
+                    <div className="space-y-3 pt-4">
+                        {otherRecentNotes.map(note => (
                             <Link key={note.id} href={`/dashboard/notes/view/${note.id}`} className="block p-4 border rounded-lg hover:bg-secondary transition-colors">
                                 <p className="font-semibold text-primary">{note.title}</p>
                                 <p className="text-sm text-muted-foreground">
