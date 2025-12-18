@@ -13,7 +13,7 @@ import { db } from "@/firebase/config";
 import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 
 import { ArrowLeft, Share2, FileDown, BookText, Menu } from "lucide-react";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/firebase/provider";
 import { trackNoteView } from "@/services/trackNoteView";
 
 // THEME
