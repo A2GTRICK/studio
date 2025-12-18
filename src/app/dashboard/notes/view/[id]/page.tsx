@@ -13,6 +13,8 @@ import { db } from "@/firebase/config";
 import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 
 import { ArrowLeft, Share2, FileDown, BookText, Menu } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { trackNoteView } from "@/services/trackNoteView";
 
 // THEME
 const THEME = {
@@ -87,6 +89,7 @@ function sanitizeForRender(dirty: string) {
 export default function PremiumNoteViewPage() {
   const params = useParams();
   const id = params?.id;
+  const { user } = useAuth();
 
   const [note, setNote] = useState<any>(null);
   const [related, setRelated] = useState<any[]>([]);
@@ -106,6 +109,15 @@ export default function PremiumNoteViewPage() {
         if (snap.exists()) {
           const data = { id: snap.id, ...snap.data() };
           setNote(data);
+
+          if (user?.uid) {
+            trackNoteView(user.uid, {
+              id: snap.id,
+              course: data.course,
+              subject: data.subject,
+              year: data.year,
+            });
+          }
 
           // FETCH RELATED NOTES
           const q = query(
@@ -132,7 +144,7 @@ export default function PremiumNoteViewPage() {
     }
 
     load();
-  }, [id]);
+  }, [id, user]);
 
   const sanitized = useMemo(() => {
     if (!note) return "";
