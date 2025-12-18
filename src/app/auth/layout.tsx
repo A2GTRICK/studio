@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import { FirebaseProvider, useFirebaseApp, useAuth, useFirestore } from "@/firebase/provider";
+import { FirebaseProvider } from "@/firebase/provider";
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
@@ -18,28 +18,11 @@ const firebaseConfig = {
   appId: "1:593098306784:web:e534cab5ec68ae820e4c85",
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-
-if (typeof window !== "undefined" && !getApps().length) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-} else {
-  app = getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
-}
-
-function AuthFirebaseProvider({ children }: { children: ReactNode }) {
-  return (
-    <FirebaseProvider app={app} auth={auth} db={db}>
-      {children}
-    </FirebaseProvider>
-  );
-}
-
+// Initialize Firebase on the client side and export the instances.
+// This is safe because this component is marked with "use client".
+const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
 
 export default function AuthLayout({
   children,
@@ -47,8 +30,8 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthFirebaseProvider>
+    <FirebaseProvider app={app} auth={auth} db={db}>
       {children}
-    </AuthFirebaseProvider>
+    </FirebaseProvider>
   );
 }
