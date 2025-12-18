@@ -1,9 +1,14 @@
+
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Layers, GraduationCap, Sparkles, BarChart3 } from 'lucide-react';
+import { BookOpen, Layers, GraduationCap, Sparkles, BarChart3, History, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import clsx from 'clsx';
+import { useAuth } from '@/firebase/provider';
+import { useEffect, useState } from 'react';
+import { getRecentlyViewedNotes } from '@/services/getRecentlyViewedNotes';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const dashboardFeatures = [
   {
@@ -31,6 +36,14 @@ const dashboardFeatures = [
     icon: <GraduationCap size={28} />,
   },
 ];
+
+interface RecentlyViewedNote {
+    id: string;
+    title: string;
+    course?: string;
+    subject?: string;
+    year?: string;
+}
 
 function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
   return (
@@ -67,6 +80,60 @@ function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
       </article>
     </Link>
   );
+}
+
+function RecentlyViewedSection() {
+    const auth = useAuth();
+    const user = auth?.user ?? null;
+    const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedNote[]>([]);
+    const [loadingRecent, setLoadingRecent] = useState(true);
+
+    useEffect(() => {
+        if (user?.uid) {
+            setLoadingRecent(true);
+            getRecentlyViewedNotes(user.uid, 5)
+                .then(notes => {
+                    setRecentlyViewed(notes);
+                })
+                .finally(() => {
+                    setLoadingRecent(false);
+                });
+        } else {
+            setLoadingRecent(false);
+        }
+    }, [user]);
+
+    if (!user || (!loadingRecent && recentlyViewed.length === 0)) {
+        return null;
+    }
+
+    return (
+        <Card className="shadow-lg mt-8">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-2xl">
+                    <History />
+                    Recently Viewed Notes
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {loadingRecent ? (
+                    <div className="flex items-center justify-center h-24 text-muted-foreground">
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <span>Loading your recent notes...</span>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {recentlyViewed.map(note => (
+                            <Link key={note.id} href={`/dashboard/notes/view/${note.id}`} className="block p-4 border rounded-lg hover:bg-secondary transition-colors">
+                                <p className="font-semibold text-primary">{note.title}</p>
+                                <p className="text-sm text-muted-foreground">{note.course} • {note.subject}</p>
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
 }
 
 export default function DashboardPage() {
@@ -130,6 +197,11 @@ export default function DashboardPage() {
                 <FeatureCard key={f.title} item={f} />
             ))}
         </div>
+      </section>
+
+      {/* Recently Viewed Section */}
+      <section>
+          <RecentlyViewedSection />
       </section>
     </div>
   );
