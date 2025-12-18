@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuthSession } from "@/auth/AuthSessionProvider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, CreditCard, Sparkles } from "lucide-react";
-import { useAuthSession } from "@/auth/AuthSessionProvider";
+import { useToast } from "@/hooks/use-toast";
 
 declare global {
   interface Window {
@@ -19,134 +20,151 @@ declare global {
   }
 }
 
-const PRO_PRICE = 100;
-
 export default function BillingPage() {
   const authSession = useAuthSession();
   const user = authSession?.user;
+  const { toast } = useToast();
 
-  const handleUpgrade = async () => {
-    if (!user) {
-      alert("Please login first.");
-      return;
-    }
+  const isPro = (user as any)?.plan === "pro";
+
+  const startPayment = async () => {
+    if (!user) return;
 
     try {
-      // 1️⃣ Create order (server)
-      const res = await fetch("/api/razorpay/create-order", {
+      const orderRes = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: PRO_PRICE,
-          plan: "pro",
-        }),
+        body: JSON.stringify({ amount: 100, plan: "pro" }), // Assuming amount is fixed for now
       });
 
-      const order = await res.json();
-
-      if (!order.id) {
+      const order = await orderRes.json();
+      if (!order || !order.id) {
         throw new Error("Order creation failed");
       }
 
-      // 2️⃣ Open Razorpay Checkout
-      const options = {
+      const razorpay = new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
-        currency: order.currency,
+        currency: "INR",
         name: "pharmA2G",
         description: "Pro Plan Subscription",
         order_id: order.id,
+        handler: async function (response: any) {
+          const verifyRes = await fetch(
+            "/api/razorpay/verify-payment",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                userId: user.uid,
+                plan: "pro",
+                amount: order.amount / 100, // Convert paise back to rupees for db
+              }),
+            }
+          );
+
+          const result = await verifyRes.json();
+
+          if (result.success) {
+            toast({
+              title: "Payment successful 🎉",
+              description: "Pro plan activated successfully.",
+            });
+
+            window.location.reload();
+          } else {
+            throw new Error("Verification failed");
+          }
+        },
         prefill: {
           name: user.displayName || "",
           email: user.email || "",
         },
-        theme: {
-          color: "#6D28D9",
-        },
-        handler: function (response: any) {
-          console.log("Payment success:", response);
+        theme: { color: "#6D28D9" },
+      });
 
-          alert(
-            "Payment successful! Verification will be completed shortly."
-          );
-
-          // 🔒 DO NOT upgrade plan here
-          // This will be done after verification (STEP 4)
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (err) {
-      console.error(err);
-      alert("Unable to initiate payment. Try again.");
+      toast({
+        variant: "destructive",
+        title: "Payment failed",
+        description: "Something went wrong. Please try again.",
+      });
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="flex flex-col gap-8 max-w-4xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold">Billing & Plans</h1>
         <p className="text-muted-foreground">
-          Upgrade to unlock premium features.
+          Manage your subscription and payment history.
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* FREE */}
-        <Card>
+        {/* FREE PLAN */}
+        <Card className="shadow-md border">
           <CardHeader>
             <CardTitle>Free</CardTitle>
-            <Badge>Current Plan</Badge>
-            <p className="text-3xl font-bold">₹0</p>
+            <CardDescription>Basic access</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm">
+            <p className="text-3xl font-bold mb-4">₹0</p>
+            <ul className="space-y-2">
               <li className="flex gap-2">
                 <Check className="text-green-500" /> Free notes & MCQs
-              </li>
-              <li className="flex gap-2">
-                <Check className="text-green-500" /> Basic progress tracking
               </li>
             </ul>
           </CardContent>
           <CardFooter>
-            <Button disabled className="w-full">
-              You’re on this plan
+            <Button disabled={!isPro} className="w-full">
+              {!isPro ? "Current Plan" : "Downgrade"}
             </Button>
           </CardFooter>
         </Card>
 
-        {/* PRO */}
-        <Card className="border-2 border-primary">
+        {/* PRO PLAN */}
+        <Card
+          className={`shadow-md ${
+            isPro ? "border-2 border-primary" : ""
+          }`}
+        >
           <CardHeader>
-            <CardTitle>Pro</CardTitle>
-            <p className="text-3xl font-bold">₹100 / month</p>
-            <CardDescription>
-              Unlock premium content & analytics.
-            </CardDescription>
+            <div className="flex justify-between items-center">
+              <CardTitle>Pro</CardTitle>
+              {isPro && <Badge>Current</Badge>}
+            </div>
+            <CardDescription>₹100 / month</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm">
+             <p className="text-3xl font-bold mb-4">₹100</p>
+            <ul className="space-y-2">
               <li className="flex gap-2">
-                <Check className="text-green-500" /> Premium notes
+                <Check className="text-green-500" /> Unlimited premium content
               </li>
               <li className="flex gap-2">
-                <Check className="text-green-500" /> Mock tests
-              </li>
-              <li className="flex gap-2">
-                <Check className="text-green-500" /> Advanced analytics
+                <Check className="text-green-500" /> Priority support
               </li>
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" onClick={handleUpgrade}>
-              Upgrade to Pro <Sparkles className="ml-2 h-4 w-4" />
+            <Button
+              className="w-full"
+              disabled={isPro}
+              onClick={startPayment}
+            >
+              {isPro ? "You're Pro 🎉" : "Upgrade to Pro"}
+              {!isPro && <Sparkles className="ml-2 h-4 w-4" />}
             </Button>
           </CardFooter>
         </Card>
       </div>
 
+      {/* PAYMENT HISTORY */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -154,7 +172,7 @@ export default function BillingPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground">
-          No payments yet.
+          Coming soon.
         </CardContent>
       </Card>
     </div>
