@@ -63,7 +63,7 @@ export function UserNav() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user.displayName || "User"}
+              {user.displayName || "A2GTRICK Academy"}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
