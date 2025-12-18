@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -28,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { Label } from "@/components/ui/label";
 
 const plans = [
   {
@@ -299,4 +299,3 @@ export default function BillingPage() {
     </>
   );
 }
-
