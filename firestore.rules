@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -47,18 +48,22 @@ service cloud.firestore {
     }
 
     /* =============================
-       USER PROFILES
-       (future-proofed)
+       USER-SPECIFIC DATA
     ============================= */
 
-    match /users/{userId} {
+    match /user_profiles/{userId} {
       allow read, write: if isOwner(userId);
     }
-
-    /* =============================
-       NOTE VIEW ANALYTICS
-       (CRITICAL FIX)
-    ============================= */
+    
+    match /upgrade_requests/{userId} {
+      // User can create/update their own request
+      allow write: if isOwner(userId);
+      // User can only read their own request
+      allow read: if isOwner(userId);
+      
+      // Admin can update any request (to approve/reject)
+      // allow update: if isAdmin();
+    }
 
     match /note_views/{viewId} {
       // user can create their own view log
