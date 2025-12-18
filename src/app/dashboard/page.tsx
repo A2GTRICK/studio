@@ -1,80 +1,95 @@
+"use client";
 
-'use client';
+import Link from "next/link";
+import {
+  BookOpen,
+  Layers,
+  GraduationCap,
+  Sparkles,
+  BarChart3,
+  History,
+  Loader2,
+  ArrowRight,
+  TrendingUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import clsx from "clsx";
+import { useAuth } from "@/firebase/provider";
+import { useEffect, useState } from "react";
+import { getRecentlyViewedNotes } from "@/services/getRecentlyViewedNotes";
+import { getUserLearningStats } from "@/services/getUserLearningStats";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-import Link from 'next/link';
-import { BookOpen, Layers, GraduationCap, Sparkles, BarChart3, History, Loader2, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import clsx from 'clsx';
-import { useAuth } from '@/firebase/provider';
-import { useEffect, useState } from 'react';
-import { getRecentlyViewedNotes } from '@/services/getRecentlyViewedNotes';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+/* =========================
+   DASHBOARD FEATURES
+========================= */
 
 const dashboardFeatures = [
   {
-    title: 'Notes Library',
-    desc: 'Access organized notes from all subjects.',
-    href: '/dashboard/notes',
+    title: "Notes Library",
+    desc: "Access organized notes from all subjects.",
+    href: "/dashboard/notes",
     icon: <BookOpen size={28} />,
   },
   {
-    title: 'MCQ Practice',
-    desc: 'Practice MCQs for GPAT, NIPER & D.Pharm.',
-    href: '/dashboard/mcq-practice',
+    title: "MCQ Practice",
+    desc: "Practice MCQs for GPAT, NIPER & D.Pharm.",
+    href: "/dashboard/mcq-practice",
     icon: <Layers size={28} />,
   },
   {
-    title: 'Mock Test',
-    desc: 'Premium exam-style practice tests.',
-    href: '/dashboard/mock-test',
+    title: "Mock Test",
+    desc: "Premium exam-style practice tests.",
+    href: "/dashboard/mock-test",
     icon: <BarChart3 size={28} />,
   },
   {
-    title: 'Academic Services',
-    desc: 'Project files, reports, dissertation help.',
-    href: '/dashboard/services',
+    title: "Academic Services",
+    desc: "Project files, reports, dissertation help.",
+    href: "/dashboard/services",
     icon: <GraduationCap size={28} />,
   },
 ];
 
+/* =========================
+   TYPES
+========================= */
+
 interface RecentlyViewedNote {
-    id: string;
-    title: string;
-    course?: string;
-    subject?: string;
-    year?: string;
+  id: string;
+  title: string;
+  course?: string;
+  subject?: string;
+  year?: string;
 }
+
+/* =========================
+   FEATURE CARD
+========================= */
 
 function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
   return (
     <Link href={item.href} className="group">
       <article
         className={clsx(
-          'relative overflow-hidden rounded-2xl p-6 shadow-lg transition-transform transform hover:-translate-y-1 hover:shadow-xl h-full',
-          'bg-white backdrop-blur-sm border border-slate-100'
+          "relative overflow-hidden rounded-2xl p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl h-full",
+          "bg-white border border-slate-100"
         )}
-        aria-labelledby={`fc-${item.title}`}
       >
         <div className="flex items-start gap-5">
-          <div
-            className={clsx(
-              'shrink-0 p-3 rounded-lg flex items-center justify-center',
-              'bg-primary/10'
-            )}
-          >
-            <div className="text-primary">{item.icon}</div>
+          <div className="shrink-0 p-3 rounded-lg bg-primary/10 text-primary">
+            {item.icon}
           </div>
-
           <div className="flex-1">
-            <h3
-              id={`fc-${item.title}`}
-              className="text-lg md:text-xl font-bold text-slate-900"
-            >
+            <h3 className="text-lg md:text-xl font-bold text-slate-900">
               {item.title}
             </h3>
-            <p className="mt-1 text-sm text-slate-600">
-              {item.desc}
-            </p>
+            <p className="mt-1 text-sm text-slate-600">{item.desc}</p>
           </div>
         </div>
       </article>
@@ -82,159 +97,229 @@ function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
   );
 }
 
+/* =========================
+   RECENTLY VIEWED SECTION
+========================= */
+
 function RecentlyViewedSection() {
-    const auth = useAuth();
-    const user = auth?.user ?? null;
-    const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedNote[]>([]);
-    const [loadingRecent, setLoadingRecent] = useState(true);
+  const auth = useAuth();
+  const user = auth?.user ?? null;
 
-    useEffect(() => {
-        if (!user?.uid) {
-            setLoadingRecent(false);
-            return;
-        }
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedNote[]>([]);
+  const [loading, setLoading] = useState(true);
 
-        setLoadingRecent(true);
-        getRecentlyViewedNotes(user.uid, 5)
-            .then(notes => {
-                setRecentlyViewed(notes);
-            })
-            .finally(() => {
-                setLoadingRecent(false);
-            });
-    }, [user?.uid]);
-
-    if (loadingRecent) {
-        return (
-             <Card className="shadow-lg mt-8">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline text-2xl">
-                        <History />
-                        Recently Viewed Notes
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-center h-24 text-muted-foreground">
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        <span>Loading your recent notes...</span>
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
-    
-    if (!user || recentlyViewed.length === 0) {
-        return null;
+  useEffect(() => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
     }
 
-    const lastOpenedNote = recentlyViewed[0];
-    const otherRecentNotes = recentlyViewed.slice(1);
+    setLoading(true);
+    getRecentlyViewedNotes(user.uid, 5)
+      .then(setRecentlyViewed)
+      .finally(() => setLoading(false));
+  }, [user?.uid]);
 
-    return (
-        <Card className="shadow-lg mt-8">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline text-2xl">
-                    <History />
-                    Recently Viewed Notes
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {/* Highlighted CTA for the most recent note */}
-                <div className="p-5 rounded-lg bg-gradient-to-r from-primary/90 to-purple-600 text-primary-foreground shadow-lg">
-                    <p className="text-sm font-medium opacity-80">Continue where you left off</p>
-                    <h4 className="text-lg font-bold mt-1">{lastOpenedNote.title}</h4>
-                    <Button asChild variant="secondary" className="mt-4 bg-white/20 hover:bg-white/30 text-white">
-                        <Link href={`/dashboard/notes/view/${lastOpenedNote.id}`}>
-                            Continue Reading
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </div>
+  if (!user || (!loading && recentlyViewed.length === 0)) {
+    return null;
+  }
 
-                {/* List of other recent notes */}
-                {otherRecentNotes.length > 0 && (
-                    <div className="space-y-3 pt-4">
-                        {otherRecentNotes.map(note => (
-                            <Link key={note.id} href={`/dashboard/notes/view/${note.id}`} className="block p-4 border rounded-lg hover:bg-secondary transition-colors">
-                                <p className="font-semibold text-primary">{note.title}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    {[note.course, note.subject].filter(Boolean).join(" • ")}
-                                </p>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
+  const continueNote = recentlyViewed[0];
+  const remainingNotes = recentlyViewed.slice(1);
+
+  return (
+    <Card className="mt-10 shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-2xl">
+          <History className="w-6 h-6" />
+          Recently Viewed Notes
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {loading ? (
+          <div className="flex items-center justify-center h-24 text-muted-foreground">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Loading your recent notes...
+          </div>
+        ) : (
+          <>
+            {/* CONTINUE READING CTA */}
+            {continueNote && (
+              <div className="p-5 rounded-xl border bg-purple-50">
+                <p className="text-sm text-purple-700 font-semibold">
+                  Continue where you left off
+                </p>
+                <h3 className="text-lg font-bold mt-1">
+                  {continueNote.title}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {[continueNote.course, continueNote.subject]
+                    .filter(Boolean)
+                    .join(" • ")}
+                </p>
+
+                <Button asChild className="mt-4">
+                  <Link
+                    href={`/dashboard/notes/view/${continueNote.id}`}
+                    className="inline-flex items-center gap-2"
+                  >
+                    Continue Reading <ArrowRight size={16} />
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            {/* REMAINING NOTES */}
+            {remainingNotes.length > 0 && (
+              <div className="space-y-3">
+                {remainingNotes.map((note) => (
+                  <Link
+                    key={note.id}
+                    href={`/dashboard/notes/view/${note.id}`}
+                    className="block p-4 border rounded-lg hover:bg-secondary transition-colors"
+                  >
+                    <p className="font-semibold text-primary">
+                      {note.title}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {[note.course, note.subject]
+                        .filter(Boolean)
+                        .join(" • ")}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
+
+/* =========================
+   LEARNING SNAPSHOT SECTION
+========================= */
+
+function LearningSnapshotSection() {
+  const auth = useAuth();
+  const user = auth?.user ?? null;
+
+  const [stats, setStats] = useState<{
+    totalNotesViewed: number;
+    subjectsExplored: number;
+    mostViewedSubject: string | null;
+    lastActiveAt: Date | null;
+  } | null>(null);
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    getUserLearningStats(user.uid)
+      .then((data) => {
+        if (data.totalNotesViewed > 0) {
+          setStats(data);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [user?.uid]);
+
+  if (loading || !stats) {
+    return null;
+  }
+
+  return (
+    <Card className="mt-8 shadow-md">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <TrendingUp className="w-5 h-5" />
+          Your Learning Snapshot
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-lg bg-secondary">
+          <p className="text-sm text-muted-foreground">Notes Viewed</p>
+          <p className="text-2xl font-bold">{stats.totalNotesViewed}</p>
+        </div>
+
+        <div className="p-4 rounded-lg bg-secondary">
+          <p className="text-sm text-muted-foreground">Subjects Explored</p>
+          <p className="text-2xl font-bold">{stats.subjectsExplored}</p>
+        </div>
+
+        <div className="p-4 rounded-lg bg-secondary">
+          <p className="text-sm text-muted-foreground">Top Subject</p>
+          <p className="font-semibold">
+            {stats.mostViewedSubject ?? "—"}
+          </p>
+        </div>
+
+        <div className="p-4 rounded-lg bg-secondary">
+          <p className="text-sm text-muted-foreground">Last Active</p>
+          <p className="font-semibold">
+            {stats.lastActiveAt
+              ? stats.lastActiveAt.toLocaleDateString()
+              : "—"}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
+/* =========================
+   DASHBOARD PAGE
+========================= */
 
 export default function DashboardPage() {
   return (
     <div className="min-h-screen p-4 md:p-8">
       {/* HERO */}
-      <section className="relative overflow-hidden rounded-2xl p-6 md:p-10 mb-8 bg-gradient-to-br from-purple-50 via-fuchsia-50 to-blue-50/50 border border-white/60">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
-              Welcome to{' '}
-              <span className="text-purple-700">pharmA2G</span>{' '}
-              <span aria-hidden>👋</span>
-            </h1>
-            <p className="mt-2 text-slate-700 max-w-xl">
-              You're all set. Explore the library, practice for your exams, or get academic help using the navigation on the left.
-            </p>
+      <section className="relative overflow-hidden rounded-2xl p-6 md:p-10 mb-8 bg-gradient-to-br from-purple-50 via-fuchsia-50 to-blue-50/50 border">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900">
+          Welcome to <span className="text-purple-700">pharmA2G</span>
+        </h1>
+        <p className="mt-2 text-slate-700 max-w-xl">
+          Explore notes, practice for exams, or continue where you left off.
+        </p>
 
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Button
-                asChild
-                className="bg-white/80 text-slate-800 shadow-sm hover:bg-white"
-              >
-                <Link
-                  href="/dashboard/notes"
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 font-medium"
-                >
-                  <Sparkles size={16} /> Explore Notes
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="bg-transparent">
-                <Link
-                  href="/dashboard/mcq-practice"
-                  className="inline-flex items-center gap-2 rounded-full px-4 py-2 font-medium"
-                >
-                  Start Practice
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* wave svg */}
-        <svg
-          viewBox="0 0 1440 80"
-          className="absolute bottom-0 left-0 w-full"
-          preserveAspectRatio="none"
-          aria-hidden
-        >
-          <path
-            d="M0,20 C200,80 400,0 720,20 C1040,40 1240,0 1440,30 L1440 80 L0 80 Z"
-            fill="rgba(255,255,255,0.6)"
-          ></path>
-        </svg>
-      </section>
-
-      {/* Features Section */}
-      <section>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {dashboardFeatures.map(f => (
-                <FeatureCard key={f.title} item={f} />
-            ))}
+        <div className="mt-4 flex gap-3 flex-wrap">
+          <Button asChild>
+            <Link href="/dashboard/notes">
+              <Sparkles size={16} className="mr-2" />
+              Explore Notes
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/mcq-practice">Start Practice</Link>
+          </Button>
         </div>
       </section>
 
-      {/* Recently Viewed Section */}
+      {/* FEATURES */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {dashboardFeatures.map((f) => (
+          <FeatureCard key={f.title} item={f} />
+        ))}
+      </section>
+
+      {/* RECENTLY VIEWED */}
       <section>
-          <RecentlyViewedSection />
+        <RecentlyViewedSection />
+      </section>
+
+      {/* LEARNING SNAPSHOT */}
+      <section>
+        <LearningSnapshotSection />
       </section>
     </div>
   );
