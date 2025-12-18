@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -102,9 +103,15 @@ function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
 ========================= */
 function LoginToPersonalizeCard() {
   const authSession = useAuthSession();
-  const user = authSession?.user ?? null;
 
-  // Hide completely if user is logged in
+  // Wait until auth is resolved
+  if (!authSession || authSession.loading) {
+    return null;
+  }
+
+  const user = authSession.user;
+
+  // Hide if logged in
   if (user) return null;
 
   return (
@@ -122,13 +129,13 @@ function LoginToPersonalizeCard() {
 
           <div className="mt-4 flex flex-wrap gap-3">
             <Button asChild>
-              <Link href="/auth/login">
+              <Link href="/auth/login?redirect=/dashboard">
                 Login
               </Link>
             </Button>
 
             <Button variant="outline" asChild>
-              <Link href="/auth/signup">
+              <Link href="/auth/signup?redirect=/dashboard">
                 Create Free Account
               </Link>
             </Button>
@@ -370,3 +377,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
