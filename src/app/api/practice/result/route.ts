@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { docToPlain } from "@/lib/firestore-helpers";
+import { adminDb } from "@/firebase/admin";
 
 export async function GET(req: NextRequest) {
     const url = new URL(req.url);
@@ -11,8 +12,6 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const { getAdminDb } = await import('@/lib/firebaseAdmin');
-        const adminDb = getAdminDb();
         const resDoc = await adminDb.collection('results').doc(resultId).get();
         if (!resDoc.exists) return NextResponse.json(null, { status: 404 });
         return NextResponse.json(docToPlain(resDoc));

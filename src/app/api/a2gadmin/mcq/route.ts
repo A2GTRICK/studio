@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { adminDb } from "@/firebase/admin";
 import { isAdminAuthenticated } from "@/lib/verifyAdminSession";
 
 // Helper to sanitize form data
