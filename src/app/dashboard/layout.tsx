@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { AuthSessionProvider } from "@/auth/AuthSessionProvider";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -98,63 +99,65 @@ export default function DashboardLayout({
 
   return (
     <FirebaseClientProvider>
-      <SidebarProvider>
-        <div className="flex min-h-screen">
-          <Sidebar>
-            <div className="flex h-16 items-center px-4">
-              <Link
-                href="/dashboard"
-                className="font-bold text-lg text-primary"
-              >
-                pharmA2G
-              </Link>
-            </div>
+      <AuthSessionProvider>
+        <SidebarProvider>
+          <div className="flex min-h-screen">
+            <Sidebar>
+              <div className="flex h-16 items-center px-4">
+                <Link
+                  href="/dashboard"
+                  className="font-bold text-lg text-primary"
+                >
+                  pharmA2G
+                </Link>
+              </div>
 
-            <SidebarMenu>
-              <NavItem
-                href="/dashboard"
-                icon={LayoutDashboard}
-                label="Dashboard"
-              />
+              <SidebarMenu>
+                <NavItem
+                  href="/dashboard"
+                  icon={LayoutDashboard}
+                  label="Dashboard"
+                />
 
-              <NavItem href="/dashboard/notes" icon={BookOpen} label="Notes" />
+                <NavItem href="/dashboard/notes" icon={BookOpen} label="Notes" />
 
-              <NavItem
-                href="/dashboard/mcq-practice"
-                icon={DraftingCompass}
-                label="MCQ Practice"
-              />
+                <NavItem
+                  href="/dashboard/mcq-practice"
+                  icon={DraftingCompass}
+                  label="MCQ Practice"
+                />
 
-              <NavItem
-                href="/dashboard/mock-test"
-                icon={BarChart3}
-                label="Mock Test"
-              />
+                <NavItem
+                  href="/dashboard/mock-test"
+                  icon={BarChart3}
+                  label="Mock Test"
+                />
 
-              <NavItem
-                href="/dashboard/services"
-                icon={HelpingHand}
-                label="Services"
-              />
+                <NavItem
+                  href="/dashboard/services"
+                  icon={HelpingHand}
+                  label="Services"
+                />
 
-              <NavItem
-                href="/dashboard/settings"
-                icon={Settings}
-                label="Settings"
-              />
-            </SidebarMenu>
-          </Sidebar>
-          <SidebarInset>
-              <header className="flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-                <SidebarTrigger className="md:hidden"/>
-                <h1 className="text-lg font-semibold md:text-xl">
-                  {getHeaderTitle()}
-                </h1>
-              </header>
-            <main className='flex-1 p-4 md:p-6 bg-secondary/40'>{children}</main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
+                <NavItem
+                  href="/dashboard/settings"
+                  icon={Settings}
+                  label="Settings"
+                />
+              </SidebarMenu>
+            </Sidebar>
+            <SidebarInset>
+                <header className="flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+                  <SidebarTrigger className="md:hidden"/>
+                  <h1 className="text-lg font-semibold md:text-xl">
+                    {getHeaderTitle()}
+                  </h1>
+                </header>
+              <main className='flex-1 p-4 md:p-6 bg-secondary/40'>{children}</main>
+            </SidebarInset>
+          </div>
+        </SidebarProvider>
+      </AuthSessionProvider>
     </FirebaseClientProvider>
   );
 }
