@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import clsx from "clsx";
-import { useAuth } from "@/firebase/provider";
+import { useAuthSession } from "@/auth/AuthSessionProvider";
 import { useEffect, useState } from "react";
 import { getRecentlyViewedNotes } from "@/services/getRecentlyViewedNotes";
 import { getUserLearningStats } from "@/services/getUserLearningStats";
@@ -98,12 +98,55 @@ function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
 }
 
 /* =========================
+   LOGIN TO PERSONALIZE CARD
+========================= */
+function LoginToPersonalizeCard() {
+  const authSession = useAuthSession();
+  const user = authSession?.user ?? null;
+
+  // Hide completely if user is logged in
+  if (user) return null;
+
+  return (
+    <div className="mt-10">
+      <div className="relative overflow-hidden rounded-2xl p-6 md:p-8 border border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-sm">
+        <div className="max-w-3xl">
+          <h2 className="text-2xl font-bold text-purple-900">
+            Personalize your learning 🚀
+          </h2>
+
+          <p className="mt-2 text-gray-700">
+            Login to track your progress, continue where you left off, and
+            unlock premium features when you’re ready.
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/auth/login">
+                Login
+              </Link>
+            </Button>
+
+            <Button variant="outline" asChild>
+              <Link href="/auth/signup">
+                Create Free Account
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* =========================
    RECENTLY VIEWED SECTION
 ========================= */
 
 function RecentlyViewedSection() {
-  const auth = useAuth();
-  const user = auth?.user ?? null;
+  const authSession = useAuthSession();
+  const user = authSession?.user ?? null;
 
   const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -201,10 +244,9 @@ function RecentlyViewedSection() {
 /* =========================
    LEARNING SNAPSHOT SECTION
 ========================= */
-
 function LearningSnapshotSection() {
-  const auth = useAuth();
-  const user = auth?.user ?? null;
+  const authSession = useAuthSession();
+  const user = authSession?.user ?? null;
 
   const [stats, setStats] = useState<{
     totalNotesViewed: number;
@@ -310,6 +352,10 @@ export default function DashboardPage() {
         {dashboardFeatures.map((f) => (
           <FeatureCard key={f.title} item={f} />
         ))}
+      </section>
+      
+      <section>
+        <LoginToPersonalizeCard />
       </section>
 
       {/* RECENTLY VIEWED */}
