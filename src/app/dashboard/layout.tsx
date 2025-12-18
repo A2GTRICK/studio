@@ -80,9 +80,11 @@ export default function DashboardLayout({
     // FULL VIEWPORT – NO SIDEBAR – NO CONSTRAINTS
     return (
       <FirebaseClientProvider>
-        <div className="min-h-screen w-screen bg-slate-50">
-          {children}
-        </div>
+        <AuthSessionProvider>
+            <div className="min-h-screen w-screen bg-slate-50">
+            {children}
+            </div>
+        </AuthSessionProvider>
       </FirebaseClientProvider>
     );
   }
