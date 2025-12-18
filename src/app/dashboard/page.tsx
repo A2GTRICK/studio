@@ -26,9 +26,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-/* =========================
+/* ======================================================
    DASHBOARD FEATURES
-========================= */
+====================================================== */
 
 const dashboardFeatures = [
   {
@@ -57,9 +57,9 @@ const dashboardFeatures = [
   },
 ];
 
-/* =========================
+/* ======================================================
    TYPES
-========================= */
+====================================================== */
 
 interface RecentlyViewedNote {
   id: string;
@@ -69,24 +69,25 @@ interface RecentlyViewedNote {
   year?: string;
 }
 
-/* =========================
+/* ======================================================
    FEATURE CARD
-========================= */
+====================================================== */
 
 function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
   return (
     <Link href={item.href} className="group">
       <article
         className={clsx(
-          "relative overflow-hidden rounded-2xl p-6 shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl h-full",
-          "bg-white border border-slate-100"
+          "relative overflow-hidden rounded-2xl p-6 h-full",
+          "bg-white border border-slate-100 shadow-lg",
+          "transition-transform hover:-translate-y-1 hover:shadow-xl"
         )}
       >
         <div className="flex items-start gap-5">
           <div className="shrink-0 p-3 rounded-lg bg-primary/10 text-primary">
             {item.icon}
           </div>
-          <div className="flex-1">
+          <div>
             <h3 className="text-lg md:text-xl font-bold text-slate-900">
               {item.title}
             </h3>
@@ -98,64 +99,51 @@ function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
   );
 }
 
-/* =========================
-   LOGIN TO PERSONALIZE CARD
-========================= */
+/* ======================================================
+   LOGIN TO PERSONALIZE CTA
+====================================================== */
+
 function LoginToPersonalizeCard() {
-  const authSession = useAuthSession();
+  const auth = useAuthSession();
 
-  // Wait until auth is resolved
-  if (!authSession || authSession.loading) {
-    return null;
-  }
-
-  const user = authSession.user;
-
-  // Hide if logged in
-  if (user) return null;
+  if (!auth || auth.loading) return null;
+  if (auth.user) return null;
 
   return (
-    <div className="mt-10">
-      <div className="relative overflow-hidden rounded-2xl p-6 md:p-8 border border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-sm">
-        <div className="max-w-3xl">
-          <h2 className="text-2xl font-bold text-purple-900">
-            Personalize your learning 🚀
-          </h2>
+    <Card className="mt-10 border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
+      <CardContent className="p-6 md:p-8">
+        <h2 className="text-2xl font-bold text-purple-900">
+          Personalize your learning 🚀
+        </h2>
+        <p className="mt-2 text-gray-700">
+          Login to track progress, resume learning, and unlock premium features
+          when you’re ready.
+        </p>
 
-          <p className="mt-2 text-gray-700">
-            Login to track your progress, continue where you left off, and
-            unlock premium features when you’re ready.
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href="/auth/login?redirect=/dashboard">
-                Login
-              </Link>
-            </Button>
-
-            <Button variant="outline" asChild>
-              <Link href="/auth/signup?redirect=/dashboard">
-                Create Free Account
-              </Link>
-            </Button>
-          </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button asChild>
+            <Link href="/auth/login?redirect=/dashboard">Login</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/auth/signup?redirect=/dashboard">
+              Create Free Account
+            </Link>
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
-
-/* =========================
-   RECENTLY VIEWED SECTION
-========================= */
+/* ======================================================
+   RECENTLY VIEWED NOTES
+====================================================== */
 
 function RecentlyViewedSection() {
-  const authSession = useAuthSession();
-  const user = authSession?.user ?? null;
+  const auth = useAuthSession();
+  const user = auth?.user ?? null;
 
-  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedNote[]>([]);
+  const [notes, setNotes] = useState<RecentlyViewedNote[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -164,18 +152,15 @@ function RecentlyViewedSection() {
       return;
     }
 
-    setLoading(true);
     getRecentlyViewedNotes(user.uid, 5)
-      .then(setRecentlyViewed)
+      .then(setNotes)
       .finally(() => setLoading(false));
   }, [user?.uid]);
 
-  if (!user || (!loading && recentlyViewed.length === 0)) {
-    return null;
-  }
+  if (!user || (!loading && notes.length === 0)) return null;
 
-  const continueNote = recentlyViewed[0];
-  const remainingNotes = recentlyViewed.slice(1);
+  const primary = notes[0];
+  const rest = notes.slice(1);
 
   return (
     <Card className="mt-10 shadow-lg">
@@ -190,28 +175,25 @@ function RecentlyViewedSection() {
         {loading ? (
           <div className="flex items-center justify-center h-24 text-muted-foreground">
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            Loading your recent notes...
+            Loading your recent notes…
           </div>
         ) : (
           <>
-            {/* CONTINUE READING CTA */}
-            {continueNote && (
+            {primary && (
               <div className="p-5 rounded-xl border bg-purple-50">
-                <p className="text-sm text-purple-700 font-semibold">
+                <p className="text-sm font-semibold text-purple-700">
                   Continue where you left off
                 </p>
-                <h3 className="text-lg font-bold mt-1">
-                  {continueNote.title}
-                </h3>
+                <h3 className="text-lg font-bold mt-1">{primary.title}</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {[continueNote.course, continueNote.subject]
+                  {[primary.course, primary.subject]
                     .filter(Boolean)
                     .join(" • ")}
                 </p>
 
                 <Button asChild className="mt-4">
                   <Link
-                    href={`/dashboard/notes/view/${continueNote.id}`}
+                    href={`/dashboard/notes/view/${primary.id}`}
                     className="inline-flex items-center gap-2"
                   >
                     Continue Reading <ArrowRight size={16} />
@@ -220,18 +202,15 @@ function RecentlyViewedSection() {
               </div>
             )}
 
-            {/* REMAINING NOTES */}
-            {remainingNotes.length > 0 && (
+            {rest.length > 0 && (
               <div className="space-y-3">
-                {remainingNotes.map((note) => (
+                {rest.map((note) => (
                   <Link
                     key={note.id}
                     href={`/dashboard/notes/view/${note.id}`}
-                    className="block p-4 border rounded-lg hover:bg-secondary transition-colors"
+                    className="block p-4 border rounded-lg hover:bg-secondary"
                   >
-                    <p className="font-semibold text-primary">
-                      {note.title}
-                    </p>
+                    <p className="font-semibold text-primary">{note.title}</p>
                     <p className="text-sm text-muted-foreground">
                       {[note.course, note.subject]
                         .filter(Boolean)
@@ -248,41 +227,27 @@ function RecentlyViewedSection() {
   );
 }
 
-/* =========================
-   LEARNING SNAPSHOT SECTION
-========================= */
+/* ======================================================
+   LEARNING SNAPSHOT
+====================================================== */
+
 function LearningSnapshotSection() {
-  const authSession = useAuthSession();
-  const user = authSession?.user ?? null;
+  const auth = useAuthSession();
+  const user = auth?.user ?? null;
 
-  const [stats, setStats] = useState<{
-    totalNotesViewed: number;
-    subjectsExplored: number;
-    mostViewedSubject: string | null;
-    lastActiveAt: Date | null;
-  } | null>(null);
-
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
-    if (!user?.uid) {
-      setLoading(false);
-      return;
-    }
+    if (!user?.uid) return;
 
-    setLoading(true);
-    getUserLearningStats(user.uid)
-      .then((data) => {
-        if (data.totalNotesViewed > 0) {
-          setStats(data);
-        }
-      })
-      .finally(() => setLoading(false));
+    getUserLearningStats(user.uid).then((data) => {
+      if (data.totalNotesViewed > 0) {
+        setStats(data);
+      }
+    });
   }, [user?.uid]);
 
-  if (loading || !stats) {
-    return null;
-  }
+  if (!stats) return null;
 
   return (
     <Card className="mt-8 shadow-md">
@@ -294,46 +259,43 @@ function LearningSnapshotSection() {
       </CardHeader>
 
       <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-lg bg-secondary">
-          <p className="text-sm text-muted-foreground">Notes Viewed</p>
-          <p className="text-2xl font-bold">{stats.totalNotesViewed}</p>
-        </div>
-
-        <div className="p-4 rounded-lg bg-secondary">
-          <p className="text-sm text-muted-foreground">Subjects Explored</p>
-          <p className="text-2xl font-bold">{stats.subjectsExplored}</p>
-        </div>
-
-        <div className="p-4 rounded-lg bg-secondary">
-          <p className="text-sm text-muted-foreground">Top Subject</p>
-          <p className="font-semibold">
-            {stats.mostViewedSubject ?? "—"}
-          </p>
-        </div>
-
-        <div className="p-4 rounded-lg bg-secondary">
-          <p className="text-sm text-muted-foreground">Last Active</p>
-          <p className="font-semibold">
-            {stats.lastActiveAt
+        <SnapshotItem label="Notes Viewed" value={stats.totalNotesViewed} />
+        <SnapshotItem label="Subjects Explored" value={stats.subjectsExplored} />
+        <SnapshotItem
+          label="Top Subject"
+          value={stats.mostViewedSubject ?? "—"}
+        />
+        <SnapshotItem
+          label="Last Active"
+          value={
+            stats.lastActiveAt
               ? stats.lastActiveAt.toLocaleDateString()
-              : "—"}
-          </p>
-        </div>
+              : "—"
+          }
+        />
       </CardContent>
     </Card>
   );
 }
 
+function SnapshotItem({ label, value }: { label: string; value: any }) {
+  return (
+    <div className="p-4 rounded-lg bg-secondary">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
 
-/* =========================
+/* ======================================================
    DASHBOARD PAGE
-========================= */
+====================================================== */
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen p-4 md:p-8 space-y-10">
       {/* HERO */}
-      <section className="relative overflow-hidden rounded-2xl p-6 md:p-10 mb-8 bg-gradient-to-br from-purple-50 via-fuchsia-50 to-blue-50/50 border">
+      <section className="relative overflow-hidden rounded-2xl p-6 md:p-10 bg-gradient-to-br from-purple-50 via-fuchsia-50 to-blue-50/50 border">
         <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900">
           Welcome to <span className="text-purple-700">pharmA2G</span>
         </h1>
@@ -341,7 +303,7 @@ export default function DashboardPage() {
           Explore notes, practice for exams, or continue where you left off.
         </p>
 
-        <div className="mt-4 flex gap-3 flex-wrap">
+        <div className="mt-4 flex flex-wrap gap-3">
           <Button asChild>
             <Link href="/dashboard/notes">
               <Sparkles size={16} className="mr-2" />
@@ -360,20 +322,10 @@ export default function DashboardPage() {
           <FeatureCard key={f.title} item={f} />
         ))}
       </section>
-      
-      <section>
-        <LoginToPersonalizeCard />
-      </section>
 
-      {/* RECENTLY VIEWED */}
-      <section>
-        <RecentlyViewedSection />
-      </section>
-
-      {/* LEARNING SNAPSHOT */}
-      <section>
-        <LearningSnapshotSection />
-      </section>
+      <LoginToPersonalizeCard />
+      <RecentlyViewedSection />
+      <LearningSnapshotSection />
     </div>
   );
 }
