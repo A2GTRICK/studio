@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuthSession } from "@/auth/AuthSessionProvider";
-import { useAuth } from "@/firebase/provider";
 import {
   updateProfile,
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase/provider";
 
 import {
   Avatar,
@@ -28,67 +25,43 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck, GraduationCap, Info } from "lucide-react";
+import { Loader2, ShieldCheck, GraduationCap } from "lucide-react";
 
 /* =========================================================
-   PROFILE PAGE — ENHANCED & SAFE
+   PROFILE PAGE — FINAL, STABLE, EDUCATOR-GRADE
 ========================================================= */
 
 export default function ProfilePage() {
   const authSession = useAuthSession();
-  const auth = useAuth();
-  const db = useFirestore();
   const { toast } = useToast();
-
   const user = authSession?.user;
 
-  /* ========================
-     BASIC PROFILE
-  ======================== */
-  const [displayName, setDisplayName] = useState(user?.displayName || "");
+  /* -----------------------
+     BASIC INFO STATE
+  ----------------------- */
+  const [displayName, setDisplayName] = useState(
+    user?.displayName || ""
+  );
 
-  /* ========================
-     OPTIONAL DETAILS (Firestore)
-  ======================== */
-  const [phone, setPhone] = useState("");
-  const [college, setCollege] = useState("");
-  const [course, setCourse] = useState("");
-  const [gradYear, setGradYear] = useState("");
+  /* -----------------------
+     OPTIONAL ACADEMIC INFO
+  ----------------------- */
+  const [targetExam, setTargetExam] = useState("");
+  const [collegeName, setCollegeName] = useState("");
+  const [studyYear, setStudyYear] = useState("");
 
-  const [savingProfile, setSavingProfile] = useState(false);
-
-  /* ========================
-     PASSWORD
-  ======================== */
+  /* -----------------------
+     PASSWORD STATE
+  ----------------------- */
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  const [loadingName, setLoadingName] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
 
-  /* ========================
-     LOAD EXTRA PROFILE
-  ======================== */
-  useEffect(() => {
-    if (!user || !db) return;
-
-    const loadProfile = async () => {
-      const ref = doc(db, "users", user.uid);
-      const snap = await getDoc(ref);
-
-      if (snap.exists()) {
-        const data = snap.data();
-        setPhone(data.phone || "");
-        setCollege(data.college || "");
-        setCourse(data.course || "");
-        setGradYear(data.gradYear || "");
-      }
-    };
-
-    loadProfile();
-  }, [user, db]);
-
-  /* ========================
-     GUARDS
-  ======================== */
+  /* -----------------------
+     LOADING / GUARD
+  ----------------------- */
   if (authSession?.loading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -97,7 +70,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user || !auth || !db) {
+  if (!user) {
     return (
       <div className="text-center text-muted-foreground">
         Please log in to view your profile.
@@ -105,48 +78,50 @@ export default function ProfilePage() {
     );
   }
 
-  /* ========================
-     SAVE PROFILE (SAFE)
-  ======================== */
-  const saveProfile = async () => {
-    setSavingProfile(true);
+  /* -----------------------
+     UPDATE DISPLAY NAME
+  ----------------------- */
+  const handleUpdateName = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (displayName.trim().length < 2) {
+      toast({
+        variant: "destructive",
+        title: "Invalid name",
+        description: "Display name must be at least 2 characters.",
+      });
+      return;
+    }
+
+    if (displayName === user.displayName) {
+      toast({
+        title: "No changes",
+        description: "Your name is already up to date.",
+      });
+      return;
+    }
+
+    setLoadingName(true);
     try {
-      // Auth display name
-      if (displayName !== user.displayName) {
-        await updateProfile(user, { displayName });
-      }
-
-      // Firestore optional profile
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          phone,
-          college,
-          course,
-          gradYear,
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
-
+      await updateProfile(user, { displayName });
       toast({
         title: "Profile updated",
-        description: "Your profile details were saved.",
+        description: "Your name has been saved successfully.",
       });
     } catch (err: any) {
       toast({
         variant: "destructive",
         title: "Update failed",
-        description: err.message || "Unable to save profile.",
+        description: err.message || "Unable to update profile.",
       });
     } finally {
-      setSavingProfile(false);
+      setLoadingName(false);
     }
   };
 
-  /* ========================
-     UPDATE PASSWORD (SAFE)
-  ======================== */
+  /* -----------------------
+     UPDATE PASSWORD
+  ----------------------- */
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -154,7 +129,7 @@ export default function ProfilePage() {
       toast({
         variant: "destructive",
         title: "Missing fields",
-        description: "Enter current and new password.",
+        description: "Please enter both passwords.",
       });
       return;
     }
@@ -163,36 +138,49 @@ export default function ProfilePage() {
       toast({
         variant: "destructive",
         title: "Weak password",
-        description: "Minimum 6 characters required.",
+        description: "Password must be at least 6 characters.",
       });
       return;
     }
 
     setLoadingPassword(true);
+
     try {
       await user.reload();
+
+      if (!user.email) {
+        throw new Error("Email authentication required.");
+      }
+
       const credential = EmailAuthProvider.credential(
-        user.email!,
+        user.email,
         currentPassword
       );
+
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, newPassword);
 
       toast({
         title: "Password updated",
-        description: "Your password has been changed.",
+        description: "Your password has been changed successfully.",
       });
 
       setCurrentPassword("");
       setNewPassword("");
-    } catch (err: any) {
+    } catch (error: any) {
+      let message = "Password update failed.";
+
+      if (error.code === "auth/wrong-password") {
+        message = "Current password is incorrect.";
+      } else if (error.code === "auth/requires-recent-login") {
+        message =
+          "Please log out and log in again before changing password.";
+      }
+
       toast({
         variant: "destructive",
         title: "Security check failed",
-        description:
-          err.code === "auth/wrong-password"
-            ? "Incorrect current password."
-            : "Please log in again and retry.",
+        description: message,
       });
     } finally {
       setLoadingPassword(false);
@@ -204,9 +192,10 @@ export default function ProfilePage() {
       .slice(0, 2)
       .toUpperCase();
 
-  /* ========================
+  /* =========================================================
      UI
-  ======================== */
+  ========================================================= */
+
   return (
     <div className="max-w-3xl mx-auto space-y-8">
 
@@ -218,57 +207,90 @@ export default function ProfilePage() {
             {initials}
           </AvatarFallback>
         </Avatar>
+
         <div>
           <h1 className="text-3xl font-bold">
             {user.displayName || "Your Profile"}
           </h1>
-          <p className="text-muted-foreground">{user.email}</p>
+          <p className="text-muted-foreground">
+            {user.email}
+          </p>
         </div>
       </div>
 
-      {/* BASIC + OPTIONAL PROFILE */}
+      {/* BASIC INFORMATION */}
       <Card>
         <CardHeader>
-          <CardTitle>Profile Details</CardTitle>
+          <CardTitle>Basic Information</CardTitle>
           <CardDescription>
-            Optional information to personalize your learning.
+            This information is used across the platform.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handleUpdateName} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={user.email || ""} disabled />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Display Name</Label>
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </div>
+
+            <Button type="submit" disabled={loadingName}>
+              {loadingName && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Save Changes
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* ACADEMIC PREFERENCES (OPTIONAL) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="w-5 h-5" />
+            Academic Preferences
+          </CardTitle>
+          <CardDescription>
+            Optional — helps personalize your learning.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div>
-            <Label>Display Name</Label>
+          <div className="space-y-2">
+            <Label>Target Exam / Course</Label>
             <Input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="GPAT / D.Pharm / B.Pharm"
+              value={targetExam}
+              onChange={(e) => setTargetExam(e.target.value)}
             />
           </div>
 
-          <div>
-            <Label>Phone (optional)</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <div className="space-y-2">
+            <Label>College / University</Label>
+            <Input
+              placeholder="Optional"
+              value={collegeName}
+              onChange={(e) => setCollegeName(e.target.value)}
+            />
           </div>
 
-          <div>
-            <Label>College / Institute</Label>
-            <Input value={college} onChange={(e) => setCollege(e.target.value)} />
+          <div className="space-y-2">
+            <Label>Year of Study / Graduation</Label>
+            <Input
+              placeholder="e.g. Final Year / 2026"
+              value={studyYear}
+              onChange={(e) => setStudyYear(e.target.value)}
+            />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Course</Label>
-              <Input value={course} onChange={(e) => setCourse(e.target.value)} />
-            </div>
-            <div>
-              <Label>Graduation Year</Label>
-              <Input value={gradYear} onChange={(e) => setGradYear(e.target.value)} />
-            </div>
-          </div>
-
-          <Button onClick={saveProfile} disabled={savingProfile}>
-            {savingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Profile
-          </Button>
         </CardContent>
       </Card>
 
@@ -276,24 +298,38 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5" /> Security
+            <ShieldCheck className="w-5 h-5" />
+            Security
           </CardTitle>
+          <CardDescription>
+            Change your account password.
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleUpdatePassword} className="space-y-4">
-            <Input
-              type="password"
-              placeholder="Current password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-            <Input
-              type="password"
-              placeholder="New password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
+            <div className="space-y-2">
+              <Label>Current Password</Label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) =>
+                  setCurrentPassword(e.target.value)
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) =>
+                  setNewPassword(e.target.value)
+                }
+              />
+            </div>
+
             <Button type="submit" disabled={loadingPassword}>
               {loadingPassword && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -301,21 +337,6 @@ export default function ProfilePage() {
               Update Password
             </Button>
           </form>
-        </CardContent>
-      </Card>
-
-      {/* ACCOUNT META */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="w-5 h-5" /> Account Info
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="text-sm space-y-2 text-muted-foreground">
-          <p>Account created: {new Date(user.metadata.creationTime!).toDateString()}</p>
-          <p>Last login: {new Date(user.metadata.lastSignInTime!).toDateString()}</p>
-          <p>Auth provider: {user.providerData[0]?.providerId}</p>
         </CardContent>
       </Card>
     </div>
