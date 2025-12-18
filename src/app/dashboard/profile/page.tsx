@@ -121,7 +121,7 @@ export default function ProfilePage() {
       toast({
         variant: "destructive",
         title: "Missing fields",
-        description: "Please enter both passwords.",
+        description: "Please enter both current and new password.",
       });
       return;
     }
@@ -136,9 +136,17 @@ export default function ProfilePage() {
     }
 
     setLoadingPassword(true);
+
     try {
+      // 🔐 Force refresh user session
+      await user.reload();
+
+      if (!user.email) {
+        throw new Error("Email authentication required.");
+      }
+
       const credential = EmailAuthProvider.credential(
-        user.email!,
+        user.email,
         currentPassword
       );
 
@@ -147,23 +155,27 @@ export default function ProfilePage() {
 
       toast({
         title: "Password updated",
-        description:
-          "Your password was changed successfully. Please use the new password next time.",
+        description: "Your password has been changed successfully.",
       });
 
       setCurrentPassword("");
       setNewPassword("");
     } catch (error: any) {
-      let message =
-        "Failed to update password. Please try again.";
+      let message = "Password update failed.";
 
       if (error.code === "auth/wrong-password") {
-        message = "Incorrect current password.";
+        message = "Current password is incorrect.";
+      } else if (error.code === "auth/too-many-requests") {
+        message =
+          "Too many attempts. Please wait a few minutes and try again.";
+      } else if (error.code === "auth/requires-recent-login") {
+        message =
+          "For security reasons, please log out and log in again before changing your password.";
       }
 
       toast({
         variant: "destructive",
-        title: "Security check failed",
+        title: "Security verification failed",
         description: message,
       });
     } finally {
