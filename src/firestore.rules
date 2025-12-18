@@ -38,6 +38,10 @@ service cloud.firestore {
     // =============================
     // USER-SPECIFIC DATA
     // =============================
+    
+    match /user_profiles/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
 
     match /note_views/{viewId} {
       // Allow a user to read their own view history.
