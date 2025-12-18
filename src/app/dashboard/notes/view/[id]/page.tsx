@@ -89,7 +89,8 @@ function sanitizeForRender(dirty: string) {
 export default function PremiumNoteViewPage() {
   const params = useParams();
   const id = params?.id;
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user ?? null;
 
   const [note, setNote] = useState<any>(null);
   const [related, setRelated] = useState<any[]>([]);
