@@ -89,19 +89,20 @@ function RecentlyViewedSection() {
     const [loadingRecent, setLoadingRecent] = useState(true);
 
     useEffect(() => {
-        if (user?.uid) {
-            setLoadingRecent(true);
-            getRecentlyViewedNotes(user.uid, 5)
-                .then(notes => {
-                    setRecentlyViewed(notes);
-                })
-                .finally(() => {
-                    setLoadingRecent(false);
-                });
-        } else {
+        if (!user?.uid) {
             setLoadingRecent(false);
+            return;
         }
-    }, [user]);
+
+        setLoadingRecent(true);
+        getRecentlyViewedNotes(user.uid, 5)
+            .then(notes => {
+                setRecentlyViewed(notes);
+            })
+            .finally(() => {
+                setLoadingRecent(false);
+            });
+    }, [user?.uid]);
 
     if (!user || (!loadingRecent && recentlyViewed.length === 0)) {
         return null;
@@ -126,7 +127,9 @@ function RecentlyViewedSection() {
                         {recentlyViewed.map(note => (
                             <Link key={note.id} href={`/dashboard/notes/view/${note.id}`} className="block p-4 border rounded-lg hover:bg-secondary transition-colors">
                                 <p className="font-semibold text-primary">{note.title}</p>
-                                <p className="text-sm text-muted-foreground">{note.course} • {note.subject}</p>
+                                <p className="text-sm text-muted-foreground">
+                                    {[note.course, note.subject].filter(Boolean).join(" • ")}
+                                </p>
                             </Link>
                         ))}
                     </div>
