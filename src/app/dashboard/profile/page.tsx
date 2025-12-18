@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthSession } from "@/auth/AuthSessionProvider";
 import { useAuth } from "@/firebase/provider";
 import {
@@ -9,6 +9,8 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useFirestore } from "@/firebase/provider";
 
 import {
   Avatar,
@@ -26,32 +28,67 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, GraduationCap, Info } from "lucide-react";
 
 /* =========================================================
-   PROFILE PAGE — STABLE & PRODUCTION SAFE
+   PROFILE PAGE — ENHANCED & SAFE
 ========================================================= */
 
 export default function ProfilePage() {
   const authSession = useAuthSession();
   const auth = useAuth();
+  const db = useFirestore();
   const { toast } = useToast();
 
   const user = authSession?.user;
 
-  const [displayName, setDisplayName] = useState(
-    user?.displayName || ""
-  );
+  /* ========================
+     BASIC PROFILE
+  ======================== */
+  const [displayName, setDisplayName] = useState(user?.displayName || "");
+
+  /* ========================
+     OPTIONAL DETAILS (Firestore)
+  ======================== */
+  const [phone, setPhone] = useState("");
+  const [college, setCollege] = useState("");
+  const [course, setCourse] = useState("");
+  const [gradYear, setGradYear] = useState("");
+
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  /* ========================
+     PASSWORD
+  ======================== */
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-
-  const [loadingName, setLoadingName] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
 
   /* ========================
-     LOADING / GUARD
+     LOAD EXTRA PROFILE
   ======================== */
+  useEffect(() => {
+    if (!user || !db) return;
 
+    const loadProfile = async () => {
+      const ref = doc(db, "users", user.uid);
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        setPhone(data.phone || "");
+        setCollege(data.college || "");
+        setCourse(data.course || "");
+        setGradYear(data.gradYear || "");
+      }
+    };
+
+    loadProfile();
+  }, [user, db]);
+
+  /* ========================
+     GUARDS
+  ======================== */
   if (authSession?.loading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -60,7 +97,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user || !auth) {
+  if (!user || !auth || !db) {
     return (
       <div className="text-center text-muted-foreground">
         Please log in to view your profile.
@@ -69,51 +106,47 @@ export default function ProfilePage() {
   }
 
   /* ========================
-     UPDATE DISPLAY NAME
+     SAVE PROFILE (SAFE)
   ======================== */
-
-  const handleUpdateName = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (displayName.trim().length < 2) {
-      toast({
-        variant: "destructive",
-        title: "Invalid name",
-        description: "Display name must be at least 2 characters.",
-      });
-      return;
-    }
-
-    if (displayName === user.displayName) {
-      toast({
-        title: "No changes detected",
-        description: "Your name is already up to date.",
-      });
-      return;
-    }
-
-    setLoadingName(true);
+  const saveProfile = async () => {
+    setSavingProfile(true);
     try {
-      await updateProfile(user, { displayName });
+      // Auth display name
+      if (displayName !== user.displayName) {
+        await updateProfile(user, { displayName });
+      }
+
+      // Firestore optional profile
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          phone,
+          college,
+          course,
+          gradYear,
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
+
       toast({
         title: "Profile updated",
-        description: "Your display name has been saved.",
+        description: "Your profile details were saved.",
       });
-    } catch (error: any) {
+    } catch (err: any) {
       toast({
         variant: "destructive",
         title: "Update failed",
-        description: error.message || "Unable to update name.",
+        description: err.message || "Unable to save profile.",
       });
     } finally {
-      setLoadingName(false);
+      setSavingProfile(false);
     }
   };
 
   /* ========================
-     UPDATE PASSWORD
+     UPDATE PASSWORD (SAFE)
   ======================== */
-
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -121,7 +154,7 @@ export default function ProfilePage() {
       toast({
         variant: "destructive",
         title: "Missing fields",
-        description: "Please enter both current and new password.",
+        description: "Enter current and new password.",
       });
       return;
     }
@@ -130,53 +163,36 @@ export default function ProfilePage() {
       toast({
         variant: "destructive",
         title: "Weak password",
-        description: "Password must be at least 6 characters.",
+        description: "Minimum 6 characters required.",
       });
       return;
     }
 
     setLoadingPassword(true);
-
     try {
-      // 🔐 Force refresh user session
       await user.reload();
-
-      if (!user.email) {
-        throw new Error("Email authentication required.");
-      }
-
       const credential = EmailAuthProvider.credential(
-        user.email,
+        user.email!,
         currentPassword
       );
-
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, newPassword);
 
       toast({
         title: "Password updated",
-        description: "Your password has been changed successfully.",
+        description: "Your password has been changed.",
       });
 
       setCurrentPassword("");
       setNewPassword("");
-    } catch (error: any) {
-      let message = "Password update failed.";
-
-      if (error.code === "auth/wrong-password") {
-        message = "Current password is incorrect.";
-      } else if (error.code === "auth/too-many-requests") {
-        message =
-          "Too many attempts. Please wait a few minutes and try again.";
-      } else if (error.code === "auth/requires-recent-login") {
-        message =
-          "For security reasons, please log out and log in again before changing your password.";
-      }
-
+    } catch (err: any) {
       toast({
         variant: "destructive",
-        title: "Security verification failed",
-        description: message,
+        title: "Security check failed",
+        description:
+          err.code === "auth/wrong-password"
+            ? "Incorrect current password."
+            : "Please log in again and retry.",
       });
     } finally {
       setLoadingPassword(false);
@@ -191,72 +207,68 @@ export default function ProfilePage() {
   /* ========================
      UI
   ======================== */
-
   return (
     <div className="max-w-3xl mx-auto space-y-8">
 
       {/* HEADER */}
       <div className="flex items-center gap-4">
         <Avatar className="h-20 w-20 border-2 border-primary">
-          <AvatarImage
-            src={user.photoURL || undefined}
-            alt={user.displayName || ""}
-          />
+          <AvatarImage src={user.photoURL || undefined} />
           <AvatarFallback className="text-2xl">
             {initials}
           </AvatarFallback>
         </Avatar>
-
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold">
             {user.displayName || "Your Profile"}
           </h1>
-          <p className="text-muted-foreground">
-            {user.email}
-          </p>
+          <p className="text-muted-foreground">{user.email}</p>
         </div>
       </div>
 
-      {/* PROFILE INFO */}
+      {/* BASIC + OPTIONAL PROFILE */}
       <Card>
         <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
+          <CardTitle>Profile Details</CardTitle>
           <CardDescription>
-            Update how your name appears across the platform.
+            Optional information to personalize your learning.
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <form
-            onSubmit={handleUpdateName}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label>Email (read-only)</Label>
-              <Input value={user.email || ""} disabled />
-            </div>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Display Name</Label>
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="displayName">
-                Display Name
-              </Label>
-              <Input
-                id="displayName"
-                value={displayName}
-                onChange={(e) =>
-                  setDisplayName(e.target.value)
-                }
-                placeholder="Your name"
-              />
-            </div>
+          <div>
+            <Label>Phone (optional)</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
 
-            <Button type="submit" disabled={loadingName}>
-              {loadingName && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Save Changes
-            </Button>
-          </form>
+          <div>
+            <Label>College / Institute</Label>
+            <Input value={college} onChange={(e) => setCollege(e.target.value)} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Course</Label>
+              <Input value={course} onChange={(e) => setCourse(e.target.value)} />
+            </div>
+            <div>
+              <Label>Graduation Year</Label>
+              <Input value={gradYear} onChange={(e) => setGradYear(e.target.value)} />
+            </div>
+          </div>
+
+          <Button onClick={saveProfile} disabled={savingProfile}>
+            {savingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Profile
+          </Button>
         </CardContent>
       </Card>
 
@@ -264,53 +276,46 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5" />
-            Security
+            <ShieldCheck className="w-5 h-5" /> Security
           </CardTitle>
-          <CardDescription>
-            Change your password to keep your account secure.
-          </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form
-            onSubmit={handleUpdatePassword}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label>Current Password</Label>
-              <Input
-                type="password"
-                value={currentPassword}
-                onChange={(e) =>
-                  setCurrentPassword(e.target.value)
-                }
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>New Password</Label>
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={(e) =>
-                  setNewPassword(e.target.value)
-                }
-                placeholder="At least 6 characters"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loadingPassword}
-            >
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <Input
+              type="password"
+              placeholder="Current password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+            <Input
+              type="password"
+              placeholder="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <Button type="submit" disabled={loadingPassword}>
               {loadingPassword && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Update Password
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* ACCOUNT META */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info className="w-5 h-5" /> Account Info
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="text-sm space-y-2 text-muted-foreground">
+          <p>Account created: {new Date(user.metadata.creationTime!).toDateString()}</p>
+          <p>Last login: {new Date(user.metadata.lastSignInTime!).toDateString()}</p>
+          <p>Auth provider: {user.providerData[0]?.providerId}</p>
         </CardContent>
       </Card>
     </div>
