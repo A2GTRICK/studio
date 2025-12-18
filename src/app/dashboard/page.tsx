@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -104,10 +103,17 @@ function FeatureCard({ item }: { item: (typeof dashboardFeatures)[number] }) {
 ====================================================== */
 
 function LoginToPersonalizeCard() {
-  const auth = useAuthSession();
+  const authSession = useAuthSession();
 
-  if (!auth || auth.loading) return null;
-  if (auth.user) return null;
+  // Wait until auth is resolved
+  if (!authSession || authSession.loading) {
+    return null;
+  }
+
+  const user = authSession.user;
+
+  // Hide if logged in
+  if (user) return null;
 
   return (
     <Card className="mt-10 border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
