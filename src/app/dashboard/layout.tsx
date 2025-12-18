@@ -1,5 +1,8 @@
 "use client";
 
+import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { AuthSessionProvider } from "@/auth/AuthSessionProvider";
+
 import {
   SidebarProvider,
   Sidebar,
@@ -22,8 +25,6 @@ import {
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
-import { AuthSessionProvider } from "@/auth/AuthSessionProvider";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
