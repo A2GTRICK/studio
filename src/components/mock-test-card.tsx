@@ -1,9 +1,19 @@
 
 'use client';
 
-import type { MockTest } from "@/app/dashboard/mock-test/page";
 import { Button } from "@/components/ui/button";
 import { Star, Timer, BookOpen, Play } from "lucide-react";
+
+export type MockTest = {
+  id: string;
+  title: string;
+  description?: string;
+  subject?: string;
+  duration?: number;
+  isPremium?: boolean;
+  questions?: any[];
+  questionCount?: number; // Added field
+};
 
 export default function MockTestCard({ test }: { test: MockTest }) {
   const questionCount = Array.isArray(test.questions) ? test.questions.length : 0;
