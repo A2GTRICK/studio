@@ -44,8 +44,7 @@ type User = {
 
 function daysBetween(date?: string | null) {
   if (!date) return null;
-  const diff =
-    new Date(date).getTime() - new Date().getTime();
+  const diff = new Date(date).getTime() - Date.now();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
@@ -72,7 +71,12 @@ export default function AdminSingleUserPage() {
     text: string;
   } | null>(null);
 
-  const [input, setInput] = useState("");
+  const [inputs, setInputs] = useState({
+    note: "",
+    test: "",
+    service: "",
+    premium: "",
+  });
 
   useEffect(() => {
     loadUser();
@@ -149,11 +153,7 @@ export default function AdminSingleUserPage() {
         <CardContent className="space-y-3">
           <Input
             type="date"
-            value={
-              user.premiumUntil
-                ? user.premiumUntil.slice(0, 10)
-                : ""
-            }
+            value={user.premiumUntil?.slice(0, 10) || ""}
             onChange={(e) =>
               update({
                 premiumUntil: new Date(e.target.value).toISOString(),
@@ -165,48 +165,30 @@ export default function AdminSingleUserPage() {
           <div className="flex gap-2">
             <Button
               onClick={() =>
-                setConfirm({
-                  text: "+30 Days Premium",
-                  action: async () =>
-                    update({
-                      premiumUntil: new Date(
-                        Date.now() + 30 * 86400000
-                      ).toISOString(),
-                      isLifetime: false,
-                    }),
+                update({
+                  premiumUntil: new Date(Date.now() + 30 * 86400000).toISOString(),
+                  isLifetime: false,
                 })
               }
             >
               +30 Days
             </Button>
-
             <Button
               onClick={() =>
-                setConfirm({
-                  text: "+90 Days Premium",
-                  action: async () =>
-                    update({
-                      premiumUntil: new Date(
-                        Date.now() + 90 * 86400000
-                      ).toISOString(),
-                      isLifetime: false,
-                    }),
+                update({
+                  premiumUntil: new Date(Date.now() + 90 * 86400000).toISOString(),
+                  isLifetime: false,
                 })
               }
             >
               +90 Days
             </Button>
-
             <Button
               variant="secondary"
               onClick={() =>
-                setConfirm({
-                  text: "Set Lifetime Premium",
-                  action: async () =>
-                    update({
-                      isLifetime: true,
-                      premiumUntil: null,
-                    }),
+                update({
+                  isLifetime: true,
+                  premiumUntil: null,
                 })
               }
             >
@@ -216,51 +198,77 @@ export default function AdminSingleUserPage() {
         </CardContent>
       </Card>
 
+      {/* GRANULAR ACCESS */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <AccessBlock
+          title="Notes Access"
+          items={user.grantedNoteIds || []}
+          input={inputs.note}
+          onInput={(v) => setInputs({ ...inputs, note: v })}
+          onAdd={(v) =>
+            update({
+              grantedNoteIds: [...(user.grantedNoteIds || []), v],
+            })
+          }
+          onRemove={(v) =>
+            update({
+              grantedNoteIds: (user.grantedNoteIds || []).filter((x) => x !== v),
+            })
+          }
+        />
+
+        <AccessBlock
+          title="Tests / MCQs Access"
+          items={user.grantedTestIds || []}
+          input={inputs.test}
+          onInput={(v) => setInputs({ ...inputs, test: v })}
+          onAdd={(v) =>
+            update({
+              grantedTestIds: [...(user.grantedTestIds || []), v],
+            })
+          }
+          onRemove={(v) =>
+            update({
+              grantedTestIds: (user.grantedTestIds || []).filter((x) => x !== v),
+            })
+          }
+        />
+
+        <AccessBlock
+          title="Services Access"
+          items={user.grantedServiceSlugs || []}
+          input={inputs.service}
+          onInput={(v) => setInputs({ ...inputs, service: v })}
+          onAdd={(v) =>
+            update({
+              grantedServiceSlugs: [...(user.grantedServiceSlugs || []), v],
+            })
+          }
+          onRemove={(v) =>
+            update({
+              grantedServiceSlugs: (user.grantedServiceSlugs || []).filter((x) => x !== v),
+            })
+          }
+        />
+      </div>
+
       {/* PREMIUM OVERRIDES */}
       <AccessBlock
         title="🔥 Premium Overrides (ANYTHING)"
         items={user.premiumOverrideIds || []}
+        input={inputs.premium}
+        onInput={(v) => setInputs({ ...inputs, premium: v })}
         onAdd={(v) =>
           update({
-            premiumOverrideIds: [
-              ...(user.premiumOverrideIds || []),
-              v,
-            ],
+            premiumOverrideIds: [...(user.premiumOverrideIds || []), v],
           })
         }
         onRemove={(v) =>
           update({
-            premiumOverrideIds: (user.premiumOverrideIds || []).filter(
-              (x) => x !== v
-            ),
+            premiumOverrideIds: (user.premiumOverrideIds || []).filter((x) => x !== v),
           })
         }
-        input={input}
-        setInput={setInput}
       />
-
-      {/* CONFIRM DIALOG */}
-      <Dialog open={!!confirm} onOpenChange={() => setConfirm(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Action</DialogTitle>
-          </DialogHeader>
-          <p>{confirm?.text}</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirm(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                await confirm?.action();
-                setConfirm(null);
-              }}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -270,17 +278,17 @@ export default function AdminSingleUserPage() {
 function AccessBlock({
   title,
   items,
+  input,
+  onInput,
   onAdd,
   onRemove,
-  input,
-  setInput,
 }: {
   title: string;
   items: string[];
+  input: string;
+  onInput: (v: string) => void;
   onAdd: (v: string) => void;
   onRemove: (v: string) => void;
-  input: string;
-  setInput: (v: string) => void;
 }) {
   return (
     <Card>
@@ -292,33 +300,21 @@ function AccessBlock({
           items.map((id) => (
             <div key={id} className="flex justify-between">
               <span>{id}</span>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => onRemove(id)}
-              >
+              <Button size="sm" variant="destructive" onClick={() => onRemove(id)}>
                 Revoke
               </Button>
             </div>
           ))
         ) : (
-          <p className="text-muted-foreground">No overrides granted.</p>
+          <p className="text-muted-foreground">No access granted.</p>
         )}
 
         <Input
-          placeholder="Paste ANY content ID / slug"
+          placeholder="Paste ID / slug"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => onInput(e.target.value)}
         />
-        <Button
-          size="sm"
-          onClick={() => {
-            if (input.trim()) {
-              onAdd(input.trim());
-              setInput("");
-            }
-          }}
-        >
+        <Button size="sm" onClick={() => input && onAdd(input)}>
           Grant
         </Button>
       </CardContent>
