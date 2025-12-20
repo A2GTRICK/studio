@@ -9,7 +9,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { db, auth } from "@/firebase/config";
+import { db } from "@/firebase/config";
 
 import {
   Card,
@@ -30,12 +30,11 @@ import {
 
 type User = {
   id: string;
-  name?: string;
+  displayName?: string;
   email?: string;
-  phone?: string;
   plan?: "free" | "pro";
   status?: "active" | "blocked";
-  exam?: string;
+  isPremium?: boolean;
   createdAt?: any;
 };
 
@@ -46,68 +45,52 @@ export default function AdminUsersPage() {
   const [planFilter, setPlanFilter] = useState("all");
 
   useEffect(() => {
-    // DEBUG LOGS
-    console.log("DEBUG: Firebase Project ID:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      console.log("DEBUG: auth.currentUser?.uid:", user?.uid);
-      console.log("DEBUG: auth.currentUser?.email:", user?.email);
-      console.log("DEBUG: Is auth.currentUser null?", user === null);
-      if (user) {
-        loadUsers();
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
+    loadUsers();
   }, []);
 
   async function loadUsers() {
     setLoading(true);
 
-    try {
-        const q = query(
-          collection(db, "user_profiles"),
-          orderBy("createdAt", "desc")
-        );
+    const q = query(
+      collection(db, "users"),
+      orderBy("createdAt", "desc")
+    );
 
-        const snap = await getDocs(q);
+    const snap = await getDocs(q);
 
-        const rows: User[] = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as any),
-        }));
+    const rows: User[] = snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as any),
+    }));
 
-        setUsers(rows);
-    } catch (error) {
-        console.error("DEBUG: Firestore query failed:", error);
-    } finally {
-        setLoading(false);
-    }
+    setUsers(rows);
+    setLoading(false);
   }
 
   async function toggleBlock(user: User) {
-    await updateDoc(doc(db, "user_profiles", user.id), {
+    await updateDoc(doc(db, "users", user.id), {
       status: user.status === "blocked" ? "active" : "blocked",
     });
     loadUsers();
   }
 
   async function changePlan(user: User, plan: "free" | "pro") {
-    await updateDoc(doc(db, "user_profiles", user.id), {
+    await updateDoc(doc(db, "users", user.id), {
       plan,
+      isPremium: plan === "pro",
     });
     loadUsers();
   }
 
   const filteredUsers = users.filter((u) => {
-    const nameMatch = u.name?.toLowerCase().includes(search.toLowerCase()) ?? false;
-    const emailMatch = u.email?.toLowerCase().includes(search.toLowerCase()) ?? false;
-    
-    const matchSearch = nameMatch || emailMatch;
+    const text =
+      `${u.displayName || ""} ${u.email || ""}`.toLowerCase();
 
+    const matchSearch = text.includes(search.toLowerCase());
     const matchPlan =
-      planFilter === "all" || u.plan === planFilter;
+      planFilter === "all" ||
+      (planFilter === "pro" && u.isPremium) ||
+      (planFilter === "free" && !u.isPremium);
 
     return matchSearch && matchPlan;
   });
@@ -175,18 +158,18 @@ export default function AdminUsersPage() {
                       className="border-b last:border-0"
                     >
                       <td className="py-3">
-                        {user.name || "—"}
+                        {user.displayName || "—"}
                       </td>
                       <td>{user.email || "—"}</td>
                       <td>
                         <Badge
                           variant={
-                            user.plan === "pro"
+                            user.isPremium
                               ? "default"
                               : "secondary"
                           }
                         >
-                          {user.plan || "free"}
+                          {user.isPremium ? "pro" : "free"}
                         </Badge>
                       </td>
                       <td>
@@ -207,9 +190,7 @@ export default function AdminUsersPage() {
                           onClick={() =>
                             changePlan(
                               user,
-                              user.plan === "pro"
-                                ? "free"
-                                : "pro"
+                              user.isPremium ? "free" : "pro"
                             )
                           }
                         >
