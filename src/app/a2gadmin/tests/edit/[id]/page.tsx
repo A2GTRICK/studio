@@ -1,4 +1,3 @@
-// src/app/a2gadmin/tests/edit/[id]/page.tsx
 "use client";
 
 import {
@@ -20,7 +19,14 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Eye, X, Pencil, Save, Trash2, GripVertical } from "lucide-react";
+import {
+  Eye,
+  Pencil,
+  Save,
+  Trash2,
+  GripVertical,
+  Crown,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2 } from "lucide-react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
@@ -35,6 +41,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+
+/* =========================================================
+   SORTABLE ITEM
+========================================================= */
 
 function SortableItem({ id, children }: any) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -100,6 +110,8 @@ function parseBulkQuestions(raw: string) {
 }
 
 
+/* ========================================================= */
+
 export default function EditTestPage() {
   const { id } = useParams<{ id: string }>();
 
@@ -107,6 +119,11 @@ export default function EditTestPage() {
   const [test, setTest] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
 
+  /* ---------------- PREMIUM CONTROL ---------------- */
+  const [isPremium, setIsPremium] = useState(false);
+  const [price, setPrice] = useState<number | "">("");
+
+  /* ---------------- QUESTIONS / UI ---------------- */
   // Add Question
   const [newQuestionText, setNewQuestionText] = useState("");
   const [newOptions, setNewOptions] = useState(["", "", "", ""]);
@@ -127,46 +144,50 @@ export default function EditTestPage() {
   const [importing, setImporting] = useState(false);
 
   // Instructions
-  const [instructions, setInstructions] = useState<string>("");
-  const [showInstructions, setShowInstructions] = useState<boolean>(true);
-
+  const [instructions, setInstructions] = useState("");
+  const [showInstructions, setShowInstructions] = useState(true);
 
   useEffect(() => {
     load();
   }, [id]);
 
   useEffect(() => {
-    // This useEffect will run once the `test` data is loaded
     if (test) {
-      setInstructions(test?.instructions?.content || `GENERAL INSTRUCTIONS
+      setIsPremium(test.isPremium === true);
+      setPrice(test.price ?? "");
+      setInstructions(
+        test?.instructions?.content ||
+          `GENERAL INSTRUCTIONS
 
-• Total questions: Auto-calculated
 • Each question carries equal marks
 • Negative marking may apply
 • No calculator allowed
 • Do not refresh the page during test
-`);
+`
+      );
       setShowInstructions(test?.instructions?.enabled ?? true);
     }
   }, [test]);
 
   async function load() {
     setLoading(true);
-    const testSnap = await getDoc(doc(db, "test_series", id));
-    if (testSnap.exists()) {
-      const testData = testSnap.data();
-      setTest(testData);
+    const snap = await getDoc(doc(db, "test_series", id));
+    if (snap.exists()) {
+      const data = snap.data();
+      setTest(data);
+
       const qSnap = await getDocs(
         query(
           collection(db, "test_series", id, "questions"),
           orderBy("order", "asc")
         )
       );
+
       setQuestions(
         qSnap.docs.map((d, index) => ({
           ...d.data(),
           id: d.id,
-          order: d.data().order ?? index, // fallback safety
+          order: d.data().order ?? index,
         }))
       );
     }
@@ -193,7 +214,6 @@ export default function EditTestPage() {
       }
     );
 
-    // 🔢 increment questionCount
     await updateDoc(testRef, {
       questionCount: (test.questionCount || 0) + 1,
       updatedAt: serverTimestamp(),
@@ -299,67 +319,122 @@ export default function EditTestPage() {
     await batch.commit();
   }
 
-  async function saveInstructions() {
+  /* =============================
+     SAVE PREMIUM SETTINGS
+  ============================= */
+
+  async function savePremiumSettings() {
     await updateDoc(doc(db, "test_series", id), {
-      instructions: {
-        content: instructions,
-        enabled: showInstructions,
-        updatedAt: serverTimestamp(),
-      },
+      isPremium,
+      price: isPremium && price ? Number(price) : null,
       updatedAt: serverTimestamp(),
     });
+    alert("Premium settings saved.");
   }
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!test) return <div className="p-6">Test not found</div>;
 
   return (
-    <div className="relative flex gap-6">
-      {/* MAIN CONTENT */}
-      <div className="flex-1 space-y-4">
+    <div className="space-y-6">
+
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{test.title}</h1>
 
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>CBT Instructions (Shown to Students)</CardTitle>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="show-instructions">Enable</Label>
-              <Switch
-                id="show-instructions"
-                checked={showInstructions}
-                onCheckedChange={setShowInstructions}
+        {isPremium && (
+          <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
+            <Crown className="w-4 h-4" /> Premium Test
+          </Badge>
+        )}
+      </div>
+
+      {/* =============================
+          PREMIUM SETTINGS (NEW)
+      ============================= */}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Premium Access Settings</CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2">
+              <Crown className="w-4 h-4 text-yellow-600" />
+              Mark this test as Premium
+            </Label>
+            <Switch checked={isPremium} onCheckedChange={setIsPremium} />
+          </div>
+
+          {isPremium && (
+            <div>
+              <Label>Price (optional, for future use)</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 99"
+                value={price}
+                onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : "")}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Pricing is optional. Billing logic remains unchanged.
+              </p>
             </div>
-          </CardHeader>
+          )}
 
-          <CardContent>
-            <Tabs defaultValue="edit" className="w-full">
-              <TabsList>
-                <TabsTrigger value="edit">Edit</TabsTrigger>
-                <TabsTrigger value="preview">Student Preview</TabsTrigger>
-              </TabsList>
+          <div className="flex justify-end">
+            <Button onClick={savePremiumSettings}>
+              Save Premium Settings
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-              <TabsContent value="edit" className="mt-4">
-                <Textarea
-                  rows={10}
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="Enter CBT instructions exactly as students will see"
-                />
-                <div className="mt-3 flex justify-end">
-                  <Button onClick={saveInstructions}>Save Instructions</Button>
-                </div>
-              </TabsContent>
+      {/* =============================
+          INSTRUCTIONS
+      ============================= */}
 
-              <TabsContent value="preview" className="mt-4">
-                <div className="border rounded-md p-4 bg-muted text-sm whitespace-pre-line">
-                  {instructions}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>CBT Instructions (Shown to Students)</CardTitle>
+           <div className="flex items-center gap-2">
+            <Label>Enable</Label>
+            <Switch checked={showInstructions} onCheckedChange={setShowInstructions} />
+          </div>
+        </CardHeader>
 
+        <CardContent>
+          <Textarea
+            rows={8}
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+          />
+          <div className="mt-3 flex justify-end">
+            <Button
+              onClick={async () => {
+                await updateDoc(doc(db, "test_series", id), {
+                  instructions: {
+                    content: instructions,
+                    enabled: showInstructions,
+                  },
+                  updatedAt: serverTimestamp(),
+                });
+                 alert("Instructions saved.");
+              }}
+            >
+              Save Instructions
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* =============================
+          QUESTIONS, BULK IMPORT, ETC.
+      ============================= */}
+      <div className="relative flex gap-6">
+      {/* MAIN CONTENT */}
+      <div className="flex-1 space-y-4">
         {/* Question List */}
         <DndContext
           collisionDetection={closestCenter}
@@ -634,6 +709,7 @@ export default function EditTestPage() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
