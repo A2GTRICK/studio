@@ -14,10 +14,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
-/* ======================
-   TYPES
-====================== */
+/* ================= TYPES ================= */
 
 type User = {
   id: string;
@@ -26,17 +31,34 @@ type User = {
   plan?: "free" | "pro";
   status?: "active" | "blocked";
 
+  premiumUntil?: string | null;
+  isLifetime?: boolean;
+
   grantedNoteIds?: string[];
   grantedTestIds?: string[];
   grantedServiceSlugs?: string[];
-  premiumContentOverrides?: string[];
-
-  premiumUntil?: string;
+  premiumOverrideIds?: string[];
 };
 
-/* ======================
-   PAGE
-====================== */
+/* ================= HELPERS ================= */
+
+function daysBetween(date?: string | null) {
+  if (!date) return null;
+  const diff =
+    new Date(date).getTime() - new Date().getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function premiumBadge(user: User) {
+  if (user.isLifetime) return <Badge>Lifetime</Badge>;
+  const days = daysBetween(user.premiumUntil);
+  if (days === null) return <Badge variant="outline">Free</Badge>;
+  if (days < 0) return <Badge variant="destructive">Expired</Badge>;
+  if (days <= 7) return <Badge variant="secondary">Expiring</Badge>;
+  return <Badge>Active</Badge>;
+}
+
+/* ================= PAGE ================= */
 
 export default function AdminSingleUserPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -45,278 +67,258 @@ export default function AdminSingleUserPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [noteInput, setNoteInput] = useState("");
-  const [testInput, setTestInput] = useState("");
-  const [serviceInput, setServiceInput] = useState("");
-  const [premiumOverrideInput, setPremiumOverrideInput] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
+  const [confirm, setConfirm] = useState<{
+    action: () => Promise<void>;
+    text: string;
+  } | null>(null);
+
+  const [input, setInput] = useState("");
 
   useEffect(() => {
     loadUser();
   }, [userId]);
 
   async function loadUser() {
+    setLoading(true);
     const snap = await getDoc(doc(db, "users", userId));
-    if (snap.exists()) {
-      const data = snap.data() as any;
-      setUser({ id: snap.id, ...data });
-      if (data.premiumUntil) {
-        setExpiryDate(data.premiumUntil.slice(0, 10));
-      }
-    }
+    setUser(
+      snap.exists()
+        ? { id: snap.id, ...(snap.data() as any) }
+        : null
+    );
     setLoading(false);
   }
 
-  /* ===== PREMIUM STATUS ===== */
-
-  function remainingDays() {
-    if (!user?.premiumUntil) return null;
-    return Math.ceil(
-      (new Date(user.premiumUntil).getTime() - Date.now()) /
-        (1000 * 60 * 60 * 24)
-    );
-  }
-
-  const daysLeft = remainingDays();
-  const isExpired = daysLeft !== null && daysLeft <= 0;
-  const isExpiringSoon = daysLeft !== null && daysLeft > 0 && daysLeft <= 7;
-
-  /* ===== UPDATE HELPERS ===== */
-
-  async function updateArray(
-    field: keyof User,
-    value: string,
-    mode: "add" | "remove"
-  ) {
-    const current = ((user as any)[field] as string[]) || [];
-    const updated =
-      mode === "add"
-        ? [...new Set([...current, value])]
-        : current.filter((v) => v !== value);
-
-    await updateDoc(doc(db, "users", user!.id), {
-      [field]: updated,
-    });
-
+  async function update(data: Partial<User>) {
+    if (!user) return;
+    await updateDoc(doc(db, "users", user.id), data);
     loadUser();
   }
 
-  async function addPremiumDays(days: number) {
-    const base = user?.premiumUntil
-      ? new Date(user.premiumUntil)
-      : new Date();
-    base.setDate(base.getDate() + days);
-
-    await updateDoc(doc(db, "users", user!.id), {
-      premiumUntil: base.toISOString(),
-      plan: "pro",
-    });
-
-    loadUser();
-  }
-
-  async function setExpiryFromCalendar() {
-    if (!expiryDate) return;
-    await updateDoc(doc(db, "users", user!.id), {
-      premiumUntil: new Date(expiryDate).toISOString(),
-      plan: "pro",
-    });
-    loadUser();
-  }
-
-  if (loading) return <p>Loading user…</p>;
+  if (loading) return <p>Loading...</p>;
   if (!user) return <p>User not found</p>;
 
+  const remainingDays = daysBetween(user.premiumUntil);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">ADMIN · USER CONTROL</h1>
-        <Button variant="outline" onClick={() => router.push("/a2gadmin/users")}>
+      <div className="flex justify-between">
+        <h1 className="text-2xl font-bold">Admin · User Control</h1>
+        <Button variant="outline" onClick={() => router.back()}>
           ← Back
         </Button>
       </div>
 
-      {/* SUMMARY */}
+      {/* ACCOUNT SUMMARY */}
       <Card>
         <CardHeader>
           <CardTitle>Account Summary</CardTitle>
         </CardHeader>
-        <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
+        <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-muted-foreground">Name</p>
-            <p>{user.displayName}</p>
+            <p>{user.displayName || "—"}</p>
           </div>
-
           <div>
             <p className="text-muted-foreground">Email</p>
-            <p>{user.email}</p>
+            <p>{user.email || "—"}</p>
           </div>
-
           <div>
             <p className="text-muted-foreground">Plan</p>
-            <div className="flex gap-2">
-              <Badge>{user.plan}</Badge>
-              {isExpired && <Badge variant="destructive">Expired</Badge>}
-              {isExpiringSoon && (
-                <Badge className="bg-yellow-500 text-black">
-                  Expiring Soon
-                </Badge>
-              )}
-            </div>
+            <Badge>{user.plan || "free"}</Badge>
           </div>
-
           <div>
-            <p className="text-muted-foreground">Premium Remaining</p>
-            {daysLeft === null ? (
-              <p>—</p>
-            ) : isExpired ? (
-              <Badge variant="destructive">Expired</Badge>
-            ) : (
-              <p>{daysLeft} days</p>
-            )}
+            <p className="text-muted-foreground">Premium Status</p>
+            {premiumBadge(user)}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* ACCESS BOXES */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <AccessBox
-          title="Notes Access"
-          items={user.grantedNoteIds || []}
-          input={noteInput}
-          setInput={setNoteInput}
-          onAdd={(v) => updateArray("grantedNoteIds", v, "add")}
-          onRemove={(v) => updateArray("grantedNoteIds", v, "remove")}
-        />
-
-        <AccessBox
-          title="Tests / MCQs Access"
-          items={user.grantedTestIds || []}
-          input={testInput}
-          setInput={setTestInput}
-          onAdd={(v) => updateArray("grantedTestIds", v, "add")}
-          onRemove={(v) => updateArray("grantedTestIds", v, "remove")}
-        />
-
-        <AccessBox
-          title="Services Access"
-          items={user.grantedServiceSlugs || []}
-          input={serviceInput}
-          setInput={setServiceInput}
-          onAdd={(v) => updateArray("grantedServiceSlugs", v, "add")}
-          onRemove={(v) => updateArray("grantedServiceSlugs", v, "remove")}
-        />
-      </div>
-
-      {/* PREMIUM OVERRIDE */}
-      <Card className="border-2 border-purple-500">
-        <CardHeader>
-          <CardTitle>🔥 Premium Content Overrides</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {(user.premiumContentOverrides || []).map((id) => (
-            <div key={id} className="flex justify-between">
-              <span>{id}</span>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() =>
-                  updateArray("premiumContentOverrides", id, "remove")
-                }
-              >
-                Revoke
-              </Button>
+          {remainingDays !== null && !user.isLifetime && (
+            <div>
+              <p className="text-muted-foreground">Premium Remaining</p>
+              <p>{remainingDays} days</p>
             </div>
-          ))}
-
-          <div className="flex gap-2">
-            <Input
-              placeholder="Paste premium content ID"
-              value={premiumOverrideInput}
-              onChange={(e) => setPremiumOverrideInput(e.target.value)}
-            />
-            <Button
-              onClick={() =>
-                premiumOverrideInput &&
-                updateArray(
-                  "premiumContentOverrides",
-                  premiumOverrideInput,
-                  "add"
-                )
-              }
-            >
-              Grant
-            </Button>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* PREMIUM TIME */}
+      {/* PREMIUM TIME CONTROL */}
       <Card>
         <CardHeader>
           <CardTitle>Premium Time Control</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-3">
-            <Button onClick={() => addPremiumDays(30)}>+30 Days</Button>
-            <Button onClick={() => addPremiumDays(90)}>+90 Days</Button>
+        <CardContent className="space-y-3">
+          <Input
+            type="date"
+            value={
+              user.premiumUntil
+                ? user.premiumUntil.slice(0, 10)
+                : ""
+            }
+            onChange={(e) =>
+              update({
+                premiumUntil: new Date(e.target.value).toISOString(),
+                isLifetime: false,
+              })
+            }
+          />
+
+          <div className="flex gap-2">
             <Button
-              variant="destructive"
-              onClick={() => addPremiumDays(365 * 50)}
+              onClick={() =>
+                setConfirm({
+                  text: "+30 Days Premium",
+                  action: async () =>
+                    update({
+                      premiumUntil: new Date(
+                        Date.now() + 30 * 86400000
+                      ).toISOString(),
+                      isLifetime: false,
+                    }),
+                })
+              }
+            >
+              +30 Days
+            </Button>
+
+            <Button
+              onClick={() =>
+                setConfirm({
+                  text: "+90 Days Premium",
+                  action: async () =>
+                    update({
+                      premiumUntil: new Date(
+                        Date.now() + 90 * 86400000
+                      ).toISOString(),
+                      isLifetime: false,
+                    }),
+                })
+              }
+            >
+              +90 Days
+            </Button>
+
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setConfirm({
+                  text: "Set Lifetime Premium",
+                  action: async () =>
+                    update({
+                      isLifetime: true,
+                      premiumUntil: null,
+                    }),
+                })
+              }
             >
               Lifetime
             </Button>
           </div>
-
-          <div className="flex gap-3">
-            <Input
-              type="date"
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-            />
-            <Button onClick={setExpiryFromCalendar}>
-              Set Expiry Date
-            </Button>
-          </div>
         </CardContent>
       </Card>
+
+      {/* PREMIUM OVERRIDES */}
+      <AccessBlock
+        title="🔥 Premium Overrides (ANYTHING)"
+        items={user.premiumOverrideIds || []}
+        onAdd={(v) =>
+          update({
+            premiumOverrideIds: [
+              ...(user.premiumOverrideIds || []),
+              v,
+            ],
+          })
+        }
+        onRemove={(v) =>
+          update({
+            premiumOverrideIds: (user.premiumOverrideIds || []).filter(
+              (x) => x !== v
+            ),
+          })
+        }
+        input={input}
+        setInput={setInput}
+      />
+
+      {/* CONFIRM DIALOG */}
+      <Dialog open={!!confirm} onOpenChange={() => setConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Action</DialogTitle>
+          </DialogHeader>
+          <p>{confirm?.text}</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                await confirm?.action();
+                setConfirm(null);
+              }}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-/* ======================
-   ACCESS BOX
-====================== */
+/* ================= REUSABLE BLOCK ================= */
 
-function AccessBox({
+function AccessBlock({
   title,
   items,
-  input,
-  setInput,
   onAdd,
   onRemove,
-}: any) {
+  input,
+  setInput,
+}: {
+  title: string;
+  items: string[];
+  onAdd: (v: string) => void;
+  onRemove: (v: string) => void;
+  input: string;
+  setInput: (v: string) => void;
+}) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        {items.map((id: string) => (
-          <div key={id} className="flex justify-between">
-            <span>{id}</span>
-            <Button size="sm" variant="destructive" onClick={() => onRemove(id)}>
-              Revoke
-            </Button>
-          </div>
-        ))}
+      <CardContent className="space-y-3">
+        {items.length ? (
+          items.map((id) => (
+            <div key={id} className="flex justify-between">
+              <span>{id}</span>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => onRemove(id)}
+              >
+                Revoke
+              </Button>
+            </div>
+          ))
+        ) : (
+          <p className="text-muted-foreground">No overrides granted.</p>
+        )}
+
         <Input
-          placeholder="Enter ID"
+          placeholder="Paste ANY content ID / slug"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <Button size="sm" onClick={() => input && onAdd(input)}>
+        <Button
+          size="sm"
+          onClick={() => {
+            if (input.trim()) {
+              onAdd(input.trim());
+              setInput("");
+            }
+          }}
+        >
           Grant
         </Button>
       </CardContent>
