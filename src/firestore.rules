@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -22,6 +23,10 @@ service cloud.firestore {
     /* =============================
        PUBLIC READ DATA
     ============================= */
+
+    match /test_series/{id} {
+      allow read, list: if true;
+    }
 
     match /notes/{id} {
       allow read, list: if true;
