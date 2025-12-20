@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Loader2, Clock, Lock } from "lucide-react";
+import { Loader2, Clock, Crown } from "lucide-react";
 import clsx from "clsx";
+import { Badge } from "@/components/ui/badge";
 
 interface MockTest {
   id: string;
@@ -16,6 +23,7 @@ interface MockTest {
   exam?: string;
   duration?: number;
   isPremium?: boolean;
+  price?: number | null;
   isPublished?: boolean;
 }
 
@@ -36,7 +44,6 @@ export default function MockTestListPage() {
       );
 
       const snap = await getDocs(q);
-
       setTests(
         snap.docs.map((d) => ({
           id: d.id,
@@ -56,7 +63,8 @@ export default function MockTestListPage() {
         t.title?.toLowerCase().includes(search.toLowerCase()) ||
         t.subject?.toLowerCase().includes(search.toLowerCase());
 
-      const matchesFilter = filter === "ALL" || t.exam === filter;
+      const matchesFilter =
+        filter === "ALL" || t.exam === filter;
 
       return matchesSearch && matchesFilter;
     });
@@ -88,16 +96,16 @@ export default function MockTestListPage() {
       />
 
       {/* FILTERS */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2">
         {["ALL", "RRB", "AIIMS", "GPAT"].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f as any)}
             className={clsx(
-              "px-4 py-1 rounded-full border text-sm transition",
+              "px-4 py-1 rounded-full border text-sm",
               filter === f
                 ? "bg-primary text-white"
-                : "bg-white text-muted-foreground hover:bg-muted"
+                : "bg-white text-muted-foreground"
             )}
           >
             {f}
@@ -107,48 +115,62 @@ export default function MockTestListPage() {
 
       {/* GRID */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((test) => (
-          <div
-            key={test.id}
-            className="border rounded-xl bg-white p-5 shadow-sm flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold leading-snug">
-                  {test.title}
-                </h3>
+        {filtered.map((test) => {
+          const isPremium = test.isPremium === true;
+          const price =
+            typeof test.price === "number" ? test.price : null;
 
-                {test.isPremium && (
-                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
-                    <Lock className="w-3 h-3" />
-                    Premium
-                  </span>
+          return (
+            <div
+              key={test.id}
+              className="border rounded-xl bg-white p-5 shadow-sm flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold leading-snug">
+                    {test.title}
+                  </h3>
+
+                  {isPremium && (
+                    <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
+                      <Crown className="w-3 h-3" />
+                      Premium
+                    </Badge>
+                  )}
+                </div>
+
+                {test.subject && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {test.subject}
+                  </p>
+                )}
+
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
+                  <Clock className="w-4 h-4" />
+                  {test.duration || 0} min
+                </div>
+
+                {isPremium && price !== null && (
+                  <div className="mt-2 text-sm font-medium text-primary">
+                    ₹{price}
+                  </div>
                 )}
               </div>
 
-              {test.subject && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {test.subject}
-                </p>
-              )}
-
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
-                <Clock className="w-4 h-4" />
-                {test.duration || 0} min
-              </div>
+              {/* ALWAYS GO TO INSTRUCTION PAGE */}
+              <Link
+                href={`/dashboard/mock-test/${test.id}/instruction`}
+                className="mt-4"
+              >
+                <Button className="w-full">
+                  {isPremium && price !== null
+                    ? `View & Buy`
+                    : "Start Mock Test"}
+                </Button>
+              </Link>
             </div>
-
-            {/* ✅ ALWAYS GO THROUGH INSTRUCTION (PREMIUM GATE) */}
-            <Link
-              href={`/dashboard/mock-test/${test.id}/instruction`}
-              className="mt-4"
-            >
-              <Button className="w-full">
-                Start Mock Test
-              </Button>
-            </Link>
-          </div>
-        ))}
+          );
+        })}
 
         {filtered.length === 0 && (
           <div className="col-span-full text-center text-muted-foreground p-10">
