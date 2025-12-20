@@ -2,13 +2,22 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Monitor, BookOpen, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Clock,
+  Monitor,
+  BookOpen,
+  Loader2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuthSession } from "@/auth/AuthSessionProvider";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/config";
 
-// --- Helper functions for access control ---
+/* -------------------------------------------------
+   Helper functions for access control
+-------------------------------------------------- */
+
 function daysBetween(date?: string | null) {
   if (!date) return null;
   const diff = new Date(date).getTime() - Date.now();
@@ -22,10 +31,15 @@ function hasActivePremium(userData: any) {
   return days !== null && days >= 0;
 }
 
+/* -------------------------------------------------
+   Page
+-------------------------------------------------- */
+
 export default function MockTestInstructionPage() {
   const params = useParams();
   const router = useRouter();
   const testId = params.id as string;
+
   const authSession = useAuthSession();
   const user = authSession?.user;
 
@@ -46,6 +60,7 @@ export default function MockTestInstructionPage() {
           setMockTest(null);
           return;
         }
+
         const testData = testSnap.data();
         setMockTest(testData);
 
@@ -70,7 +85,6 @@ export default function MockTestInstructionPage() {
     try {
       document.documentElement.requestFullscreen?.();
     } catch {}
-    // We use window.location.href to ensure a full page reload into the test environment
     window.location.href = `/dashboard/mock-test/${testId}`;
   }
 
@@ -86,12 +100,24 @@ export default function MockTestInstructionPage() {
     return <div className="p-10 text-center">Test not found.</div>;
   }
 
+  /* -------------------------------------------------
+     PREMIUM + ACCESS LOGIC
+  -------------------------------------------------- */
+
   const isLocked =
     mockTest.isPremium === true &&
     !hasActivePremium(userData) &&
-    !(Array.isArray(userData?.grantedTestIds) && userData.grantedTestIds.includes(testId)) &&
-    !(Array.isArray(userData?.premiumOverrideIds) && userData.premiumOverrideIds.includes(testId));
+    !(Array.isArray(userData?.grantedTestIds) &&
+      userData.grantedTestIds.includes(testId)) &&
+    !(Array.isArray(userData?.premiumOverrideIds) &&
+      userData.premiumOverrideIds.includes(testId));
 
+  const premiumPrice =
+    typeof mockTest.price === "number" ? mockTest.price : null;
+
+  /* -------------------------------------------------
+     LOCKED VIEW
+  -------------------------------------------------- */
 
   if (isLocked) {
     return (
@@ -105,15 +131,27 @@ export default function MockTestInstructionPage() {
         </p>
 
         <p className="text-sm text-muted-foreground">
-          Upgrade to premium to unlock this test and many other features designed for comprehensive exam preparation.
+          Unlock this test to continue your exam preparation.
         </p>
 
-        <Button onClick={() => router.push("/dashboard/billing")}>
-          Upgrade to Premium
+        <Button
+          onClick={() => {
+            if (premiumPrice) {
+              router.push(`/dashboard/billing?test=${testId}`);
+            } else {
+              router.push("/dashboard/billing");
+            }
+          }}
+        >
+          {premiumPrice ? `Buy for ₹${premiumPrice}` : "Upgrade to Premium"}
         </Button>
       </div>
     );
   }
+
+  /* -------------------------------------------------
+     INSTRUCTIONS VIEW
+  -------------------------------------------------- */
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
@@ -121,18 +159,21 @@ export default function MockTestInstructionPage() {
         Mock Test Instructions
       </h1>
 
-      {/* INSTRUCTIONS */}
       <div className="bg-white border rounded-xl p-6 space-y-4">
         <Instruction
           icon={<Clock />}
           title="Test Duration"
-          text={`The test is time-bound for ${mockTest.duration || 'N/A'} minutes. The timer will start immediately once you begin.`}
+          text={`The test is time-bound for ${
+            mockTest.duration || "N/A"
+          } minutes. The timer will start immediately once you begin.`}
         />
 
         <Instruction
           icon={<BookOpen />}
           title="Question Pattern"
-          text={`There are ${mockTest.questionCount || 'multiple'} questions. Each question carries equal marks. Negative marking may apply.`}
+          text={`There are ${
+            mockTest.questionCount || "multiple"
+          } questions. Each question carries equal marks. Negative marking may apply.`}
         />
 
         <Instruction
@@ -148,7 +189,6 @@ export default function MockTestInstructionPage() {
         />
       </div>
 
-      {/* WARNINGS */}
       <div className="bg-amber-50 border border-amber-300 rounded-xl p-6 space-y-3">
         <h2 className="font-semibold text-amber-800 text-lg">
           Important Warnings
@@ -162,7 +202,6 @@ export default function MockTestInstructionPage() {
         </ul>
       </div>
 
-      {/* ACTION */}
       <div className="flex justify-center">
         <Button size="lg" className="px-10" onClick={startTest}>
           Start Mock Test
@@ -171,6 +210,10 @@ export default function MockTestInstructionPage() {
     </div>
   );
 }
+
+/* -------------------------------------------------
+   Instruction Component
+-------------------------------------------------- */
 
 function Instruction({
   icon,
