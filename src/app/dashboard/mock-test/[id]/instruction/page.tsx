@@ -1,24 +1,23 @@
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase/config";
+import { useAuthSession } from "@/auth/AuthSessionProvider";
 import { Button } from "@/components/ui/button";
 import {
-  AlertTriangle,
-  Clock,
-  Monitor,
-  BookOpen,
   Loader2,
+  Clock,
+  BookOpen,
+  Monitor,
+  AlertTriangle,
   Crown,
   ShieldCheck,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useAuthSession } from "@/auth/AuthSessionProvider";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
 
 /* -------------------------------------------------
-   Helper functions (UNCHANGED)
+   HELPERS
 -------------------------------------------------- */
 
 function daysBetween(date?: string | null) {
@@ -35,62 +34,45 @@ function hasActivePremium(userData: any) {
 }
 
 /* -------------------------------------------------
-   Page
+   PAGE
 -------------------------------------------------- */
 
 export default function MockTestInstructionPage() {
-  const params = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const testId = params.id as string;
-
   const authSession = useAuthSession();
   const user = authSession?.user;
 
-  const [mockTest, setMockTest] = useState<any>(null);
+  const [test, setTest] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!testId || authSession.loading) return;
+    if (!id || authSession.loading) return;
 
-    async function loadData() {
-      setLoading(true);
+    async function load() {
       try {
-        const testRef = doc(db, "test_series", testId);
-        const testSnap = await getDoc(testRef);
-
+        const testSnap = await getDoc(doc(db, "test_series", id));
         if (!testSnap.exists()) {
-          setMockTest(null);
+          setTest(null);
           return;
         }
 
-        setMockTest(testSnap.data());
+        setTest(testSnap.data());
 
         if (user?.uid) {
-          const userRef = doc(db, "users", user.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            setUserData(userSnap.data());
-          }
+          const userSnap = await getDoc(doc(db, "users", user.uid));
+          if (userSnap.exists()) setUserData(userSnap.data());
         }
-      } catch (err) {
-        console.error(err);
       } finally {
         setLoading(false);
       }
     }
 
-    loadData();
-  }, [testId, user, authSession.loading]);
+    load();
+  }, [id, user, authSession.loading]);
 
-  function startTest() {
-    try {
-      document.documentElement.requestFullscreen?.();
-    } catch {}
-    window.location.href = `/dashboard/mock-test/${testId}`;
-  }
-
-  if (loading) {
+  if (loading || authSession.loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -98,141 +80,123 @@ export default function MockTestInstructionPage() {
     );
   }
 
-  if (!mockTest) {
-    return <div className="p-10 text-center">Test not found.</div>;
+  if (!test) {
+    return <div className="p-10 text-center">Mock test not found.</div>;
   }
 
   /* -------------------------------------------------
-     ACCESS LOGIC (UNCHANGED)
+     ACCESS DECISION (FINAL)
   -------------------------------------------------- */
 
-  const isLocked =
-    mockTest.isPremium === true &&
-    !hasActivePremium(userData) &&
-    !(Array.isArray(userData?.grantedTestIds) &&
-      userData.grantedTestIds.includes(testId)) &&
-    !(Array.isArray(userData?.premiumOverrideIds) &&
-      userData.premiumOverrideIds.includes(testId));
+  const hasOverride =
+    Array.isArray(userData?.grantedTestIds) &&
+    userData.grantedTestIds.includes(id);
 
-  const premiumPrice =
-    typeof mockTest.price === "number" ? mockTest.price : null;
+  const isLocked =
+    test.isPremium === true &&
+    !hasActivePremium(userData) &&
+    !hasOverride;
 
   /* -------------------------------------------------
-     LOCKED (TRUST-FIRST PREMIUM VIEW)
+     PREMIUM LOCKED VIEW (FINAL UX)
   -------------------------------------------------- */
 
   if (isLocked) {
     return (
-      <div className="max-w-xl mx-auto mt-12 p-8 rounded-2xl border bg-white shadow-sm space-y-6 text-center">
-
-        <div className="flex justify-center">
-          <div className="h-14 w-14 rounded-full bg-yellow-100 flex items-center justify-center">
-            <Crown className="text-yellow-600" />
+      <div className="max-w-xl mx-auto mt-14 px-6">
+        <div className="border rounded-2xl p-8 bg-white shadow-sm text-center space-y-6">
+          <div className="mx-auto w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center">
+            <Crown className="text-purple-700 w-7 h-7" />
           </div>
+
+          <h1 className="text-2xl font-bold">
+            Structured Premium Mock Test
+          </h1>
+
+          <p className="text-muted-foreground text-sm">
+            This mock test is part of our carefully designed premium practice
+            set, aligned with real exam patterns and difficulty levels.
+          </p>
+
+          <div className="bg-muted rounded-xl p-4 text-sm text-left space-y-2">
+            <p>✔ Exam-level question balance</p>
+            <p>✔ Timed CBT experience</p>
+            <p>✔ Accurate self-assessment</p>
+            <p>✔ No ads, no distractions</p>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <ShieldCheck className="w-4 h-4" />
+            Secure access · Fair pricing · Instant unlock
+          </div>
+
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => router.push("/dashboard/billing")}
+          >
+            Continue with Pro Access
+          </Button>
+
+          <button
+            onClick={() => router.push("/dashboard/mock-test")}
+            className="text-xs text-muted-foreground underline"
+          >
+            Explore free mock tests
+          </button>
         </div>
-
-        <h1 className="text-2xl font-bold">
-          Premium Mock Test
-        </h1>
-
-        <p className="text-muted-foreground text-sm">
-          This mock test is part of our premium practice set, designed to
-          closely match real exam difficulty and pattern.
-        </p>
-
-        <div className="text-left bg-muted/40 rounded-xl p-4 text-sm space-y-2">
-          <p className="font-medium">What you get:</p>
-          <ul className="list-disc list-inside text-muted-foreground space-y-1">
-            <li>Exam-level questions with proper difficulty balance</li>
-            <li>Timed CBT experience</li>
-            <li>Accurate self-assessment</li>
-            <li>No distractions, no ads</li>
-          </ul>
-        </div>
-
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <ShieldCheck className="w-4 h-4" />
-          One-time unlock • Secure payment • Instant access
-        </div>
-
-        <Button
-          size="lg"
-          className="w-full"
-          onClick={() =>
-            router.push(
-              premiumPrice
-                ? `/dashboard/billing?test=${testId}`
-                : "/dashboard/billing"
-            )
-          }
-        >
-          {premiumPrice
-            ? `Unlock Test • ₹${premiumPrice}`
-            : "Upgrade to Premium"}
-        </Button>
-
-        <p className="text-xs text-muted-foreground">
-          You can continue using free tests anytime.
-        </p>
       </div>
     );
   }
 
   /* -------------------------------------------------
-     INSTRUCTIONS (NORMAL FLOW)
+     INSTRUCTIONS (FREE / UNLOCKED)
   -------------------------------------------------- */
 
-  return (
-    <div className="max-w-3xl mx-auto p-6 space-y-8">
+  function startTest() {
+    try {
+      document.documentElement.requestFullscreen?.();
+    } catch {}
+    router.push(`/dashboard/mock-test/${id}`);
+  }
 
+  return (
+    <div className="max-w-3xl mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold text-center">
         Mock Test Instructions
       </h1>
 
-      <div className="bg-white border rounded-2xl p-6 space-y-4">
+      <div className="bg-white border rounded-xl p-6 space-y-4">
         <Instruction
           icon={<Clock />}
-          title="Test Duration"
-          text={`The test is time-bound for ${
-            mockTest.duration || "N/A"
-          } minutes. The timer starts immediately after you begin.`}
+          title="Duration"
+          text={`${test.duration || "N/A"} minutes · Auto submit on timeout`}
         />
 
         <Instruction
           icon={<BookOpen />}
           title="Question Pattern"
-          text={`There are ${
-            mockTest.questionCount || "multiple"
-          } questions. Each question carries equal marks. Negative marking may apply.`}
+          text={`${
+            test.questionCount || "Multiple"
+          } questions · Equal marks · Negative marking may apply`}
         />
 
         <Instruction
           icon={<Monitor />}
           title="Navigation"
-          text="You can move between questions freely before submission."
+          text="You may navigate freely before final submission."
         />
 
         <Instruction
           icon={<AlertTriangle />}
-          title="Auto Submission"
-          text="The test will auto-submit when time ends."
+          title="Important"
+          text="Do not refresh or switch tabs during the test."
         />
       </div>
 
-      <div className="bg-amber-50 border border-amber-300 rounded-xl p-5">
-        <h2 className="font-semibold text-amber-800 mb-2">
-          Important Notes
-        </h2>
-        <ul className="list-disc list-inside text-sm text-amber-800 space-y-1">
-          <li>Do not refresh or close the browser.</li>
-          <li>Switching tabs may affect performance.</li>
-          <li>This test is for practice and self-evaluation.</li>
-        </ul>
-      </div>
-
       <div className="flex justify-center">
-        <Button size="lg" className="px-12" onClick={startTest}>
-          Start Mock Test
+        <Button size="lg" className="px-10" onClick={startTest}>
+          I Agree & Start Test
         </Button>
       </div>
     </div>
@@ -240,7 +204,7 @@ export default function MockTestInstructionPage() {
 }
 
 /* -------------------------------------------------
-   Instruction Component
+   COMPONENT
 -------------------------------------------------- */
 
 function Instruction({
