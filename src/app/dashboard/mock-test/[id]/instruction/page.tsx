@@ -46,6 +46,7 @@ export default function MockTestInstructionPage() {
   const [test, setTest] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     if (!id || authSession.loading) return;
@@ -75,6 +76,43 @@ export default function MockTestInstructionPage() {
     load();
   }, [id, user, authSession.loading]);
 
+  async function handleStartTest() {
+    setStarting(true);
+    try {
+      const idToken = await user?.getIdToken();
+      const res = await fetch("/api/mock-test/start", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ testId: id }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        // For now, we use a simple alert. In a real app, you might use a toast or a modal.
+        alert(data.error || "Access denied. Please check your subscription.");
+        if (data.error === "Payment required") {
+            // Optional: redirect to a dedicated payment page for this test
+            // router.push(`/dashboard/billing?testId=${id}`);
+        }
+        return;
+      }
+
+      // If server says OK, proceed to start the test
+      try {
+        document.documentElement.requestFullscreen?.();
+      } catch {}
+      router.push(`/dashboard/mock-test/${id}?start=1`);
+
+    } catch (err: any) {
+        alert("An error occurred while starting the test: " + err.message);
+    } finally {
+        setStarting(false);
+    }
+  }
+
   if (loading || authSession.loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -87,10 +125,6 @@ export default function MockTestInstructionPage() {
     return <div className="p-10 text-center">Mock test not found.</div>;
   }
 
-  /* -------------------------------------------------
-     ACCESS DECISION (FINAL)
-  -------------------------------------------------- */
-
   const hasOverride =
     Array.isArray(userData?.grantedTestIds) &&
     userData.grantedTestIds.includes(id);
@@ -100,10 +134,6 @@ export default function MockTestInstructionPage() {
     !hasActivePremium(userData) &&
     !hasOverride;
 
-  /* -------------------------------------------------
-     PREMIUM LOCKED VIEW (FINAL UX)
-  -------------------------------------------------- */
-
   if (isLocked) {
     return (
       <div className="max-w-xl mx-auto mt-14 px-6">
@@ -111,28 +141,21 @@ export default function MockTestInstructionPage() {
           <div className="mx-auto w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center">
             <Crown className="text-purple-700 w-7 h-7" />
           </div>
-
-          <h1 className="text-2xl font-bold">
-            Structured Premium Mock Test
-          </h1>
-
+          <h1 className="text-2xl font-bold">Structured Premium Mock Test</h1>
           <p className="text-muted-foreground text-sm">
             This mock test is part of our carefully designed premium practice
             set, aligned with real exam patterns and difficulty levels.
           </p>
-
           <div className="bg-muted rounded-xl p-4 text-sm text-left space-y-2">
             <p>✔ Exam-level question balance</p>
             <p>✔ Timed CBT experience</p>
             <p>✔ Accurate self-assessment</p>
             <p>✔ No ads, no distractions</p>
           </div>
-
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="w-4 h-4" />
             Secure access · Fair pricing · Instant unlock
           </div>
-
           <Button
             size="lg"
             className="w-full"
@@ -140,7 +163,6 @@ export default function MockTestInstructionPage() {
           >
             Continue with Pro Access
           </Button>
-
           <button
             onClick={() => router.push("/dashboard/mock-test")}
             className="text-xs text-muted-foreground underline"
@@ -150,17 +172,6 @@ export default function MockTestInstructionPage() {
         </div>
       </div>
     );
-  }
-
-  /* -------------------------------------------------
-     INSTRUCTIONS (FREE / UNLOCKED)
-  -------------------------------------------------- */
-
-  function startTest() {
-    try {
-      document.documentElement.requestFullscreen?.();
-    } catch {}
-    router.push(`/dashboard/mock-test/${id}`);
   }
 
   return (
@@ -175,7 +186,6 @@ export default function MockTestInstructionPage() {
           title="Duration"
           text={`${test.duration || "N/A"} minutes · Auto submit on timeout`}
         />
-
         <Instruction
           icon={<BookOpen />}
           title="Question Pattern"
@@ -183,13 +193,11 @@ export default function MockTestInstructionPage() {
             test.questionCount || "Multiple"
           } questions · Equal marks · Negative marking may apply`}
         />
-
         <Instruction
           icon={<Monitor />}
           title="Navigation"
           text="You may navigate freely before final submission."
         />
-
         <Instruction
           icon={<AlertTriangle />}
           title="Important"
@@ -198,17 +206,14 @@ export default function MockTestInstructionPage() {
       </div>
 
       <div className="flex justify-center">
-        <Button size="lg" className="px-10" onClick={startTest}>
-          I Agree & Start Test
+        <Button size="lg" className="px-10" onClick={handleStartTest} disabled={starting}>
+          {starting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {starting ? "Verifying..." : "I Agree & Start Test"}
         </Button>
       </div>
     </div>
   );
 }
-
-/* -------------------------------------------------
-   COMPONENT
--------------------------------------------------- */
 
 function Instruction({
   icon,
