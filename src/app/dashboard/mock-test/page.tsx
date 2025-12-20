@@ -1,166 +1,144 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock } from "lucide-react";
+import clsx from "clsx";
 
-type Test = {
+interface MockTest {
   id: string;
   title: string;
   subject?: string;
-  category?: string;
+  exam?: string;
+  duration?: number;
   isPremium?: boolean;
   isPublished?: boolean;
-  duration?: number;
-  questionCount?: number;
-  createdAt?: any;
-};
-
-const CATEGORIES = ["ALL", "RRB", "AIIMS", "GPAT"];
+}
 
 export default function MockTestListPage() {
   const [loading, setLoading] = useState(true);
-  const [tests, setTests] = useState<Test[]>([]);
-
+  const [tests, setTests] = useState<MockTest[]>([]);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("ALL");
-  const [sort, setSort] = useState<"newest" | "duration">("newest");
+  const [filter, setFilter] =
+    useState<"ALL" | "RRB" | "AIIMS" | "GPAT">("ALL");
 
-  /* ---------------- FETCH ---------------- */
   useEffect(() => {
     async function load() {
       setLoading(true);
 
       const q = query(
         collection(db, "test_series"),
-        where("isPublished", "==", true)
+        where("isPublished", "==", true),
+        orderBy("createdAt", "desc")
       );
 
       const snap = await getDocs(q);
-      const data = snap.docs.map(d => ({
-        id: d.id,
-        ...(d.data() as any),
-      }));
+      setTests(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as any),
+        }))
+      );
 
-      setTests(data);
       setLoading(false);
     }
 
     load();
   }, []);
 
-  /* ---------------- FILTER + SORT ---------------- */
-  const visibleTests = useMemo(() => {
-    let list = [...tests];
+  const filtered = useMemo(() => {
+    return tests.filter((t) => {
+      const matchesSearch =
+        t.title?.toLowerCase().includes(search.toLowerCase()) ||
+        t.subject?.toLowerCase().includes(search.toLowerCase());
 
-    // 🔍 Search
-    if (search.trim()) {
-      list = list.filter(t =>
-        t.title?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+      const matchesFilter =
+        filter === "ALL" || t.exam === filter;
 
-    // 🏷 Category
-    if (category !== "ALL") {
-      list = list.filter(t =>
-        t.subject?.toUpperCase().includes(category)
-      );
-    }
+      return matchesSearch && matchesFilter;
+    });
+  }, [tests, search, filter]);
 
-    // ⬇ Sort
-    if (sort === "newest") {
-      list.sort((a, b) =>
-        (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
-      );
-    } else {
-      list.sort((a, b) =>
-        (a.duration || 0) - (b.duration || 0)
-      );
-    }
-
-    return list;
-  }, [tests, search, category, sort]);
-
-  /* ---------------- UI ---------------- */
   if (loading) {
     return (
       <div className="flex justify-center p-10">
-        <Loader2 className="animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold">Mock Tests</h1>
+        <h1 className="text-3xl font-bold">Mock Tests</h1>
         <p className="text-muted-foreground">
           Full-length exam simulations (NTA / RRB style)
         </p>
       </div>
 
-      {/* CONTROLS */}
-      <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+      {/* SEARCH */}
+      <Input
+        placeholder="Search mock tests..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
-        {/* SEARCH */}
-        <Input
-          placeholder="Search mock tests..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="md:max-w-xs"
-        />
-
-        {/* CATEGORY */}
-        <div className="flex gap-2 flex-wrap">
-          {CATEGORIES.map(c => (
-            <Button
-              key={c}
-              size="sm"
-              variant={category === c ? "default" : "outline"}
-              onClick={() => setCategory(c)}
-            >
-              {c}
-            </Button>
-          ))}
-        </div>
-
-        {/* SORT */}
-        <select
-          className="border rounded px-3 py-2 text-sm"
-          value={sort}
-          onChange={e => setSort(e.target.value as any)}
-        >
-          <option value="newest">Newest First</option>
-          <option value="duration">Duration (Short → Long)</option>
-        </select>
+      {/* FILTERS */}
+      <div className="flex gap-2 flex-wrap">
+        {["ALL", "RRB", "AIIMS", "GPAT"].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f as any)}
+            className={clsx(
+              "px-4 py-1 rounded-full border text-sm transition",
+              filter === f
+                ? "bg-primary text-white"
+                : "bg-white text-muted-foreground"
+            )}
+          >
+            {f}
+          </button>
+        ))}
       </div>
 
       {/* GRID */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {visibleTests.map(test => (
+        {filtered.map((test) => (
           <div
             key={test.id}
-            className="border rounded-lg p-5 bg-white flex flex-col justify-between"
+            className="border rounded-xl bg-white p-5 shadow-sm flex flex-col justify-between"
           >
             <div>
-              <h3 className="font-semibold">{test.title}</h3>
-              <p className="text-sm text-muted-foreground">
-                {test.subject}
-              </p>
-              <div className="mt-2 text-sm">
-                ⏱ {test.duration || 60} min
+              <h3 className="font-semibold leading-snug">
+                {test.title}
+              </h3>
+
+              {test.subject && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {test.subject}
+                </p>
+              )}
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
+                <Clock className="w-4 h-4" />
+                {test.duration || 0} min
               </div>
             </div>
 
+            {/* ✅ SINGLE SOURCE OF TRUTH */}
             <Link
-              href={`/dashboard/mock-test/${test.id}`}
+              href={`/dashboard/mock-test/${test.id}/instructions`}
               className="mt-4"
             >
               <Button className="w-full">
@@ -170,9 +148,9 @@ export default function MockTestListPage() {
           </div>
         ))}
 
-        {visibleTests.length === 0 && (
-          <div className="col-span-full text-center text-muted-foreground py-10">
-            No tests found.
+        {filtered.length === 0 && (
+          <div className="col-span-full text-center text-muted-foreground p-10">
+            No mock tests found
           </div>
         )}
       </div>
