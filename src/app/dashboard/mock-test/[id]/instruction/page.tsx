@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -8,6 +9,8 @@ import {
   Monitor,
   BookOpen,
   Loader2,
+  Crown,
+  ShieldCheck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuthSession } from "@/auth/AuthSessionProvider";
@@ -15,7 +18,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/config";
 
 /* -------------------------------------------------
-   Helper functions for access control
+   Helper functions (UNCHANGED)
 -------------------------------------------------- */
 
 function daysBetween(date?: string | null) {
@@ -61,8 +64,7 @@ export default function MockTestInstructionPage() {
           return;
         }
 
-        const testData = testSnap.data();
-        setMockTest(testData);
+        setMockTest(testSnap.data());
 
         if (user?.uid) {
           const userRef = doc(db, "users", user.uid);
@@ -71,8 +73,8 @@ export default function MockTestInstructionPage() {
             setUserData(userSnap.data());
           }
         }
-      } catch (error) {
-        console.error("Failed to load test/user data:", error);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -101,7 +103,7 @@ export default function MockTestInstructionPage() {
   }
 
   /* -------------------------------------------------
-     PREMIUM + ACCESS LOGIC
+     ACCESS LOGIC (UNCHANGED)
   -------------------------------------------------- */
 
   const isLocked =
@@ -116,56 +118,84 @@ export default function MockTestInstructionPage() {
     typeof mockTest.price === "number" ? mockTest.price : null;
 
   /* -------------------------------------------------
-     LOCKED VIEW
+     LOCKED (TRUST-FIRST PREMIUM VIEW)
   -------------------------------------------------- */
 
   if (isLocked) {
     return (
-      <div className="max-w-xl mx-auto mt-10 text-center space-y-4 p-8 border rounded-xl bg-card shadow-sm">
-        <div className="text-5xl">🔒</div>
+      <div className="max-w-xl mx-auto mt-12 p-8 rounded-2xl border bg-white shadow-sm space-y-6 text-center">
 
-        <h1 className="text-xl font-bold">Premium Mock Test</h1>
+        <div className="flex justify-center">
+          <div className="h-14 w-14 rounded-full bg-yellow-100 flex items-center justify-center">
+            <Crown className="text-yellow-600" />
+          </div>
+        </div>
 
-        <p className="text-muted-foreground">
-          This mock test is available for premium users only.
+        <h1 className="text-2xl font-bold">
+          Premium Mock Test
+        </h1>
+
+        <p className="text-muted-foreground text-sm">
+          This mock test is part of our premium practice set, designed to
+          closely match real exam difficulty and pattern.
         </p>
 
-        <p className="text-sm text-muted-foreground">
-          Unlock this test to continue your exam preparation.
-        </p>
+        <div className="text-left bg-muted/40 rounded-xl p-4 text-sm space-y-2">
+          <p className="font-medium">What you get:</p>
+          <ul className="list-disc list-inside text-muted-foreground space-y-1">
+            <li>Exam-level questions with proper difficulty balance</li>
+            <li>Timed CBT experience</li>
+            <li>Accurate self-assessment</li>
+            <li>No distractions, no ads</li>
+          </ul>
+        </div>
+
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <ShieldCheck className="w-4 h-4" />
+          One-time unlock • Secure payment • Instant access
+        </div>
 
         <Button
-          onClick={() => {
-            if (premiumPrice) {
-              router.push(`/dashboard/billing?test=${testId}`);
-            } else {
-              router.push("/dashboard/billing");
-            }
-          }}
+          size="lg"
+          className="w-full"
+          onClick={() =>
+            router.push(
+              premiumPrice
+                ? `/dashboard/billing?test=${testId}`
+                : "/dashboard/billing"
+            )
+          }
         >
-          {premiumPrice ? `Buy for ₹${premiumPrice}` : "Upgrade to Premium"}
+          {premiumPrice
+            ? `Unlock Test • ₹${premiumPrice}`
+            : "Upgrade to Premium"}
         </Button>
+
+        <p className="text-xs text-muted-foreground">
+          You can continue using free tests anytime.
+        </p>
       </div>
     );
   }
 
   /* -------------------------------------------------
-     INSTRUCTIONS VIEW
+     INSTRUCTIONS (NORMAL FLOW)
   -------------------------------------------------- */
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="max-w-3xl mx-auto p-6 space-y-8">
+
       <h1 className="text-3xl font-bold text-center">
         Mock Test Instructions
       </h1>
 
-      <div className="bg-white border rounded-xl p-6 space-y-4">
+      <div className="bg-white border rounded-2xl p-6 space-y-4">
         <Instruction
           icon={<Clock />}
           title="Test Duration"
           text={`The test is time-bound for ${
             mockTest.duration || "N/A"
-          } minutes. The timer will start immediately once you begin.`}
+          } minutes. The timer starts immediately after you begin.`}
         />
 
         <Instruction
@@ -179,31 +209,29 @@ export default function MockTestInstructionPage() {
         <Instruction
           icon={<Monitor />}
           title="Navigation"
-          text="You can move between questions using Next and Previous buttons. Answers can be changed before submission."
+          text="You can move between questions freely before submission."
         />
 
         <Instruction
           icon={<AlertTriangle />}
           title="Auto Submission"
-          text="The test will be automatically submitted when the timer reaches zero."
+          text="The test will auto-submit when time ends."
         />
       </div>
 
-      <div className="bg-amber-50 border border-amber-300 rounded-xl p-6 space-y-3">
-        <h2 className="font-semibold text-amber-800 text-lg">
-          Important Warnings
+      <div className="bg-amber-50 border border-amber-300 rounded-xl p-5">
+        <h2 className="font-semibold text-amber-800 mb-2">
+          Important Notes
         </h2>
-
         <ul className="list-disc list-inside text-sm text-amber-800 space-y-1">
-          <li>Do not refresh the page during the test.</li>
-          <li>Do not close the browser or switch tabs until submission.</li>
-          <li>Test progress is not saved if the page is reloaded.</li>
-          <li>This is a practice mock test for self-assessment.</li>
+          <li>Do not refresh or close the browser.</li>
+          <li>Switching tabs may affect performance.</li>
+          <li>This test is for practice and self-evaluation.</li>
         </ul>
       </div>
 
       <div className="flex justify-center">
-        <Button size="lg" className="px-10" onClick={startTest}>
+        <Button size="lg" className="px-12" onClick={startTest}>
           Start Mock Test
         </Button>
       </div>
@@ -229,7 +257,7 @@ function Instruction({
       <div className="text-primary mt-1">{icon}</div>
       <div>
         <div className="font-semibold">{title}</div>
-        <div className="text-sm text-gray-600">{text}</div>
+        <div className="text-sm text-muted-foreground">{text}</div>
       </div>
     </div>
   );
