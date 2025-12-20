@@ -26,6 +26,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+/* =====================
+   TYPES
+===================== */
+
 type User = {
   id: string;
   displayName?: string;
@@ -35,13 +39,16 @@ type User = {
   grantedNoteIds?: string[];
   grantedTestIds?: string[];
   grantedServiceSlugs?: string[];
+  premiumUntil?: string; // ISO date
 };
 
 type PendingAction =
-  | { type: "note"; value: string; mode: "grant" | "revoke" }
-  | { type: "test"; value: string; mode: "grant" | "revoke" }
-  | { type: "service"; value: string; mode: "grant" | "revoke" }
+  | { type: "note" | "test" | "service"; value: string; mode: "grant" | "revoke" }
   | null;
+
+/* =====================
+   PAGE
+===================== */
 
 export default function AdminSingleUserPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -54,8 +61,7 @@ export default function AdminSingleUserPage() {
   const [testInput, setTestInput] = useState("");
   const [serviceInput, setServiceInput] = useState("");
 
-  const [pendingAction, setPendingAction] =
-    useState<PendingAction>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
   useEffect(() => {
     if (userId) loadUser();
@@ -65,11 +71,7 @@ export default function AdminSingleUserPage() {
     setLoading(true);
     const ref = doc(db, "users", userId);
     const snap = await getDoc(ref);
-    setUser(
-      snap.exists()
-        ? { id: snap.id, ...(snap.data() as any) }
-        : null
-    );
+    setUser(snap.exists() ? { id: snap.id, ...(snap.data() as any) } : null);
     setLoading(false);
   }
 
@@ -77,7 +79,6 @@ export default function AdminSingleUserPage() {
     if (!user || !pendingAction) return;
 
     const ref = doc(db, "users", user.id);
-
     const fieldMap = {
       note: "grantedNoteIds",
       test: "grantedTestIds",
@@ -101,33 +102,40 @@ export default function AdminSingleUserPage() {
     loadUser();
   }
 
-  if (loading) return <p>Loading user...</p>;
+  if (loading) return <p>Loading user…</p>;
   if (!user)
     return (
-      <div>
-        <p>User not found</p>
-        <Button onClick={() => router.push("/a2gadmin/users")}>
-          Back
-        </Button>
+      <div className="space-y-4">
+        <p>User not found.</p>
+        <Button onClick={() => router.push("/a2gadmin/users")}>Back</Button>
       </div>
     );
+
+  const premiumRemaining = user.premiumUntil
+    ? Math.max(
+        0,
+        Math.ceil(
+          (new Date(user.premiumUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        )
+      )
+    : null;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">User Management</h1>
+        <h1 className="text-2xl font-bold">User Details</h1>
         <Button variant="outline" onClick={() => router.push("/a2gadmin/users")}>
           ← Back
         </Button>
       </div>
 
-      {/* Summary */}
+      {/* Account Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Account Summary</CardTitle>
         </CardHeader>
-        <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
+        <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
           <div>
             <p className="text-muted-foreground">Name</p>
             <p>{user.displayName || "—"}</p>
@@ -142,53 +150,44 @@ export default function AdminSingleUserPage() {
           </div>
           <div>
             <p className="text-muted-foreground">Status</p>
-            <Badge>{user.status || "active"}</Badge>
+            <Badge variant={user.status === "blocked" ? "destructive" : "outline"}>
+              {user.status || "active"}
+            </Badge>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Premium Remaining</p>
+            <p>{premiumRemaining !== null ? `${premiumRemaining} days` : "—"}</p>
           </div>
         </CardContent>
       </Card>
 
       {/* Access Controls */}
       <div className="grid md:grid-cols-3 gap-6">
-        {/* NOTES */}
         <AccessBlock
           title="Notes"
           items={user.grantedNoteIds || []}
           input={noteInput}
           setInput={setNoteInput}
-          onGrant={(v) =>
-            setPendingAction({ type: "note", value: v, mode: "grant" })
-          }
-          onRevoke={(v) =>
-            setPendingAction({ type: "note", value: v, mode: "revoke" })
-          }
+          onGrant={(v) => setPendingAction({ type: "note", value: v, mode: "grant" })}
+          onRevoke={(v) => setPendingAction({ type: "note", value: v, mode: "revoke" })}
         />
 
-        {/* TESTS */}
         <AccessBlock
           title="Tests"
           items={user.grantedTestIds || []}
           input={testInput}
           setInput={setTestInput}
-          onGrant={(v) =>
-            setPendingAction({ type: "test", value: v, mode: "grant" })
-          }
-          onRevoke={(v) =>
-            setPendingAction({ type: "test", value: v, mode: "revoke" })
-          }
+          onGrant={(v) => setPendingAction({ type: "test", value: v, mode: "grant" })}
+          onRevoke={(v) => setPendingAction({ type: "test", value: v, mode: "revoke" })}
         />
 
-        {/* SERVICES */}
         <AccessBlock
           title="Services"
           items={user.grantedServiceSlugs || []}
           input={serviceInput}
           setInput={setServiceInput}
-          onGrant={(v) =>
-            setPendingAction({ type: "service", value: v, mode: "grant" })
-          }
-          onRevoke={(v) =>
-            setPendingAction({ type: "service", value: v, mode: "revoke" })
-          }
+          onGrant={(v) => setPendingAction({ type: "service", value: v, mode: "grant" })}
+          onRevoke={(v) => setPendingAction({ type: "service", value: v, mode: "revoke" })}
         />
       </div>
 
@@ -199,9 +198,8 @@ export default function AdminSingleUserPage() {
             <DialogTitle>Confirm Action</DialogTitle>
           </DialogHeader>
           <p className="text-sm">
-            Are you sure you want to{" "}
-            <strong>{pendingAction?.mode}</strong>{" "}
-            access for <strong>{pendingAction?.value}</strong>?
+            Are you sure you want to <strong>{pendingAction?.mode}</strong> access for{" "}
+            <strong>{pendingAction?.value}</strong>?
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPendingAction(null)}>
@@ -215,7 +213,9 @@ export default function AdminSingleUserPage() {
   );
 }
 
-/* ---------- Reusable Access Block ---------- */
+/* =====================
+   ACCESS BLOCK
+===================== */
 
 function AccessBlock({
   title,
@@ -241,7 +241,7 @@ function AccessBlock({
         {items.length ? (
           items.map((id) => (
             <div key={id} className="flex justify-between items-center">
-              <span>{id}</span>
+              <span className="truncate">{id}</span>
               <Button size="sm" variant="destructive" onClick={() => onRevoke(id)}>
                 Revoke
               </Button>
@@ -252,12 +252,12 @@ function AccessBlock({
         )}
 
         <Input
-          placeholder={`Enter ${title} ID`}
+          placeholder={`Enter ${title} ID / Slug`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
         <Button size="sm" onClick={() => input && onGrant(input)}>
-          Grant
+          Grant Access
         </Button>
       </CardContent>
     </Card>
