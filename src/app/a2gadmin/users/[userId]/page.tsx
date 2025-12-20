@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/firebase/config";
 
 import {
@@ -13,6 +17,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type User = {
   id: string;
@@ -20,12 +32,16 @@ type User = {
   email?: string;
   plan?: "free" | "pro";
   status?: "active" | "blocked";
-  createdAt?: any;
-  lastLogin?: any;
   grantedNoteIds?: string[];
   grantedTestIds?: string[];
   grantedServiceSlugs?: string[];
 };
+
+type PendingAction =
+  | { type: "note"; value: string; mode: "grant" | "revoke" }
+  | { type: "test"; value: string; mode: "grant" | "revoke" }
+  | { type: "service"; value: string; mode: "grant" | "revoke" }
+  | null;
 
 export default function AdminSingleUserPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -33,6 +49,13 @@ export default function AdminSingleUserPage() {
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [noteInput, setNoteInput] = useState("");
+  const [testInput, setTestInput] = useState("");
+  const [serviceInput, setServiceInput] = useState("");
+
+  const [pendingAction, setPendingAction] =
+    useState<PendingAction>(null);
 
   useEffect(() => {
     if (userId) loadUser();
@@ -42,158 +65,201 @@ export default function AdminSingleUserPage() {
     setLoading(true);
     const ref = doc(db, "users", userId);
     const snap = await getDoc(ref);
-
-    if (!snap.exists()) {
-      setUser(null);
-    } else {
-      setUser({
-        id: snap.id,
-        ...(snap.data() as any),
-      });
-    }
-
+    setUser(
+      snap.exists()
+        ? { id: snap.id, ...(snap.data() as any) }
+        : null
+    );
     setLoading(false);
   }
 
-  if (loading) {
-    return <p className="text-muted-foreground">Loading user...</p>;
+  async function confirmAction() {
+    if (!user || !pendingAction) return;
+
+    const ref = doc(db, "users", user.id);
+
+    const fieldMap = {
+      note: "grantedNoteIds",
+      test: "grantedTestIds",
+      service: "grantedServiceSlugs",
+    } as const;
+
+    const field = fieldMap[pendingAction.type];
+    const current: string[] = (user as any)[field] || [];
+
+    const updated =
+      pendingAction.mode === "grant"
+        ? [...new Set([...current, pendingAction.value])]
+        : current.filter((v) => v !== pendingAction.value);
+
+    await updateDoc(ref, { [field]: updated });
+
+    setPendingAction(null);
+    setNoteInput("");
+    setTestInput("");
+    setServiceInput("");
+    loadUser();
   }
 
-  if (!user) {
+  if (loading) return <p>Loading user...</p>;
+  if (!user)
     return (
-      <div className="space-y-4">
-        <p className="text-destructive font-medium">User not found.</p>
-        <Button variant="outline" onClick={() => router.push("/a2gadmin/users")}>
-          Back to Users
+      <div>
+        <p>User not found</p>
+        <Button onClick={() => router.push("/a2gadmin/users")}>
+          Back
         </Button>
       </div>
     );
-  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">User Details</h1>
-          <p className="text-muted-foreground">
-            Read-only overview of user account and access.
-          </p>
-        </div>
-
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">User Management</h1>
         <Button variant="outline" onClick={() => router.push("/a2gadmin/users")}>
-          ← Back to Users
+          ← Back
         </Button>
       </div>
 
-      {/* Account Summary */}
+      {/* Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Account Summary</CardTitle>
         </CardHeader>
-
         <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-muted-foreground">Name</p>
-            <p className="font-medium">{user.displayName || "—"}</p>
+            <p>{user.displayName || "—"}</p>
           </div>
-
           <div>
             <p className="text-muted-foreground">Email</p>
-            <p className="font-medium">{user.email || "—"}</p>
+            <p>{user.email || "—"}</p>
           </div>
-
           <div>
             <p className="text-muted-foreground">Plan</p>
             <Badge>{user.plan || "free"}</Badge>
           </div>
-
           <div>
             <p className="text-muted-foreground">Status</p>
-            <Badge
-              variant={user.status === "blocked" ? "destructive" : "outline"}
-            >
-              {user.status || "active"}
-            </Badge>
-          </div>
-
-          <div>
-            <p className="text-muted-foreground">Account Created</p>
-            <p className="font-medium">
-              {user.createdAt?.toDate?.().toLocaleString() || "—"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-muted-foreground">Last Login</p>
-            <p className="font-medium">
-              {user.lastLogin?.toDate?.().toLocaleString() || "—"}
-            </p>
+            <Badge>{user.status || "active"}</Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Access Details */}
+      {/* Access Controls */}
       <div className="grid md:grid-cols-3 gap-6">
-        {/* Notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Granted Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            {user.grantedNoteIds?.length ? (
-              <ul className="list-disc ml-4">
-                {user.grantedNoteIds.map((id) => (
-                  <li key={id}>{id}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground">No notes granted.</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* NOTES */}
+        <AccessBlock
+          title="Notes"
+          items={user.grantedNoteIds || []}
+          input={noteInput}
+          setInput={setNoteInput}
+          onGrant={(v) =>
+            setPendingAction({ type: "note", value: v, mode: "grant" })
+          }
+          onRevoke={(v) =>
+            setPendingAction({ type: "note", value: v, mode: "revoke" })
+          }
+        />
 
-        {/* Tests */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Granted Tests</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            {user.grantedTestIds?.length ? (
-              <ul className="list-disc ml-4">
-                {user.grantedTestIds.map((id) => (
-                  <li key={id}>{id}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground">No tests granted.</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* TESTS */}
+        <AccessBlock
+          title="Tests"
+          items={user.grantedTestIds || []}
+          input={testInput}
+          setInput={setTestInput}
+          onGrant={(v) =>
+            setPendingAction({ type: "test", value: v, mode: "grant" })
+          }
+          onRevoke={(v) =>
+            setPendingAction({ type: "test", value: v, mode: "revoke" })
+          }
+        />
 
-        {/* Services */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Granted Services</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            {user.grantedServiceSlugs?.length ? (
-              <ul className="list-disc ml-4">
-                {user.grantedServiceSlugs.map((id) => (
-                  <li key={id}>{id}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground">No services granted.</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* SERVICES */}
+        <AccessBlock
+          title="Services"
+          items={user.grantedServiceSlugs || []}
+          input={serviceInput}
+          setInput={setServiceInput}
+          onGrant={(v) =>
+            setPendingAction({ type: "service", value: v, mode: "grant" })
+          }
+          onRevoke={(v) =>
+            setPendingAction({ type: "service", value: v, mode: "revoke" })
+          }
+        />
       </div>
 
-      <p className="text-sm text-muted-foreground italic">
-        Access modification, confirmations, premium expiry, and notifications
-        will be added in the next steps.
-      </p>
+      {/* Confirmation Dialog */}
+      <Dialog open={!!pendingAction} onOpenChange={() => setPendingAction(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Action</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm">
+            Are you sure you want to{" "}
+            <strong>{pendingAction?.mode}</strong>{" "}
+            access for <strong>{pendingAction?.value}</strong>?
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingAction(null)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmAction}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+/* ---------- Reusable Access Block ---------- */
+
+function AccessBlock({
+  title,
+  items,
+  input,
+  setInput,
+  onGrant,
+  onRevoke,
+}: {
+  title: string;
+  items: string[];
+  input: string;
+  setInput: (v: string) => void;
+  onGrant: (v: string) => void;
+  onRevoke: (v: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title} Access</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        {items.length ? (
+          items.map((id) => (
+            <div key={id} className="flex justify-between items-center">
+              <span>{id}</span>
+              <Button size="sm" variant="destructive" onClick={() => onRevoke(id)}>
+                Revoke
+              </Button>
+            </div>
+          ))
+        ) : (
+          <p className="text-muted-foreground">No access granted.</p>
+        )}
+
+        <Input
+          placeholder={`Enter ${title} ID`}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <Button size="sm" onClick={() => input && onGrant(input)}>
+          Grant
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
