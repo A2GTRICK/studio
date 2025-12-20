@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-} from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase/config";
 
 import {
@@ -25,13 +21,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 
 /* ======================
    TYPES
@@ -43,16 +32,21 @@ type User = {
   email?: string;
   plan?: "free" | "pro";
   status?: "active" | "blocked";
+
   grantedNoteIds?: string[];
   grantedTestIds?: string[];
   grantedServiceSlugs?: string[];
+
+  premiumContentOverrides?: string[]; // 🔥 NEW
   premiumUntil?: string;
 };
 
-type PendingAction = {
-  label: string;
-  execute: () => Promise<void>;
-} | null;
+type PendingAction =
+  | {
+      label: string;
+      action: () => Promise<void>;
+    }
+  | null;
 
 /* ======================
    PAGE
@@ -65,12 +59,12 @@ export default function AdminSingleUserPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [overrideType, setOverrideType] =
-    useState<"note" | "test" | "service" | "bundle" | "feature">("note");
-  const [overrideValue, setOverrideValue] = useState("");
+  const [noteInput, setNoteInput] = useState("");
+  const [testInput, setTestInput] = useState("");
+  const [serviceInput, setServiceInput] = useState("");
+  const [premiumContentInput, setPremiumContentInput] = useState("");
 
-  const [premiumDays, setPremiumDays] = useState("");
-  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [pending, setPending] = useState<PendingAction>(null);
 
   useEffect(() => {
     loadUser();
@@ -82,54 +76,51 @@ export default function AdminSingleUserPage() {
     setLoading(false);
   }
 
-  if (loading) return <p>Loading user…</p>;
-  if (!user) return <p>User not found</p>;
-
-  const premiumRemaining =
-    user.premiumUntil &&
-    Math.ceil(
-      (new Date(user.premiumUntil).getTime() - Date.now()) /
-        (1000 * 60 * 60 * 24)
+  function daysRemaining() {
+    if (!user?.premiumUntil) return null;
+    return Math.max(
+      0,
+      Math.ceil(
+        (new Date(user.premiumUntil).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24)
+      )
     );
-
-  function fieldForType(type: string) {
-    if (type === "note") return "grantedNoteIds";
-    if (type === "test") return "grantedTestIds";
-    return "grantedServiceSlugs";
   }
 
-  async function applyOverride() {
-    const field = fieldForType(overrideType);
-    const current: string[] = (user as any)[field] || [];
-    await updateDoc(doc(db, "users", user.id), {
-      [field]: [...new Set([...current, overrideValue])],
+  async function updateArrayField(
+    field: keyof User,
+    value: string,
+    mode: "add" | "remove"
+  ) {
+    const current = ((user as any)[field] as string[]) || [];
+    const updated =
+      mode === "add"
+        ? [...new Set([...current, value])]
+        : current.filter((v) => v !== value);
+
+    await updateDoc(doc(db, "users", user!.id), {
+      [field]: updated,
     });
-    setOverrideValue("");
+
     loadUser();
   }
 
-  async function addPremiumDays() {
-    const days = Number(premiumDays);
-    const base = user.premiumUntil
+  async function addPremiumDays(days: number) {
+    const base = user?.premiumUntil
       ? new Date(user.premiumUntil)
       : new Date();
     base.setDate(base.getDate() + days);
 
-    await updateDoc(doc(db, "users", user.id), {
+    await updateDoc(doc(db, "users", user!.id), {
       premiumUntil: base.toISOString(),
       plan: "pro",
     });
-    setPremiumDays("");
+
     loadUser();
   }
 
-  async function lifetimePremium() {
-    await updateDoc(doc(db, "users", user.id), {
-      premiumUntil: "2099-12-31T00:00:00.000Z",
-      plan: "pro",
-    });
-    loadUser();
-  }
+  if (loading) return <p>Loading user…</p>;
+  if (!user) return <p>User not found</p>;
 
   return (
     <div className="space-y-8">
@@ -141,7 +132,7 @@ export default function AdminSingleUserPage() {
         </Button>
       </div>
 
-      {/* USER SUMMARY */}
+      {/* SUMMARY */}
       <Card>
         <CardHeader>
           <CardTitle>Account Summary</CardTitle>
@@ -157,117 +148,181 @@ export default function AdminSingleUserPage() {
           </div>
           <div>
             <p className="text-muted-foreground">Plan</p>
-            <Badge>{user.plan}</Badge>
+            <Badge>{user.plan || "free"}</Badge>
           </div>
           <div>
             <p className="text-muted-foreground">Status</p>
-            <Badge>{user.status}</Badge>
+            <Badge>{user.status || "active"}</Badge>
           </div>
           <div>
             <p className="text-muted-foreground">Premium Remaining</p>
-            <p>{premiumRemaining ? `${premiumRemaining} days` : "—"}</p>
+            <p>{daysRemaining() ? `${daysRemaining()} days` : "—"}</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* 🔴 ADMIN OVERRIDE PANEL */}
-      <Card className="border-2 border-red-400">
+      {/* STANDARD ACCESS */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <AccessBox
+          title="Notes Access"
+          items={user.grantedNoteIds || []}
+          input={noteInput}
+          setInput={setNoteInput}
+          onAdd={(v) => updateArrayField("grantedNoteIds", v, "add")}
+          onRemove={(v) => updateArrayField("grantedNoteIds", v, "remove")}
+        />
+
+        <AccessBox
+          title="Tests / MCQs Access"
+          items={user.grantedTestIds || []}
+          input={testInput}
+          setInput={setTestInput}
+          onAdd={(v) => updateArrayField("grantedTestIds", v, "add")}
+          onRemove={(v) => updateArrayField("grantedTestIds", v, "remove")}
+        />
+
+        <AccessBox
+          title="Services Access"
+          items={user.grantedServiceSlugs || []}
+          input={serviceInput}
+          setInput={setServiceInput}
+          onAdd={(v) => updateArrayField("grantedServiceSlugs", v, "add")}
+          onRemove={(v) => updateArrayField("grantedServiceSlugs", v, "remove")}
+        />
+      </div>
+
+      {/* 🔥 PREMIUM CONTENT OVERRIDES */}
+      <Card className="border-2 border-purple-500">
         <CardHeader>
-          <CardTitle>🔴 ADMIN OVERRIDE CONSOLE</CardTitle>
+          <CardTitle>🔥 Premium Content Overrides (ANYTHING)</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            This section bypasses ALL plans, billing, and UI restrictions.
+        <CardContent className="space-y-4 text-sm">
+          <p className="text-muted-foreground">
+            Grant access to ANY premium mock test, MCQ set, practice series, or
+            future premium content — independent of plan or billing.
           </p>
 
-          <div className="grid md:grid-cols-3 gap-3">
-            <Select value={overrideType} onValueChange={(v: any) => setOverrideType(v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="note">Note</SelectItem>
-                <SelectItem value="test">Test / MCQ</SelectItem>
-                <SelectItem value="service">Service</SelectItem>
-                <SelectItem value="bundle">Bundle</SelectItem>
-                <SelectItem value="feature">Feature Flag</SelectItem>
-              </SelectContent>
-            </Select>
+          {(user.premiumContentOverrides || []).length ? (
+            <div className="space-y-2">
+              {user.premiumContentOverrides!.map((id) => (
+                <div
+                  key={id}
+                  className="flex justify-between items-center"
+                >
+                  <span>{id}</span>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() =>
+                      updateArrayField(
+                        "premiumContentOverrides",
+                        id,
+                        "remove"
+                      )
+                    }
+                  >
+                    Revoke
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No premium overrides granted.</p>
+          )}
 
+          <div className="flex gap-2">
             <Input
-              placeholder="Paste ANY ID or slug"
-              value={overrideValue}
-              onChange={(e) => setOverrideValue(e.target.value)}
+              placeholder="Paste ANY premium content ID (mock test / MCQ / etc.)"
+              value={premiumContentInput}
+              onChange={(e) => setPremiumContentInput(e.target.value)}
             />
-
             <Button
-              variant="destructive"
-              disabled={!overrideValue}
               onClick={() =>
-                setPendingAction({
-                  label: "Apply admin override",
-                  execute: applyOverride,
-                })
+                premiumContentInput &&
+                updateArrayField(
+                  "premiumContentOverrides",
+                  premiumContentInput,
+                  "add"
+                )
               }
             >
-              APPLY OVERRIDE
-            </Button>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-3">
-            <Input
-              placeholder="Add premium days"
-              value={premiumDays}
-              onChange={(e) => setPremiumDays(e.target.value)}
-            />
-            <Button onClick={() =>
-              setPendingAction({
-                label: "Add premium days",
-                execute: addPremiumDays,
-              })
-            }>
-              Add Premium Days
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() =>
-                setPendingAction({
-                  label: "Grant lifetime premium",
-                  execute: lifetimePremium,
-                })
-              }
-            >
-              Lifetime Premium
+              Grant
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* CONFIRMATION */}
-      <Dialog open={!!pendingAction} onOpenChange={() => setPendingAction(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Admin Action</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm">
-            You are about to perform a powerful admin override.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPendingAction(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                await pendingAction?.execute();
-                setPendingAction(null);
-              }}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* PREMIUM TIME */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Premium Time Control</CardTitle>
+        </CardHeader>
+        <CardContent className="flex gap-3">
+          <Button onClick={() => addPremiumDays(30)}>+30 Days</Button>
+          <Button onClick={() => addPremiumDays(90)}>+90 Days</Button>
+          <Button
+            variant="destructive"
+            onClick={() => addPremiumDays(365 * 50)}
+          >
+            Lifetime Premium
+          </Button>
+        </CardContent>
+      </Card>
     </div>
+  );
+}
+
+/* ======================
+   REUSABLE BOX
+====================== */
+
+function AccessBox({
+  title,
+  items,
+  input,
+  setInput,
+  onAdd,
+  onRemove,
+}: {
+  title: string;
+  items: string[];
+  input: string;
+  setInput: (v: string) => void;
+  onAdd: (v: string) => void;
+  onRemove: (v: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        {items.length ? (
+          items.map((id) => (
+            <div key={id} className="flex justify-between items-center">
+              <span>{id}</span>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => onRemove(id)}
+              >
+                Revoke
+              </Button>
+            </div>
+          ))
+        ) : (
+          <p className="text-muted-foreground">No access granted.</p>
+        )}
+
+        <Input
+          placeholder="Enter ID / Slug"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <Button size="sm" onClick={() => input && onAdd(input)}>
+          Grant
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
