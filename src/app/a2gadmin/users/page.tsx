@@ -44,21 +44,47 @@ function daysBetween(date?: string | null) {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-function premiumState(user: User) {
-  if (user.isLifetime) return "lifetime";
-  const days = daysBetween(user.premiumUntil);
-  if (days === null) return "free";
-  if (days < 0) return "expired";
-  return "active";
-}
+function premiumMeta(user: User) {
+  if (user.isLifetime)
+    return {
+      label: "Lifetime",
+      badge: "bg-purple-100 text-purple-700",
+      row: "bg-purple-50",
+      state: "lifetime",
+    };
 
-function premiumBadge(user: User) {
-  if (user.isLifetime) return <Badge>Lifetime</Badge>;
   const days = daysBetween(user.premiumUntil);
-  if (days === null) return <Badge variant="outline">Free</Badge>;
-  if (days < 0) return <Badge variant="destructive">Expired</Badge>;
-  if (days <= 7) return <Badge variant="secondary">Expiring Soon</Badge>;
-  return <Badge>Active</Badge>;
+
+  if (days === null)
+    return {
+      label: "Free",
+      badge: "bg-gray-100 text-gray-700",
+      row: "",
+      state: "free",
+    };
+
+  if (days < 0)
+    return {
+      label: "Expired",
+      badge: "bg-red-100 text-red-700",
+      row: "bg-red-50",
+      state: "expired",
+    };
+
+  if (days <= 7)
+    return {
+      label: "Expiring Soon",
+      badge: "bg-yellow-100 text-yellow-800",
+      row: "bg-yellow-50",
+      state: "expiring",
+    };
+
+  return {
+    label: "Active",
+    badge: "bg-green-100 text-green-700",
+    row: "",
+    state: "active",
+  };
 }
 
 /* ================= PAGE ================= */
@@ -69,11 +95,9 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
   const [filter, setFilter] = useState<
     "all" | "active" | "expired" | "lifetime"
   >("all");
-
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
@@ -98,18 +122,11 @@ export default function AdminUsersPage() {
       const text = `${u.displayName || ""} ${u.email || ""}`.toLowerCase();
       if (!text.includes(search.toLowerCase())) return false;
 
+      const state = premiumMeta(u).state;
       if (filter === "all") return true;
-      return premiumState(u) === filter;
+      return state === filter;
     });
   }, [users, search, filter]);
-
-  async function bulkUpdate(data: Partial<User>) {
-    for (const id of selected) {
-      await updateDoc(doc(db, "users", id), data);
-    }
-    setSelected([]);
-    loadUsers();
-  }
 
   return (
     <div className="space-y-6">
@@ -130,69 +147,17 @@ export default function AdminUsersPage() {
 
       {/* FILTERS */}
       <div className="flex gap-2">
-        <Button
-          size="sm"
-          variant={filter === "all" ? "default" : "outline"}
-          onClick={() => setFilter("all")}
-        >
-          All
-        </Button>
-        <Button
-          size="sm"
-          variant={filter === "active" ? "default" : "outline"}
-          onClick={() => setFilter("active")}
-        >
-          Active
-        </Button>
-        <Button
-          size="sm"
-          variant={filter === "expired" ? "default" : "outline"}
-          onClick={() => setFilter("expired")}
-        >
-          Expired
-        </Button>
-        <Button
-          size="sm"
-          variant={filter === "lifetime" ? "default" : "outline"}
-          onClick={() => setFilter("lifetime")}
-        >
-          Lifetime
-        </Button>
+        {["all", "active", "expired", "lifetime"].map((f) => (
+          <Button
+            key={f}
+            size="sm"
+            variant={filter === f ? "default" : "outline"}
+            onClick={() => setFilter(f as any)}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </Button>
+        ))}
       </div>
-
-      {/* BULK ACTIONS */}
-      {selected.length > 0 && (
-        <Card>
-          <CardContent className="flex flex-wrap gap-2 py-4">
-            <span className="text-sm text-muted-foreground">
-              {selected.length} selected
-            </span>
-            <Button size="sm" onClick={() => bulkUpdate({ status: "blocked" })}>
-              Block
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => bulkUpdate({ status: "active" })}
-            >
-              Unblock
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => bulkUpdate({ plan: "free" })}
-            >
-              Set Free
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => bulkUpdate({ plan: "pro" })}
-            >
-              Set Pro
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
       {/* USERS TABLE */}
       <Card>
@@ -228,40 +193,57 @@ export default function AdminUsersPage() {
                 </thead>
 
                 <tbody>
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b">
-                      <td>
-                        <Checkbox
-                          checked={selected.includes(user.id)}
-                          onCheckedChange={(v) =>
-                            setSelected((prev) =>
-                              v
-                                ? [...prev, user.id]
-                                : prev.filter((id) => id !== user.id)
-                            )
-                          }
-                        />
-                      </td>
-                      <td>{user.displayName || "—"}</td>
-                      <td>{user.email || "—"}</td>
-                      <td>
-                        <Badge variant="outline">
-                          {user.plan || "free"}
-                        </Badge>
-                      </td>
-                      <td>{premiumBadge(user)}</td>
-                      <td className="text-right">
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            router.push(`/a2gadmin/users/${user.id}`)
-                          }
-                        >
-                          Open
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredUsers.map((user) => {
+                    const meta = premiumMeta(user);
+
+                    return (
+                      <tr
+                        key={user.id}
+                        className={`border-b ${meta.row}`}
+                      >
+                        <td>
+                          <Checkbox
+                            checked={selected.includes(user.id)}
+                            onCheckedChange={(v) =>
+                              setSelected((prev) =>
+                                v
+                                  ? [...prev, user.id]
+                                  : prev.filter((id) => id !== user.id)
+                              )
+                            }
+                          />
+                        </td>
+
+                        <td>{user.displayName || "—"}</td>
+                        <td>{user.email || "—"}</td>
+
+                        <td>
+                          <Badge variant="outline">
+                            {user.plan || "free"}
+                          </Badge>
+                        </td>
+
+                        <td>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${meta.badge}`}
+                          >
+                            {meta.label}
+                          </span>
+                        </td>
+
+                        <td className="text-right">
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              router.push(`/a2gadmin/users/${user.id}`)
+                            }
+                          >
+                            Open
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
