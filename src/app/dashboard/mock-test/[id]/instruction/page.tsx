@@ -1,20 +1,116 @@
+
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Monitor, BookOpen } from "lucide-react";
+import { AlertTriangle, Clock, Monitor, BookOpen, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAuthSession } from "@/auth/AuthSessionProvider";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase/config";
+
+// --- Helper functions for access control ---
+function daysBetween(date?: string | null) {
+  if (!date) return null;
+  const diff = new Date(date).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function hasActivePremium(userData: any) {
+  if (userData?.isLifetime) return true;
+  const days = daysBetween(userData?.premiumUntil);
+  return days !== null && days >= 0;
+}
 
 export default function MockTestInstructionPage() {
   const params = useParams();
+  const router = useRouter();
   const testId = params.id as string;
+  const authSession = useAuthSession();
+  const user = authSession?.user;
+
+  const [mockTest, setMockTest] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!testId || authSession.loading) return;
+
+    async function loadData() {
+      setLoading(true);
+      try {
+        const testRef = doc(db, "test_series", testId);
+        const testSnap = await getDoc(testRef);
+
+        if (!testSnap.exists()) {
+          setMockTest(null);
+          return;
+        }
+        const testData = testSnap.data();
+        setMockTest(testData);
+
+        if (user?.uid) {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            setUserData(userSnap.data());
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load test/user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [testId, user, authSession.loading]);
 
   function startTest() {
-    // OPTIONAL fullscreen — SAFE (user click)
     try {
       document.documentElement.requestFullscreen?.();
     } catch {}
-
     window.location.href = `/dashboard/mock-test/${testId}`;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!mockTest) {
+    return <div className="p-10 text-center">Test not found.</div>;
+  }
+
+  const isLocked =
+    mockTest.isPremium === true &&
+    !hasActivePremium(userData) &&
+    !userData?.grantedTestIds?.includes(testId) &&
+    !userData?.premiumOverrideIds?.includes(testId);
+
+  if (isLocked) {
+    return (
+      <div className="max-w-xl mx-auto mt-10 text-center space-y-4 p-8 border rounded-xl bg-card shadow-sm">
+        <div className="text-5xl">🔒</div>
+
+        <h1 className="text-xl font-bold">Premium Mock Test</h1>
+
+        <p className="text-muted-foreground">
+          This mock test is available for premium users only.
+        </p>
+
+        <p className="text-sm text-muted-foreground">
+          Upgrade to premium to unlock this test and many other features.
+        </p>
+
+        <Button onClick={() => router.push("/dashboard/billing")}>
+          Upgrade to Premium
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -66,11 +162,7 @@ export default function MockTestInstructionPage() {
 
       {/* ACTION */}
       <div className="flex justify-center">
-        <Button
-          size="lg"
-          className="px-10"
-          onClick={startTest}
-        >
+        <Button size="lg" className="px-10" onClick={startTest}>
           Start Mock Test
         </Button>
       </div>
