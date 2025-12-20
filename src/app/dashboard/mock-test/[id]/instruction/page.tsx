@@ -1,20 +1,20 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
-import { useAuthSession } from "@/auth/AuthSessionProvider";
 import { Button } from "@/components/ui/button";
 import {
-  Loader2,
-  Clock,
-  BookOpen,
-  Monitor,
   AlertTriangle,
+  Clock,
+  Monitor,
+  BookOpen,
+  Loader2,
   Crown,
   ShieldCheck,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAuthSession } from "@/auth/AuthSessionProvider";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase/config";
 
 /* -------------------------------------------------
    HELPERS
@@ -64,7 +64,10 @@ export default function MockTestInstructionPage() {
           const userSnap = await getDoc(doc(db, "users", user.uid));
           if (userSnap.exists()) setUserData(userSnap.data());
         }
-      } finally {
+      } catch(e) {
+        console.error("Failed to load test data", e);
+      }
+      finally {
         setLoading(false);
       }
     }
