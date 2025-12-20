@@ -1,6 +1,11 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    /* =============================
+       HELPERS
+    ============================= */
 
     function isSignedIn() {
       return request.auth != null;
@@ -15,16 +20,101 @@ service cloud.firestore {
         && request.auth.uid == "WXFMrKzg0eYHgFEspk8WoIIDc3j2";
     }
 
+    /* =============================
+       PUBLIC READ – MOCK TESTS
+    ============================= */
+
+    match /test_series/{testId} {
+      allow read: if true;          // required for dashboard
+      allow write: if false;        // admin only via server / console
+    }
+
+    match /test_series/{testId}/questions/{qid} {
+      allow read: if false;         // questions never exposed directly
+      allow write: if false;
+    }
+
+    /* =============================
+       PUBLIC READ DATA
+    ============================= */
+
+    match /notes/{id} {
+      allow read, list: if true;
+    }
+
+    match /mcqSets/{id} {
+      allow read, list: if true;
+    }
+
+    match /posts/{id} {
+      allow read, list: if true;
+    }
+
+    match /blog/{id} {
+      allow read, list: if true;
+    }
+
+    match /custom_notifications/{id} {
+      allow read, list: if true;
+    }
+
+    match /adminConfig/{doc} {
+      allow read: if true;
+    }
+
+
+    /* =============================
+       USERS
+    ============================= */
+
     match /users/{userId} {
       allow read, update: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+    
+    match /user_profiles/{userId} {
+      // Admin can read + list all users
+      allow read, list: if isAdmin();
+
+      // User can read & update own profile
+      allow read, update: if isOwner(userId);
+
+      // No deletes or creates from client
       allow create, delete: if false;
     }
 
-    match /user_profiles/{userId} {
-      allow read, list: if isAdmin();
-      allow read, update: if isOwner(userId);
-      allow create, delete: if false;
+    /* =============================
+       PAYMENTS
+    ============================= */
+
+    match /payments/{paymentId} {
+      allow read: if isSignedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isAdmin()
+        );
+      allow write: if false;
     }
+
+    /* =============================
+       NOTE VIEW ANALYTICS
+    ============================= */
+
+    match /note_views/{viewId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+
+
+    /* =============================
+       FALLBACK – BLOCK EVERYTHING
+    ============================= */
 
     match /{document=**} {
       allow read, write: if false;

@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-} from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,20 +18,17 @@ interface MockTest {
   duration?: number;
   isPremium?: boolean;
   price?: number | null;
-  isPublished?: boolean;
 }
 
 export default function MockTestListPage() {
   const [loading, setLoading] = useState(true);
   const [tests, setTests] = useState<MockTest[]>([]);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"ALL" | "RRB" | "AIIMS" | "GPAT">("ALL");
+  const [filter, setFilter] =
+    useState<"ALL" | "RRB" | "AIIMS" | "GPAT">("ALL");
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
-
-      // ✅ SAFE QUERY (NO INDEX REQUIRED)
       const q = query(
         collection(db, "test_series"),
         where("isPublished", "==", true)
@@ -46,7 +37,7 @@ export default function MockTestListPage() {
       const snap = await getDocs(q);
 
       setTests(
-        snap.docs.map((d) => ({
+        snap.docs.map(d => ({
           id: d.id,
           ...(d.data() as any),
         }))
@@ -59,7 +50,7 @@ export default function MockTestListPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return tests.filter((t) => {
+    return tests.filter(t => {
       const matchesSearch =
         t.title?.toLowerCase().includes(search.toLowerCase()) ||
         t.subject?.toLowerCase().includes(search.toLowerCase());
@@ -81,24 +72,16 @@ export default function MockTestListPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold">Mock Tests</h1>
-        <p className="text-muted-foreground">
-          Full-length exam simulations (NTA / RRB style)
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold">Mock Tests</h1>
 
-      {/* SEARCH */}
       <Input
         placeholder="Search mock tests..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={e => setSearch(e.target.value)}
       />
 
-      {/* FILTERS */}
       <div className="flex gap-2">
-        {["ALL", "RRB", "AIIMS", "GPAT"].map((f) => (
+        {["ALL", "RRB", "AIIMS", "GPAT"].map(f => (
           <button
             key={f}
             onClick={() => setFilter(f as any)}
@@ -114,70 +97,46 @@ export default function MockTestListPage() {
         ))}
       </div>
 
-      {/* GRID */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((test) => {
+        {filtered.map(test => {
           const isPremium = test.isPremium === true;
-          const price =
-            typeof test.price === "number" ? test.price : null;
 
           return (
             <div
               key={test.id}
-              className="border rounded-xl bg-white p-5 shadow-sm flex flex-col justify-between"
+              className="border rounded-xl p-5 bg-white shadow-sm flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold leading-snug">
-                    {test.title}
-                  </h3>
-
+                <div className="flex justify-between">
+                  <h3 className="font-semibold">{test.title}</h3>
                   {isPremium && (
-                    <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
-                      <Crown className="w-3 h-3" />
-                      Premium
+                    <Badge className="bg-yellow-100 text-yellow-800">
+                      <Crown className="w-3 h-3 mr-1" /> Premium
                     </Badge>
                   )}
                 </div>
-
-                {test.subject && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {test.subject}
-                  </p>
-                )}
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
                   <Clock className="w-4 h-4" />
                   {test.duration || 0} min
                 </div>
 
-                {isPremium && price !== null && (
-                  <div className="mt-2 text-sm font-medium text-primary">
-                    ₹{price}
-                  </div>
+                {isPremium && test.price != null && (
+                  <div className="mt-2 font-medium">₹{test.price}</div>
                 )}
               </div>
 
-              {/* ALWAYS GO TO INSTRUCTION PAGE */}
               <Link
                 href={`/dashboard/mock-test/${test.id}/instruction`}
                 className="mt-4"
               >
                 <Button className="w-full">
-                  {isPremium && price !== null
-                    ? "View & Buy"
-                    : "Start Mock Test"}
+                  {isPremium ? "View & Buy" : "Start Mock Test"}
                 </Button>
               </Link>
             </div>
           );
         })}
-
-        {filtered.length === 0 && (
-          <div className="col-span-full text-center text-muted-foreground p-10">
-            No mock tests found
-          </div>
-        )}
       </div>
     </div>
   );
