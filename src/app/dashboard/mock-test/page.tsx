@@ -1,18 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-} from "firebase/firestore";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Loader2, Clock } from "lucide-react";
+import { Loader2, Clock, Lock } from "lucide-react";
 import clsx from "clsx";
 
 interface MockTest {
@@ -29,8 +23,7 @@ export default function MockTestListPage() {
   const [loading, setLoading] = useState(true);
   const [tests, setTests] = useState<MockTest[]>([]);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] =
-    useState<"ALL" | "RRB" | "AIIMS" | "GPAT">("ALL");
+  const [filter, setFilter] = useState<"ALL" | "RRB" | "AIIMS" | "GPAT">("ALL");
 
   useEffect(() => {
     async function load() {
@@ -43,6 +36,7 @@ export default function MockTestListPage() {
       );
 
       const snap = await getDocs(q);
+
       setTests(
         snap.docs.map((d) => ({
           id: d.id,
@@ -62,8 +56,7 @@ export default function MockTestListPage() {
         t.title?.toLowerCase().includes(search.toLowerCase()) ||
         t.subject?.toLowerCase().includes(search.toLowerCase());
 
-      const matchesFilter =
-        filter === "ALL" || t.exam === filter;
+      const matchesFilter = filter === "ALL" || t.exam === filter;
 
       return matchesSearch && matchesFilter;
     });
@@ -104,7 +97,7 @@ export default function MockTestListPage() {
               "px-4 py-1 rounded-full border text-sm transition",
               filter === f
                 ? "bg-primary text-white"
-                : "bg-white text-muted-foreground"
+                : "bg-white text-muted-foreground hover:bg-muted"
             )}
           >
             {f}
@@ -120,9 +113,18 @@ export default function MockTestListPage() {
             className="border rounded-xl bg-white p-5 shadow-sm flex flex-col justify-between"
           >
             <div>
-              <h3 className="font-semibold leading-snug">
-                {test.title}
-              </h3>
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-semibold leading-snug">
+                  {test.title}
+                </h3>
+
+                {test.isPremium && (
+                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+                    <Lock className="w-3 h-3" />
+                    Premium
+                  </span>
+                )}
+              </div>
 
               {test.subject && (
                 <p className="text-sm text-muted-foreground mt-1">
@@ -136,9 +138,9 @@ export default function MockTestListPage() {
               </div>
             </div>
 
-            {/* ✅ SINGLE SOURCE OF TRUTH */}
+            {/* ✅ ALWAYS GO THROUGH INSTRUCTION (PREMIUM GATE) */}
             <Link
-              href={`/dashboard/mock-test/${test.id}/instructions`}
+              href={`/dashboard/mock-test/${test.id}/instruction`}
               className="mt-4"
             >
               <Button className="w-full">
