@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   collection,
   getDocs,
@@ -20,12 +21,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
+/* =====================
+   TYPES
+===================== */
 
 type User = {
   id: string;
@@ -36,14 +35,19 @@ type User = {
   grantedNoteIds?: string[];
   grantedTestIds?: string[];
   grantedServiceSlugs?: string[];
+  premiumUntil?: string; // ISO date
 };
 
+/* =====================
+   PAGE
+===================== */
+
 export default function AdminUsersPage() {
+  const router = useRouter();
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [noteInput, setNoteInput] = useState("");
 
   useEffect(() => {
     loadUsers();
@@ -63,6 +67,7 @@ export default function AdminUsersPage() {
   }
 
   async function toggleBlock(user: User) {
+    if (!confirm(`Are you sure you want to ${user.status === "blocked" ? "unblock" : "block"} this user?`)) return;
     await updateDoc(doc(db, "users", user.id), {
       status: user.status === "blocked" ? "active" : "blocked",
     });
@@ -70,42 +75,31 @@ export default function AdminUsersPage() {
   }
 
   async function togglePlan(user: User) {
+    if (!confirm(`Change plan for ${user.email}?`)) return;
     await updateDoc(doc(db, "users", user.id), {
       plan: user.plan === "pro" ? "free" : "pro",
     });
     loadUsers();
   }
 
-  async function grantNoteAccess() {
-    if (!selectedUser || !noteInput) return;
-
-    const existing = selectedUser.grantedNoteIds || [];
-    if (existing.includes(noteInput)) return;
-
-    await updateDoc(doc(db, "users", selectedUser.id), {
-      grantedNoteIds: [...existing, noteInput],
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const text = `${u.displayName || ""} ${u.email || ""}`.toLowerCase();
+      return text.includes(search.toLowerCase());
     });
-
-    setNoteInput("");
-    loadUsers();
-  }
-
-  const filteredUsers = users.filter((u) => {
-    const text = `${u.displayName || ""} ${u.email || ""}`.toLowerCase();
-    return text.includes(search.toLowerCase());
-  });
+  }, [users, search]);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">User Management</h1>
         <p className="text-muted-foreground">
-          Manage users, plans, and special access.
+          Central control panel for plans, access overrides, and account status.
         </p>
       </div>
 
       <Input
-        placeholder="Search name or email"
+        placeholder="Search by name or email"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -114,29 +108,29 @@ export default function AdminUsersPage() {
         <CardHeader>
           <CardTitle>Users ({filteredUsers.length})</CardTitle>
         </CardHeader>
-
         <CardContent>
           {loading ? (
-            <p className="text-muted-foreground">Loading users...</p>
+            <p className="text-muted-foreground">Loading users…</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="border-b">
+                <thead className="border-b text-left">
                   <tr>
-                    <th>Name</th>
+                    <th className="py-2">Name</th>
                     <th>Email</th>
                     <th>Plan</th>
                     <th>Status</th>
+                    <th>Overrides</th>
                     <th className="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b">
-                      <td>{user.displayName || "—"}</td>
+                    <tr key={user.id} className="border-b hover:bg-muted/40">
+                      <td className="py-2 font-medium">{user.displayName || "—"}</td>
                       <td>{user.email || "—"}</td>
                       <td>
-                        <Badge>
+                        <Badge variant={user.plan === "pro" ? "default" : "outline"}>
                           {user.plan || "free"}
                         </Badge>
                       </td>
@@ -145,16 +139,15 @@ export default function AdminUsersPage() {
                           {user.status || "active"}
                         </Badge>
                       </td>
+                      <td className="text-xs text-muted-foreground">
+                        N:{user.grantedNoteIds?.length || 0} · T:{user.grantedTestIds?.length || 0} · S:{user.grantedServiceSlugs?.length || 0}
+                      </td>
                       <td className="text-right space-x-2">
+                        <Button size="sm" variant="outline" onClick={() => router.push(`/a2gadmin/users/${user.id}`)}>
+                          Open
+                        </Button>
                         <Button size="sm" onClick={() => togglePlan(user)}>
                           Toggle Plan
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedUser(user)}
-                        >
-                          Grant Access
                         </Button>
                         <Button
                           size="sm"
@@ -172,42 +165,6 @@ export default function AdminUsersPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Grant Access Dialog */}
-      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Grant Note Access
-            </DialogTitle>
-          </DialogHeader>
-
-          <p className="text-sm text-muted-foreground">
-            Enter Note ID to grant access (example: pharma_unit_3)
-          </p>
-
-          <Input
-            placeholder="Note ID"
-            value={noteInput}
-            onChange={(e) => setNoteInput(e.target.value)}
-          />
-
-          <Button onClick={grantNoteAccess}>
-            Grant Access
-          </Button>
-
-          {selectedUser?.grantedNoteIds?.length ? (
-            <div className="text-sm mt-4">
-              <strong>Already Granted:</strong>
-              <ul className="list-disc ml-4">
-                {selectedUser.grantedNoteIds.map((id) => (
-                  <li key={id}>{id}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
