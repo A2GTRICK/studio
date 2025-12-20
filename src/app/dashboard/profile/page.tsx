@@ -9,7 +9,12 @@ import {
   EmailAuthProvider,
 } from "firebase/auth";
 import { db } from "@/firebase/config";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
 import {
   Avatar,
@@ -27,12 +32,70 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck, GraduationCap, Phone } from "lucide-react";
+import {
+  Loader2,
+  ShieldCheck,
+  Phone,
+  Crown,
+} from "lucide-react";
 
 /* =========================================================
-   PROFILE PAGE — AUTH + FIRESTORE (SAFE)
+   PROFILE PAGE — SAFE ENHANCED VERSION
 ========================================================= */
+
+type PremiumData = {
+  premiumUntil?: string | null;
+  isLifetime?: boolean;
+  grantedNoteIds?: string[];
+  grantedTestIds?: string[];
+  grantedServiceSlugs?: string[];
+  premiumOverrideIds?: string[];
+};
+
+function daysBetween(date?: string | null) {
+  if (!date) return null;
+  const diff = new Date(date).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function premiumMeta(p: PremiumData) {
+  if (p.isLifetime) {
+    return {
+      label: "Lifetime Premium",
+      color: "bg-purple-100 text-purple-700",
+    };
+  }
+
+  const days = daysBetween(p.premiumUntil);
+
+  if (days === null) {
+    return {
+      label: "Free User",
+      color: "bg-gray-100 text-gray-700",
+    };
+  }
+
+  if (days < 0) {
+    return {
+      label: "Premium Expired",
+      color: "bg-red-100 text-red-700",
+    };
+  }
+
+  if (days <= 7) {
+    return {
+      label: `Premium Expiring (${days} days left)`,
+      color: "bg-yellow-100 text-yellow-800",
+    };
+  }
+
+  return {
+    label: "Premium Active",
+    color: "bg-green-100 text-green-700",
+  };
+}
 
 export default function ProfilePage() {
   const authSession = useAuthSession();
@@ -54,6 +117,11 @@ export default function ProfilePage() {
   const [rollNumber, setRollNumber] = useState("");
 
   /* -----------------------
+     PREMIUM DATA (READ ONLY)
+  ----------------------- */
+  const [premium, setPremium] = useState<PremiumData>({});
+
+  /* -----------------------
      PASSWORD
   ----------------------- */
   const [currentPassword, setCurrentPassword] = useState("");
@@ -69,20 +137,30 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
 
-    const loadProfile = async () => {
-      const ref = doc(db, "user_profiles", user.uid);
-      const snap = await getDoc(ref);
+    const loadAll = async () => {
+      const profileRef = doc(db, "user_profiles", user.uid);
+      const userRef = doc(db, "users", user.uid);
 
-      if (snap.exists()) {
-        const data = snap.data();
+      const [profileSnap, userSnap] = await Promise.all([
+        getDoc(profileRef),
+        getDoc(userRef),
+      ]);
+
+      if (profileSnap.exists()) {
+        const data = profileSnap.data();
         setMobile(data.mobile || "");
         setAbout(data.about || "");
         setRollNumber(data.rollNumber || "");
       }
+
+      if (userSnap.exists()) {
+        setPremium(userSnap.data() as PremiumData);
+      }
+
       setLoading(false);
     };
 
-    loadProfile();
+    loadAll();
   }, [user]);
 
   if (authSession?.loading || loading) {
@@ -186,6 +264,8 @@ export default function ProfilePage() {
       .slice(0, 2)
       .toUpperCase();
 
+  const premiumInfo = premiumMeta(premium);
+
   /* ========================================================= */
 
   return (
@@ -207,8 +287,35 @@ export default function ProfilePage() {
           <p className="text-muted-foreground">
             {user.email}
           </p>
+
+          <span
+            className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full text-xs font-medium ${premiumInfo.color}`}
+          >
+            <Crown className="w-4 h-4" />
+            {premiumInfo.label}
+          </span>
         </div>
       </div>
+
+      {/* PREMIUM ACCESS (READ ONLY) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>My Premium Access</CardTitle>
+          <CardDescription>
+            Content unlocked for your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <AccessList title="Premium Notes" items={premium.grantedNoteIds} />
+          <AccessList title="Premium Tests / MCQs" items={premium.grantedTestIds} />
+          <AccessList title="Premium Services" items={premium.grantedServiceSlugs} />
+          <AccessList
+            title="Special Premium Unlocks"
+            items={premium.premiumOverrideIds}
+            highlight
+          />
+        </CardContent>
+      </Card>
 
       {/* BASIC INFO */}
       <Card>
@@ -323,6 +430,38 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/* ================= REUSABLE ================= */
+
+function AccessList({
+  title,
+  items,
+  highlight,
+}: {
+  title: string;
+  items?: string[];
+  highlight?: boolean;
+}) {
+  return (
+    <div>
+      <p className="font-medium mb-1">{title}</p>
+      {items && items.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {items.map((id) => (
+            <Badge
+              key={id}
+              variant={highlight ? "default" : "outline"}
+            >
+              {id}
+            </Badge>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">No access</p>
+      )}
     </div>
   );
 }
