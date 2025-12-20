@@ -22,7 +22,7 @@ export default function CBTMockTestPage() {
   const search = useSearchParams();
   const router = useRouter();
 
-  /* 🔒 INSTRUCTION GATE (UNCHANGED) */
+  /* 🔒 HARD ENTRY GATE */
   useEffect(() => {
     if (!search.get("start")) {
       router.replace(`/dashboard/mock-test/${id}/instructions`);
@@ -90,7 +90,7 @@ export default function CBTMockTestPage() {
     if (submitRequested && !isSubmitting) {
       submitTestSafe("AUTO_SUBMIT");
     }
-  }, [submitRequested, isSubmitting, questions, answers, router]);
+  }, [submitRequested, isSubmitting]);
 
   /* =========================
      CBT WARNING SYSTEM
