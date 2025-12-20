@@ -37,13 +37,14 @@ export default function MockTestListPage() {
     async function load() {
       setLoading(true);
 
+      // ✅ SAFE QUERY (NO INDEX REQUIRED)
       const q = query(
         collection(db, "test_series"),
-        where("isPublished", "==", true),
-        orderBy("createdAt", "desc")
+        where("isPublished", "==", true)
       );
 
       const snap = await getDocs(q);
+
       setTests(
         snap.docs.map((d) => ({
           id: d.id,
@@ -164,7 +165,7 @@ export default function MockTestListPage() {
               >
                 <Button className="w-full">
                   {isPremium && price !== null
-                    ? `View & Buy`
+                    ? "View & Buy"
                     : "Start Mock Test"}
                 </Button>
               </Link>
