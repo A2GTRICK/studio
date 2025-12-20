@@ -8,8 +8,6 @@ import {
   query,
   updateDoc,
   doc,
-  limit,
-  startAfter,
 } from "firebase/firestore";
 import { db } from "@/firebase/config";
 
@@ -41,42 +39,32 @@ type User = {
   createdAt?: any;
 };
 
-const PAGE_SIZE = 20;
-
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("all");
-  const [lastDoc, setLastDoc] = useState<any>(null);
 
   useEffect(() => {
     loadUsers();
   }, []);
 
-  async function loadUsers(loadMore = false) {
+  async function loadUsers() {
     setLoading(true);
-    
-    let q;
-    const baseQuery = query(
+
+    const q = query(
       collection(db, "user_profiles"),
       orderBy("createdAt", "desc")
     );
 
-    if (loadMore && lastDoc) {
-      q = query(baseQuery, startAfter(lastDoc), limit(PAGE_SIZE));
-    } else {
-      q = query(baseQuery, limit(PAGE_SIZE));
-    }
-
     const snap = await getDocs(q);
+
     const rows: User[] = snap.docs.map((d) => ({
       id: d.id,
       ...(d.data() as any),
     }));
 
-    setUsers(loadMore ? [...users, ...rows] : rows);
-    setLastDoc(snap.docs[snap.docs.length - 1] || null);
+    setUsers(rows);
     setLoading(false);
   }
 
@@ -84,27 +72,23 @@ export default function AdminUsersPage() {
     await updateDoc(doc(db, "user_profiles", user.id), {
       status: user.status === "blocked" ? "active" : "blocked",
     });
-    // Optimistically update UI
-    setUsers(users.map(u => u.id === user.id ? {...u, status: u.status === 'blocked' ? 'active' : 'blocked'} : u));
+    loadUsers();
   }
 
   async function changePlan(user: User, plan: "free" | "pro") {
     await updateDoc(doc(db, "user_profiles", user.id), {
       plan,
     });
-     // Optimistically update UI
-    setUsers(users.map(u => u.id === user.id ? {...u, plan } : u));
+    loadUsers();
   }
 
   const filteredUsers = users.filter((u) => {
-    const searchLower = search.toLowerCase();
     const matchSearch =
-      !search ||
-      u.name?.toLowerCase().includes(searchLower) ||
-      u.email?.toLowerCase().includes(searchLower);
+      u.name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase());
 
     const matchPlan =
-      planFilter === "all" || (u.plan || 'free') === planFilter;
+      planFilter === "all" || u.plan === planFilter;
 
     return matchSearch && matchPlan;
   });
@@ -146,7 +130,7 @@ export default function AdminUsersPage() {
         </CardHeader>
 
         <CardContent>
-          {loading && users.length === 0 ? (
+          {loading ? (
             <p className="text-muted-foreground">Loading users...</p>
           ) : filteredUsers.length === 0 ? (
             <p className="text-muted-foreground">
@@ -157,11 +141,11 @@ export default function AdminUsersPage() {
               <table className="w-full text-sm">
                 <thead className="border-b">
                   <tr className="text-left">
-                    <th className="py-2 px-2">Name</th>
-                    <th className="px-2">Email</th>
-                    <th className="px-2">Plan</th>
-                    <th className="px-2">Status</th>
-                    <th className="text-right px-2">Actions</th>
+                    <th className="py-2">Name</th>
+                    <th>Email</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
                   </tr>
                 </thead>
 
@@ -171,11 +155,11 @@ export default function AdminUsersPage() {
                       key={user.id}
                       className="border-b last:border-0"
                     >
-                      <td className="py-3 px-2">
+                      <td className="py-3">
                         {user.name || "—"}
                       </td>
-                      <td className="px-2">{user.email || "—"}</td>
-                      <td className="px-2">
+                      <td>{user.email || "—"}</td>
+                      <td>
                         <Badge
                           variant={
                             user.plan === "pro"
@@ -186,7 +170,7 @@ export default function AdminUsersPage() {
                           {user.plan || "free"}
                         </Badge>
                       </td>
-                      <td className="px-2">
+                      <td>
                         <Badge
                           variant={
                             user.status === "blocked"
@@ -197,7 +181,7 @@ export default function AdminUsersPage() {
                           {user.status || "active"}
                         </Badge>
                       </td>
-                      <td className="text-right space-x-2 px-2">
+                      <td className="text-right space-x-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -233,15 +217,6 @@ export default function AdminUsersPage() {
               </table>
             </div>
           )}
-           {!loading && lastDoc && (
-             <Button
-                variant="outline"
-                onClick={() => loadUsers(true)}
-                className="w-full mt-4"
-              >
-               Load More
-             </Button>
-           )}
         </CardContent>
       </Card>
     </div>
