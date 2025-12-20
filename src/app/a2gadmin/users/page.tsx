@@ -9,7 +9,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { db, auth } from "@/firebase/config";
 
 import {
   Card,
@@ -46,26 +46,44 @@ export default function AdminUsersPage() {
   const [planFilter, setPlanFilter] = useState("all");
 
   useEffect(() => {
-    loadUsers();
+    // DEBUG LOGS
+    console.log("DEBUG: Firebase Project ID:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      console.log("DEBUG: auth.currentUser?.uid:", user?.uid);
+      console.log("DEBUG: auth.currentUser?.email:", user?.email);
+      console.log("DEBUG: Is auth.currentUser null?", user === null);
+      if (user) {
+        loadUsers();
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   async function loadUsers() {
     setLoading(true);
 
-    const q = query(
-      collection(db, "user_profiles"),
-      orderBy("createdAt", "desc")
-    );
+    try {
+        const q = query(
+          collection(db, "user_profiles"),
+          orderBy("createdAt", "desc")
+        );
 
-    const snap = await getDocs(q);
+        const snap = await getDocs(q);
 
-    const rows: User[] = snap.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as any),
-    }));
+        const rows: User[] = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as any),
+        }));
 
-    setUsers(rows);
-    setLoading(false);
+        setUsers(rows);
+    } catch (error) {
+        console.error("DEBUG: Firestore query failed:", error);
+    } finally {
+        setLoading(false);
+    }
   }
 
   async function toggleBlock(user: User) {
@@ -83,9 +101,10 @@ export default function AdminUsersPage() {
   }
 
   const filteredUsers = users.filter((u) => {
-    const matchSearch =
-      u.name?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase());
+    const nameMatch = u.name?.toLowerCase().includes(search.toLowerCase()) ?? false;
+    const emailMatch = u.email?.toLowerCase().includes(search.toLowerCase()) ?? false;
+    
+    const matchSearch = nameMatch || emailMatch;
 
     const matchPlan =
       planFilter === "all" || u.plan === planFilter;
