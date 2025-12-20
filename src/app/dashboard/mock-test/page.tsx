@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -141,8 +142,15 @@ export default function MockTestListPage() {
 
                   {/* PRICE */}
                   {isPremium && (
-                    <div className="mt-2 font-medium">
-                      {price > 0 ? `₹${price}` : "Free"}
+                    <div className="mt-2 font-medium rupee">
+                      {price > 0 ? (
+                        <>
+                          <span className="mr-0.5">&#8377;</span>
+                          {price}
+                        </>
+                      ) : (
+                        "Free"
+                      )}
                     </div>
                   )}
                 </div>

@@ -127,6 +127,10 @@ body {
 }
 
 @layer utilities {
+    .rupee {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
+      font-weight: 500;
+    }
     @keyframes orbit-fast {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
