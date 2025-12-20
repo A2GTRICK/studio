@@ -6,6 +6,7 @@ import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useAuthSession } from "@/auth/AuthSessionProvider";
 
 type Option = string | { text: string };
 
@@ -17,19 +18,30 @@ interface Question {
   explanation?: string;
 }
 
+// Helper functions for access control
+function daysBetween(date?: string | null) {
+  if (!date) return null;
+  const diff = new Date(date).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function hasActivePremium(userData: any) {
+  if (!userData) return false;
+  if (userData.isLifetime) return true;
+  const days = daysBetween(userData?.premiumUntil);
+  return days !== null && days >= 0;
+}
+
+
 export default function CBTMockTestPage() {
   const { id } = useParams<{ id: string }>();
   const search = useSearchParams();
   const router = useRouter();
-
-  /* 🔒 HARD ENTRY GATE */
-  useEffect(() => {
-    if (!search.get("start")) {
-      router.replace(`/dashboard/mock-test/${id}/instructions`);
-    }
-  }, [id, router, search]);
+  const authSession = useAuthSession();
+  const user = authSession?.user;
 
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [current, setCurrent] = useState(0);
@@ -41,7 +53,82 @@ export default function CBTMockTestPage() {
   const [warnings, setWarnings] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitRequested, setSubmitRequested] = useState(false);
+  
 
+  useEffect(() => {
+    if (authSession.loading) return; // Wait for auth session to resolve
+
+    if (!search.get("start")) {
+      router.replace(`/dashboard/mock-test/${id}/instructions`);
+      return;
+    }
+
+    async function loadAndVerify() {
+      const testSnap = await getDoc(doc(db, "test_series", id));
+      if (!testSnap.exists()) {
+        setAccessDenied(true);
+        setLoading(false);
+        return;
+      }
+
+      const testData = testSnap.data();
+      let userHasAccess = false;
+
+      if (testData.isPremium === true) {
+        if (user?.uid) {
+          const userSnap = await getDoc(doc(db, "users", user.uid));
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const hasGrant = userData.grantedTestIds?.includes(id);
+            if (hasActivePremium(userData) || hasGrant) {
+              userHasAccess = true;
+            }
+          }
+        }
+      } else {
+        // It's a free test
+        userHasAccess = true;
+      }
+
+      if (!userHasAccess) {
+        setAccessDenied(true);
+        setLoading(false);
+        // Redirect back to instructions which will show the paywall
+        router.replace(`/dashboard/mock-test/${id}/instructions`);
+        return;
+      }
+      
+      // If access is granted, load questions
+      setTitle(testData.title || "Mock Test");
+      setTimeLeft((testData.duration || 60) * 60);
+
+      const qSnap = await getDocs(
+        collection(db, "test_series", id, "questions")
+      );
+
+      const qs = qSnap.docs.map(d => {
+        const q = d.data();
+        return {
+          id: d.id,
+          text: q.question?.text || q.text || "Question missing",
+          options: q.options || [],
+          correctAnswer: q.correctAnswer ?? 0,
+          explanation: q.explanation || "",
+        };
+      });
+
+      setQuestions(qs);
+      setMarked(new Array(qs.length).fill(false));
+      setVisited(new Array(qs.length).fill(false));
+      setLoading(false);
+
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+
+    loadAndVerify();
+  }, [id, search, authSession.loading, user, router]);
+  
+  
   /* =========================
      SAFE SUBMIT (UNCHANGED)
   ========================= */
@@ -139,46 +226,6 @@ export default function CBTMockTestPage() {
       document.removeEventListener("fullscreenchange", onFsChange);
   }, [isSubmitting]);
 
-  /* =========================
-     LOAD TEST DATA
-  ========================= */
-
-  useEffect(() => {
-    async function load() {
-      const tSnap = await getDoc(doc(db, "test_series", id));
-      if (!tSnap.exists()) return;
-
-      const t = tSnap.data();
-      setTitle(t.title || "Mock Test");
-      setTimeLeft((t.duration || 60) * 60);
-
-      const qSnap = await getDocs(
-        collection(db, "test_series", id, "questions")
-      );
-
-      const qs = qSnap.docs.map(d => {
-        const q = d.data();
-        return {
-          id: d.id,
-          text: q.question?.text || q.text || "Question missing",
-          options: q.options || [],
-          correctAnswer: q.correctAnswer ?? 0,
-          explanation: q.explanation || "",
-        };
-      });
-
-      setQuestions(qs);
-      setMarked(new Array(qs.length).fill(false));
-      setVisited(new Array(qs.length).fill(false));
-      setLoading(false);
-
-      document.documentElement.requestFullscreen?.().catch(() => {});
-    }
-
-    if (search.get("start")) {
-      load();
-    }
-  }, [id, search]);
 
   /* =========================
      TIMER
@@ -216,6 +263,14 @@ export default function CBTMockTestPage() {
         <Loader2 className="animate-spin" />
       </div>
     );
+  }
+  
+  if (accessDenied) {
+      return (
+          <div className="p-10 text-center text-red-600">
+              Access Denied. You do not have permission to start this premium test.
+          </div>
+      )
   }
 
   const q = questions[current];
