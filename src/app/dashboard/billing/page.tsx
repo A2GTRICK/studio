@@ -44,6 +44,10 @@ export default function BillingPage() {
     try {
       const orderRes = await fetch("/api/razorpay/create-order", {
         method: "POST",
+        body: JSON.stringify({
+          amount: 100,
+          plan: 'pro'
+        })
       });
 
       const order = await orderRes.json();
@@ -76,8 +80,9 @@ export default function BillingPage() {
 
           if (result.success) {
             toast({
-              title: "Payment successful 🎉",
-              description: "Pro plan activated successfully.",
+              title: "Pro access activated",
+              description:
+                "You now have uninterrupted access to structured study material.",
             });
             window.location.reload();
           } else {
@@ -91,20 +96,21 @@ export default function BillingPage() {
     } catch {
       toast({
         variant: "destructive",
-        title: "Payment failed",
-        description: "Something went wrong. Please try again.",
+        title: "Payment unsuccessful",
+        description: "Please try again. No amount was deducted.",
       });
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-10">
 
       {/* HEADER */}
       <div>
-        <h1 className="text-3xl font-bold">Billing & Plans</h1>
-        <p className="text-muted-foreground">
-          Manage your subscription and payment history.
+        <h1 className="text-3xl font-bold">Billing & Access</h1>
+        <p className="text-muted-foreground max-w-xl">
+          Choose the level of access that fits your current stage of
+          preparation. You can upgrade anytime.
         </p>
       </div>
 
@@ -112,21 +118,33 @@ export default function BillingPage() {
       <div className="grid gap-6 md:grid-cols-2">
 
         {/* FREE */}
-        <Card>
+        <Card className="relative">
           <CardHeader>
-            <CardTitle>Free</CardTitle>
-            <CardDescription>Basic access</CardDescription>
+            <CardTitle>Free Access</CardTitle>
+            <CardDescription>
+              Suitable for casual browsing and limited practice
+            </CardDescription>
           </CardHeader>
+
           <CardContent>
             <div className="text-4xl font-bold flex items-center">
               <IndianRupee className="w-6 h-6" /> 0
             </div>
-            <ul className="mt-4 space-y-2">
+
+            <ul className="mt-4 space-y-2 text-sm">
               <li className="flex gap-2">
-                <Check className="text-green-500" /> Free notes & MCQs
+                <Check className="text-green-500" /> Selected notes
+              </li>
+              <li className="flex gap-2">
+                <Check className="text-green-500" /> Free MCQ practice
               </li>
             </ul>
+
+            <p className="mt-4 text-xs text-muted-foreground">
+              Ideal if you are exploring topics or just getting started.
+            </p>
           </CardContent>
+
           <CardFooter>
             <Button disabled className="w-full">
               Current Plan
@@ -135,13 +153,15 @@ export default function BillingPage() {
         </Card>
 
         {/* PRO */}
-        <Card className={isPro ? "border-2 border-primary" : ""}>
+        <Card className={`relative ${isPro ? "border-2 border-primary" : ""}`}>
           <CardHeader>
-            <div className="flex justify-between">
-              <CardTitle>Pro</CardTitle>
-              {isPro && <Badge>Current</Badge>}
+            <div className="flex justify-between items-center">
+              <CardTitle>Pro Access</CardTitle>
+              {isPro && <Badge>Active</Badge>}
             </div>
-            <CardDescription>Monthly subscription</CardDescription>
+            <CardDescription>
+              Structured, exam-oriented preparation
+            </CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -152,9 +172,9 @@ export default function BillingPage() {
               </span>
             </div>
 
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 space-y-2 text-sm">
               <li className="flex gap-2">
-                <Check className="text-green-500" /> Unlimited premium notes
+                <Check className="text-green-500" /> All premium notes
               </li>
               <li className="flex gap-2">
                 <Check className="text-green-500" /> Mock tests & analytics
@@ -163,6 +183,11 @@ export default function BillingPage() {
                 <Check className="text-green-500" /> Priority support
               </li>
             </ul>
+
+            <p className="mt-4 text-xs text-muted-foreground">
+              Recommended if you are preparing seriously and want continuity
+              across subjects.
+            </p>
           </CardContent>
 
           <CardFooter>
@@ -171,7 +196,7 @@ export default function BillingPage() {
               disabled={isPro}
               onClick={() => setShowPreview(true)}
             >
-              {isPro ? "You're Pro 🎉" : "Upgrade to Pro"}
+              {isPro ? "You’re already Pro" : "Continue with Pro"}
               {!isPro && <Sparkles className="ml-2 h-4 w-4" />}
             </Button>
           </CardFooter>
@@ -186,25 +211,30 @@ export default function BillingPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground">
-          Coming soon.
+          Your past transactions will appear here.
         </CardContent>
       </Card>
 
       {/* ==========================
-         PREVIEW / TRUST MODAL
+         CONFIRMATION MODAL
       ========================== */}
       {showPreview && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
           <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-xl space-y-5">
 
             <h2 className="text-2xl font-bold">
-              Confirm your Pro Plan
+              Confirm Pro Access
             </h2>
 
+            <p className="text-sm text-muted-foreground">
+              This gives you uninterrupted access to structured study material
+              across notes, mock tests, and practice.
+            </p>
+
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>✔ Access to all premium notes & mock tests</p>
-              <p>✔ Progress tracking & analytics</p>
+              <p>✔ Syllabus-aligned premium content</p>
               <p>✔ Cancel anytime</p>
+              <p>✔ No hidden charges</p>
             </div>
 
             <div className="border rounded-lg p-4 flex justify-between items-center">
@@ -217,15 +247,18 @@ export default function BillingPage() {
             <div className="flex items-start gap-2 text-xs text-muted-foreground">
               <ShieldCheck className="w-4 h-4 mt-0.5" />
               Payments are securely processed by Razorpay.
-              We never store your card or UPI details.
+              We do not store your card or UPI details.
             </div>
 
             <div className="flex gap-3 justify-end">
-              <Button variant="outline" onClick={() => setShowPreview(false)}>
-                Cancel
+              <Button
+                variant="outline"
+                onClick={() => setShowPreview(false)}
+              >
+                Go back
               </Button>
               <Button onClick={startPayment}>
-                Proceed to Secure Payment
+                Proceed to secure payment
               </Button>
             </div>
           </div>
