@@ -23,7 +23,6 @@ type User = {
   id: string;
   displayName?: string;
   email?: string;
-
   plan?: "free" | "pro";
   status?: "active" | "blocked";
 
@@ -32,7 +31,7 @@ type User = {
   grantedServiceSlugs?: string[];
   premiumContentOverrides?: string[];
 
-  premiumUntil?: string; // ISO
+  premiumUntil?: string;
 };
 
 /* ======================
@@ -50,7 +49,6 @@ export default function AdminSingleUserPage() {
   const [testInput, setTestInput] = useState("");
   const [serviceInput, setServiceInput] = useState("");
   const [premiumOverrideInput, setPremiumOverrideInput] = useState("");
-
   const [expiryDate, setExpiryDate] = useState("");
 
   useEffect(() => {
@@ -69,20 +67,21 @@ export default function AdminSingleUserPage() {
     setLoading(false);
   }
 
-  /* ========= PREMIUM STATE ========= */
+  /* ===== PREMIUM STATUS ===== */
 
-  function premiumDaysRemaining() {
+  function remainingDays() {
     if (!user?.premiumUntil) return null;
-    const diff =
-      new Date(user.premiumUntil).getTime() - Date.now();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return Math.ceil(
+      (new Date(user.premiumUntil).getTime() - Date.now()) /
+        (1000 * 60 * 60 * 24)
+    );
   }
 
-  const premiumExpired =
-    user?.premiumUntil &&
-    new Date(user.premiumUntil).getTime() < Date.now();
+  const daysLeft = remainingDays();
+  const isExpired = daysLeft !== null && daysLeft <= 0;
+  const isExpiringSoon = daysLeft !== null && daysLeft > 0 && daysLeft <= 7;
 
-  /* ========= UPDATE HELPERS ========= */
+  /* ===== UPDATE HELPERS ===== */
 
   async function updateArray(
     field: keyof User,
@@ -138,7 +137,7 @@ export default function AdminSingleUserPage() {
         </Button>
       </div>
 
-      {/* ACCOUNT SUMMARY */}
+      {/* SUMMARY */}
       <Card>
         <CardHeader>
           <CardTitle>Account Summary</CardTitle>
@@ -156,29 +155,25 @@ export default function AdminSingleUserPage() {
 
           <div>
             <p className="text-muted-foreground">Plan</p>
-            <div className="flex gap-2 items-center">
-              <Badge>{user.plan || "free"}</Badge>
-              {premiumExpired && (
-                <Badge variant="destructive">Expired</Badge>
+            <div className="flex gap-2">
+              <Badge>{user.plan}</Badge>
+              {isExpired && <Badge variant="destructive">Expired</Badge>}
+              {isExpiringSoon && (
+                <Badge className="bg-yellow-500 text-black">
+                  Expiring Soon
+                </Badge>
               )}
             </div>
           </div>
 
           <div>
-            <p className="text-muted-foreground">Status</p>
-            <Badge>{user.status || "active"}</Badge>
-          </div>
-
-          <div>
             <p className="text-muted-foreground">Premium Remaining</p>
-            {user.premiumUntil ? (
-              premiumExpired ? (
-                <Badge variant="destructive">Expired</Badge>
-              ) : (
-                <p>{premiumDaysRemaining()} days</p>
-              )
-            ) : (
+            {daysLeft === null ? (
               <p>—</p>
+            ) : isExpired ? (
+              <Badge variant="destructive">Expired</Badge>
+            ) : (
+              <p>{daysLeft} days</p>
             )}
           </div>
         </CardContent>
@@ -214,14 +209,14 @@ export default function AdminSingleUserPage() {
         />
       </div>
 
-      {/* PREMIUM OVERRIDES */}
+      {/* PREMIUM OVERRIDE */}
       <Card className="border-2 border-purple-500">
         <CardHeader>
           <CardTitle>🔥 Premium Content Overrides</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {(user.premiumContentOverrides || []).map((id) => (
-            <div key={id} className="flex justify-between items-center">
+            <div key={id} className="flex justify-between">
               <span>{id}</span>
               <Button
                 size="sm"
@@ -237,7 +232,7 @@ export default function AdminSingleUserPage() {
 
           <div className="flex gap-2">
             <Input
-              placeholder="Paste ANY premium content ID"
+              placeholder="Paste premium content ID"
               value={premiumOverrideInput}
               onChange={(e) => setPremiumOverrideInput(e.target.value)}
             />
@@ -257,24 +252,24 @@ export default function AdminSingleUserPage() {
         </CardContent>
       </Card>
 
-      {/* PREMIUM TIME CONTROL */}
+      {/* PREMIUM TIME */}
       <Card>
         <CardHeader>
           <CardTitle>Premium Time Control</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3">
             <Button onClick={() => addPremiumDays(30)}>+30 Days</Button>
             <Button onClick={() => addPremiumDays(90)}>+90 Days</Button>
             <Button
               variant="destructive"
               onClick={() => addPremiumDays(365 * 50)}
             >
-              Lifetime Premium
+              Lifetime
             </Button>
           </div>
 
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-3">
             <Input
               type="date"
               value={expiryDate}
@@ -291,7 +286,7 @@ export default function AdminSingleUserPage() {
 }
 
 /* ======================
-   REUSABLE ACCESS BOX
+   ACCESS BOX
 ====================== */
 
 function AccessBox({
@@ -301,39 +296,23 @@ function AccessBox({
   setInput,
   onAdd,
   onRemove,
-}: {
-  title: string;
-  items: string[];
-  input: string;
-  setInput: (v: string) => void;
-  onAdd: (v: string) => void;
-  onRemove: (v: string) => void;
-}) {
+}: any) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        {items.length ? (
-          items.map((id) => (
-            <div key={id} className="flex justify-between items-center">
-              <span>{id}</span>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => onRemove(id)}
-              >
-                Revoke
-              </Button>
-            </div>
-          ))
-        ) : (
-          <p className="text-muted-foreground">No access granted.</p>
-        )}
-
+        {items.map((id: string) => (
+          <div key={id} className="flex justify-between">
+            <span>{id}</span>
+            <Button size="sm" variant="destructive" onClick={() => onRemove(id)}>
+              Revoke
+            </Button>
+          </div>
+        ))}
         <Input
-          placeholder="Enter ID / Slug"
+          placeholder="Enter ID"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
