@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -17,7 +16,8 @@ function daysBetween(date?: string | null) {
 }
 
 function hasActivePremium(userData: any) {
-  if (userData?.isLifetime) return true;
+  if (!userData) return false;
+  if (userData.isLifetime) return true;
   const days = daysBetween(userData?.premiumUntil);
   return days !== null && days >= 0;
 }
@@ -70,6 +70,7 @@ export default function MockTestInstructionPage() {
     try {
       document.documentElement.requestFullscreen?.();
     } catch {}
+    // We use window.location.href to ensure a full page reload into the test environment
     window.location.href = `/dashboard/mock-test/${testId}`;
   }
 
@@ -88,8 +89,9 @@ export default function MockTestInstructionPage() {
   const isLocked =
     mockTest.isPremium === true &&
     !hasActivePremium(userData) &&
-    !userData?.grantedTestIds?.includes(testId) &&
-    !userData?.premiumOverrideIds?.includes(testId);
+    !(Array.isArray(userData?.grantedTestIds) && userData.grantedTestIds.includes(testId)) &&
+    !(Array.isArray(userData?.premiumOverrideIds) && userData.premiumOverrideIds.includes(testId));
+
 
   if (isLocked) {
     return (
@@ -103,7 +105,7 @@ export default function MockTestInstructionPage() {
         </p>
 
         <p className="text-sm text-muted-foreground">
-          Upgrade to premium to unlock this test and many other features.
+          Upgrade to premium to unlock this test and many other features designed for comprehensive exam preparation.
         </p>
 
         <Button onClick={() => router.push("/dashboard/billing")}>
@@ -124,13 +126,13 @@ export default function MockTestInstructionPage() {
         <Instruction
           icon={<Clock />}
           title="Test Duration"
-          text="The test is time-bound. The timer will start immediately once you begin the test."
+          text={`The test is time-bound for ${mockTest.duration || 'N/A'} minutes. The timer will start immediately once you begin.`}
         />
 
         <Instruction
           icon={<BookOpen />}
           title="Question Pattern"
-          text="Each question carries equal marks. Some questions have negative marking for incorrect answers."
+          text={`There are ${mockTest.questionCount || 'multiple'} questions. Each question carries equal marks. Negative marking may apply.`}
         />
 
         <Instruction
@@ -154,7 +156,7 @@ export default function MockTestInstructionPage() {
 
         <ul className="list-disc list-inside text-sm text-amber-800 space-y-1">
           <li>Do not refresh the page during the test.</li>
-          <li>Do not close the browser until submission.</li>
+          <li>Do not close the browser or switch tabs until submission.</li>
           <li>Test progress is not saved if the page is reloaded.</li>
           <li>This is a practice mock test for self-assessment.</li>
         </ul>
