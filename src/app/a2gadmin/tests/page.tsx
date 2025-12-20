@@ -1,9 +1,8 @@
-// src/app/a2gadmin/tests/page.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2, PlusCircle, Eye } from "lucide-react";
+import { Loader2, PlusCircle, Eye, Search } from "lucide-react";
 import {
   collection,
   getDocs,
@@ -31,6 +30,11 @@ export default function TestAdminPage() {
   const [allTests, setAllTests] = useState<Test[]>([]);
   const [confirmTest, setConfirmTest] = useState<Test | null>(null);
 
+  /* UI FILTER STATES */
+  const [search, setSearch] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
+
   async function loadTests() {
     setLoading(true);
     const testsRef = collection(db, "test_series");
@@ -44,33 +48,52 @@ export default function TestAdminPage() {
     loadTests();
   }, []);
 
+  /* SUBJECT OPTIONS */
+  const subjects = useMemo(() => {
+    const s = new Set<string>();
+    allTests.forEach(t => t.subject && s.add(t.subject));
+    return Array.from(s);
+  }, [allTests]);
+
+  /* FILTERED LIST */
+  const filteredTests = useMemo(() => {
+    return allTests.filter(t => {
+      if (search && !t.title.toLowerCase().includes(search.toLowerCase())) {
+        return false;
+      }
+      if (subjectFilter !== "all" && t.subject !== subjectFilter) {
+        return false;
+      }
+      if (statusFilter === "published" && !t.isPublished) return false;
+      if (statusFilter === "draft" && t.isPublished) return false;
+      return true;
+    });
+  }, [allTests, search, subjectFilter, statusFilter]);
+
   async function validateBeforePublish(testId: string): Promise<string | null> {
     const qSnap = await getDocs(
       collection(db, "test_series", testId, "questions")
     );
-  
-    if (qSnap.empty) {
-      return "Cannot publish: Test has no questions.";
-    }
-  
+
+    if (qSnap.empty) return "Cannot publish: Test has no questions.";
+
     let index = 1;
-  
+
     for (const docSnap of qSnap.docs) {
       const q = docSnap.data();
-  
+
       if (!q?.question?.text || !q.question.text.trim()) {
         return `Question ${index}: Missing question text.`;
       }
-  
-      // FIX: Check if options is an array of objects with a `text` property
+
       if (
         !Array.isArray(q.options) ||
         q.options.length < 2 ||
-        q.options.some((opt: any) => typeof opt.text !== 'string' || !opt.text.trim())
+        q.options.some((opt: any) => typeof opt.text !== "string" || !opt.text.trim())
       ) {
-        return `Question ${index}: At least 2 non-empty options are required.`;
+        return `Question ${index}: Invalid options.`;
       }
-  
+
       if (
         typeof q.correctAnswer !== "number" ||
         q.correctAnswer < 0 ||
@@ -78,36 +101,31 @@ export default function TestAdminPage() {
       ) {
         return `Question ${index}: Invalid correct answer index.`;
       }
-  
+
       index++;
     }
-  
-    return null; // ✅ All good
+
+    return null;
   }
 
   async function togglePublish(test: Test) {
-    // Always allow unpublish
     if (test.isPublished) {
-      await updateDoc(doc(db, "test_series", test.id), {
-        isPublished: false,
-      });
+      await updateDoc(doc(db, "test_series", test.id), { isPublished: false });
       loadTests();
       return;
     }
-  
-    // Validate BEFORE publishing
+
     const error = await validateBeforePublish(test.id);
-  
     if (error) {
       alert(`Publish blocked:\n\n${error}`);
       return;
     }
-  
+
     await updateDoc(doc(db, "test_series", test.id), {
       isPublished: true,
       updatedAt: new Date(),
     });
-  
+
     loadTests();
   }
 
@@ -138,8 +156,10 @@ export default function TestAdminPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex justify-between mb-6">
+    <div className="max-w-7xl mx-auto space-y-6">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold">Mock Test Manager</h1>
           <p className="text-muted-foreground">
@@ -155,7 +175,49 @@ export default function TestAdminPage() {
         </Link>
       </div>
 
-      <div className="border rounded-xl overflow-hidden">
+      {/* FILTER BAR */}
+      <div className="bg-white border rounded-xl p-4 flex flex-wrap gap-4 items-center">
+        <div className="flex items-center gap-2 border rounded-lg px-3 py-2">
+          <Search className="w-4 h-4 text-muted-foreground" />
+          <input
+            placeholder="Search by title"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="outline-none text-sm w-48"
+          />
+        </div>
+
+        <select
+          value={subjectFilter}
+          onChange={e => setSubjectFilter(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm"
+        >
+          <option value="all">All subjects</option>
+          {subjects.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+
+        <div className="flex gap-2">
+          {["all", "published", "draft"].map(s => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s as any)}
+              className={clsx(
+                "px-3 py-1.5 rounded-lg text-sm border",
+                statusFilter === s
+                  ? "bg-primary text-white"
+                  : "bg-muted"
+              )}
+            >
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* TABLE */}
+      <div className="border rounded-xl overflow-hidden bg-white">
         <table className="w-full">
           <thead className="bg-muted">
             <tr>
@@ -168,7 +230,7 @@ export default function TestAdminPage() {
             </tr>
           </thead>
           <tbody>
-            {allTests.map(test => (
+            {filteredTests.map(test => (
               <tr key={test.id} className="border-t">
                 <td className="p-4 font-medium">{test.title}</td>
                 <td className="p-4 hidden md:table-cell">
@@ -209,11 +271,9 @@ export default function TestAdminPage() {
                     size="sm"
                     variant={test.isPublished ? "secondary" : "default"}
                     onClick={() => {
-                      if (test.isPublished) {
-                        togglePublish(test); // unpublish = no confirm
-                      } else {
-                        setConfirmTest(test); // publish = confirm
-                      }
+                      test.isPublished
+                        ? togglePublish(test)
+                        : setConfirmTest(test);
                     }}
                   >
                     {test.isPublished ? "Unpublish" : "Publish"}
@@ -228,22 +288,23 @@ export default function TestAdminPage() {
                 </td>
               </tr>
             ))}
-            {allTests.length === 0 && (
+
+            {filteredTests.length === 0 && (
               <tr>
                 <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                  No tests found
+                  No tests match the current filters
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {/* CONFIRM MODAL (UNCHANGED) */}
       {confirmTest && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-2">
-              Confirm Publish
-            </h2>
+            <h2 className="text-xl font-bold mb-2">Confirm Publish</h2>
 
             <div className="space-y-2 text-sm">
               <p><b>Title:</b> {confirmTest.title}</p>
@@ -262,19 +323,15 @@ export default function TestAdminPage() {
 
               {(confirmTest.questionCount ?? 0) < 5 && (
                 <p className="text-red-600 text-xs">
-                  ⚠️ Warning: Very few questions. Are you sure?
+                  ⚠️ Very few questions. Are you sure?
                 </p>
               )}
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-              <Button
-                variant="secondary"
-                onClick={() => setConfirmTest(null)}
-              >
+              <Button variant="secondary" onClick={() => setConfirmTest(null)}>
                 Cancel
               </Button>
-
               <Button
                 onClick={async () => {
                   await togglePublish(confirmTest);
