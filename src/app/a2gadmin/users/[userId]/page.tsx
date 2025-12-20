@@ -25,10 +25,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-/* =====================
+/* =======================
    TYPES
-===================== */
+======================= */
 
 type User = {
   id: string;
@@ -43,12 +44,21 @@ type User = {
 };
 
 type PendingAction =
-  | { type: "note" | "test" | "service"; value: string; mode: "grant" | "revoke" }
+  | {
+      field: "grantedNoteIds" | "grantedTestIds" | "grantedServiceSlugs";
+      value: string;
+      mode: "grant" | "revoke";
+    }
+  | {
+      field: "premiumUntil";
+      value: string;
+      mode: "set";
+    }
   | null;
 
-/* =====================
+/* =======================
    PAGE
-===================== */
+======================= */
 
 export default function AdminSingleUserPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -57,10 +67,11 @@ export default function AdminSingleUserPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [noteInput, setNoteInput] = useState("");
-  const [testInput, setTestInput] = useState("");
-  const [serviceInput, setServiceInput] = useState("");
+  const [contentType, setContentType] =
+    useState<"note" | "test" | "service">("note");
+  const [contentId, setContentId] = useState("");
 
+  const [premiumDays, setPremiumDays] = useState("");
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
   useEffect(() => {
@@ -69,8 +80,7 @@ export default function AdminSingleUserPage() {
 
   async function loadUser() {
     setLoading(true);
-    const ref = doc(db, "users", userId);
-    const snap = await getDoc(ref);
+    const snap = await getDoc(doc(db, "users", userId));
     setUser(snap.exists() ? { id: snap.id, ...(snap.data() as any) } : null);
     setLoading(false);
   }
@@ -79,26 +89,22 @@ export default function AdminSingleUserPage() {
     if (!user || !pendingAction) return;
 
     const ref = doc(db, "users", user.id);
-    const fieldMap = {
-      note: "grantedNoteIds",
-      test: "grantedTestIds",
-      service: "grantedServiceSlugs",
-    } as const;
 
-    const field = fieldMap[pendingAction.type];
-    const current: string[] = (user as any)[field] || [];
+    if (pendingAction.field === "premiumUntil") {
+      await updateDoc(ref, { premiumUntil: pendingAction.value });
+    } else {
+      const current: string[] = (user as any)[pendingAction.field] || [];
+      const updated =
+        pendingAction.mode === "grant"
+          ? [...new Set([...current, pendingAction.value])]
+          : current.filter((v) => v !== pendingAction.value);
 
-    const updated =
-      pendingAction.mode === "grant"
-        ? [...new Set([...current, pendingAction.value])]
-        : current.filter((v) => v !== pendingAction.value);
-
-    await updateDoc(ref, { [field]: updated });
+      await updateDoc(ref, { [pendingAction.field]: updated });
+    }
 
     setPendingAction(null);
-    setNoteInput("");
-    setTestInput("");
-    setServiceInput("");
+    setContentId("");
+    setPremiumDays("");
     loadUser();
   }
 
@@ -106,23 +112,30 @@ export default function AdminSingleUserPage() {
   if (!user)
     return (
       <div className="space-y-4">
-        <p>User not found.</p>
+        <p>User not found</p>
         <Button onClick={() => router.push("/a2gadmin/users")}>Back</Button>
       </div>
     );
 
-  const premiumRemaining = user.premiumUntil
-    ? Math.max(
-        0,
-        Math.ceil(
-          (new Date(user.premiumUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-        )
+  const premiumRemaining =
+    user.premiumUntil &&
+    Math.max(
+      0,
+      Math.ceil(
+        (new Date(user.premiumUntil).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24)
       )
-    : null;
+    );
+
+  function mapField(type: string) {
+    if (type === "note") return "grantedNoteIds";
+    if (type === "test") return "grantedTestIds";
+    return "grantedServiceSlugs";
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8">
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">User Details</h1>
         <Button variant="outline" onClick={() => router.push("/a2gadmin/users")}>
@@ -130,7 +143,7 @@ export default function AdminSingleUserPage() {
         </Button>
       </div>
 
-      {/* Account Summary */}
+      {/* ACCOUNT SUMMARY */}
       <Card>
         <CardHeader>
           <CardTitle>Account Summary</CardTitle>
@@ -156,50 +169,105 @@ export default function AdminSingleUserPage() {
           </div>
           <div>
             <p className="text-muted-foreground">Premium Remaining</p>
-            <p>{premiumRemaining !== null ? `${premiumRemaining} days` : "—"}</p>
+            <p>{premiumRemaining ? `${premiumRemaining} days` : "—"}</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Access Controls */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <AccessBlock
-          title="Notes"
-          items={user.grantedNoteIds || []}
-          input={noteInput}
-          setInput={setNoteInput}
-          onGrant={(v) => setPendingAction({ type: "note", value: v, mode: "grant" })}
-          onRevoke={(v) => setPendingAction({ type: "note", value: v, mode: "revoke" })}
-        />
+      {/* ADMIN OVERRIDE CONSOLE */}
+      <Card className="border-red-200">
+        <CardHeader>
+          <CardTitle>Admin Override Console (Advanced)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <p className="text-muted-foreground">
+            Manual overrides bypass plans and billing. Use carefully.
+          </p>
 
-        <AccessBlock
-          title="Tests"
-          items={user.grantedTestIds || []}
-          input={testInput}
-          setInput={setTestInput}
-          onGrant={(v) => setPendingAction({ type: "test", value: v, mode: "grant" })}
-          onRevoke={(v) => setPendingAction({ type: "test", value: v, mode: "revoke" })}
-        />
+          {/* UNIVERSAL ACCESS */}
+          <div className="grid md:grid-cols-3 gap-3">
+            <Select value={contentType} onValueChange={(v: any) => setContentType(v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Content Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="note">Note</SelectItem>
+                <SelectItem value="test">Test / MCQ</SelectItem>
+                <SelectItem value="service">Service / Feature</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <AccessBlock
-          title="Services"
-          items={user.grantedServiceSlugs || []}
-          input={serviceInput}
-          setInput={setServiceInput}
-          onGrant={(v) => setPendingAction({ type: "service", value: v, mode: "grant" })}
-          onRevoke={(v) => setPendingAction({ type: "service", value: v, mode: "revoke" })}
-        />
-      </div>
+            <Input
+              placeholder="Paste ANY ID / Slug"
+              value={contentId}
+              onChange={(e) => setContentId(e.target.value)}
+            />
 
-      {/* Confirmation Dialog */}
+            <Button
+              onClick={() =>
+                setPendingAction({
+                  field: mapField(contentType),
+                  value: contentId,
+                  mode: "grant",
+                })
+              }
+              disabled={!contentId}
+            >
+              Apply Override
+            </Button>
+          </div>
+
+          {/* PREMIUM OVERRIDE */}
+          <div className="grid md:grid-cols-3 gap-3">
+            <Input
+              placeholder="Add premium days (e.g. 30)"
+              value={premiumDays}
+              onChange={(e) => setPremiumDays(e.target.value)}
+            />
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const days = Number(premiumDays);
+                if (!days) return;
+                const base = user.premiumUntil
+                  ? new Date(user.premiumUntil)
+                  : new Date();
+                base.setDate(base.getDate() + days);
+                setPendingAction({
+                  field: "premiumUntil",
+                  value: base.toISOString(),
+                  mode: "set",
+                });
+              }}
+            >
+              Add Days
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={() =>
+                setPendingAction({
+                  field: "premiumUntil",
+                  value: "2099-12-31T00:00:00.000Z",
+                  mode: "set",
+                })
+              }
+            >
+              Lifetime Premium
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* CONFIRMATION */}
       <Dialog open={!!pendingAction} onOpenChange={() => setPendingAction(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Action</DialogTitle>
+            <DialogTitle>Confirm Admin Override</DialogTitle>
           </DialogHeader>
           <p className="text-sm">
-            Are you sure you want to <strong>{pendingAction?.mode}</strong> access for{" "}
-            <strong>{pendingAction?.value}</strong>?
+            This action will directly modify user access and bypass normal rules.
+            Are you sure?
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPendingAction(null)}>
@@ -210,56 +278,5 @@ export default function AdminSingleUserPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-/* =====================
-   ACCESS BLOCK
-===================== */
-
-function AccessBlock({
-  title,
-  items,
-  input,
-  setInput,
-  onGrant,
-  onRevoke,
-}: {
-  title: string;
-  items: string[];
-  input: string;
-  setInput: (v: string) => void;
-  onGrant: (v: string) => void;
-  onRevoke: (v: string) => void;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title} Access</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        {items.length ? (
-          items.map((id) => (
-            <div key={id} className="flex justify-between items-center">
-              <span className="truncate">{id}</span>
-              <Button size="sm" variant="destructive" onClick={() => onRevoke(id)}>
-                Revoke
-              </Button>
-            </div>
-          ))
-        ) : (
-          <p className="text-muted-foreground">No access granted.</p>
-        )}
-
-        <Input
-          placeholder={`Enter ${title} ID / Slug`}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <Button size="sm" onClick={() => input && onGrant(input)}>
-          Grant Access
-        </Button>
-      </CardContent>
-    </Card>
   );
 }
