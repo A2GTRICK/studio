@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -115,6 +114,7 @@ export default function MockTestListPage() {
           {filtered.map((test) => {
             const isPremium = test.isPremium === true;
             const price = test.price ?? 0;
+            const isPaid = isPremium && price > 0;
 
             return (
               <div
@@ -141,16 +141,10 @@ export default function MockTestListPage() {
                   </div>
 
                   {/* PRICE */}
-                  {isPremium && (
+                  {isPaid && (
                     <div className="mt-2 font-medium rupee">
-                      {price > 0 ? (
-                        <>
-                          <span className="mr-0.5">&#8377;</span>
-                          {price}
-                        </>
-                      ) : (
-                        "Free"
-                      )}
+                      <span className="mr-0.5">&#8377;</span>
+                      {price}
                     </div>
                   )}
                 </div>
@@ -161,9 +155,7 @@ export default function MockTestListPage() {
                   className="mt-4"
                 >
                   <Button className="w-full">
-                    {isPremium && price > 0
-                      ? "View & Buy"
-                      : "Start Mock Test"}
+                    {isPaid ? "Unlock Test" : "Start Mock Test"}
                   </Button>
                 </Link>
               </div>
