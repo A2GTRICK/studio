@@ -14,13 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 
 /* ======================
    TYPES
@@ -39,7 +32,7 @@ type User = {
   grantedServiceSlugs?: string[];
   premiumContentOverrides?: string[];
 
-  premiumUntil?: string; // ISO date
+  premiumUntil?: string; // ISO
 };
 
 /* ======================
@@ -70,20 +63,26 @@ export default function AdminSingleUserPage() {
       const data = snap.data() as any;
       setUser({ id: snap.id, ...data });
       if (data.premiumUntil) {
-        setExpiryDate(data.premiumUntil.slice(0, 10)); // YYYY-MM-DD
+        setExpiryDate(data.premiumUntil.slice(0, 10));
       }
     }
     setLoading(false);
   }
 
-  function remainingDays() {
+  /* ========= PREMIUM STATE ========= */
+
+  function premiumDaysRemaining() {
     if (!user?.premiumUntil) return null;
-    const days = Math.ceil(
-      (new Date(user.premiumUntil).getTime() - Date.now()) /
-        (1000 * 60 * 60 * 24)
-    );
-    return days > 0 ? days : 0;
+    const diff =
+      new Date(user.premiumUntil).getTime() - Date.now();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
+
+  const premiumExpired =
+    user?.premiumUntil &&
+    new Date(user.premiumUntil).getTime() < Date.now();
+
+  /* ========= UPDATE HELPERS ========= */
 
   async function updateArray(
     field: keyof User,
@@ -119,13 +118,10 @@ export default function AdminSingleUserPage() {
 
   async function setExpiryFromCalendar() {
     if (!expiryDate) return;
-    const iso = new Date(expiryDate).toISOString();
-
     await updateDoc(doc(db, "users", user!.id), {
-      premiumUntil: iso,
+      premiumUntil: new Date(expiryDate).toISOString(),
       plan: "pro",
     });
-
     loadUser();
   }
 
@@ -142,7 +138,7 @@ export default function AdminSingleUserPage() {
         </Button>
       </div>
 
-      {/* SUMMARY */}
+      {/* ACCOUNT SUMMARY */}
       <Card>
         <CardHeader>
           <CardTitle>Account Summary</CardTitle>
@@ -152,25 +148,38 @@ export default function AdminSingleUserPage() {
             <p className="text-muted-foreground">Name</p>
             <p>{user.displayName}</p>
           </div>
+
           <div>
             <p className="text-muted-foreground">Email</p>
             <p>{user.email}</p>
           </div>
+
           <div>
             <p className="text-muted-foreground">Plan</p>
-            <Badge>{user.plan}</Badge>
+            <div className="flex gap-2 items-center">
+              <Badge>{user.plan || "free"}</Badge>
+              {premiumExpired && (
+                <Badge variant="destructive">Expired</Badge>
+              )}
+            </div>
           </div>
+
           <div>
             <p className="text-muted-foreground">Status</p>
-            <Badge>{user.status}</Badge>
+            <Badge>{user.status || "active"}</Badge>
           </div>
+
           <div>
             <p className="text-muted-foreground">Premium Remaining</p>
-            <p>
-              {remainingDays() !== null
-                ? `${remainingDays()} days`
-                : "—"}
-            </p>
+            {user.premiumUntil ? (
+              premiumExpired ? (
+                <Badge variant="destructive">Expired</Badge>
+              ) : (
+                <p>{premiumDaysRemaining()} days</p>
+              )
+            ) : (
+              <p>—</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -205,7 +214,7 @@ export default function AdminSingleUserPage() {
         />
       </div>
 
-      {/* PREMIUM CONTENT OVERRIDE */}
+      {/* PREMIUM OVERRIDES */}
       <Card className="border-2 border-purple-500">
         <CardHeader>
           <CardTitle>🔥 Premium Content Overrides</CardTitle>
@@ -265,7 +274,6 @@ export default function AdminSingleUserPage() {
             </Button>
           </div>
 
-          {/* CALENDAR */}
           <div className="flex gap-3 items-center">
             <Input
               type="date"
@@ -283,7 +291,7 @@ export default function AdminSingleUserPage() {
 }
 
 /* ======================
-   REUSABLE BOX
+   REUSABLE ACCESS BOX
 ====================== */
 
 function AccessBox({
