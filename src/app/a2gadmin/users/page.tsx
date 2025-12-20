@@ -22,25 +22,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
-/* =====================
+/* ======================
    TYPES
-===================== */
+====================== */
 
 type User = {
   id: string;
   displayName?: string;
   email?: string;
+
   plan?: "free" | "pro";
   status?: "active" | "blocked";
+
   grantedNoteIds?: string[];
   grantedTestIds?: string[];
   grantedServiceSlugs?: string[];
-  premiumUntil?: string; // ISO date
+  premiumContentOverrides?: string[];
+
+  premiumUntil?: string;
 };
 
-/* =====================
+/* ======================
    PAGE
-===================== */
+====================== */
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -57,6 +61,7 @@ export default function AdminUsersPage() {
     setLoading(true);
     const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
+
     setUsers(
       snap.docs.map((d) => ({
         id: d.id,
@@ -67,18 +72,29 @@ export default function AdminUsersPage() {
   }
 
   async function toggleBlock(user: User) {
-    if (!confirm(`Are you sure you want to ${user.status === "blocked" ? "unblock" : "block"} this user?`)) return;
+    if (
+      !confirm(
+        `Are you sure you want to ${
+          user.status === "blocked" ? "UNBLOCK" : "BLOCK"
+        } this user?`
+      )
+    )
+      return;
+
     await updateDoc(doc(db, "users", user.id), {
       status: user.status === "blocked" ? "active" : "blocked",
     });
+
     loadUsers();
   }
 
   async function togglePlan(user: User) {
-    if (!confirm(`Change plan for ${user.email}?`)) return;
+    if (!confirm(`Toggle plan for ${user.email}?`)) return;
+
     await updateDoc(doc(db, "users", user.id), {
       plan: user.plan === "pro" ? "free" : "pro",
     });
+
     loadUsers();
   }
 
@@ -89,21 +105,33 @@ export default function AdminUsersPage() {
     });
   }, [users, search]);
 
+  function premiumRemaining(user: User) {
+    if (!user.premiumUntil) return "—";
+    const days = Math.ceil(
+      (new Date(user.premiumUntil).getTime() - Date.now()) /
+        (1000 * 60 * 60 * 24)
+    );
+    return days > 0 ? `${days}d` : "0d";
+  }
+
   return (
     <div className="space-y-6">
+      {/* HEADER */}
       <div>
         <h1 className="text-2xl font-bold">User Management</h1>
         <p className="text-muted-foreground">
-          Central control panel for plans, access overrides, and account status.
+          Central admin control for plans, premium overrides, and access control.
         </p>
       </div>
 
+      {/* SEARCH */}
       <Input
         placeholder="Search by name or email"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
+      {/* USERS TABLE */}
       <Card>
         <CardHeader>
           <CardTitle>Users ({filteredUsers.length})</CardTitle>
@@ -120,41 +148,88 @@ export default function AdminUsersPage() {
                     <th>Email</th>
                     <th>Plan</th>
                     <th>Status</th>
+                    <th>Premium</th>
                     <th>Overrides</th>
                     <th className="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-muted/40">
-                      <td className="py-2 font-medium">{user.displayName || "—"}</td>
+                    <tr
+                      key={user.id}
+                      className="border-b hover:bg-muted/40"
+                    >
+                      <td className="py-2 font-medium">
+                        {user.displayName || "—"}
+                      </td>
                       <td>{user.email || "—"}</td>
+
+                      {/* PLAN */}
                       <td>
-                        <Badge variant={user.plan === "pro" ? "default" : "outline"}>
+                        <Badge
+                          variant={
+                            user.plan === "pro" ? "default" : "outline"
+                          }
+                        >
                           {user.plan || "free"}
                         </Badge>
                       </td>
+
+                      {/* STATUS */}
                       <td>
-                        <Badge variant={user.status === "blocked" ? "destructive" : "outline"}>
+                        <Badge
+                          variant={
+                            user.status === "blocked"
+                              ? "destructive"
+                              : "outline"
+                          }
+                        >
                           {user.status || "active"}
                         </Badge>
                       </td>
+
+                      {/* PREMIUM */}
+                      <td>{premiumRemaining(user)}</td>
+
+                      {/* OVERRIDES */}
                       <td className="text-xs text-muted-foreground">
-                        N:{user.grantedNoteIds?.length || 0} · T:{user.grantedTestIds?.length || 0} · S:{user.grantedServiceSlugs?.length || 0}
+                        N:{user.grantedNoteIds?.length || 0} · T:
+                        {user.grantedTestIds?.length || 0} · S:
+                        {user.grantedServiceSlugs?.length || 0} · 🔥
+                        {user.premiumContentOverrides?.length || 0}
                       </td>
+
+                      {/* ACTIONS */}
                       <td className="text-right space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => router.push(`/a2gadmin/users/${user.id}`)}>
-                          Open
-                        </Button>
-                        <Button size="sm" onClick={() => togglePlan(user)}>
-                          Toggle Plan
-                        </Button>
                         <Button
                           size="sm"
-                          variant={user.status === "blocked" ? "secondary" : "destructive"}
+                          variant="outline"
+                          onClick={() =>
+                            router.push(`/a2gadmin/users/${user.id}`)
+                          }
+                        >
+                          Open
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          onClick={() => togglePlan(user)}
+                        >
+                          Toggle Plan
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant={
+                            user.status === "blocked"
+                              ? "secondary"
+                              : "destructive"
+                          }
                           onClick={() => toggleBlock(user)}
                         >
-                          {user.status === "blocked" ? "Unblock" : "Block"}
+                          {user.status === "blocked"
+                            ? "Unblock"
+                            : "Block"}
                         </Button>
                       </td>
                     </tr>
