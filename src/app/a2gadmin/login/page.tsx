@@ -1,63 +1,64 @@
 "use client";
 
 import { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/firebase/config";
+import { useRouter } from "next/navigation";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-export default function AdminLogin() {
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleLogin(e: any) {
-    e.preventDefault();
+  async function handleLogin() {
+    setLoading(true);
     setError("");
 
     try {
-      const res = await fetch("/api/a2gadmin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Login failed");
-        return;
-      }
-
-      window.location.href = "/a2gadmin";
-    } catch (e) {
-      setError("Network error");
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/a2gadmin");
+    } catch (err: any) {
+      setError("Invalid admin credentials");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-700 via-indigo-800 to-black">
-      <form
-        onSubmit={handleLogin}
-        className="backdrop-blur-2xl bg-white/10 p-6 rounded-2xl shadow-2xl border border-white/20 w-96 text-white"
-      >
-        <h2 className="text-xl font-bold mb-2">Admin Access</h2>
-        <p className="text-sm opacity-70 mb-4">Enter the secret key to manage the platform.</p>
-
-        <input
-          type="password"
-          className="w-full p-3 rounded bg-white/20 text-white placeholder-gray-300 mb-3"
-          placeholder="Secret Key"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        {error && <p className="text-red-300 mb-3">{error}</p>}
-
-        <button
-          type="submit"
-          className="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded-xl transition text-white"
-        >
-          Login
-        </button>
-      </form>
+    <div className="min-h-screen flex items-center justify-center">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Admin Login</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            placeholder="Admin Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {error && (
+            <p className="text-sm text-red-500">{error}</p>
+          )}
+          <Button
+            className="w-full"
+            onClick={handleLogin}
+            disabled={loading}
+          >
+            {loading ? "Signing in..." : "Login"}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -2,10 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /* =============================
-       HELPERS
-    ============================= */
-
     function isSignedIn() {
       return request.auth != null;
     }
@@ -16,95 +12,19 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn()
-        && request.auth.uid in [
-          "ADMIN_UID_1"
-          // "ADMIN_UID_2"
-        ];
+        && request.auth.uid == "WXFMrKzg0eYHgFEspk8WoIIDc3j2";
     }
-
-    /* =============================
-       PUBLIC READ DATA
-    ============================= */
-
-    match /notes/{id} {
-      allow read, list: if true;
-    }
-
-    match /mcqSets/{id} {
-      allow read, list: if true;
-    }
-
-    match /posts/{id} {
-      allow read, list: if true;
-    }
-
-    match /blog/{id} {
-      allow read, list: if true;
-    }
-
-    match /custom_notifications/{id} {
-      allow read, list: if true;
-    }
-
-    match /adminConfig/{doc} {
-      allow read: if true;
-    }
-
-    /* =============================
-       USERS (AUTH CORE)
-    ============================= */
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
+      allow read, update: if isOwner(userId) || isAdmin();
       allow create, delete: if false;
     }
-
-    /* =============================
-       USER PROFILES (ADMIN PANEL)
-    ============================= */
 
     match /user_profiles/{userId} {
-      // Admin can read + list all users
       allow read, list: if isAdmin();
-
-      // User can read & update own profile
       allow read, update: if isOwner(userId);
-
-      // No deletes or creates from client
       allow create, delete: if false;
     }
-
-    /* =============================
-       PAYMENTS
-    ============================= */
-
-    match /payments/{paymentId} {
-      allow read: if isSignedIn()
-        && (
-          resource.data.userId == request.auth.uid
-          || isAdmin()
-        );
-      allow write: if false;
-    }
-
-    /* =============================
-       NOTE VIEW ANALYTICS
-    ============================= */
-
-    match /note_views/{viewId} {
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid;
-
-      allow read: if isSignedIn()
-        && resource.data.userId == request.auth.uid;
-
-      allow update, delete: if false;
-    }
-
-    /* =============================
-       DEFAULT DENY
-    ============================= */
 
     match /{document=**} {
       allow read, write: if false;
