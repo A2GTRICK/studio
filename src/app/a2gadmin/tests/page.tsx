@@ -9,6 +9,8 @@ import {
   Search,
   Trash2,
   Crown,
+  Save,
+  MoreVertical,
 } from "lucide-react";
 import {
   collection,
@@ -27,23 +29,21 @@ import clsx from "clsx";
 interface Test {
   id: string;
   title: string;
-  subject?: string;
+  subject?: string | string[];
   isPublished?: boolean;
   isPremium?: boolean;
   price?: number;
   updatedAt?: any;
-  questionCount?: number;
 }
 
 export default function TestAdminPage() {
   const [loading, setLoading] = useState(true);
-  const [allTests, setAllTests] = useState<Test[]>([]);
-
-  /* FILTER STATES */
+  const [tests, setTests] = useState<Test[]>([]);
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] =
     useState<"all" | "published" | "draft">("all");
+  const [priceDraft, setPriceDraft] = useState<Record<string, number>>({});
 
   async function loadTests() {
     setLoading(true);
@@ -52,8 +52,14 @@ export default function TestAdminPage() {
       orderBy("createdAt", "desc")
     );
     const snap = await getDocs(q);
-    setAllTests(
-      snap.docs.map((d) => ({ id: d.id, ...d.data() } as Test))
+    const data = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    })) as Test[];
+
+    setTests(data);
+    setPriceDraft(
+      Object.fromEntries(data.map((t) => [t.id, t.price ?? 0]))
     );
     setLoading(false);
   }
@@ -62,109 +68,109 @@ export default function TestAdminPage() {
     loadTests();
   }, []);
 
-  /* SUBJECT OPTIONS */
   const subjects = useMemo(() => {
-    const s = new Set<string>();
-    allTests.forEach((t) => t.subject && s.add(t.subject));
-    return Array.from(s);
-  }, [allTests]);
+    const set = new Set<string>();
+    tests.forEach((t) => {
+      if (Array.isArray(t.subject)) {
+        t.subject.forEach((s) => set.add(s));
+      } else if (t.subject) {
+        set.add(t.subject);
+      }
+    });
+    return Array.from(set);
+  }, [tests]);
 
-  /* FILTERED DATA */
   const filteredTests = useMemo(() => {
-    return allTests.filter((t) => {
+    return tests.filter((t) => {
       if (
         search &&
         !t.title.toLowerCase().includes(search.toLowerCase())
       )
         return false;
-      if (subjectFilter !== "all" && t.subject !== subjectFilter)
-        return false;
+      if (subjectFilter !== "all") {
+        const s = Array.isArray(t.subject)
+          ? t.subject
+          : [t.subject];
+        if (!s.includes(subjectFilter)) return false;
+      }
       if (statusFilter === "published" && !t.isPublished) return false;
       if (statusFilter === "draft" && t.isPublished) return false;
       return true;
     });
-  }, [allTests, search, subjectFilter, statusFilter]);
-
-  /* VALIDATION BEFORE PUBLISH */
-  async function validateBeforePublish(testId: string) {
-    const snap = await getDocs(
-      collection(db, "test_series", testId, "questions")
-    );
-    if (snap.empty) return "Test has no questions.";
-    return null;
-  }
+  }, [tests, search, subjectFilter, statusFilter]);
 
   async function togglePublish(test: Test) {
-    const confirm = window.confirm(
+    const ok = window.confirm(
       test.isPublished
         ? "Unpublish this test? It will disappear for users."
         : "Publish this test? It will be visible to users."
     );
-    if (!confirm) return;
-
-    if (!test.isPublished) {
-      const err = await validateBeforePublish(test.id);
-      if (err) {
-        alert(`Publish blocked:\n${err}`);
-        return;
-      }
-    }
+    if (!ok) return;
 
     await updateDoc(doc(db, "test_series", test.id), {
       isPublished: !test.isPublished,
       updatedAt: new Date(),
     });
-
     loadTests();
   }
 
   async function togglePremium(test: Test) {
-    const confirm = window.confirm(
-      "Change premium status? This affects billing everywhere."
+    const ok = window.confirm(
+      "Changing premium status affects billing and user access globally. Continue?"
     );
-    if (!confirm) return;
+    if (!ok) return;
 
     await updateDoc(doc(db, "test_series", test.id), {
       isPremium: !test.isPremium,
       updatedAt: new Date(),
     });
-
     loadTests();
   }
 
-  async function updatePrice(test: Test, price: number) {
+  async function savePrice(test: Test) {
+    const price = priceDraft[test.id];
     if (price < 0) {
       alert("Price cannot be negative.");
       return;
     }
 
-    const confirm = window.confirm(
-      `Set price to ₹${price}? This will apply everywhere.`
+    const ok = window.confirm(
+      `Set price to ₹${price}? ₹0 means Free access.`
     );
-    if (!confirm) return;
+    if (!ok) return;
 
     await updateDoc(doc(db, "test_series", test.id), {
       price,
       updatedAt: new Date(),
     });
-
     loadTests();
   }
 
-  async function handleDelete(test: Test) {
-    const confirm = window.confirm(
+  async function deleteTest(test: Test) {
+    const ok = window.confirm(
       `Delete "${test.title}" permanently? This cannot be undone.`
     );
-    if (!confirm) return;
+    if (!ok) return;
 
     await deleteDoc(doc(db, "test_series", test.id));
     loadTests();
   }
 
+  function renderSubjects(subject?: string | string[]) {
+    if (!subject) return "-";
+    const list = Array.isArray(subject) ? subject : [subject];
+    if (list.length <= 2) return list.join(", ");
+    return (
+      <span title={list.join(", ")}>
+        {list.slice(0, 2).join(", ")} +{list.length - 2} more
+      </span>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* HEADER */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Mock Tests</h1>
         <Link href="/a2gadmin/tests/create">
           <Button>
@@ -174,13 +180,13 @@ export default function TestAdminPage() {
         </Link>
       </div>
 
-      {/* FILTER BAR */}
+      {/* FILTERS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search test title"
             className="pl-9"
+            placeholder="Search test title"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -193,9 +199,7 @@ export default function TestAdminPage() {
         >
           <option value="all">All Subjects</option>
           {subjects.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
+            <option key={s}>{s}</option>
           ))}
         </select>
 
@@ -212,10 +216,16 @@ export default function TestAdminPage() {
         </select>
       </div>
 
+      {/* HELPER */}
+      <p className="text-sm text-muted-foreground">
+        ℹ️ Price ₹0 = Free access. Premium controls affect billing and
+        availability everywhere.
+      </p>
+
       {/* TABLE */}
       <div className="border rounded overflow-x-auto">
         {loading ? (
-          <div className="p-8 flex justify-center">
+          <div className="p-10 flex justify-center">
             <Loader2 className="animate-spin" />
           </div>
         ) : (
@@ -227,14 +237,17 @@ export default function TestAdminPage() {
                 <th>Status</th>
                 <th>Premium</th>
                 <th>Price (₹)</th>
-                <th className="text-right p-3">Actions</th>
+                <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredTests.map((t) => (
-                <tr key={t.id} className="border-t">
+                <tr
+                  key={t.id}
+                  className="border-t hover:bg-muted/40"
+                >
                   <td className="p-3 font-medium">{t.title}</td>
-                  <td>{t.subject || "-"}</td>
+                  <td>{renderSubjects(t.subject)}</td>
 
                   <td>
                     <span
@@ -260,21 +273,31 @@ export default function TestAdminPage() {
                     </Button>
                   </td>
 
-                  <td>
+                  <td className="flex items-center gap-2">
                     <Input
                       type="number"
-                      defaultValue={t.price || 0}
-                      className="w-24"
-                      onBlur={(e) =>
-                        updatePrice(t, Number(e.target.value))
+                      className="w-20"
+                      value={priceDraft[t.id]}
+                      onChange={(e) =>
+                        setPriceDraft({
+                          ...priceDraft,
+                          [t.id]: Number(e.target.value),
+                        })
                       }
                     />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => savePrice(t)}
+                    >
+                      <Save className="w-4 h-4" />
+                    </Button>
                   </td>
 
                   <td className="p-3 text-right space-x-2">
                     <Link href={`/a2gadmin/tests/edit/${t.id}`}>
                       <Button size="sm" variant="outline">
-                        Edit
+                        <Eye className="w-4 h-4" />
                       </Button>
                     </Link>
 
@@ -289,7 +312,7 @@ export default function TestAdminPage() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleDelete(t)}
+                      onClick={() => deleteTest(t)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
