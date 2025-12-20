@@ -22,7 +22,7 @@ export default function CBTMockTestPage() {
   const search = useSearchParams();
   const router = useRouter();
 
-  /* 🔒 INSTRUCTION GATE */
+  /* 🔒 INSTRUCTION GATE (UNCHANGED) */
   useEffect(() => {
     if (!search.get("start")) {
       router.replace(`/dashboard/mock-test/${id}/instructions`);
@@ -38,16 +38,16 @@ export default function CBTMockTestPage() {
   const [visited, setVisited] = useState<boolean[]>([]);
   const [timeLeft, setTimeLeft] = useState(3600);
 
-  // Hard Locks & Submission State
   const [warnings, setWarnings] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitRequested, setSubmitRequested] = useState(false);
 
-  // Single Safe Submit Function
+  /* =========================
+     SAFE SUBMIT (UNCHANGED)
+  ========================= */
+
   function submitTestSafe(reason: string) {
     if (isSubmitting) return;
-
-    console.warn("CBT SUBMIT:", reason);
     setIsSubmitting(true);
 
     let correct = 0;
@@ -81,64 +81,68 @@ export default function CBTMockTestPage() {
       })
     );
 
-    // defer navigation safely
     setTimeout(() => {
       router.replace("/dashboard/mock-test/result");
     }, 100);
   }
 
-  // Central Submit Effect
   useEffect(() => {
     if (submitRequested && !isSubmitting) {
       submitTestSafe("AUTO_SUBMIT");
     }
-  }, [submitRequested, isSubmitting]);
+  }, [submitRequested, isSubmitting, questions, answers, router]);
 
-  // Clean Warning Handler
+  /* =========================
+     CBT WARNING SYSTEM
+  ========================= */
+
   function handleWarning(reason: string) {
     setWarnings(prev => {
       const next = prev + 1;
 
       if (next >= 3) {
         alert(
-          "CBT WARNING 3/3\n\n" +
-          reason +
-          "\n\nTest will be submitted now."
+          "CBT RULE VIOLATION (3/3)\n\n" +
+            reason +
+            "\n\nThe test will now be submitted."
         );
         setSubmitRequested(true);
         return 3;
       }
 
       alert(
-        `CBT WARNING ${next}/3\n\n${reason}\n\nDo not repeat this action.`
+        `CBT WARNING (${next}/3)\n\n${reason}\n\nDo not repeat this action.`
       );
       return next;
     });
   }
 
-  // Visibility / Tab Switch Effect
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.hidden && !isSubmitting) {
-        handleWarning("Tab switched or minimized");
+        handleWarning("Tab switched or application minimized");
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
   }, [isSubmitting]);
 
-  // Fullscreen Exit Effect
   useEffect(() => {
     const onFsChange = () => {
       if (!document.fullscreenElement && !isSubmitting) {
-        handleWarning("Exited full screen");
+        handleWarning("Exited fullscreen mode");
       }
     };
     document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFsChange);
   }, [isSubmitting]);
-  
-  /* LOAD */
+
+  /* =========================
+     LOAD TEST DATA
+  ========================= */
+
   useEffect(() => {
     async function load() {
       const tSnap = await getDoc(doc(db, "test_series", id));
@@ -152,7 +156,7 @@ export default function CBTMockTestPage() {
         collection(db, "test_series", id, "questions")
       );
 
-      const qs = qSnap.docs.map((d) => {
+      const qs = qSnap.docs.map(d => {
         const q = d.data();
         return {
           id: d.id,
@@ -168,7 +172,6 @@ export default function CBTMockTestPage() {
       setVisited(new Array(qs.length).fill(false));
       setLoading(false);
 
-      /* FORCE FULLSCREEN */
       document.documentElement.requestFullscreen?.().catch(() => {});
     }
 
@@ -177,7 +180,10 @@ export default function CBTMockTestPage() {
     }
   }, [id, search]);
 
-  /* TIMER */
+  /* =========================
+     TIMER
+  ========================= */
+
   useEffect(() => {
     if (!questions.length || isSubmitting) return;
 
@@ -194,13 +200,13 @@ export default function CBTMockTestPage() {
 
     return () => clearInterval(t);
   }, [questions, isSubmitting]);
-  
-  /* VISIT TRACKER */
+
+  /* VISITED TRACKING */
   useEffect(() => {
     if (questions.length > 0 && !visited[current]) {
-      const newVisited = [...visited];
-      newVisited[current] = true;
-      setVisited(newVisited);
+      const v = [...visited];
+      v[current] = true;
+      setVisited(v);
     }
   }, [current, questions, visited]);
 
@@ -213,39 +219,46 @@ export default function CBTMockTestPage() {
   }
 
   const q = questions[current];
-
-    if (!q) {
-     return (
+  if (!q) {
+    return (
       <div className="p-10 text-center text-muted-foreground">
-        Loading question or test has no questions...
+        No questions available in this test.
       </div>
     );
   }
 
   function paletteColor(i: number) {
-    if (marked[i]) return "bg-blue-500 text-white";
-    if (answers[i] != null) return "bg-green-500 text-white";
+    if (marked[i]) return "bg-blue-600 text-white";
+    if (answers[i] != null) return "bg-green-600 text-white";
     if (visited[i]) return "bg-yellow-400";
     return "bg-gray-200";
   }
 
+  /* =========================
+     RENDER
+  ========================= */
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* HEADER */}
-      <div className="bg-white border-b px-6 py-4 flex justify-between">
-        <h1 className="font-bold">{title}</h1>
-        <div className="flex gap-4 items-center">
+      <div className="bg-white border-b px-6 py-4 flex justify-between items-center">
+        <h1 className="font-bold text-lg">{title}</h1>
+        <div className="flex gap-6 items-center text-sm">
           <span className="text-red-600 font-semibold">
             Warnings: {warnings}/3
           </span>
-          <span>
-            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
+          <span className="font-mono">
+            {Math.floor(timeLeft / 60)}:
+            {String(timeLeft % 60).padStart(2, "0")}
           </span>
-          <Button variant="destructive" onClick={() => {
-              if (confirm("Are you sure you want to submit the test?")) {
-                  setSubmitRequested(true);
+          <Button
+            variant="destructive"
+            onClick={() => {
+              if (confirm("Submit the test now?")) {
+                setSubmitRequested(true);
               }
-          }}>
+            }}
+          >
             Submit Test
           </Button>
         </div>
@@ -255,75 +268,85 @@ export default function CBTMockTestPage() {
       <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
         {/* QUESTION */}
         <div className="flex justify-center">
-            <div className="w-full max-w-3xl">
-                <div className="bg-white border rounded p-5">
-                    <p className="font-semibold mb-3">
-                    Q{current + 1}. {q.text}
-                    </p>
+          <div className="w-full max-w-3xl">
+            <div className="bg-white border rounded-xl p-6">
+              <p className="font-semibold mb-4">
+                Q{current + 1}. {q.text}
+              </p>
 
-                    <div className="space-y-2">
-                    {q.options.map((o, i) => {
-                        const label = typeof o === "string" ? o : o.text;
-                        return (
-                        <label key={i} className="flex items-center gap-2 border rounded p-2 cursor-pointer">
-                            <input
-                            type="radio"
-                            name={`q-${current}`}
-                            checked={answers[current] === i}
-                            onChange={() => setAnswers({ ...answers, [current]: i })}
-                            />{" "}
-                            {label}
-                        </label>
-                        );
-                    })}
-                    </div>
-                </div>
-
-                <div className="flex justify-between mt-4">
-                    <Button
-                    variant="outline"
-                    disabled={current === 0}
-                    onClick={() => setCurrent(current - 1)}
+              <div className="space-y-3">
+                {q.options.map((o, i) => {
+                  const label = typeof o === "string" ? o : o.text;
+                  return (
+                    <label
+                      key={i}
+                      className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition ${
+                        answers[current] === i
+                          ? "border-purple-600 bg-purple-50"
+                          : "hover:bg-slate-50"
+                      }`}
                     >
-                    Previous
-                    </Button>
-
-                    <div className="flex gap-2">
-                        <Button
-                            variant="secondary"
-                            onClick={() => {
-                            const m = [...marked];
-                            m[current] = !m[current];
-                            setMarked(m);
-                            }}
-                        >
-                            Mark for Review
-                        </Button>
-                        <Button
-                            onClick={() =>
-                            setCurrent(
-                                current === questions.length - 1
-                                ? current
-                                : current + 1
-                            )
-                            }
-                        >
-                            Save & Next
-                        </Button>
-                    </div>
-                </div>
+                      <input
+                        type="radio"
+                        name={`q-${current}`}
+                        checked={answers[current] === i}
+                        onChange={() =>
+                          setAnswers({ ...answers, [current]: i })
+                        }
+                      />
+                      <span>{label}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
+
+            <div className="flex justify-between mt-5">
+              <Button
+                variant="outline"
+                disabled={current === 0}
+                onClick={() => setCurrent(current - 1)}
+              >
+                Previous
+              </Button>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    const m = [...marked];
+                    m[current] = !m[current];
+                    setMarked(m);
+                  }}
+                >
+                  Mark for Review
+                </Button>
+
+                <Button
+                  onClick={() =>
+                    setCurrent(
+                      current === questions.length - 1
+                        ? current
+                        : current + 1
+                    )
+                  }
+                >
+                  Save & Next
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* PALETTE */}
-        <div className="bg-white border rounded p-4 h-fit md:sticky md:top-24 min-w-[260px]">
+        <div className="bg-white border rounded-xl p-4 h-fit sticky top-24">
           <h2 className="font-semibold mb-3">Question Palette</h2>
           <div className="grid grid-cols-5 gap-2">
             {questions.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
-                className={`p-2 rounded text-sm ${paletteColor(i)}`}
+                className={`p-2 rounded text-sm font-medium ${paletteColor(i)}`}
               >
                 {i + 1}
               </button>
