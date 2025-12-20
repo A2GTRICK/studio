@@ -30,23 +30,17 @@ type User = {
   id: string;
   displayName?: string;
   email?: string;
+
   plan?: "free" | "pro";
   status?: "active" | "blocked";
 
   grantedNoteIds?: string[];
   grantedTestIds?: string[];
   grantedServiceSlugs?: string[];
+  premiumContentOverrides?: string[];
 
-  premiumContentOverrides?: string[]; // 🔥 NEW
-  premiumUntil?: string;
+  premiumUntil?: string; // ISO date
 };
-
-type PendingAction =
-  | {
-      label: string;
-      action: () => Promise<void>;
-    }
-  | null;
 
 /* ======================
    PAGE
@@ -62,9 +56,9 @@ export default function AdminSingleUserPage() {
   const [noteInput, setNoteInput] = useState("");
   const [testInput, setTestInput] = useState("");
   const [serviceInput, setServiceInput] = useState("");
-  const [premiumContentInput, setPremiumContentInput] = useState("");
+  const [premiumOverrideInput, setPremiumOverrideInput] = useState("");
 
-  const [pending, setPending] = useState<PendingAction>(null);
+  const [expiryDate, setExpiryDate] = useState("");
 
   useEffect(() => {
     loadUser();
@@ -72,22 +66,26 @@ export default function AdminSingleUserPage() {
 
   async function loadUser() {
     const snap = await getDoc(doc(db, "users", userId));
-    setUser(snap.exists() ? { id: snap.id, ...(snap.data() as any) } : null);
+    if (snap.exists()) {
+      const data = snap.data() as any;
+      setUser({ id: snap.id, ...data });
+      if (data.premiumUntil) {
+        setExpiryDate(data.premiumUntil.slice(0, 10)); // YYYY-MM-DD
+      }
+    }
     setLoading(false);
   }
 
-  function daysRemaining() {
+  function remainingDays() {
     if (!user?.premiumUntil) return null;
-    return Math.max(
-      0,
-      Math.ceil(
-        (new Date(user.premiumUntil).getTime() - Date.now()) /
-          (1000 * 60 * 60 * 24)
-      )
+    const days = Math.ceil(
+      (new Date(user.premiumUntil).getTime() - Date.now()) /
+        (1000 * 60 * 60 * 24)
     );
+    return days > 0 ? days : 0;
   }
 
-  async function updateArrayField(
+  async function updateArray(
     field: keyof User,
     value: string,
     mode: "add" | "remove"
@@ -113,6 +111,18 @@ export default function AdminSingleUserPage() {
 
     await updateDoc(doc(db, "users", user!.id), {
       premiumUntil: base.toISOString(),
+      plan: "pro",
+    });
+
+    loadUser();
+  }
+
+  async function setExpiryFromCalendar() {
+    if (!expiryDate) return;
+    const iso = new Date(expiryDate).toISOString();
+
+    await updateDoc(doc(db, "users", user!.id), {
+      premiumUntil: iso,
       plan: "pro",
     });
 
@@ -148,28 +158,32 @@ export default function AdminSingleUserPage() {
           </div>
           <div>
             <p className="text-muted-foreground">Plan</p>
-            <Badge>{user.plan || "free"}</Badge>
+            <Badge>{user.plan}</Badge>
           </div>
           <div>
             <p className="text-muted-foreground">Status</p>
-            <Badge>{user.status || "active"}</Badge>
+            <Badge>{user.status}</Badge>
           </div>
           <div>
             <p className="text-muted-foreground">Premium Remaining</p>
-            <p>{daysRemaining() ? `${daysRemaining()} days` : "—"}</p>
+            <p>
+              {remainingDays() !== null
+                ? `${remainingDays()} days`
+                : "—"}
+            </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* STANDARD ACCESS */}
+      {/* ACCESS BOXES */}
       <div className="grid md:grid-cols-3 gap-6">
         <AccessBox
           title="Notes Access"
           items={user.grantedNoteIds || []}
           input={noteInput}
           setInput={setNoteInput}
-          onAdd={(v) => updateArrayField("grantedNoteIds", v, "add")}
-          onRemove={(v) => updateArrayField("grantedNoteIds", v, "remove")}
+          onAdd={(v) => updateArray("grantedNoteIds", v, "add")}
+          onRemove={(v) => updateArray("grantedNoteIds", v, "remove")}
         />
 
         <AccessBox
@@ -177,8 +191,8 @@ export default function AdminSingleUserPage() {
           items={user.grantedTestIds || []}
           input={testInput}
           setInput={setTestInput}
-          onAdd={(v) => updateArrayField("grantedTestIds", v, "add")}
-          onRemove={(v) => updateArrayField("grantedTestIds", v, "remove")}
+          onAdd={(v) => updateArray("grantedTestIds", v, "add")}
+          onRemove={(v) => updateArray("grantedTestIds", v, "remove")}
         />
 
         <AccessBox
@@ -186,62 +200,44 @@ export default function AdminSingleUserPage() {
           items={user.grantedServiceSlugs || []}
           input={serviceInput}
           setInput={setServiceInput}
-          onAdd={(v) => updateArrayField("grantedServiceSlugs", v, "add")}
-          onRemove={(v) => updateArrayField("grantedServiceSlugs", v, "remove")}
+          onAdd={(v) => updateArray("grantedServiceSlugs", v, "add")}
+          onRemove={(v) => updateArray("grantedServiceSlugs", v, "remove")}
         />
       </div>
 
-      {/* 🔥 PREMIUM CONTENT OVERRIDES */}
+      {/* PREMIUM CONTENT OVERRIDE */}
       <Card className="border-2 border-purple-500">
         <CardHeader>
-          <CardTitle>🔥 Premium Content Overrides (ANYTHING)</CardTitle>
+          <CardTitle>🔥 Premium Content Overrides</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <p className="text-muted-foreground">
-            Grant access to ANY premium mock test, MCQ set, practice series, or
-            future premium content — independent of plan or billing.
-          </p>
-
-          {(user.premiumContentOverrides || []).length ? (
-            <div className="space-y-2">
-              {user.premiumContentOverrides!.map((id) => (
-                <div
-                  key={id}
-                  className="flex justify-between items-center"
-                >
-                  <span>{id}</span>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() =>
-                      updateArrayField(
-                        "premiumContentOverrides",
-                        id,
-                        "remove"
-                      )
-                    }
-                  >
-                    Revoke
-                  </Button>
-                </div>
-              ))}
+        <CardContent className="space-y-3 text-sm">
+          {(user.premiumContentOverrides || []).map((id) => (
+            <div key={id} className="flex justify-between items-center">
+              <span>{id}</span>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() =>
+                  updateArray("premiumContentOverrides", id, "remove")
+                }
+              >
+                Revoke
+              </Button>
             </div>
-          ) : (
-            <p className="text-muted-foreground">No premium overrides granted.</p>
-          )}
+          ))}
 
           <div className="flex gap-2">
             <Input
-              placeholder="Paste ANY premium content ID (mock test / MCQ / etc.)"
-              value={premiumContentInput}
-              onChange={(e) => setPremiumContentInput(e.target.value)}
+              placeholder="Paste ANY premium content ID"
+              value={premiumOverrideInput}
+              onChange={(e) => setPremiumOverrideInput(e.target.value)}
             />
             <Button
               onClick={() =>
-                premiumContentInput &&
-                updateArrayField(
+                premiumOverrideInput &&
+                updateArray(
                   "premiumContentOverrides",
-                  premiumContentInput,
+                  premiumOverrideInput,
                   "add"
                 )
               }
@@ -252,20 +248,34 @@ export default function AdminSingleUserPage() {
         </CardContent>
       </Card>
 
-      {/* PREMIUM TIME */}
+      {/* PREMIUM TIME CONTROL */}
       <Card>
         <CardHeader>
           <CardTitle>Premium Time Control</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-3">
-          <Button onClick={() => addPremiumDays(30)}>+30 Days</Button>
-          <Button onClick={() => addPremiumDays(90)}>+90 Days</Button>
-          <Button
-            variant="destructive"
-            onClick={() => addPremiumDays(365 * 50)}
-          >
-            Lifetime Premium
-          </Button>
+        <CardContent className="space-y-4">
+          <div className="flex gap-3 flex-wrap">
+            <Button onClick={() => addPremiumDays(30)}>+30 Days</Button>
+            <Button onClick={() => addPremiumDays(90)}>+90 Days</Button>
+            <Button
+              variant="destructive"
+              onClick={() => addPremiumDays(365 * 50)}
+            >
+              Lifetime Premium
+            </Button>
+          </div>
+
+          {/* CALENDAR */}
+          <div className="flex gap-3 items-center">
+            <Input
+              type="date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+            />
+            <Button onClick={setExpiryFromCalendar}>
+              Set Expiry Date
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
