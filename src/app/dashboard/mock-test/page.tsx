@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,10 +19,10 @@ interface MockTest {
   id: string;
   title: string;
   subject?: string;
-  exam?: string;
+  exam?: "RRB" | "AIIMS" | "GPAT" | string;
   duration?: number;
   isPremium?: boolean;
-  price?: number | null;
+  price?: number;
 }
 
 export default function MockTestListPage() {
@@ -35,14 +40,12 @@ export default function MockTestListPage() {
       );
 
       const snap = await getDocs(q);
-
       setTests(
-        snap.docs.map(d => ({
+        snap.docs.map((d) => ({
           id: d.id,
           ...(d.data() as any),
         }))
       );
-
       setLoading(false);
     }
 
@@ -50,13 +53,14 @@ export default function MockTestListPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return tests.filter(t => {
-      const matchesSearch =
-        t.title?.toLowerCase().includes(search.toLowerCase()) ||
-        t.subject?.toLowerCase().includes(search.toLowerCase());
+    return tests.filter((t) => {
+      const text =
+        `${t.title} ${t.subject ?? ""}`.toLowerCase();
+      const matchesSearch = text.includes(search.toLowerCase());
 
       const matchesFilter =
-        filter === "ALL" || t.exam === filter;
+        filter === "ALL" ||
+        (t.exam && t.exam.toUpperCase() === filter);
 
       return matchesSearch && matchesFilter;
     });
@@ -64,32 +68,35 @@ export default function MockTestListPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-10">
+      <div className="flex justify-center p-12">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6 px-4">
+      {/* HEADER */}
       <h1 className="text-3xl font-bold">Mock Tests</h1>
 
+      {/* SEARCH */}
       <Input
         placeholder="Search mock tests..."
         value={search}
-        onChange={e => setSearch(e.target.value)}
+        onChange={(e) => setSearch(e.target.value)}
       />
 
-      <div className="flex gap-2">
-        {["ALL", "RRB", "AIIMS", "GPAT"].map(f => (
+      {/* FILTERS */}
+      <div className="flex flex-wrap gap-2">
+        {["ALL", "RRB", "AIIMS", "GPAT"].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f as any)}
             className={clsx(
-              "px-4 py-1 rounded-full border text-sm",
+              "px-4 py-1 rounded-full border text-sm transition",
               filter === f
                 ? "bg-primary text-white"
-                : "bg-white text-muted-foreground"
+                : "bg-white text-muted-foreground hover:bg-muted"
             )}
           >
             {f}
@@ -97,47 +104,65 @@ export default function MockTestListPage() {
         ))}
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map(test => {
-          const isPremium = test.isPremium === true;
+      {/* GRID */}
+      {filtered.length === 0 ? (
+        <div className="text-center text-muted-foreground p-10">
+          No mock tests found
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((test) => {
+            const isPremium = test.isPremium === true;
+            const price = test.price ?? 0;
 
-          return (
-            <div
-              key={test.id}
-              className="border rounded-xl p-5 bg-white shadow-sm flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex justify-between">
-                  <h3 className="font-semibold">{test.title}</h3>
+            return (
+              <div
+                key={test.id}
+                className="border rounded-xl p-5 bg-white shadow-sm flex flex-col justify-between hover:shadow-md transition"
+              >
+                <div>
+                  <div className="flex justify-between gap-3">
+                    <h3 className="font-semibold leading-snug">
+                      {test.title}
+                    </h3>
+
+                    {isPremium && (
+                      <Badge className="bg-yellow-100 text-yellow-800 h-fit">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Premium
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
+                    <Clock className="w-4 h-4" />
+                    {test.duration || 0} min
+                  </div>
+
+                  {/* PRICE */}
                   {isPremium && (
-                    <Badge className="bg-yellow-100 text-yellow-800">
-                      <Crown className="w-3 h-3 mr-1" /> Premium
-                    </Badge>
+                    <div className="mt-2 font-medium">
+                      {price > 0 ? `₹${price}` : "Free"}
+                    </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
-                  <Clock className="w-4 h-4" />
-                  {test.duration || 0} min
-                </div>
-
-                {isPremium && test.price != null && (
-                  <div className="mt-2 font-medium">₹{test.price}</div>
-                )}
+                {/* CTA */}
+                <Link
+                  href={`/dashboard/mock-test/${test.id}/instruction`}
+                  className="mt-4"
+                >
+                  <Button className="w-full">
+                    {isPremium && price > 0
+                      ? "View & Buy"
+                      : "Start Mock Test"}
+                  </Button>
+                </Link>
               </div>
-
-              <Link
-                href={`/dashboard/mock-test/${test.id}/instruction`}
-                className="mt-4"
-              >
-                <Button className="w-full">
-                  {isPremium ? "View & Buy" : "Start Mock Test"}
-                </Button>
-              </Link>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
