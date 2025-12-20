@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -78,7 +77,7 @@ export default function AdminSingleUserPage() {
         <div>
           <h1 className="text-2xl font-bold">User Details</h1>
           <p className="text-muted-foreground">
-            Read-only overview of user account.
+            Read-only overview of user account and access.
           </p>
         </div>
 
@@ -87,7 +86,7 @@ export default function AdminSingleUserPage() {
         </Button>
       </div>
 
-      {/* User Overview */}
+      {/* Account Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Account Summary</CardTitle>
@@ -134,39 +133,67 @@ export default function AdminSingleUserPage() {
         </CardContent>
       </Card>
 
-      {/* Access Summary (Read-only for now) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Access Summary</CardTitle>
-        </CardHeader>
+      {/* Access Details */}
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Notes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Granted Notes</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm space-y-2">
+            {user.grantedNoteIds?.length ? (
+              <ul className="list-disc ml-4">
+                {user.grantedNoteIds.map((id) => (
+                  <li key={id}>{id}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No notes granted.</p>
+            )}
+          </CardContent>
+        </Card>
 
-        <CardContent className="space-y-3 text-sm">
-          <div>
-            <p className="text-muted-foreground">Granted Notes</p>
-            <p className="font-medium">
-              {user.grantedNoteIds?.length || 0}
-            </p>
-          </div>
+        {/* Tests */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Granted Tests</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm space-y-2">
+            {user.grantedTestIds?.length ? (
+              <ul className="list-disc ml-4">
+                {user.grantedTestIds.map((id) => (
+                  <li key={id}>{id}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No tests granted.</p>
+            )}
+          </CardContent>
+        </Card>
 
-          <div>
-            <p className="text-muted-foreground">Granted Tests</p>
-            <p className="font-medium">
-              {user.grantedTestIds?.length || 0}
-            </p>
-          </div>
+        {/* Services */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Granted Services</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm space-y-2">
+            {user.grantedServiceSlugs?.length ? (
+              <ul className="list-disc ml-4">
+                {user.grantedServiceSlugs.map((id) => (
+                  <li key={id}>{id}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No services granted.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-          <div>
-            <p className="text-muted-foreground">Granted Services</p>
-            <p className="font-medium">
-              {user.grantedServiceSlugs?.length || 0}
-            </p>
-          </div>
-
-          <p className="text-muted-foreground italic">
-            (Detailed access controls will appear here in next steps.)
-          </p>
-        </CardContent>
-      </Card>
+      <p className="text-sm text-muted-foreground italic">
+        Access modification, confirmations, premium expiry, and notifications
+        will be added in the next steps.
+      </p>
     </div>
   );
 }
