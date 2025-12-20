@@ -2,91 +2,109 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      return request.auth != null &&
-             request.auth.token.admin == true;
+    /* =============================
+       HELPERS
+    ============================= */
+
+    function isSignedIn() {
+      return request.auth != null;
     }
-    
-    // =============================
-    // PUBLIC READ DATA
-    // =============================
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.uid == "WXFMrKzg0eYHgFEspk8WoIIDc3j2";
+    }
+
+    /* =============================
+       PUBLIC READ DATA
+    ============================= */
 
     match /notes/{id} {
-      allow list, read: if true;
+      allow read, list: if true;
     }
 
     match /mcqSets/{id} {
-      allow list, read: if true;
+      allow read, list: if true;
     }
 
     match /posts/{id} {
-      allow list, read: if true;
+      allow read, list: if true;
     }
 
     match /blog/{id} {
-      allow list, read: if true;
+      allow read, list: if true;
     }
 
     match /custom_notifications/{id} {
-      allow list, read: if true;
+      allow read, list: if true;
     }
 
     match /adminConfig/{doc} {
       allow read: if true;
     }
 
-    // =============================
-    // USER-SPECIFIC DATA
-    // =============================
-    
-    match /user_profiles/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    /* =============================
+       USERS (AUTH CORE)
+    ============================= */
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow create, delete: if false;
     }
+
+    /* =============================
+       USER PROFILES (ADMIN PANEL)
+    ============================= */
+
+    match /user_profiles/{userId} {
+      // Admin can read + list all users
+      allow read, list: if isAdmin();
+
+      // User can read & update own profile
+      allow read, update: if isOwner(userId);
+
+      // No deletes or creates from client
+      allow create, delete: if false;
+    }
+
+    /* =============================
+       PAYMENTS
+    ============================= */
+
+    match /payments/{paymentId} {
+      allow read: if isSignedIn()
+        && (
+          resource.data.userId == request.auth.uid
+          || isAdmin()
+        );
+      allow write: if false;
+    }
+
+    /* =============================
+       NOTE VIEW ANALYTICS
+    ============================= */
 
     match /note_views/{viewId} {
-      // Allow a user to read their own view history.
-      // Deny list access to prevent users from seeing other's history.
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      // Allow users to create their own view history.
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+
+      allow update, delete: if false;
     }
 
-    // =============================
-    // TEST SERIES (CBT)
-    // =============================
+    /* =============================
+       DEFAULT DENY
+    ============================= */
 
-    match /test_series/{testId} {
-      // Anyone can read published tests
-      allow read: if true;
-    
-      // TEMP ADMIN ACCESS (NO AUTH YET)
-      allow create, update, delete: if true;
-    
-      match /questions/{questionId} {
-        allow read: if true;
-    
-        // Enforce schema safety
-        allow create, update: if
-          request.resource.data.question.text is string
-          && request.resource.data.question.text.size() > 0
-          && request.resource.data.options is list
-          && request.resource.data.options.size() >= 2
-          && request.resource.data.correctAnswer is int
-          && request.resource.data.correctAnswer >= 0
-          && request.resource.data.correctAnswer
-             < request.resource.data.options.size();
-    
-        allow delete: if true;
-      }
-    }
-    
-    // =============================
-    // GUEST MOCK TEST ATTEMPTS
-    // =============================
-
-    match /testAttempts/{attemptId} {
-      allow create: if true;
-      allow read, update, delete: if false;
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
