@@ -25,6 +25,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import StayUpdatedStrip from "@/components/stay-updated-strip";
+import EmailVerificationBanner from "@/components/email-verification-banner";
 
 /* ======================================================
    DASHBOARD FEATURES
@@ -322,6 +323,8 @@ export default function DashboardPage() {
           </Button>
         </div>
       </section>
+
+      <EmailVerificationBanner />
 
       {/* FEATURES */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
