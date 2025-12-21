@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { sendEmailVerification } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/auth/AuthSessionProvider";
-import { MailCheck, X } from "lucide-react";
+import { MailCheck, X, CheckCircle2 } from "lucide-react";
 
 export default function EmailVerificationBanner() {
   const authSession = useAuthSession();
@@ -58,22 +59,33 @@ export default function EmailVerificationBanner() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          onClick={handleResend}
-          disabled={sending || sent}
-        >
-          {sent ? "Email Sent" : sending ? "Sending..." : "Verify Now"}
-        </Button>
+      <div className="flex flex-col items-start md:items-end">
+        <div className="flex items-center gap-2">
+            <Button
+            size="sm"
+            onClick={handleResend}
+            disabled={sending || sent}
+            >
+            {sent ? "Email Sent" : sending ? "Sending..." : "Verify Now"}
+            </Button>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={dismiss}
-        >
-          <X className="w-4 h-4" />
-        </Button>
+            <Button
+            size="sm"
+            variant="ghost"
+            onClick={dismiss}
+            >
+            <X className="w-4 h-4" />
+            </Button>
+        </div>
+        {sent && (
+            <div className="flex items-center gap-2 text-green-700 text-sm mt-2">
+                <CheckCircle2 className="w-4 h-4" />
+                Verification email sent. Please check your inbox.
+            </div>
+        )}
+        <p className="text-xs text-muted-foreground mt-2">
+            After verifying, refresh this page to see your verified status.
+        </p>
       </div>
     </div>
   );
