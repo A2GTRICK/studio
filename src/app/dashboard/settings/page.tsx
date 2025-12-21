@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -15,6 +14,7 @@ import { useAuth } from "@/firebase/provider";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { Palette, LogOut } from "lucide-react";
+import EmailVerificationBanner from "@/components/email-verification-banner";
 
 export default function SettingsPage() {
   const [theme, setTheme] = useState("light");
@@ -46,6 +46,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
+      <EmailVerificationBanner />
       <h1 className="text-3xl font-bold">Settings</h1>
       
       {/* APPEARANCE */}

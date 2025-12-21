@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -21,7 +20,7 @@ import { useAuth } from "@/firebase/provider";
 import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CreditCard, LifeBuoy, LogOut, Settings, User } from "lucide-react";
+import { CreditCard, LifeBuoy, LogOut, Settings, User, BadgeCheck } from "lucide-react";
 
 export function UserNav() {
   const authSession = useAuthSession();
@@ -68,6 +67,12 @@ export function UserNav() {
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
+            {user?.emailVerified && (
+              <div className="flex items-center gap-1 text-green-600 text-xs mt-1">
+                <BadgeCheck className="w-4 h-4" />
+                <span>Verified</span>
+              </div>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
