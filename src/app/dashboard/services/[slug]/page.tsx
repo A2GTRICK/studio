@@ -16,8 +16,7 @@ import {
   CheckCircle,
   Mail,
   FileText,
-  MessageCircle,
-  Send,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -41,15 +40,23 @@ export default function ServiceDetailPage({
     features,
   } = service;
 
+  /* ======================================================
+     INQUIRY LINKS (SAFE & FALLBACK READY)
+  ====================================================== */
+
   const mailtoLink = createServiceMailto(service);
   const sampleMailtoLink = createSampleRequestMailto(service);
 
-  // Safe, pre-filled inquiry messages
-  const whatsappLink = `https://wa.me/919999999999?text=${encodeURIComponent(
-    `Hello, I am interested in the "${title}" service. Please guide me further.`
-  )}`;
-
-  const telegramLink = `https://t.me/a2gtrickacademy`;
+  /**
+   * 🔴 REPLACE THIS WITH YOUR REAL GOOGLE FORM LINK
+   * Make sure form has:
+   *  - Email
+   *  - WhatsApp Number
+   *  - Service Name
+   */
+  const googleFormLink =
+    'https://docs.google.com/forms/d/e/FORM_ID/viewform?usp=pp_url' +
+    `&entry.1111111111=${encodeURIComponent(title)}`;
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -125,22 +132,36 @@ export default function ServiceDetailPage({
           {/* CTA CARD */}
           <Card className="shadow-md p-6 bg-secondary/30 border-dashed">
             <h3 className="font-headline text-lg font-semibold mb-2 text-center">
-              Ready to Get Started?
+              Request This Service
             </h3>
+
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              Choose any method below. No payment required now.
+              No payment required now. Share your requirement and we’ll guide
+              you.
             </p>
 
             <div className="flex flex-col gap-3">
-              {/* PRIMARY – EMAIL */}
+              {/* PRIMARY — GOOGLE FORM */}
               <Button asChild size="lg">
-                <a href={mailtoLink}>
-                  <Mail className="mr-2 h-5 w-5" />
-                  Get Quote via Email
+                <a
+                  href={googleFormLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="mr-2 h-5 w-5" />
+                  Submit Requirement
                 </a>
               </Button>
 
-              {/* SECONDARY */}
+              {/* SECONDARY — EMAIL */}
+              <Button asChild variant="outline">
+                <a href={mailtoLink}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Contact via Email
+                </a>
+              </Button>
+
+              {/* OPTIONAL */}
               <Button asChild variant="outline">
                 <a href={sampleMailtoLink}>
                   <FileText className="mr-2 h-4 w-4" />
@@ -148,36 +169,10 @@ export default function ServiceDetailPage({
                 </a>
               </Button>
 
-              {/* INSTANT OPTIONS */}
-              <div className="pt-3 border-t text-center">
-                <p className="text-xs text-muted-foreground mb-2">
-                  Prefer instant chat?
-                </p>
-
-                <div className="flex flex-col gap-2">
-                  <Button asChild variant="outline">
-                    <a
-                      href={whatsappLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      WhatsApp Inquiry
-                    </a>
-                  </Button>
-
-                  <Button asChild variant="outline">
-                    <a
-                      href={telegramLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Send className="mr-2 h-4 w-4" />
-                      Telegram Inquiry
-                    </a>
-                  </Button>
-                </div>
-              </div>
+              {/* FUTURE WHATSAPP PLACEHOLDER */}
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                WhatsApp inquiry will be available soon.
+              </p>
             </div>
           </Card>
         </div>
