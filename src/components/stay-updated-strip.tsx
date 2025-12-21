@@ -20,13 +20,16 @@ const socialLinks = {
 
 export default function StayUpdatedStrip() {
   return (
-    <div className="bg-white border border-primary/20 rounded-xl shadow-md p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div className="rounded-xl border border-primary/15 bg-gradient-to-r from-primary/5 via-white to-primary/5 p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="text-center md:text-left">
-        <h4 className="font-semibold text-primary">Stay Updated with Exam Alerts</h4>
+        <h4 className="font-semibold text-gray-900">
+          Never miss an important pharmacy update
+        </h4>
         <p className="text-sm text-muted-foreground mt-1">
-          Get free access to exam news, job alerts, and result notifications.
+          Official exam alerts, results, and verified job updates — free and spam-free.
         </p>
       </div>
+
       <div className="flex items-center gap-3 flex-shrink-0">
         <Button asChild variant="outline">
           <Link href={socialLinks.notifications}>
@@ -34,14 +37,24 @@ export default function StayUpdatedStrip() {
             App Alerts
           </Link>
         </Button>
+
         <Button asChild variant="outline">
-          <a href={socialLinks.telegram} target="_blank" rel="noopener noreferrer">
+          <a
+            href={socialLinks.telegram}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <Send className="mr-2 h-4 w-4" />
             Telegram
           </a>
         </Button>
+
         <Button asChild variant="outline">
-          <a href={socialLinks.whatsapp} target="_blank" rel="noopener noreferrer">
+          <a
+            href={socialLinks.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <WhatsAppIcon className="mr-2 h-4 w-4" />
             WhatsApp
           </a>
