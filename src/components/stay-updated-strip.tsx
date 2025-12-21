@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Bell, Send } from 'lucide-react';
+import { Youtube, Send } from 'lucide-react';
 import { SVGProps } from 'react';
 
 const WhatsAppIcon = (props: SVGProps<SVGSVGElement>) => (
@@ -13,29 +13,34 @@ const WhatsAppIcon = (props: SVGProps<SVGSVGElement>) => (
 );
 
 const socialLinks = {
-  notifications: '/dashboard/notifications',
-  telegram: 'https://t.me/a2gtrickacademy',
-  whatsapp: 'https://whatsapp.com/channel/0029VafwdunEKyZOy2acO41A',
+  youtube: "https://youtube.com/@a2g_tricks?si=_Ocd7GZHI39TUhof",
+  telegram: "https://t.me/a2gtrickacademy",
+  whatsapp: "https://whatsapp.com/channel/0029VafwdunEKyZOy2acO41A",
 };
 
 export default function StayUpdatedStrip() {
   return (
-    <div className="rounded-xl border border-primary/15 bg-gradient-to-r from-primary/5 via-white to-primary/5 p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+    <div className="bg-white border border-primary/20 rounded-xl shadow-md p-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="text-center md:text-left">
-        <h4 className="font-semibold text-gray-900">
+        <h4 className="font-semibold text-primary">
           Never miss an important pharmacy update
         </h4>
         <p className="text-sm text-muted-foreground mt-1">
-          Official exam alerts, results, and verified job updates — free and spam-free.
+          Official exam alerts, results, and verified job updates — free and
+          spam-free.
         </p>
       </div>
 
       <div className="flex items-center gap-3 flex-shrink-0">
         <Button asChild variant="outline">
-          <Link href={socialLinks.notifications}>
-            <Bell className="mr-2 h-4 w-4" />
-            App Alerts
-          </Link>
+          <a
+            href={socialLinks.youtube}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Youtube className="mr-2 h-4 w-4" />
+            YouTube
+          </a>
         </Button>
 
         <Button asChild variant="outline">
