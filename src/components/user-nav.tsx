@@ -28,25 +28,47 @@ export function UserNav() {
   const router = useRouter();
   const { auth } = useFirebase();
   const session = useAuthSession();
+
   const user = session?.user;
+  const loading = session?.loading;
 
-  if (!user) return null;
+  /* --------------------------------------------------
+     LOADING STATE (avoid flicker)
+  -------------------------------------------------- */
+  if (loading) {
+    return null;
+  }
 
+  /* --------------------------------------------------
+     ❌ NOT LOGGED IN → SHOW LOGIN BUTTON
+  -------------------------------------------------- */
+  if (!user) {
+    return (
+      <Button asChild size="sm">
+        <Link href="/auth/login?redirect=/dashboard">
+          Login
+        </Link>
+      </Button>
+    );
+  }
+
+  /* --------------------------------------------------
+     ✅ LOGGED IN → SHOW USER DROPDOWN
+  -------------------------------------------------- */
   async function handleLogout() {
     if (!auth) return;
     await signOut(auth);
     router.push("/");
   }
 
-  const initials =
-    user.email?.charAt(0).toUpperCase() ?? "U";
+  const initials = user.email?.charAt(0).toUpperCase() ?? "U";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary text-white">
+            <AvatarFallback className="bg-primary text-white font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -63,7 +85,7 @@ export function UserNav() {
               {user.email}
             </p>
 
-            {/* ✅ EMAIL VERIFICATION STATUS */}
+            {/* EMAIL VERIFICATION STATUS */}
             {user.emailVerified ? (
               <div className="flex items-center gap-1 text-xs text-green-600 mt-1">
                 <CheckCircle2 className="h-3.5 w-3.5" />
