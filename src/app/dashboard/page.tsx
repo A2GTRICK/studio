@@ -24,6 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import StayUpdatedStrip from "@/components/stay-updated-strip";
 
 /* ======================================================
    DASHBOARD FEATURES
@@ -327,6 +328,10 @@ export default function DashboardPage() {
         {dashboardFeatures.map((f) => (
           <FeatureCard key={f.title} item={f} />
         ))}
+      </section>
+      
+      <section className="pt-6">
+        <StayUpdatedStrip />
       </section>
 
       <LoginToPersonalizeCard />
