@@ -11,7 +11,7 @@ import { db } from "@/firebase/config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Loader2, Clock, Crown } from "lucide-react";
+import { Loader2, Clock, Crown, ArrowLeft } from "lucide-react";
 import clsx from "clsx";
 import { Badge } from "@/components/ui/badge";
 
@@ -77,6 +77,10 @@ export default function MockTestListPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 px-4">
       {/* HEADER */}
+      <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-primary hover:underline mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Dashboard
+      </Link>
       <h1 className="text-3xl font-bold">Mock Tests</h1>
 
       {/* SEARCH */}
@@ -113,8 +117,7 @@ export default function MockTestListPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((test) => {
             const isPremium = test.isPremium === true;
-            const price = test.price ?? 0;
-            const isPaid = isPremium && price > 0;
+            const isPaid = isPremium && (test.price ?? 0) > 0;
 
             return (
               <div
@@ -140,11 +143,16 @@ export default function MockTestListPage() {
                     {test.duration || 0} min
                   </div>
 
-                  {/* PRICE */}
-                  {isPaid && (
+                  {isPremium && (
                     <div className="mt-2 font-medium rupee">
-                      <span className="mr-0.5">&#8377;</span>
-                      {price}
+                      {(test.price ?? 0) > 0 ? (
+                        <>
+                          <span className="mr-0.5">&#8377;</span>
+                          {test.price}
+                        </>
+                      ) : (
+                        "Free"
+                      )}
                     </div>
                   )}
                 </div>
