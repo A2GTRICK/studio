@@ -1,11 +1,17 @@
-
 'use client';
 
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Service } from '@/lib/services-data';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Mail } from 'lucide-react';
 
 interface ServiceCardProps {
   service: Service;
@@ -19,7 +25,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
       <CardHeader>
         <div className="flex items-start gap-4">
           <div className="bg-primary/10 text-primary p-3 rounded-lg">
-             <Icon className="w-8 h-8" />
+            <Icon className="w-8 h-8" />
           </div>
           <div>
             <CardTitle className="font-headline text-xl">{title}</CardTitle>
@@ -29,14 +35,29 @@ export function ServiceCard({ service }: ServiceCardProps) {
           </div>
         </div>
       </CardHeader>
+
       <CardContent className="flex-grow">
         <CardDescription>{description}</CardDescription>
       </CardContent>
-      <CardFooter className="flex justify-between items-center bg-secondary/20 p-4">
-        <div className="font-bold text-primary text-sm">{price}</div>
-        <Button asChild size="sm">
+
+      <CardFooter className="flex flex-col gap-3 bg-secondary/20 p-4">
+        <div className="flex w-full justify-between items-center">
+          <div className="font-bold text-primary text-sm">{price}</div>
+        </div>
+
+        {/* PRIMARY CTA */}
+        <Button asChild className="w-full">
           <Link href={`/dashboard/services/${slug}`}>
-            Learn More <ArrowRight className="ml-2 h-4 w-4" />
+            Learn More
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
+
+        {/* SECONDARY SOFT CTA */}
+        <Button asChild variant="outline" className="w-full">
+          <Link href={`/dashboard/services/${slug}`}>
+            <Mail className="mr-2 h-4 w-4" />
+            Get Quote
           </Link>
         </Button>
       </CardFooter>
