@@ -181,16 +181,6 @@ export default function DashboardLayout({
                         icon={HelpingHand}
                         label="Help & FAQ"
                       />
-                      <NavItem
-                        href="/dashboard/profile"
-                        icon={User}
-                        label="Profile"
-                      />
-                      <NavItem
-                        href="/dashboard/settings"
-                        icon={Settings}
-                        label="Settings"
-                      />
                   </SidebarMenu>
               </SidebarFooter>
             </Sidebar>
