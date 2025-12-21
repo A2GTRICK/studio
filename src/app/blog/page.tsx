@@ -2,7 +2,7 @@
 import { fetchAllPosts, type Post } from "@/services/posts";
 import Image from "next/image";
 import Link from "next/link";
-import { Rss, Loader2, ArrowRight } from "lucide-react";
+import { Rss, Loader2, Bell, Send } from "lucide-react";
 import { Suspense } from "react";
 import { Metadata } from "next";
 
@@ -103,8 +103,8 @@ export default function BlogPage() {
 
           <p className="mt-2 text-sm text-muted-foreground">
             Updated regularly for <strong>GPAT</strong>, <strong>AIIMS</strong>,
-            <strong> RRB Pharmacist</strong>, <strong>D.Pharm</strong> &
-            <strong> B.Pharm</strong> aspirants.
+            <strong> RRB Pharmacist</strong>, <strong>D.Pharm</strong> &{" "}
+            <strong>B.Pharm</strong> aspirants.
           </p>
         </header>
 
@@ -125,21 +125,35 @@ export default function BlogPage() {
           <BlogList />
         </Suspense>
 
-        {/* INTERNAL CONVERSION BRIDGE */}
-        <section className="text-center pt-10">
+        {/* SOFT CONNECTION SECTION (NO LOGIN / NO PAYMENT) */}
+        <section className="bg-white border rounded-2xl p-8 text-center max-w-3xl mx-auto">
           <h3 className="text-xl font-semibold mb-2">
-            Ready to test your preparation?
+            Stay updated with pharmacy exam alerts
           </h3>
-          <p className="text-muted-foreground mb-4">
-            Practice with real exam-style mock tests designed for pharmacy
-            exams.
+          <p className="text-muted-foreground mb-5">
+            Get important exam news, result updates, and academic alerts — free
+            and spam-free.
           </p>
-          <Link
-            href="/dashboard/mock-test"
-            className="inline-flex items-center gap-2 text-primary font-medium hover:underline"
-          >
-            Explore Mock Tests <ArrowRight className="w-4 h-4" />
-          </Link>
+
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link
+              href="/dashboard/notifications"
+              className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:bg-primary/90"
+            >
+              <Bell className="w-4 h-4" />
+              Get alerts
+            </Link>
+
+            <a
+              href="https://t.me/a2gtrickacademy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-secondary px-5 py-2.5 rounded-lg hover:shadow"
+            >
+              <Send className="w-4 h-4" />
+              Join Telegram
+            </a>
+          </div>
         </section>
       </div>
     </div>
