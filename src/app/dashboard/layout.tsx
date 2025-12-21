@@ -25,7 +25,8 @@ import {
   BarChart3,
   Settings,
   Info,
-  Bell
+  Bell,
+  User,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -103,7 +104,7 @@ export default function DashboardLayout({
     if (pathname.startsWith('/dashboard/mcq-practice')) return 'MCQ Practice';
     if (pathname.startsWith('/dashboard/mock-test')) return 'Mock Test';
     if (pathname.startsWith('/dashboard/services')) return 'Academic Services';
-    if (pathname.startsWith('/dashboard/profile')) return 'Profile & Settings';
+    if (pathname.startsWith('/dashboard/profile')) return 'Profile';
     if (pathname.startsWith('/dashboard/billing')) return 'Billing';
     if (pathname.startsWith('/dashboard/ai-note-generator')) return 'AI Note Generator';
     if (pathname.startsWith('/dashboard/ai-quiz-generator')) return 'AI Quiz Generator';
@@ -111,6 +112,7 @@ export default function DashboardLayout({
     if (pathname.startsWith('/dashboard/notifications')) return 'Notifications';
     if (pathname.startsWith('/dashboard/about')) return 'About';
     if (pathname.startsWith('/dashboard/help')) return 'Help';
+    if (pathname.startsWith('/dashboard/settings')) return 'Settings';
     return 'pharmA2G';
   }
 
@@ -181,8 +183,13 @@ export default function DashboardLayout({
                       />
                       <NavItem
                         href="/dashboard/profile"
+                        icon={User}
+                        label="Profile"
+                      />
+                      <NavItem
+                        href="/dashboard/settings"
                         icon={Settings}
-                        label="Profile & Settings"
+                        label="Settings"
                       />
                   </SidebarMenu>
               </SidebarFooter>
