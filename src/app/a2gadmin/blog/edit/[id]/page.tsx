@@ -38,70 +38,89 @@ function slugify(text: string) {
     .replace(/--+/g, "-");
 }
 
+/* ✅ SAFE DEFAULT SHAPE (CRITICAL FIX) */
+const EMPTY_POST = {
+  title: "",
+  slug: "",
+  summary: "",
+  category: "",
+  tags: "",
+  banner: "",
+  content: "",
+  isPublished: false,
+};
+
 export default function EditBlogPage() {
   const { id } = useParams();
   const router = useRouter();
 
-  const [post, setPost] = useState<any>(null);
+  const [post, setPost] = useState<typeof EMPTY_POST>(EMPTY_POST);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
+  /* LOAD POST */
   useEffect(() => {
     async function load() {
       try {
         const ref = doc(db, "posts", String(id));
         const snap = await getDoc(ref);
+
         if (!snap.exists()) {
           setMsg("Post not found.");
           return;
         }
+
         const data = snap.data();
         setPost({
+          ...EMPTY_POST,
           ...data,
           tags: Array.isArray(data.tags)
             ? data.tags.join(", ")
             : "",
+          isPublished: Boolean(data.isPublished),
         });
       } catch {
         setMsg("Failed to load post.");
+      } finally {
+        setLoading(false);
       }
     }
     load();
   }, [id]);
 
-  if (!post)
-    return (
-      <div className="flex justify-center p-10">
-        <Loader2 className="animate-spin" />
-      </div>
-    );
-
+  /* SAVE */
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+
     if (!post.title || !post.content) {
       setMsg("Title and content are required.");
       return;
     }
 
     setSaving(true);
+    setMsg("");
+
     try {
       await updateDoc(doc(db, "posts", String(id)), {
         ...post,
-        slug: slugify(post.slug),
+        slug: slugify(post.slug || post.title),
         tags: post.tags
           .split(",")
-          .map((t: string) => t.trim())
+          .map(t => t.trim())
           .filter(Boolean),
         updatedAt: serverTimestamp(),
       });
-      setMsg("Changes saved successfully.");
+
+      setMsg("Post saved successfully.");
     } catch {
-      setMsg("Save failed. Try again.");
+      setMsg("Save failed. Please try again.");
     } finally {
       setSaving(false);
     }
   }
 
+  /* DELETE */
   async function handleDelete() {
     const ok = confirm(
       "Delete this post permanently?\n\nThis cannot be undone."
@@ -114,6 +133,14 @@ export default function EditBlogPage() {
     } catch {
       alert("Delete failed.");
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center p-10">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -129,13 +156,15 @@ export default function EditBlogPage() {
         </button>
 
         <div className="flex gap-2">
+          {/* ✅ PREVIEW WORKS EVEN FOR DRAFT */}
           <Link
-            href={`/blog/${post.slug}`}
+            href={`/blog/${post.slug}?preview=1`}
             target="_blank"
             className="px-3 py-1.5 rounded-md bg-secondary text-sm flex items-center gap-2"
           >
             <Eye className="w-4 h-4" /> Preview
           </Link>
+
           <Button
             size="sm"
             variant="destructive"
@@ -154,8 +183,8 @@ export default function EditBlogPage() {
         <div className="bg-secondary/30 p-6 rounded-lg border space-y-4">
           <Input
             value={post.title}
-            onChange={(e) =>
-              setPost((p: any) => ({
+            onChange={e =>
+              setPost(p => ({
                 ...p,
                 title: e.target.value,
                 slug: slugify(e.target.value),
@@ -167,8 +196,8 @@ export default function EditBlogPage() {
 
           <Input
             value={post.slug}
-            onChange={(e) =>
-              setPost((p: any) => ({
+            onChange={e =>
+              setPost(p => ({
                 ...p,
                 slug: e.target.value,
               }))
@@ -179,8 +208,8 @@ export default function EditBlogPage() {
 
           <Textarea
             value={post.summary}
-            onChange={(e) =>
-              setPost((p: any) => ({
+            onChange={e =>
+              setPost(p => ({
                 ...p,
                 summary: e.target.value,
               }))
@@ -191,8 +220,8 @@ export default function EditBlogPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <Input
               value={post.category}
-              onChange={(e) =>
-                setPost((p: any) => ({
+              onChange={e =>
+                setPost(p => ({
                   ...p,
                   category: e.target.value,
                 }))
@@ -201,8 +230,8 @@ export default function EditBlogPage() {
             />
             <Input
               value={post.tags}
-              onChange={(e) =>
-                setPost((p: any) => ({
+              onChange={e =>
+                setPost(p => ({
                   ...p,
                   tags: e.target.value,
                 }))
@@ -213,8 +242,8 @@ export default function EditBlogPage() {
 
           <Input
             value={post.banner}
-            onChange={(e) =>
-              setPost((p: any) => ({
+            onChange={e =>
+              setPost(p => ({
                 ...p,
                 banner: e.target.value,
               }))
@@ -222,12 +251,13 @@ export default function EditBlogPage() {
             placeholder="Banner image URL"
           />
 
+          {/* ✅ FIXED CONTROLLED CHECKBOX */}
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={post.isPublished}
-              onChange={(e) =>
-                setPost((p: any) => ({
+              onChange={e =>
+                setPost(p => ({
                   ...p,
                   isPublished: e.target.checked,
                 }))
@@ -245,7 +275,7 @@ export default function EditBlogPage() {
             <MDEditor
               value={post.content}
               onChange={(v = "") =>
-                setPost((p: any) => ({
+                setPost(p => ({
                   ...p,
                   content: v,
                 }))
@@ -280,3 +310,4 @@ export default function EditBlogPage() {
     </div>
   );
 }
+    
