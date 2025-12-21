@@ -15,7 +15,7 @@ import js from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
 import bash from "react-syntax-highlighter/dist/esm/languages/hljs/bash";
 import atomOneDark from "react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark";
 
-import { ArrowLeft, Bell } from "lucide-react";
+import { ArrowLeft, Bell, Send } from "lucide-react";
 import ClientControls from "./client-controls";
 import { fetchSinglePost, fetchRelatedPosts } from "@/services/posts";
 
@@ -213,22 +213,36 @@ export default async function BlogPage({
                 </ReactMarkdown>
               </div>
 
-              {/* SUBSCRIBE CTA – FIXED & WORKING */}
-              <div className="mt-12 border-t pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+              {/* FREE CONNECTION CTA (NO BILLING, NO FORCE) */}
+              <div className="mt-12 border-t pt-8 bg-primary/5 rounded-xl px-6 py-6 flex flex-col sm:flex-row justify-between items-center gap-6">
                 <div>
-                  <div className="text-sm font-semibold">Author</div>
+                  <div className="text-sm font-semibold">
+                    Stay updated with pharmacy exam alerts
+                  </div>
                   <div className="text-sm text-muted-foreground">
-                    {post.author || "pharmA2G Editorial Team"}
+                    Results, merit lists, and important updates — no spam.
                   </div>
                 </div>
 
-                <Link
-                  href="/dashboard/billing"
-                  className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:bg-primary/90"
-                >
-                  <Bell className="w-4 h-4" />
-                  Get exam updates & alerts
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href="/dashboard/notifications"
+                    className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg shadow hover:bg-primary/90"
+                  >
+                    <Bell className="w-4 h-4" />
+                    Get alerts
+                  </Link>
+
+                  <a
+                    href="https://t.me/a2gtrickacademy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-white border px-4 py-2 rounded-lg hover:shadow"
+                  >
+                    <Send className="w-4 h-4" />
+                    Join Telegram
+                  </a>
+                </div>
               </div>
 
               {/* RELATED */}
