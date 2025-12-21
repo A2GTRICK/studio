@@ -21,6 +21,7 @@ import {
   LogOut,
   CheckCircle2,
   AlertTriangle,
+  LogIn,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -29,32 +30,32 @@ export function UserNav() {
   const { auth } = useFirebase();
   const session = useAuthSession();
 
-  const user = session?.user;
-  const loading = session?.loading;
-
-  /* --------------------------------------------------
-     LOADING STATE (avoid flicker)
-  -------------------------------------------------- */
-  if (loading) {
-    return null;
+  // ⏳ Auth still loading → keep layout stable
+  if (!session || session.loading) {
+    return (
+      <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+    );
   }
 
-  /* --------------------------------------------------
-     ❌ NOT LOGGED IN → SHOW LOGIN BUTTON
-  -------------------------------------------------- */
+  const user = session.user;
+
+  /* =====================================================
+     🔐 NOT LOGGED IN → SHOW LOGIN BUTTON (CRITICAL FIX)
+  ====================================================== */
   if (!user) {
     return (
-      <Button asChild size="sm">
-        <Link href="/auth/login?redirect=/dashboard">
+      <Button asChild variant="outline" size="sm">
+        <Link href="/auth/login">
+          <LogIn className="mr-2 h-4 w-4" />
           Login
         </Link>
       </Button>
     );
   }
 
-  /* --------------------------------------------------
-     ✅ LOGGED IN → SHOW USER DROPDOWN
-  -------------------------------------------------- */
+  /* =====================================================
+     ✅ LOGGED IN → USER DROPDOWN
+  ====================================================== */
   async function handleLogout() {
     if (!auth) return;
     await signOut(auth);
@@ -68,7 +69,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary text-white font-semibold">
+            <AvatarFallback className="bg-primary text-white">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -78,14 +79,10 @@ export function UserNav() {
       <DropdownMenuContent className="w-64" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-semibold leading-none">
-              A2GTRICK Academy
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {user.email}
-            </p>
+            <p className="text-sm font-semibold">A2GTRICK Academy</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
 
-            {/* EMAIL VERIFICATION STATUS */}
+            {/* 🔐 Email verification status (SAFE & PASSIVE) */}
             {user.emailVerified ? (
               <div className="flex items-center gap-1 text-xs text-green-600 mt-1">
                 <CheckCircle2 className="h-3.5 w-3.5" />
