@@ -113,6 +113,26 @@ service cloud.firestore {
 
 
     /* =============================
+       SERVICE REQUESTS (ADMIN ONLY)
+    ============================= */
+
+    match /service_requests/{requestId} {
+
+      // ONLY admin can read service requests
+      allow read: if isAdmin();
+
+      // ONLY admin can update status
+      allow update: if isAdmin();
+
+      // Creation allowed only via server / controlled forms later
+      allow create: if false;
+
+      // Never allow delete
+      allow delete: if false;
+    }
+
+
+    /* =============================
        FALLBACK – BLOCK EVERYTHING
     ============================= */
 

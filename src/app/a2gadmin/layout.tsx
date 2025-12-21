@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { HelpingHand } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -32,6 +33,7 @@ export default function AdminLayout({
             { label: "Tests", href: "/a2gadmin/tests" },
             { label: "Blog", href: "/a2gadmin/blog" },
             { label: "Jobs", href: "/a2gadmin/jobs" },
+            { label: "Service Requests", href: "/a2gadmin/service-requests"},
             { label: "Notifications", href: "/a2gadmin/notifications" },
             { label: "Users", href: "/a2gadmin/users" },
             { label: "Payments", href: "/a2gadmin/payments" },
