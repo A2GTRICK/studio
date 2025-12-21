@@ -1,9 +1,13 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useAuthSession } from "@/auth/AuthSessionProvider";
 import {
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from "firebase/auth";
 import { db } from "@/firebase/config";
 import {
@@ -34,9 +38,9 @@ import {
   Loader2,
   Crown,
   Phone,
+  ShieldCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/firebase/provider";
 
 /* =========================================================
    PROFILE PAGE — SAFE ENHANCED VERSION
@@ -98,6 +102,7 @@ export default function ProfilePage() {
   const authSession = useAuthSession();
   const { toast } = useToast();
   const user = authSession?.user;
+  const router = useRouter();
 
   /* -----------------------
      AUTH FIELDS
@@ -105,6 +110,9 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState(
     user?.displayName || ""
   );
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
 
   /* -----------------------
      EXTRA PROFILE FIELDS
@@ -120,6 +128,8 @@ export default function ProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
 
   /* -----------------------
      LOAD PROFILE DATA
@@ -203,6 +213,53 @@ export default function ProfilePage() {
     }
   };
 
+    /* -----------------------
+     PASSWORD CHANGE
+  ----------------------- */
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword || !newPassword) {
+      toast({
+        variant: "destructive",
+        title: "Missing fields",
+        description: "Fill both password fields.",
+      });
+      return;
+    }
+
+    setSavingPassword(true);
+
+    try {
+      if (!user.email) throw new Error("Email required");
+
+      const cred = EmailAuthProvider.credential(
+        user.email,
+        currentPassword
+      );
+
+      await reauthenticateWithCredential(user, cred);
+      await updatePassword(user, newPassword);
+
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed.",
+      });
+
+      setCurrentPassword("");
+      setNewPassword("");
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Password update failed",
+        description: err.message,
+      });
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+
 
   const initials =
     (user.displayName || user.email || "U")
@@ -232,15 +289,24 @@ export default function ProfilePage() {
           <p className="text-muted-foreground">
             {user.email}
           </p>
-
-          <span
-            className={`inline-flex items-center gap-2 mt-2 px-3 py-1 rounded-full text-xs font-medium ${premiumInfo.color}`}
-          >
-            <Crown className="w-4 h-4" />
-            {premiumInfo.label}
-          </span>
         </div>
       </div>
+      
+      {/* PREMIUM STATUS */}
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Premium Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <Badge
+            className={`inline-flex items-center gap-2 mt-2 px-3 py-1 text-sm font-medium ${premiumInfo.color}`}
+            >
+            {premiumInfo.label}
+          </Badge>
+          {(premium.grantedNoteIds?.length || 0) > 0 && <p className="text-sm mt-2">Special access to {premium.grantedNoteIds?.length} notes.</p>}
+        </CardContent>
+      </Card>
+
 
       {/* BASIC INFO */}
       <Card>
@@ -285,6 +351,54 @@ export default function ProfilePage() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Save Profile
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* SECURITY */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex gap-2 items-center">
+            <ShieldCheck className="w-5 h-5" />
+            Security
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div>
+              <Label>Current Password</Label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) =>
+                  setCurrentPassword(e.target.value)
+                }
+                placeholder="Enter your current password"
+              />
+            </div>
+
+            <div>
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) =>
+                  setNewPassword(e.target.value)
+                }
+                placeholder="Enter a new password"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={savingPassword}
+            >
+              {savingPassword && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Update Password
             </Button>
           </form>
         </CardContent>
