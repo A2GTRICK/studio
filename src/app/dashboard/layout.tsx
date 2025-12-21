@@ -103,7 +103,7 @@ export default function DashboardLayout({
     if (pathname.startsWith('/dashboard/mcq-practice')) return 'MCQ Practice';
     if (pathname.startsWith('/dashboard/mock-test')) return 'Mock Test';
     if (pathname.startsWith('/dashboard/services')) return 'Academic Services';
-    if (pathname.startsWith('/dashboard/settings')) return 'Settings';
+    if (pathname.startsWith('/dashboard/profile')) return 'Profile & Settings';
     if (pathname.startsWith('/dashboard/billing')) return 'Billing';
     if (pathname.startsWith('/dashboard/ai-note-generator')) return 'AI Note Generator';
     if (pathname.startsWith('/dashboard/ai-quiz-generator')) return 'AI Quiz Generator';
@@ -180,9 +180,9 @@ export default function DashboardLayout({
                         label="Help & FAQ"
                       />
                       <NavItem
-                        href="/dashboard/settings"
+                        href="/dashboard/profile"
                         icon={Settings}
-                        label="Settings"
+                        label="Profile & Settings"
                       />
                   </SidebarMenu>
               </SidebarFooter>

@@ -39,7 +39,12 @@ import {
   ShieldCheck,
   Phone,
   Crown,
+  Palette,
+  LogOut,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/firebase/provider";
+import { signOut } from "firebase/auth";
 
 /* =========================================================
    PROFILE PAGE — SAFE ENHANCED VERSION
@@ -101,6 +106,8 @@ export default function ProfilePage() {
   const authSession = useAuthSession();
   const { toast } = useToast();
   const user = authSession?.user;
+  const firebaseAuth = useAuth();
+  const router = useRouter();
 
   /* -----------------------
      AUTH FIELDS
@@ -130,6 +137,22 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    setTheme(currentTheme);
+    document.documentElement.classList.toggle('dark', currentTheme === 'dark');
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
+
 
   /* -----------------------
      LOAD PROFILE DATA
@@ -162,6 +185,12 @@ export default function ProfilePage() {
 
     loadAll();
   }, [user]);
+  
+  const handleLogout = async () => {
+    if (!firebaseAuth) return;
+    await signOut(firebaseAuth);
+    router.push('/');
+  };
 
   if (authSession?.loading || loading) {
     return (
@@ -297,32 +326,12 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* PREMIUM ACCESS (READ ONLY) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>My Premium Access</CardTitle>
-          <CardDescription>
-            Content unlocked for your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <AccessList title="Premium Notes" items={premium.grantedNoteIds} />
-          <AccessList title="Premium Tests / MCQs" items={premium.grantedTestIds} />
-          <AccessList title="Premium Services" items={premium.grantedServiceSlugs} />
-          <AccessList
-            title="Special Premium Unlocks"
-            items={premium.premiumOverrideIds}
-            highlight
-          />
-        </CardContent>
-      </Card>
-
       {/* BASIC INFO */}
       <Card>
         <CardHeader>
           <CardTitle>Basic Information</CardTitle>
           <CardDescription>
-            Visible across the platform.
+            This information is visible across the platform.
           </CardDescription>
         </CardHeader>
 
@@ -354,27 +363,7 @@ export default function ProfilePage() {
                 onChange={(e) => setMobile(e.target.value)}
               />
             </div>
-
-            <div>
-              <Label>Roll Number</Label>
-              <Input
-                placeholder="Optional"
-                value={rollNumber}
-                onChange={(e) =>
-                  setRollNumber(e.target.value)
-                }
-              />
-            </div>
-
-            <div>
-              <Label>About</Label>
-              <Textarea
-                placeholder="Short bio (optional)"
-                value={about}
-                onChange={(e) => setAbout(e.target.value)}
-              />
-            </div>
-
+            
             <Button type="submit" disabled={savingProfile}>
               {savingProfile && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -382,6 +371,26 @@ export default function ProfilePage() {
               Save Profile
             </Button>
           </form>
+        </CardContent>
+      </Card>
+      
+      {/* APPEARANCE */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="w-5 h-5" /> Appearance
+          </CardTitle>
+          <CardDescription>
+            Customize the look and feel of the application.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <Label>Theme</Label>
+            <Button variant="outline" onClick={toggleTheme}>
+              Switch to {theme === 'light' ? 'Dark' : 'Light'} Mode
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -404,6 +413,7 @@ export default function ProfilePage() {
                 onChange={(e) =>
                   setCurrentPassword(e.target.value)
                 }
+                placeholder="Enter your current password"
               />
             </div>
 
@@ -415,6 +425,7 @@ export default function ProfilePage() {
                 onChange={(e) =>
                   setNewPassword(e.target.value)
                 }
+                placeholder="Enter a new password"
               />
             </div>
 
@@ -430,38 +441,14 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
-    </div>
-  );
-}
+      
+      <div className="pt-4">
+        <Button variant="destructive" onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Log Out
+        </Button>
+      </div>
 
-/* ================= REUSABLE ================= */
-
-function AccessList({
-  title,
-  items,
-  highlight,
-}: {
-  title: string;
-  items?: string[];
-  highlight?: boolean;
-}) {
-  return (
-    <div>
-      <p className="font-medium mb-1">{title}</p>
-      {items && items.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {items.map((id) => (
-            <Badge
-              key={id}
-              variant={highlight ? "default" : "outline"}
-            >
-              {id}
-            </Badge>
-          ))}
-        </div>
-      ) : (
-        <p className="text-muted-foreground">No access</p>
-      )}
     </div>
   );
 }
