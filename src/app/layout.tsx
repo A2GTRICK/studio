@@ -3,6 +3,7 @@ import AppProviders from "@/components/AppProviders";
 import { Toaster } from "@/components/ui/toaster";
 import { PT_Sans } from 'next/font/google';
 import { cn } from "@/lib/utils";
+import { Metadata } from 'next';
 
 const fontBody = PT_Sans({
   subsets: ['latin'],
@@ -10,9 +11,19 @@ const fontBody = PT_Sans({
   variable: '--font-pt-sans',
 });
 
-export const metadata = {
-  title: "A2G Smart Notes",
-  description: "AI-assisted pharmacy notes & practice",
+export const metadata: Metadata = {
+  title: "pharmA2G | Smart Notes & AI Tools for Pharmacy Students",
+  description: "Your smart friend for pharmacy exams (GPAT, NIPER) and studies (D.Pharm, B.Pharm). Get AI-powered notes, MCQ practice, and expert academic services.",
+  openGraph: {
+    title: "pharmA2G | Smart Notes & AI Tools for Pharmacy Students",
+    description: "AI-powered learning platform for D.Pharm, B.Pharm, GPAT, NIPER and other pharmacy exams.",
+    images: [{
+      url: 'https://i.postimg.cc/k5CkkR0S/image-logo.png',
+      width: 800,
+      height: 600,
+      alt: 'pharmA2G Logo'
+    }]
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

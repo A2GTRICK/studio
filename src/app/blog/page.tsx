@@ -19,7 +19,7 @@ async function BlogList() {
       {posts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {posts.map((post: Post) => (
-            <Link key={post.id} href={`/blog/${post.id}`} passHref>
+            <Link key={post.id} href={`/blog/${post.slug || post.id}`} passHref>
               <div className="group bg-white rounded-2xl shadow-lg overflow-hidden h-full flex flex-col transition-transform transform hover:-translate-y-2 hover:shadow-2xl border border-gray-200">
                 {post.banner && (
                   <div className="relative w-full h-48">
@@ -38,7 +38,7 @@ async function BlogList() {
                   </h2>
                    <p className="mt-2 text-sm text-muted-foreground flex-grow line-clamp-3">{post.summary}</p>
                    <div className="mt-4 text-xs text-muted-foreground">
-                     {post.createdAt ? new Date(post.createdAt.seconds * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric'}) : ''}
+                     {post.createdAt ? new Date((post.createdAt as any).seconds * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric'}) : ''}
                    </div>
                 </div>
               </div>
