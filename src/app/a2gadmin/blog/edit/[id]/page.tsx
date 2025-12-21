@@ -1,5 +1,3 @@
-
-// src/app/a2gadmin/blog/edit/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -10,169 +8,273 @@ import "@uiw/react-markdown-preview/markdown.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft, Save, Trash2, Eye } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  Save,
+  Trash2,
+  Eye,
+} from "lucide-react";
 import Link from "next/link";
 import { db } from "@/firebase/config";
-import { doc, getDoc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  deleteDoc,
+} from "firebase/firestore";
 
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), {
+  ssr: false,
+});
 
 function slugify(text: string) {
   return text
-    .toString()
     .toLowerCase()
     .trim()
     .replace(/\s+/g, "-")
-    .replace(/[^\w\-]+/g, "")
-    .replace(/\-\-+/g, "-");
+    .replace(/[^\w-]/g, "")
+    .replace(/--+/g, "-");
 }
-
-type Post = {
-    title: string;
-    slug: string;
-    summary: string;
-    category: string;
-    tags: string;
-    banner: string;
-    content: string;
-    isPublished: boolean;
-};
 
 export default function EditBlogPage() {
   const { id } = useParams();
   const router = useRouter();
 
-  const [post, setPost] = useState<Post>({ 
-    title: "", slug: "", summary: "", category: "", tags: "", banner: "", content: "", isPublished: true 
-  });
-  
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    if (!id) return;
-    async function loadPost() {
-      setLoading(true);
+    async function load() {
       try {
-        const docRef = doc(db, 'posts', Array.isArray(id) ? id[0] : id);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            setPost({
-              ...data,
-              tags: Array.isArray(data.tags) ? data.tags.join(', ') : '',
-            } as Post);
-        } else {
+        const ref = doc(db, "posts", String(id));
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
           setMsg("Post not found.");
+          return;
         }
-      } catch (err) {
-        setMsg("Network error.");
+        const data = snap.data();
+        setPost({
+          ...data,
+          tags: Array.isArray(data.tags)
+            ? data.tags.join(", ")
+            : "",
+        });
+      } catch {
+        setMsg("Failed to load post.");
       }
-      setLoading(false);
     }
-    loadPost();
+    load();
   }, [id]);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value;
-    setPost(p => ({ ...p, title: newTitle, slug: slugify(newTitle)}));
-  };
+  if (!post)
+    return (
+      <div className="flex justify-center p-10">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    setMsg("");
-    
-    if (!post.title || !post.slug || !post.content) {
-      setMsg("Title, Slug, and Content are required.");
-      setSaving(false);
+    if (!post.title || !post.content) {
+      setMsg("Title and content are required.");
       return;
     }
 
+    setSaving(true);
     try {
-      const docRef = doc(db, 'posts', Array.isArray(id) ? id[0] : id);
-      const payload = {
+      await updateDoc(doc(db, "posts", String(id)), {
         ...post,
-        tags: post.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         slug: slugify(post.slug),
+        tags: post.tags
+          .split(",")
+          .map((t: string) => t.trim())
+          .filter(Boolean),
         updatedAt: serverTimestamp(),
-      };
-      await updateDoc(docRef, payload);
-      setMsg("Post updated successfully!");
-
-    } catch (err: any) {
-      setMsg("A network or server error occurred.");
+      });
+      setMsg("Changes saved successfully.");
+    } catch {
+      setMsg("Save failed. Try again.");
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this post? This cannot be undone.")) {
-        return;
-    }
-    setSaving(true);
+    const ok = confirm(
+      "Delete this post permanently?\n\nThis cannot be undone."
+    );
+    if (!ok) return;
+
     try {
-        const docRef = doc(db, 'posts', Array.isArray(id) ? id[0] : id);
-        await deleteDoc(docRef);
-        alert("Post deleted.");
-        router.push('/a2gadmin/blog');
-    } catch (err) {
-        alert("Deletion failed due to a network error.");
+      await deleteDoc(doc(db, "posts", String(id)));
+      router.push("/a2gadmin/blog");
+    } catch {
+      alert("Delete failed.");
     }
-    setSaving(false);
   }
 
-  if (loading) return <div className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-
   return (
-    <div className="text-foreground max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm hover:underline text-primary">
-            <ArrowLeft className="w-4 h-4" /> Back to Blog Manager
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* TOP BAR */}
+      <div className="flex justify-between items-center">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-sm text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
         </button>
+
         <div className="flex gap-2">
-            <Link href={`/blog/${post.slug}`} target="_blank" className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80">
-                <Eye className="w-4 h-4" /> Preview
-            </Link>
-             <Button variant="destructive" size="sm" onClick={handleDelete} disabled={saving}>
-                <Trash2 className="w-4 h-4" />
-            </Button>
+          <Link
+            href={`/blog/${post.slug}`}
+            target="_blank"
+            className="px-3 py-1.5 rounded-md bg-secondary text-sm flex items-center gap-2"
+          >
+            <Eye className="w-4 h-4" /> Preview
+          </Link>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleDelete}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
-      <h1 className="text-2xl font-semibold mb-6">Edit Blog Post</h1>
+      <h1 className="text-2xl font-semibold">
+        Edit Blog Post
+      </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="p-6 bg-secondary/30 rounded-lg border space-y-4">
-          <Input value={post.title} onChange={handleTitleChange} placeholder="* Post Title" required />
-          <Input value={post.slug} onChange={(e) => setPost(p => ({ ...p, slug: e.target.value }))} placeholder="* URL Slug" required />
-          <Textarea value={post.summary} onChange={(e) => setPost(p => ({ ...p, summary: e.target.value }))} placeholder="Short Summary / Meta Description" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input value={post.category} onChange={(e) => setPost(p => ({ ...p, category: e.target.value }))} placeholder="Category" />
-            <Input value={post.tags} onChange={(e) => setPost(p => ({ ...p, tags: e.target.value }))} placeholder="Tags (comma-separated)" />
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="bg-secondary/30 p-6 rounded-lg border space-y-4">
+          <Input
+            value={post.title}
+            onChange={(e) =>
+              setPost((p: any) => ({
+                ...p,
+                title: e.target.value,
+                slug: slugify(e.target.value),
+              }))
+            }
+            placeholder="Post Title"
+            required
+          />
+
+          <Input
+            value={post.slug}
+            onChange={(e) =>
+              setPost((p: any) => ({
+                ...p,
+                slug: e.target.value,
+              }))
+            }
+            placeholder="URL Slug"
+            required
+          />
+
+          <Textarea
+            value={post.summary}
+            onChange={(e) =>
+              setPost((p: any) => ({
+                ...p,
+                summary: e.target.value,
+              }))
+            }
+            placeholder="Short summary / meta description"
+          />
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <Input
+              value={post.category}
+              onChange={(e) =>
+                setPost((p: any) => ({
+                  ...p,
+                  category: e.target.value,
+                }))
+              }
+              placeholder="Category"
+            />
+            <Input
+              value={post.tags}
+              onChange={(e) =>
+                setPost((p: any) => ({
+                  ...p,
+                  tags: e.target.value,
+                }))
+              }
+              placeholder="Tags (comma separated)"
+            />
           </div>
-          <Input value={post.banner} onChange={(e) => setPost(p => ({ ...p, banner: e.target.value }))} placeholder="Banner Image URL" />
-           <label className="flex items-center gap-2 cursor-pointer pt-2 text-sm">
-              <input type="checkbox" checked={post.isPublished} onChange={(e) => setPost(p => ({ ...p, isPublished: e.target.checked }))} /> Published
+
+          <Input
+            value={post.banner}
+            onChange={(e) =>
+              setPost((p: any) => ({
+                ...p,
+                banner: e.target.value,
+              }))
+            }
+            placeholder="Banner image URL"
+          />
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={post.isPublished}
+              onChange={(e) =>
+                setPost((p: any) => ({
+                  ...p,
+                  isPublished: e.target.checked,
+                }))
+              }
+            />
+            Published
           </label>
         </div>
-        
-        <div className="p-6 bg-secondary/30 rounded-lg border">
-          <h2 className="text-lg font-semibold mb-2">Content (Markdown)</h2>
+
+        <div className="bg-secondary/30 p-6 rounded-lg border">
+          <h2 className="font-semibold mb-2">
+            Content (Markdown)
+          </h2>
           <div data-color-mode="dark">
-            <MDEditor value={post.content} onChange={(v = "") => setPost(p => ({ ...p, content: v }))} height={500} />
+            <MDEditor
+              value={post.content}
+              onChange={(v = "") =>
+                setPost((p: any) => ({
+                  ...p,
+                  content: v,
+                }))
+              }
+              height={500}
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-6">
-          <Button type="submit" disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
-            {saving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />}
-            {saving ? "Saving..." : "Save Changes"}
+        <div className="flex items-center gap-4">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={saving}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {saving ? (
+              <Loader2 className="animate-spin w-5 h-5 mr-2" />
+            ) : (
+              <Save className="w-5 h-5 mr-2" />
+            )}
+            {saving ? "Saving…" : "Save Changes"}
           </Button>
-          {msg && <span className="text-sm">{msg}</span>}
+
+          {msg && (
+            <span className="text-sm text-muted-foreground">
+              {msg}
+            </span>
+          )}
         </div>
       </form>
     </div>
