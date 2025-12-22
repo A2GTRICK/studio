@@ -32,6 +32,26 @@ declare global {
 }
 
 const pricingPlans = [
+   {
+    id: 'pro_daily',
+    name: 'Pro Daily',
+    price: 15,
+    duration: 1,
+    durationLabel: '/ day',
+    description: 'Perfect for a single-day study session.',
+    features: ['All premium notes', 'Mock tests & analytics', '24-hour access'],
+    isPopular: false,
+  },
+    {
+    id: 'pro_weekly',
+    name: 'Pro Weekly',
+    price: 50,
+    duration: 7,
+    durationLabel: '/ week',
+    description: 'Ideal for a week of focused preparation.',
+    features: ['All premium notes', 'Mock tests & analytics', '7-day access'],
+    isPopular: false,
+  },
   {
     id: 'pro_monthly',
     name: 'Pro Monthly',
@@ -68,11 +88,11 @@ type Plan = typeof pricingPlans[0];
 
 export default function BillingPage() {
   const authSession = useAuthSession();
-  const user = authSession?.user;
   const { toast } = useToast();
 
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   
+  const user = authSession?.user;
   const isPro = (user as any)?.plan === "pro";
   const isEmailVerified = user?.emailVerified === true;
 
@@ -166,7 +186,7 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10">
+    <div className="max-w-7xl mx-auto space-y-10">
 
       <div>
         <h1 className="text-3xl font-bold">Billing & Access</h1>
@@ -185,7 +205,7 @@ export default function BillingPage() {
           </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {pricingPlans.map((plan) => (
             <Card key={plan.id} className={cn(
                 "relative flex flex-col",
@@ -243,7 +263,7 @@ export default function BillingPage() {
               Confirm: {selectedPlan.name}
             </h2>
             <p className="text-sm text-muted-foreground">
-              You are about to purchase the {selectedPlan.name} plan, which gives you Pro access for {selectedPlan.duration} days.
+              You are about to purchase the {selectedPlan.name} plan, which gives you Pro access for {selectedPlan.duration} {selectedPlan.duration > 1 ? 'days' : 'day'}.
             </p>
             <div className="border rounded-lg p-4 flex justify-between items-center">
               <span className="font-medium">Amount payable</span>
