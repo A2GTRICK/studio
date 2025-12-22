@@ -29,7 +29,7 @@ export default function PremiumGuard({
   canAccess,
   contentType = "content",
   contentId,
-  price,
+  price = 20, // Default price for single item
   children,
 }: PremiumGuardProps) {
   const router = useRouter();
