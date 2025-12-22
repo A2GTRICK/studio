@@ -1,6 +1,5 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -22,21 +21,7 @@ service cloud.firestore {
     }
 
     /* =============================
-       PUBLIC READ – MOCK TESTS
-    ============================= */
-
-    match /test_series/{testId} {
-      allow read: if true;          // required for dashboard
-      allow write: if false;        // admin only via server / console
-    }
-
-    match /test_series/{testId}/questions/{qid} {
-      allow read: if false;         // questions never exposed directly
-      allow write: if false;
-    }
-
-    /* =============================
-       PUBLIC READ DATA
+       PUBLIC READ CONTENT
     ============================= */
 
     match /notes/{id} {
@@ -49,6 +34,7 @@ service cloud.firestore {
 
     match /posts/{id} {
       allow read, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     match /blog/{id} {
@@ -57,36 +43,48 @@ service cloud.firestore {
 
     match /custom_notifications/{id} {
       allow read, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     match /adminConfig/{doc} {
       allow read: if true;
+      allow write: if isAdmin();
     }
 
+    /* =============================
+       MOCK TESTS (FULLY WORKING)
+    ============================= */
+
+    match /test_series/{testId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+
+      match /questions/{questionId} {
+        allow read: if true;
+        allow create, update, delete: if isAdmin();
+      }
+    }
 
     /* =============================
-       USERS
+       USERS (AUTH CORE)
     ============================= */
 
     match /users/{userId} {
-      allow read, update: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
       allow create: if isSignedIn();
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
-    
+
     match /user_profiles/{userId} {
-      // Admin can read + list all users
-      allow read, list: if isAdmin();
-
-      // User can read & update own profile
-      allow read, update: if isOwner(userId);
-
-      // No deletes or creates from client
-      allow create, delete: if false;
+      allow read: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow delete: if false;
     }
 
     /* =============================
-       PAYMENTS
+       PAYMENTS (SERVER WRITE ONLY)
     ============================= */
 
     match /payments/{paymentId} {
@@ -96,6 +94,15 @@ service cloud.firestore {
           || isAdmin()
         );
       allow write: if false;
+    }
+
+    /* =============================
+       BILLING PLANS (ADMIN ONLY) ✅ FIX
+    ============================= */
+
+    match /billing_plans/{planId} {
+      allow read, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     /* =============================
@@ -112,32 +119,19 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-
     /* =============================
-       ADMIN ONLY
+       SERVICE REQUESTS (ADMIN PANEL)
     ============================= */
-    match /billing_plans/{planId} {
-      allow read, write: if isAdmin();
-    }
-    
+
     match /service_requests/{requestId} {
-
-      // ONLY admin can read service requests
-      allow read: if isAdmin();
-
-      // ONLY admin can update status
+      allow read, list: if isAdmin();
       allow update: if isAdmin();
-
-      // Creation allowed only via server / controlled forms later
-      allow create: if false;
-
-      // Never allow delete
+      allow create: if isSignedIn();
       allow delete: if false;
     }
 
-
     /* =============================
-       FALLBACK – BLOCK EVERYTHING
+       FALLBACK — BLOCK EVERYTHING
     ============================= */
 
     match /{document=**} {
