@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -37,6 +38,7 @@ export default function AdminLayout({
             { label: "Notifications", href: "/a2gadmin/notifications" },
             { label: "Users", href: "/a2gadmin/users" },
             { label: "Payments", href: "/a2gadmin/payments" },
+            { label: "Billing Plans", href: "/a2gadmin/billing" },
             { label: "Settings", href: "/a2gadmin/settings" },
           ].map((nav) => (
             <Link
