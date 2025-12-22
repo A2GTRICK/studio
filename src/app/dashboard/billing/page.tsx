@@ -30,12 +30,16 @@ declare global {
 }
 
 export default function BillingPage() {
-  const { user } = useAuthSession();
+  const session = useAuthSession();
+  const user = session?.user;
   const { toast } = useToast();
 
   const [showPreview, setShowPreview] = useState(false);
-  const isPro = (user as any)?.plan === "pro";
-  const isEmailVerified = user?.emailVerified === true;
+  
+  // Safely access user properties
+  const isPro = !!user && (user as any)?.plan === "pro";
+  const isEmailVerified = !!user && user.emailVerified === true;
+
 
   /* ===============================
      RAZORPAY PAYMENT START
@@ -43,6 +47,15 @@ export default function BillingPage() {
 
   const startPayment = async () => {
     setShowPreview(false);
+
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: "You must be logged in to make a payment.",
+      });
+      return;
+    }
 
     try {
       const orderRes = await fetch("/api/razorpay/create-order", {
@@ -54,6 +67,9 @@ export default function BillingPage() {
       });
 
       const order = await orderRes.json();
+      if (!orderRes.ok) {
+        throw new Error(order.error || 'Failed to create Razorpay order.');
+      }
 
       const razorpay = new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -75,6 +91,7 @@ export default function BillingPage() {
                 userId: user.uid,
                 plan: "pro",
                 amount: order.amount,
+                contentId: null, // Pro plan doesn't have a specific contentId
               }),
             }
           );
@@ -89,18 +106,22 @@ export default function BillingPage() {
             });
             window.location.reload();
           } else {
-            throw new Error("Verification failed");
+            throw new Error(result.error || "Payment verification failed");
           }
+        },
+        prefill: {
+            name: user.displayName || "",
+            email: user.email || "",
         },
         theme: { color: "#6D28D9" },
       });
 
       razorpay.open();
-    } catch {
+    } catch(err: any) {
       toast({
         variant: "destructive",
         title: "Payment unsuccessful",
-        description: "Please try again. No amount was deducted.",
+        description: err.message || "Please try again. No amount was deducted.",
       });
     }
   };
@@ -118,7 +139,7 @@ export default function BillingPage() {
       </div>
       
       {/* EMAIL VERIFICATION BANNER */}
-      {!isEmailVerified && (
+      {user && !isEmailVerified && (
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex items-start gap-4 shadow-sm">
               <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5"/>
               <div>
