@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
 
 /* ================= TYPES ================= */
 
@@ -27,6 +28,7 @@ type User = {
   id: string;
   displayName?: string;
   email?: string;
+  emailVerified?: boolean; // Added for verification status
   plan?: "free" | "pro";
   premiumUntil?: string | null;
   isLifetime?: boolean;
@@ -78,7 +80,8 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "active" | "expired" | "lifetime">("all");
+  const [premiumFilter, setPremiumFilter] = useState<"all" | "active" | "expired" | "lifetime">("all");
+  const [verifiedFilter, setVerifiedFilter] = useState<"all" | "verified" | "not_verified">("all");
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
@@ -89,6 +92,8 @@ export default function AdminUsersPage() {
     setLoading(true);
     const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
+    // The `emailVerified` field is assumed to be in the 'users' collection document.
+    // If not, this would require an Admin SDK call to fetch it, but for client-side this is the approach.
     setUsers(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
     setLoading(false);
   }
@@ -96,12 +101,18 @@ export default function AdminUsersPage() {
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
       const text = `${u.displayName || ""} ${u.email || ""}`.toLowerCase();
-      if (!text.includes(search.toLowerCase())) return false;
+      if (search && !text.includes(search.toLowerCase())) return false;
 
-      if (filter === "all") return true;
-      return getPremiumState(u) === filter;
+      if (premiumFilter !== "all" && getPremiumState(u) !== premiumFilter) {
+          return false;
+      }
+      
+      if (verifiedFilter === 'verified' && !u.emailVerified) return false;
+      if (verifiedFilter === 'not_verified' && u.emailVerified) return false;
+
+      return true;
     });
-  }, [users, search, filter]);
+  }, [users, search, premiumFilter, verifiedFilter]);
 
   /* ================= EXPORT / COPY ================= */
 
@@ -116,12 +127,13 @@ export default function AdminUsersPage() {
 
   function exportCSV() {
     const rows = [
-      ["Name", "Email", "Plan", "Premium Status"],
+      ["Name", "Email", "Plan", "Premium Status", "Email Verified"],
       ...filteredUsers.map(u => [
         u.displayName || "",
         u.email || "",
         u.plan || "free",
         premiumMeta(u).label,
+        String(!!u.emailVerified),
       ]),
     ];
 
@@ -146,23 +158,28 @@ export default function AdminUsersPage() {
       </div>
 
       <Input
-        placeholder="Search users"
+        placeholder="Search users by name or email..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
       {/* FILTERS */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
+         <div className="font-medium text-sm self-center">Premium:</div>
         {["all", "active", "expired", "lifetime"].map(f => (
           <Button
             key={f}
             size="sm"
-            variant={filter === f ? "default" : "outline"}
-            onClick={() => setFilter(f as any)}
+            variant={premiumFilter === f ? "default" : "outline"}
+            onClick={() => setPremiumFilter(f as any)}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </Button>
         ))}
+         <div className="font-medium text-sm self-center ml-4">Verification:</div>
+         <Button size="sm" variant={verifiedFilter === 'all' ? 'default' : 'outline'} onClick={() => setVerifiedFilter('all')}>All</Button>
+         <Button size="sm" variant={verifiedFilter === 'verified' ? 'default' : 'outline'} onClick={() => setVerifiedFilter('verified')}>Verified</Button>
+         <Button size="sm" variant={verifiedFilter === 'not_verified' ? 'default' : 'outline'} onClick={() => setVerifiedFilter('not_verified')}>Not Verified</Button>
       </div>
 
       {/* EXPORT ACTIONS */}
@@ -191,20 +208,28 @@ export default function AdminUsersPage() {
               <table className="w-full text-sm">
                 <thead className="border-b">
                   <tr>
-                    <th></th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Plan</th>
-                    <th>Premium</th>
-                    <th className="text-right">Action</th>
+                    <th className="p-2 text-left">
+                       <Checkbox
+                            checked={selected.length === filteredUsers.length && filteredUsers.length > 0}
+                            onCheckedChange={(v) =>
+                              setSelected(v ? filteredUsers.map(u => u.id) : [])
+                            }
+                          />
+                    </th>
+                    <th className="p-2 text-left">Name</th>
+                    <th className="p-2 text-left">Email</th>
+                    <th className="p-2 text-left">Verification</th>
+                    <th className="p-2 text-left">Plan</th>
+                    <th className="p-2 text-left">Premium</th>
+                    <th className="p-2 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map(user => {
                     const meta = premiumMeta(user);
                     return (
-                      <tr key={user.id} className={`border-b ${meta.row}`}>
-                        <td>
+                      <tr key={user.id} className={`border-b ${meta.row} hover:bg-muted/50`}>
+                        <td className="p-2">
                           <Checkbox
                             checked={selected.includes(user.id)}
                             onCheckedChange={(v) =>
@@ -214,15 +239,28 @@ export default function AdminUsersPage() {
                             }
                           />
                         </td>
-                        <td>{user.displayName || "—"}</td>
-                        <td>{user.email || "—"}</td>
-                        <td><Badge variant="outline">{user.plan || "free"}</Badge></td>
-                        <td>
+                        <td className="p-2">{user.displayName || "—"}</td>
+                        <td className="p-2">{user.email || "—"}</td>
+                        <td className="p-2">
+                           {user.emailVerified ? (
+                              <div className="flex items-center gap-1.5 text-green-600">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span>Verified</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-amber-600">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span>No</span>
+                              </div>
+                            )}
+                        </td>
+                        <td className="p-2"><Badge variant="outline">{user.plan || "free"}</Badge></td>
+                        <td className="p-2">
                           <span className={`px-2 py-1 rounded-full text-xs ${meta.badge}`}>
                             {meta.label}
                           </span>
                         </td>
-                        <td className="text-right">
+                        <td className="p-2 text-right">
                           <Button size="sm" onClick={() => router.push(`/a2gadmin/users/${user.id}`)}>
                             Open
                           </Button>
