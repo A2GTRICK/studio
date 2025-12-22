@@ -1,12 +1,28 @@
-
 // src/lib/verifyAdminSession.ts
 import { type NextRequest } from "next/server";
+import { getAuth } from "firebase-admin/auth";
+import { adminDb } from "./firebaseAdmin";
 
-export function isAdminAuthenticated(req: NextRequest) {
-  const session = req.cookies.get("a2g_admin_session");
-  if (!session || !session.value) return false;
+const ADMIN_UID = "WXFMrKzg0eYHgFEspk8WoIIDc3j2";
 
-  // In a real system you would store tokens in DB
-  // For now, if cookie exists → admin
-  return true;
+export async function isAdminAuthenticated(req: NextRequest): Promise<boolean> {
+  const session = req.cookies.get("a2g_admin_session")?.value;
+  if (!session) return false;
+
+  try {
+    // Initialize admin app if not already done
+    if (!adminDb) {
+      console.error("verifyAdminSession: Firebase Admin not initialized.");
+      return false;
+    }
+    
+    const decoded = await getAuth().verifySessionCookie(session, true);
+    
+    // Check if the user is the designated admin
+    return decoded.uid === ADMIN_UID;
+
+  } catch (error) {
+    console.warn("Admin session verification failed:", error);
+    return false;
+  }
 }
