@@ -18,8 +18,10 @@ import {
   Sparkles,
   ShieldCheck,
   IndianRupee,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 declare global {
   interface Window {
@@ -33,6 +35,7 @@ export default function BillingPage() {
 
   const [showPreview, setShowPreview] = useState(false);
   const isPro = (user as any)?.plan === "pro";
+  const isEmailVerified = user?.emailVerified === true;
 
   /* ===============================
      RAZORPAY PAYMENT START
@@ -113,6 +116,18 @@ export default function BillingPage() {
           preparation. You can upgrade anytime.
         </p>
       </div>
+      
+      {/* EMAIL VERIFICATION BANNER */}
+      {!isEmailVerified && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex items-start gap-4 shadow-sm">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5"/>
+              <div>
+                  <h3 className="font-semibold text-amber-900">Email Verification Required</h3>
+                  <p className="text-sm text-amber-800 mt-1">Please verify your email address before proceeding with a payment. You can find the verification link in your inbox or resend it from your <Link href="/dashboard/settings" className="underline font-medium">settings page</Link>.</p>
+              </div>
+          </div>
+      )}
+
 
       {/* PLANS */}
       <div className="grid gap-6 md:grid-cols-2">
@@ -193,11 +208,11 @@ export default function BillingPage() {
           <CardFooter>
             <Button
               className="w-full"
-              disabled={isPro}
+              disabled={isPro || !isEmailVerified}
               onClick={() => setShowPreview(true)}
             >
-              {isPro ? "You’re already Pro" : "Continue with Pro"}
-              {!isPro && <Sparkles className="ml-2 h-4 w-4" />}
+              {isPro ? "You’re already Pro" : !isEmailVerified ? "Verify Email to Upgrade" : "Continue with Pro"}
+              {!isPro && isEmailVerified && <Sparkles className="ml-2 h-4 w-4" />}
             </Button>
           </CardFooter>
         </Card>
