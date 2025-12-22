@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
@@ -21,7 +22,7 @@ import {
 } from "firebase/firestore";
 
 import { ArrowLeft, Share2, FileDown, BookText, Menu } from "lucide-react";
-import { useAuth } from "@/firebase/provider";
+import { useAuthSession } from "@/auth/AuthSessionProvider";
 import { trackNoteView } from "@/services/trackNoteView";
 import PremiumGuard from "@/components/premium/PremiumGuard";
 
@@ -84,8 +85,7 @@ export default function PremiumNoteViewPage() {
   const router = useRouter();
   const id = params?.id as string;
 
-  const auth = useAuth();
-  const user = auth?.user ?? null;
+  const { user } = useAuthSession() ?? {};
 
   const [note, setNote] = useState<any>(null);
   const [related, setRelated] = useState<any[]>([]);
@@ -176,8 +176,7 @@ export default function PremiumNoteViewPage() {
   const canAccess =
     note.isPremium !== true ||
     hasActivePremium(userData) ||
-    userData?.grantedNoteIds?.includes(note.id) ||
-    userData?.premiumOverrideIds?.includes(note.id);
+    userData?.grantedNoteIds?.includes(note.id);
 
   const created = new Date(
     note.createdAt?.seconds * 1000 || Date.now()
@@ -220,8 +219,10 @@ export default function PremiumNoteViewPage() {
 
           <PremiumGuard
             isPremium={note.isPremium === true}
-            canAccess={canAccess}   // ✅ ADD
+            canAccess={canAccess}
             contentType="note"
+            contentId={note.id}
+            price={20} // Example price, you can make this dynamic
           >
             <div className={`${THEME.card} p-8 prose max-w-none`}>
               <ReactMarkdown

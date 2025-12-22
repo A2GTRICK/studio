@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +14,7 @@ export async function POST(req: Request) {
       userId,
       plan,
       amount,
+      contentId, // Capture contentId for single purchases
     } = body;
 
     if (
@@ -61,17 +63,39 @@ export async function POST(req: Request) {
       razorpay_payment_id,
       createdAt: new Date(),
       status: "success",
+      contentId: contentId || null, // Log the contentId if it exists
     });
 
-    // ✅ Upgrade user plan
-    await adminDb.collection("user_profiles").doc(userId).set(
-      {
-        plan: "pro",
-        planActivatedAt: new Date(),
-        planExpiresAt: new Date(new Date().setMonth(new Date().getMonth() + 1)), // Example: 1 month validity
-      },
-      { merge: true }
-    );
+    const userRef = adminDb.collection("users").doc(userId);
+
+    // ✅ Grant access based on the plan
+    if (plan === "pro") {
+      // Pro Plan: Update general premium status
+      await userRef.set(
+        {
+          plan: "pro",
+          premiumUntil: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(), // Example: 1 month validity
+        },
+        { merge: true }
+      );
+    } else if (plan.startsWith("single_") && contentId) {
+      // Single Purchase: Add the specific contentId to the user's grants
+      const contentType = plan.split("_")[1]; // "note", "test", etc.
+      let grantField = "";
+      if (contentType === "note") grantField = "grantedNoteIds";
+      if (contentType === "test") grantField = "grantedTestIds";
+      // Add other content types as needed
+
+      if (grantField) {
+        await userRef.set(
+          {
+            [grantField]: FieldValue.arrayUnion(contentId),
+          },
+          { merge: true }
+        );
+      }
+    }
+
 
     return NextResponse.json({ success: true });
   } catch (error) {
