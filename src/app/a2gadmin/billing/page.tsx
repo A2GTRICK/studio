@@ -259,26 +259,6 @@ function EditPlanDrawer({
     }
   }
 
-  async function handleDelete() {
-    if (
-      isNew ||
-      !confirm("Are you sure you want to delete this plan permanently?")
-    ) {
-      return;
-    }
-    try {
-      await deleteDoc(doc(db, "billing_plans", plan.id));
-      toast({ title: "Plan Deleted" });
-      onSave();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Delete Failed",
-        description: error.message,
-      });
-    }
-  }
-
   return (
     <div className="fixed inset-0 z-50 bg-black/60">
       <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-card p-6 shadow-xl overflow-y-auto">
@@ -347,19 +327,14 @@ function EditPlanDrawer({
               }
             />
           </div>
-          <div className="flex justify-between pt-4">
-            {!isNew && (
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={isSaving}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-            )}
-            <div/>
-            <Button onClick={handleSave} disabled={isSaving}>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={onClose}
+            >
+              Close
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving} className="bg-primary text-white">
               {isSaving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
