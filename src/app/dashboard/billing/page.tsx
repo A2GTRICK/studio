@@ -34,22 +34,22 @@ declare global {
 const pricingPlans = [
    {
     id: 'pro_daily',
-    name: 'Pro Daily',
+    name: 'Daily Pass',
     price: 10,
     duration: 1,
     durationLabel: '/ day',
-    description: 'Perfect for a single-day study session.',
-    features: ['All premium notes', 'Mock tests & analytics', '24-hour access'],
+    description: 'Unlock a limited number of premium notes/tests for a single day.',
+    features: ['Access up to 5 premium items', 'Ideal for targeted study', '24-hour access'],
     isPopular: false,
   },
     {
     id: 'pro_weekly',
-    name: 'Pro Weekly',
+    name: 'Weekly Pass',
     price: 30,
     duration: 7,
     durationLabel: '/ week',
-    description: 'Ideal for a week of focused preparation.',
-    features: ['All premium notes', 'Mock tests & analytics', '7-day access'],
+    description: 'Perfect for a week of focused preparation with more access.',
+    features: ['Access up to 25 premium items', 'Great for exam sprints', '7-day access'],
     isPopular: false,
   },
   {
@@ -58,9 +58,9 @@ const pricingPlans = [
     price: 100,
     duration: 30,
     durationLabel: '/ month',
-    description: 'Flexible monthly access. Best for short-term prep.',
-    features: ['All premium notes', 'Mock tests & analytics', 'Priority support'],
-    isPopular: false,
+    description: 'Full access to all premium content. Best for short-term prep.',
+    features: ['Unlimited premium notes', 'Unlimited mock tests & analytics', 'Priority support'],
+    isPopular: true,
   },
   {
     id: 'pro_quarterly',
@@ -69,8 +69,8 @@ const pricingPlans = [
     duration: 90,
     durationLabel: '/ 3 months',
     description: 'Balanced plan for semester-long preparation.',
-    features: ['All premium notes', 'Mock tests & analytics', 'Priority support', 'Saves 17%'],
-    isPopular: true,
+    features: ['Unlimited premium notes', 'Unlimited mock tests & analytics', 'Priority support', 'Saves 17%'],
+    isPopular: false,
   },
   {
     id: 'pro_yearly',
@@ -79,7 +79,7 @@ const pricingPlans = [
     duration: 365,
     durationLabel: '/ year',
     description: 'Best value for long-term, comprehensive exam prep.',
-    features: ['All premium notes', 'Mock tests & analytics', 'Priority support', 'Saves ~20%'],
+    features: ['Unlimited premium notes', 'Unlimited mock tests & analytics', 'Priority support', 'Saves ~20%'],
     isPopular: false,
   },
 ];
@@ -263,7 +263,7 @@ export default function BillingPage() {
               Confirm: {selectedPlan.name}
             </h2>
             <p className="text-sm text-muted-foreground">
-              You are about to purchase the {selectedPlan.name} plan, which gives you Pro access for {selectedPlan.duration} {selectedPlan.duration > 1 ? 'days' : 'day'}.
+              You are about to purchase the {selectedPlan.name} plan, which gives you access for {selectedPlan.duration} {selectedPlan.duration > 1 ? 'days' : 'day'}.
             </p>
             <div className="border rounded-lg p-4 flex justify-between items-center">
               <span className="font-medium">Amount payable</span>
