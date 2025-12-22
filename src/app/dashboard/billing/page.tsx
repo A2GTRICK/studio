@@ -35,7 +35,7 @@ const pricingPlans = [
    {
     id: 'pro_daily',
     name: 'Pro Daily',
-    price: 15,
+    price: 10,
     duration: 1,
     durationLabel: '/ day',
     description: 'Perfect for a single-day study session.',
@@ -45,7 +45,7 @@ const pricingPlans = [
     {
     id: 'pro_weekly',
     name: 'Pro Weekly',
-    price: 50,
+    price: 30,
     duration: 7,
     durationLabel: '/ week',
     description: 'Ideal for a week of focused preparation.',
@@ -93,7 +93,7 @@ export default function BillingPage() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   
   const user = authSession?.user;
-  const isPro = (user as any)?.plan === "pro";
+  const isPro = authSession?.user && (authSession.user as any)?.plan === "pro";
   const isEmailVerified = user?.emailVerified === true;
 
   const startPayment = async (plan: Plan) => {
@@ -195,7 +195,7 @@ export default function BillingPage() {
         </p>
       </div>
       
-      {!isEmailVerified && (
+      {!isEmailVerified && user && (
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex items-start gap-4 shadow-sm">
               <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5"/>
               <div>
@@ -235,7 +235,7 @@ export default function BillingPage() {
                 <CardFooter>
                     <Button
                         className="w-full"
-                        disabled={isPro || !isEmailVerified}
+                        disabled={!!isPro || !isEmailVerified}
                         onClick={() => setSelectedPlan(plan)}
                     >
                     {isPro ? "You’re already Pro" : "Choose Plan"}
