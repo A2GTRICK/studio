@@ -23,6 +23,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -35,6 +36,7 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface Plan {
   id: string;
@@ -70,12 +72,12 @@ export default function AdminBillingPage() {
         (d) => ({ id: d.id, ...d.data() } as Plan)
       );
       setPlans(planData);
-    } catch (err) {
+    } catch (err: any) {
       toast({
         variant: "destructive",
         title: "Error Loading Plans",
         description:
-          "Could not fetch billing plans from the database.",
+          err.message || "Could not fetch billing plans from the database.",
       });
     } finally {
       setLoading(false);
@@ -185,13 +187,13 @@ function PlanCard({
           <div className="flex gap-1">
             <button
               onClick={() => onMove("up")}
-              className="p-1 hover:bg-muted"
+              className="p-1 hover:bg-muted rounded"
             >
               <ArrowUp className="w-4 h-4" />
             </button>
             <button
               onClick={() => onMove("down")}
-              className="p-1 hover:bg-muted"
+              className="p-1 hover:bg-muted rounded"
             >
               <ArrowDown className="w-4 h-4" />
             </button>
@@ -202,11 +204,11 @@ function PlanCard({
           </Badge>
         </div>
       </CardContent>
-      <CardContent>
+      <CardFooter>
         <Button className="w-full" onClick={onEdit}>
           Edit Plan
         </Button>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }
@@ -356,6 +358,7 @@ function EditPlanDrawer({
                 Delete
               </Button>
             )}
+            <div/>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

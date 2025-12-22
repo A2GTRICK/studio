@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -113,9 +114,12 @@ service cloud.firestore {
 
 
     /* =============================
-       SERVICE REQUESTS (ADMIN ONLY)
+       ADMIN ONLY
     ============================= */
-
+    match /billing_plans/{planId} {
+      allow read, write: if isAdmin();
+    }
+    
     match /service_requests/{requestId} {
 
       // ONLY admin can read service requests
