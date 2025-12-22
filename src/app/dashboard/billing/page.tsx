@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -29,25 +31,52 @@ declare global {
   }
 }
 
+const pricingPlans = [
+  {
+    id: 'pro_monthly',
+    name: 'Pro Monthly',
+    price: 100,
+    duration: 30,
+    durationLabel: '/ month',
+    description: 'Flexible monthly access. Best for short-term prep.',
+    features: ['All premium notes', 'Mock tests & analytics', 'Priority support'],
+    isPopular: false,
+  },
+  {
+    id: 'pro_quarterly',
+    name: 'Pro Quarterly',
+    price: 250,
+    duration: 90,
+    durationLabel: '/ 3 months',
+    description: 'Balanced plan for semester-long preparation.',
+    features: ['All premium notes', 'Mock tests & analytics', 'Priority support', 'Saves 17%'],
+    isPopular: true,
+  },
+  {
+    id: 'pro_yearly',
+    name: 'Pro Yearly',
+    price: 999,
+    duration: 365,
+    durationLabel: '/ year',
+    description: 'Best value for long-term, comprehensive exam prep.',
+    features: ['All premium notes', 'Mock tests & analytics', 'Priority support', 'Saves ~20%'],
+    isPopular: false,
+  },
+];
+
+type Plan = typeof pricingPlans[0];
+
 export default function BillingPage() {
-  const session = useAuthSession();
-  const user = session?.user;
+  const authSession = useAuthSession();
+  const user = authSession?.user;
   const { toast } = useToast();
 
-  const [showPreview, setShowPreview] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   
-  // Safely access user properties
-  const isPro = !!user && (user as any)?.plan === "pro";
-  const isEmailVerified = !!user && user.emailVerified === true;
+  const isPro = (user as any)?.plan === "pro";
+  const isEmailVerified = user?.emailVerified === true;
 
-
-  /* ===============================
-     RAZORPAY PAYMENT START
-  =============================== */
-
-  const startPayment = async () => {
-    setShowPreview(false);
-
+  const startPayment = async (plan: Plan) => {
     if (!user) {
       toast({
         variant: "destructive",
@@ -56,13 +85,22 @@ export default function BillingPage() {
       });
       return;
     }
+    if (!isEmailVerified) {
+      toast({
+        variant: "destructive",
+        title: "Email not verified",
+        description: "Please verify your email before making a payment.",
+      });
+      return;
+    }
 
     try {
       const orderRes = await fetch("/api/razorpay/create-order", {
         method: "POST",
         body: JSON.stringify({
-          amount: 100,
-          plan: 'pro'
+          amount: plan.price,
+          plan: plan.id,
+          contentId: null, // This is a subscription, not a single purchase
         })
       });
 
@@ -76,7 +114,7 @@ export default function BillingPage() {
         amount: order.amount,
         currency: "INR",
         name: "pharmA2G",
-        description: "Pro Plan Subscription",
+        description: `${plan.name} Subscription`,
         order_id: order.id,
         handler: async function (response: any) {
           const verifyRes = await fetch(
@@ -89,9 +127,9 @@ export default function BillingPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
                 userId: user.uid,
-                plan: "pro",
+                plan: plan.id,
                 amount: order.amount,
-                contentId: null, // Pro plan doesn't have a specific contentId
+                contentId: null,
               }),
             }
           );
@@ -100,9 +138,8 @@ export default function BillingPage() {
 
           if (result.success) {
             toast({
-              title: "Pro access activated",
-              description:
-                "You now have uninterrupted access to structured study material.",
+              title: "Pro access activated!",
+              description: `You now have uninterrupted access for ${plan.name}.`,
             });
             window.location.reload();
           } else {
@@ -123,123 +160,71 @@ export default function BillingPage() {
         title: "Payment unsuccessful",
         description: err.message || "Please try again. No amount was deducted.",
       });
+    } finally {
+        setSelectedPlan(null);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10">
+    <div className="max-w-6xl mx-auto space-y-10">
 
-      {/* HEADER */}
       <div>
         <h1 className="text-3xl font-bold">Billing & Access</h1>
         <p className="text-muted-foreground max-w-xl">
-          Choose the level of access that fits your current stage of
-          preparation. You can upgrade anytime.
+          Choose the level of access that fits your current stage of preparation.
         </p>
       </div>
       
-      {/* EMAIL VERIFICATION BANNER */}
-      {user && !isEmailVerified && (
+      {!isEmailVerified && (
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex items-start gap-4 shadow-sm">
               <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5"/>
               <div>
                   <h3 className="font-semibold text-amber-900">Email Verification Required</h3>
-                  <p className="text-sm text-amber-800 mt-1">Please verify your email address before proceeding with a payment. You can find the verification link in your inbox or resend it from your <Link href="/dashboard/settings" className="underline font-medium">settings page</Link>.</p>
+                  <p className="text-sm text-amber-800 mt-1">Please verify your email address before purchasing a plan. You can find the verification link in your inbox or resend it from your <Link href="/dashboard/settings" className="underline font-medium">settings page</Link>.</p>
               </div>
           </div>
       )}
 
-
-      {/* PLANS */}
-      <div className="grid gap-6 md:grid-cols-2">
-
-        {/* FREE */}
-        <Card className="relative">
-          <CardHeader>
-            <CardTitle>Free Access</CardTitle>
-            <CardDescription>
-              Suitable for casual browsing and limited practice
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <div className="text-4xl font-bold flex items-center">
-              <IndianRupee className="w-6 h-6" /> 0
-            </div>
-
-            <ul className="mt-4 space-y-2 text-sm">
-              <li className="flex gap-2">
-                <Check className="text-green-500" /> Selected notes
-              </li>
-              <li className="flex gap-2">
-                <Check className="text-green-500" /> Free MCQ practice
-              </li>
-            </ul>
-
-            <p className="mt-4 text-xs text-muted-foreground">
-              Ideal if you are exploring topics or just getting started.
-            </p>
-          </CardContent>
-
-          <CardFooter>
-            <Button disabled className="w-full">
-              Current Plan
-            </Button>
-          </CardFooter>
-        </Card>
-
-        {/* PRO */}
-        <Card className={`relative ${isPro ? "border-2 border-primary" : ""}`}>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Pro Access</CardTitle>
-              {isPro && <Badge>Active</Badge>}
-            </div>
-            <CardDescription>
-              Structured, exam-oriented preparation
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <div className="text-4xl font-bold flex items-center">
-              <IndianRupee className="w-6 h-6" /> 100
-              <span className="text-sm ml-1 text-muted-foreground">
-                / month
-              </span>
-            </div>
-
-            <ul className="mt-4 space-y-2 text-sm">
-              <li className="flex gap-2">
-                <Check className="text-green-500" /> All premium notes
-              </li>
-              <li className="flex gap-2">
-                <Check className="text-green-500" /> Mock tests & analytics
-              </li>
-              <li className="flex gap-2">
-                <Check className="text-green-500" /> Priority support
-              </li>
-            </ul>
-
-            <p className="mt-4 text-xs text-muted-foreground">
-              Recommended if you are preparing seriously and want continuity
-              across subjects.
-            </p>
-          </CardContent>
-
-          <CardFooter>
-            <Button
-              className="w-full"
-              disabled={isPro || !isEmailVerified}
-              onClick={() => setShowPreview(true)}
-            >
-              {isPro ? "You’re already Pro" : !isEmailVerified ? "Verify Email to Upgrade" : "Continue with Pro"}
-              {!isPro && isEmailVerified && <Sparkles className="ml-2 h-4 w-4" />}
-            </Button>
-          </CardFooter>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {pricingPlans.map((plan) => (
+            <Card key={plan.id} className={cn(
+                "relative flex flex-col",
+                plan.isPopular ? "border-2 border-primary shadow-lg" : "",
+                isPro ? "opacity-70" : ""
+            )}>
+                {plan.isPopular && <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>}
+                <CardHeader>
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                    <div className="text-4xl font-bold flex items-center">
+                    <IndianRupee className="w-6 h-6" /> {plan.price}
+                    <span className="text-sm ml-1 text-muted-foreground">
+                        {plan.durationLabel}
+                    </span>
+                    </div>
+                    <ul className="mt-4 space-y-2 text-sm">
+                    {plan.features.map(feature => (
+                        <li key={feature} className="flex gap-2">
+                            <Check className="text-green-500 w-4 h-4 mt-0.5" /> {feature}
+                        </li>
+                    ))}
+                    </ul>
+                </CardContent>
+                <CardFooter>
+                    <Button
+                        className="w-full"
+                        disabled={isPro || !isEmailVerified}
+                        onClick={() => setSelectedPlan(plan)}
+                    >
+                    {isPro ? "You’re already Pro" : "Choose Plan"}
+                    </Button>
+                </CardFooter>
+            </Card>
+        ))}
       </div>
 
-      {/* PAYMENT HISTORY */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -250,50 +235,34 @@ export default function BillingPage() {
           Your past transactions will appear here.
         </CardContent>
       </Card>
-
-      {/* ==========================
-         CONFIRMATION MODAL
-      ========================== */}
-      {showPreview && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+      
+      {selectedPlan && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-xl space-y-5">
-
             <h2 className="text-2xl font-bold">
-              Confirm Pro Access
+              Confirm: {selectedPlan.name}
             </h2>
-
             <p className="text-sm text-muted-foreground">
-              This gives you uninterrupted access to structured study material
-              across notes, mock tests, and practice.
+              You are about to purchase the {selectedPlan.name} plan, which gives you Pro access for {selectedPlan.duration} days.
             </p>
-
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p>✔ Syllabus-aligned premium content</p>
-              <p>✔ Cancel anytime</p>
-              <p>✔ No hidden charges</p>
-            </div>
-
             <div className="border rounded-lg p-4 flex justify-between items-center">
               <span className="font-medium">Amount payable</span>
               <span className="text-xl font-bold flex items-center">
-                <IndianRupee className="w-4 h-4" /> 100
+                <IndianRupee className="w-4 h-4" /> {selectedPlan.price}
               </span>
             </div>
-
             <div className="flex items-start gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="w-4 h-4 mt-0.5" />
-              Payments are securely processed by Razorpay.
-              We do not store your card or UPI details.
+              <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>Payments are securely processed by Razorpay. We do not store your card or UPI details.</span>
             </div>
-
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
-                onClick={() => setShowPreview(false)}
+                onClick={() => setSelectedPlan(null)}
               >
                 Go back
               </Button>
-              <Button onClick={startPayment}>
+              <Button onClick={() => startPayment(selectedPlan)}>
                 Proceed to secure payment
               </Button>
             </div>

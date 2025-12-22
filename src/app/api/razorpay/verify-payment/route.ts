@@ -1,7 +1,17 @@
+
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
+
+// Helper to determine plan duration in days
+function getPlanDuration(planId: string): number {
+    if (planId === 'pro_monthly') return 30;
+    if (planId === 'pro_quarterly') return 90;
+    if (planId === 'pro_yearly') return 365;
+    return 0; // Default for single purchases or unknown plans
+}
+
 
 export async function POST(req: Request) {
   try {
@@ -14,14 +24,15 @@ export async function POST(req: Request) {
       userId,
       plan,
       amount,
-      contentId, // Capture contentId for single purchases
+      contentId,
     } = body;
 
     if (
       !razorpay_order_id ||
       !razorpay_payment_id ||
       !razorpay_signature ||
-      !userId
+      !userId ||
+      !plan
     ) {
       return NextResponse.json(
         { error: "Invalid payload" },
@@ -29,24 +40,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create expected signature
     const generatedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
     if (generatedSignature !== razorpay_signature) {
-      // Create a record of the failed attempt for security auditing
-      try {
-        await adminDb.collection("payment_failures").add({
-          reason: "Signature mismatch",
-          userId,
-          razorpay_order_id,
-          attemptedAt: new Date(),
-        });
-      } catch (logError) {
-        console.error("Failed to log payment failure:", logError);
-      }
+      await adminDb.collection("payment_failures").add({
+        reason: "Signature mismatch",
+        userId,
+        razorpay_order_id,
+        attemptedAt: new Date(),
+      }).catch(logError => console.error("Failed to log payment failure:", logError));
       
       return NextResponse.json(
         { error: "Payment verification failed" },
@@ -54,7 +59,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Save payment record
     await adminDb.collection("payments").add({
       userId,
       plan,
@@ -63,39 +67,43 @@ export async function POST(req: Request) {
       razorpay_payment_id,
       createdAt: new Date(),
       status: "success",
-      contentId: contentId || null, // Log the contentId if it exists
+      contentId: contentId || null,
     });
 
     const userRef = adminDb.collection("users").doc(userId);
+    const userSnap = await userRef.get();
+    const userData = userSnap.data();
 
-    // ✅ Grant access based on the plan
-    if (plan === "pro") {
-      // Pro Plan: Update general premium status
+    // --- ACCESS GRANTING LOGIC ---
+    if (plan.startsWith('pro_')) {
+      const durationDays = getPlanDuration(plan);
+      const baseDate = (userData?.premiumUntil && new Date(userData.premiumUntil) > new Date()) 
+                         ? new Date(userData.premiumUntil) 
+                         : new Date();
+      
+      baseDate.setDate(baseDate.getDate() + durationDays);
+
       await userRef.set(
         {
           plan: "pro",
-          premiumUntil: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(), // Example: 1 month validity
+          premiumUntil: baseDate.toISOString(),
         },
         { merge: true }
       );
+
     } else if (plan.startsWith("single_") && contentId) {
-      // Single Purchase: Add the specific contentId to the user's grants
-      const contentType = plan.split("_")[1]; // "note", "test", etc.
+      const contentType = plan.split("_")[1];
       let grantField = "";
       if (contentType === "note") grantField = "grantedNoteIds";
       if (contentType === "test") grantField = "grantedTestIds";
-      // Add other content types as needed
-
+      
       if (grantField) {
         await userRef.set(
-          {
-            [grantField]: FieldValue.arrayUnion(contentId),
-          },
+          { [grantField]: FieldValue.arrayUnion(contentId) },
           { merge: true }
         );
       }
     }
-
 
     return NextResponse.json({ success: true });
   } catch (error) {

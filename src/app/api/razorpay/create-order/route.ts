@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 
@@ -9,12 +10,11 @@ export async function POST(req: Request) {
 
     if (!amount || !plan) {
       return NextResponse.json(
-        { error: "Invalid request" },
+        { error: "Invalid request: amount and plan are required." },
         { status: 400 }
       );
     }
 
-    // Initialize Razorpay (SERVER ONLY)
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
@@ -25,9 +25,8 @@ export async function POST(req: Request) {
         notes.contentId = contentId;
     }
 
-    // Amount is in paise
     const order = await razorpay.orders.create({
-      amount: amount * 100, // ₹ → paise
+      amount: amount * 100, // Amount is in paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: notes,
