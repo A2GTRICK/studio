@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -8,6 +9,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+
+// Explicitly define the only allowed admin email
+const ADMIN_EMAIL = "sharmaarvind28897@gmail.com";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -21,6 +25,18 @@ export default function AdminLoginPage() {
   async function handleLogin() {
     setLoading(true);
     setError("");
+
+    // --- Client-side email check ---
+    if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      setError("This email address is not authorized for admin access.");
+      toast({
+        variant: 'destructive',
+        title: 'Unauthorized Email',
+        description: 'Please use the registered admin email address.',
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -40,7 +56,7 @@ export default function AdminLoginPage() {
 
       router.push("/a2gadmin");
     } catch (err: any) {
-        if (err.message === "Unauthorized user.") {
+        if (err.message.includes("Unauthorized")) {
              setError("This account does not have admin privileges.");
              toast({
                 variant: 'destructive',
