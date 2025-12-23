@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // src/app/practice/page.tsx (Server Component)
 import React from 'react';
 import { fetchAllTests } from '@/services/practice';

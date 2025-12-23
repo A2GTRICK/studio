@@ -1,21 +1,16 @@
-import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
+import { getApps, initializeApp, applicationDefault } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 
-if (!admin.apps.length) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  } catch (error) {
-    console.error('Firebase admin initialization error', error);
-  }
-}
+const app =
+  getApps().length === 0
+    ? initializeApp({
+        credential: applicationDefault(),
+        storageBucket: "a2g-smart-notes-1st.appspot.com",
+      })
+    : getApps()[0];
 
-export const adminDb = admin.firestore();
-export const adminStorage = admin.storage();
-export const adminAuth = admin.auth();
+export const adminDb = getFirestore(app);
+export const adminStorage = getStorage(app);
+export const adminAuth = getAuth(app);

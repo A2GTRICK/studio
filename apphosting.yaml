@@ -3,3 +3,6 @@ runConfig:
 
 build:
   runtime: nodejs
+
+backend:
+  root_directory: .
