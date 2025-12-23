@@ -296,7 +296,7 @@ export default function EditNotePageClient() {
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [id, draftKey]);
 
   // autosave draft locally (lightweight)
   useEffect(() => {
@@ -309,7 +309,7 @@ export default function EditNotePageClient() {
       }
     }, 1200);
     return () => clearTimeout(t);
-  }, [note.content, id]);
+  }, [note.content, id, draftKey]);
 
   async function saveNote(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -443,7 +443,7 @@ export default function EditNotePageClient() {
         {note.isPremium && (
             <div className="flex items-center gap-2">
                 <Label htmlFor="price-note" className="text-sm">Price (optional)</Label>
-                <Input id="price-note" type="number" value={note.price} onChange={e => setNote({ ...note, price: e.target.value ? Number(e.target.value) : '' })} className="w-24" placeholder="e.g. 10"/>
+                <Input id="price-note" type="number" value={note.price ?? ''} onChange={e => setNote({ ...note, price: e.target.value ? Number(e.target.value) : '' })} className="w-24" placeholder="e.g. 10"/>
             </div>
         )}
       </div>
@@ -563,3 +563,5 @@ export default function EditNotePageClient() {
     </form>
   );
 }
+
+    
