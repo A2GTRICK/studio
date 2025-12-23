@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
-// Explicitly define the only allowed admin email
+// Explicitly define the only allowed admin email for client-side check
 const ADMIN_EMAIL = "sharmaarvind28897@gmail.com";
 
 export default function AdminLoginPage() {
@@ -20,29 +20,28 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  async function handleLogin() {
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
     setLoading(true);
-    setError("");
 
-    // --- Client-side email check ---
+    // --- Client-side email pre-check ---
     if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      setError("This email address is not authorized for admin access.");
       toast({
         variant: 'destructive',
         title: 'Unauthorized Email',
-        description: 'Please use the registered admin email address.',
+        description: 'This email address is not authorized for admin access.',
       });
       setLoading(false);
       return;
     }
 
     try {
+      // 1. Sign in with Firebase client SDK to get the user and ID token
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
 
-      // Send ID token to the backend to create a session
+      // 2. Send the ID token to our secure backend API to create a session
       const res = await fetch("/api/a2gadmin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,26 +50,19 @@ export default function AdminLoginPage() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || "Admin verification failed");
+        // This error comes from our API (e.g., if the UID doesn't match)
+        throw new Error(errorData.error || "Admin verification failed on the server.");
       }
 
+      // 3. If the API returns success, redirect to the admin dashboard
       router.push("/a2gadmin");
     } catch (err: any) {
-        if (err.message.includes("Unauthorized")) {
-             setError("This account does not have admin privileges.");
-             toast({
-                variant: 'destructive',
-                title: 'Access Denied',
-                description: 'This account does not have admin privileges.',
-            });
-        } else {
-            setError("Invalid credentials or server error.");
-             toast({
-                variant: 'destructive',
-                title: 'Login Failed',
-                description: 'Please check your email and password.',
-            });
-        }
+        // This will catch errors from Firebase sign-in (wrong password) or our API
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: err.message || 'Please check your credentials and try again.',
+        });
     } finally {
       setLoading(false);
     }
@@ -82,28 +74,30 @@ export default function AdminLoginPage() {
         <CardHeader>
           <CardTitle>Admin Login</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            placeholder="Admin Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {error && (
-            <p className="text-sm text-red-500">{error}</p>
-          )}
-          <Button
-            className="w-full"
-            onClick={handleLogin}
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Login"}
-          </Button>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Input
+              placeholder="Admin Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <Button
+              className="w-full"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Login"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
