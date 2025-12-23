@@ -1,17 +1,19 @@
+
 // src/app/api/a2gadmin/notes/route.ts
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { adminDb, default as admin } from "@/lib/firebaseAdmin";
+import { adminDb, adminStorage } from "@/lib/firebaseAdmin";
 import { v4 as uuidv4 } from "uuid";
+import admin from "firebase-admin";
 
 /**
  * Get storage bucket name from admin app (will throw earlier if admin not initialized)
  */
 const BUCKET_NAME = (() => {
   try {
-    return admin.storage().bucket().name;
+    return adminStorage.bucket().name;
   } catch (e) {
     // If admin initialization failed this will be informative in logs
     console.error("Failed to get storage bucket name from admin:", e);
@@ -26,7 +28,7 @@ const BUCKET_NAME = (() => {
 async function uploadFileToStorage(path: string, file: File) {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
-  const bucket = admin.storage().bucket(BUCKET_NAME);
+  const bucket = adminStorage.bucket(BUCKET_NAME);
   const fileRef = bucket.file(path);
   await fileRef.save(buffer, {
     metadata: { contentType: file.type || "application/octet-stream" },
@@ -251,7 +253,7 @@ export async function DELETE(req: NextRequest) {
     const data = snap.data() || {};
     const attachments: string[] = Array.isArray(data.attachments) ? data.attachments : [];
 
-    const bucket = admin.storage().bucket(BUCKET_NAME);
+    const bucket = adminStorage.bucket(BUCKET_NAME);
     for (const fileUrl of attachments) {
       try {
         // Expect url like: https://storage.googleapis.com/<bucket>/<path>
