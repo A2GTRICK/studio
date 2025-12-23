@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -36,6 +37,7 @@ export default function EditMcqSetPagePremium() {
   const [year, setYear] = useState("");
   const [description, setDescription] = useState("");
   const [isPremium, setIsPremium] = useState(false);
+  const [price, setPrice] = useState<number | ''>('');
   const [isPublished, setIsPublished] = useState(false);
 
   const [questions, setQuestions] = useState<EditQuestion[]>([]);
@@ -74,6 +76,7 @@ export default function EditMcqSetPagePremium() {
         setYear(payload.year || "");
         setDescription(payload.description || "");
         setIsPremium(!!payload.isPremium);
+        setPrice(payload.price ?? '');
         setIsPublished(!!payload.isPublished);
         const incoming = (payload.questions || []).map((q: any) => ({
           id: q.id || uuidv4(),
@@ -266,7 +269,7 @@ export default function EditMcqSetPagePremium() {
     }
 
     try {
-      const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length };
+      const payload = { title, course, subject, year, description, isPremium, isPublished, questions, questionCount: questions.length, price: isPremium && price ? Number(price) : null };
       
       const res = await fetch(`/api/a2gadmin/mcq?id=${id}`, {
           method: 'PUT',
@@ -319,9 +322,15 @@ export default function EditMcqSetPagePremium() {
             <Input value={subject} onChange={(e)=>setSubject(e.target.value)} placeholder="* Subject" required />
             <Input value={course} onChange={(e)=>setCourse(e.target.value)} placeholder="* Course" required />
             <Input value={year} onChange={(e)=>setYear(e.target.value)} placeholder="Year" />
-            <div className="flex items-center gap-4">
+            <div className="col-span-1 md:col-span-2 flex items-center gap-4">
               <label className="flex items-center gap-2"><input type="checkbox" checked={isPremium} onChange={(e)=>setIsPremium(e.target.checked)} /> Premium</label>
               <label className="flex items-center gap-2"><input type="checkbox" checked={isPublished} onChange={(e)=>setIsPublished(e.target.checked)} /> Published</label>
+              {isPremium && (
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="price" className="text-sm">Price (optional)</Label>
+                    <Input id="price" type="number" value={price} onChange={e => setPrice(e.target.value ? Number(e.target.value) : '')} className="w-24" placeholder="e.g. 20"/>
+                </div>
+              )}
             </div>
             <div className="md:col-span-3"><Textarea value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Description" className="h-20"/></div>
           </div>
@@ -428,5 +437,3 @@ export default function EditMcqSetPagePremium() {
     </div>
   );
 }
-
-    

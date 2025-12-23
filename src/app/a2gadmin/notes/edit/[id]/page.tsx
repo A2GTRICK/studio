@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
@@ -7,6 +8,7 @@ import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Loader2, Save, FileText, Repeat, Eye, Download, Trash } from "lucide-react";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
@@ -21,6 +23,7 @@ type NoteShape = {
   year?: string;
   topic?: string;
   isPremium?: boolean;
+  price?: number | '';
   content?: string;
   attachments?: string[];
   [k: string]: any;
@@ -222,6 +225,7 @@ export default function EditNotePageClient() {
     year: "",
     topic: "",
     isPremium: false,
+    price: '',
     content: "",
   });
 
@@ -275,6 +279,7 @@ export default function EditNotePageClient() {
           year: n.year ?? "",
           topic: n.topic ?? "",
           isPremium: !!n.isPremium,
+          price: n.price ?? '',
           content: contentToUse,
           attachments: Array.isArray(n.attachments) ? n.attachments : [],
           ...n,
@@ -319,6 +324,7 @@ export default function EditNotePageClient() {
       formData.append("year", note.year ?? "");
       formData.append("topic", note.topic ?? "");
       formData.append("isPremium", String(!!note.isPremium));
+      formData.append("price", note.isPremium && note.price ? String(note.price) : '');
       formData.append("content", note.content ?? "");
       const res = await fetch(`/api/a2gadmin/notes?id=${encodeURIComponent(id)}`, {
         method: "PUT",
@@ -425,14 +431,22 @@ export default function EditNotePageClient() {
         <Input value={note.topic ?? ""} onChange={(e) => setNote({ ...note, topic: e.target.value })} placeholder="Topic" />
       </div>
 
-      <label className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={!!note.isPremium}
-          onChange={(e) => setNote({ ...note, isPremium: e.target.checked })}
-        />
-        <span className="font-semibold text-sm">Mark as Premium</span>
-      </label>
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={!!note.isPremium}
+            onChange={(e) => setNote({ ...note, isPremium: e.target.checked })}
+          />
+          <span className="font-semibold text-sm">Mark as Premium</span>
+        </label>
+        {note.isPremium && (
+            <div className="flex items-center gap-2">
+                <Label htmlFor="price-note" className="text-sm">Price (optional)</Label>
+                <Input id="price-note" type="number" value={note.price} onChange={e => setNote({ ...note, price: e.target.value ? Number(e.target.value) : '' })} className="w-24" placeholder="e.g. 10"/>
+            </div>
+        )}
+      </div>
 
       <div className="flex items-start gap-6">
         <div className="flex-1">

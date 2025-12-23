@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -386,7 +387,6 @@ export default function EditTestPage() {
           <div className="flex justify-end">
             <Button
               onClick={savePremiumSettings}
-              disabled={isPremium && price === ""}
             >
               Save Premium Settings
             </Button>
