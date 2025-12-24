@@ -3,13 +3,17 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchAllMCQSets, type MCQSet } from "@/services/mcq";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import MCQPlayer from "@/components/mcq/MCQPlayer";
 import McqSetCard from "@/components/mcq/MCQCard";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
 
 export default function MCQPracticePage() {
   const [sets, setSets] = useState<MCQSet[]>([]);
@@ -22,6 +26,8 @@ export default function MCQPracticePage() {
   const [onlyUnattempted, setOnlyUnattempted] = useState(false);
   
   const [activeSet, setActiveSet] = useState<MCQSet | null>(null);
+  const [lockedSet, setLockedSet] = useState<MCQSet | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function load() {
@@ -82,11 +88,28 @@ export default function MCQPracticePage() {
   }, [sets, query, subject, course, onlyUnattempted]);
 
   function openPlayer(set: MCQSet) {
+    try {
+        const key = `mcq_attempt_${set.id}`;
+        if (typeof window !== 'undefined') {
+            const raw = localStorage.getItem(key);
+            if(raw) {
+                const data = JSON.parse(raw);
+                if ((data.attempts || 0) >= 3) {
+                    setLockedSet(set);
+                    return;
+                }
+            }
+        }
+    } catch {}
     setActiveSet(set);
   }
   
   function closePlayer() {
     setActiveSet(null);
+  }
+  
+  function closeLockModal() {
+      setLockedSet(null);
   }
 
   if (loading) return (
@@ -158,6 +181,23 @@ export default function MCQPracticePage() {
         )}
 
         {activeSet && <MCQPlayer setData={activeSet} onClose={closePlayer} />}
+
+        <Dialog open={!!lockedSet} onOpenChange={(isOpen) => !isOpen && setLockedSet(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Lock /> Attempts Limit Reached</DialogTitle>
+                    <DialogDescription className="pt-4">
+                        You have used all your free attempts for the set: <span className="font-bold">{lockedSet?.title}</span>.
+                        <br/><br/>
+                        Upgrade to Pro to get unlimited access to all MCQ sets, or purchase this set individually.
+                    </DialogDescription>
+                </DialogHeader>
+                 <div className="flex justify-end gap-3 pt-4">
+                    <Button variant="outline" onClick={closeLockModal}>Maybe Later</Button>
+                    <Button onClick={() => router.push('/dashboard/billing')}>Upgrade to Pro</Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }

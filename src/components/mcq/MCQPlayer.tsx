@@ -107,13 +107,24 @@ export default function MCQPlayer({ setData, onClose }: { setData: any; onClose:
 
     try {
       if (setData?.id) {
+        const key = `mcq_attempt_${setData.id}`;
+        const raw = localStorage.getItem(key);
+        let existingAttempts = 0;
+        if(raw) {
+            try {
+                const data = JSON.parse(raw);
+                existingAttempts = data.attempts || 0;
+            } catch {}
+        }
+        
         const attempt = {
           id: setData.id,
           score: correctCount,
           total: questions.length,
           date: new Date().toISOString(),
+          attempts: existingAttempts + 1,
         };
-        localStorage.setItem(`mcq_attempt_${setData.id}`, JSON.stringify(attempt));
+        localStorage.setItem(key, JSON.stringify(attempt));
       }
     } catch (e) {
       console.warn("Storage error:", e);
