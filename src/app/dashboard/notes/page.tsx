@@ -4,6 +4,7 @@ import React, { Suspense } from 'react';
 import { fetchAllNotes, type Note } from '@/services/notes';
 import NotesPageClient from './notes-page-client';
 import { Loader2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 /**
  * Server component to pre-fetch data and pass it to the client.
@@ -18,7 +19,10 @@ export default function NotesLibraryPage() {
   return (
     <Suspense fallback={
       <div className="flex h-[calc(100vh-200px)] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="text-sm text-muted-foreground">Loading Library...</span>
+        </div>
       </div>
     }>
       <NotesData />
