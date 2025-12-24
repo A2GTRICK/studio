@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -13,7 +14,8 @@ import {
   ArrowRight,
   BookMarked,
   LayoutGrid,
-  Info
+  Info,
+  ChevronRight
 } from 'lucide-react';
 import type { Note } from '@/services/notes';
 
@@ -55,6 +57,11 @@ function NoteCard({ note }: { note: Note }) {
               OPEN <ChevronRight size={14} />
             </div>
           </div>
+
+          <button className="w-full bg-gray-900 text-white rounded-xl py-3 text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center justify-center gap-2 group/btn active:scale-95 shadow-lg shadow-gray-200">
+            Study Material
+            <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+          </button>
         </div>
       </div>
     </div>
@@ -105,7 +112,8 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
   const toggleYear = (year: string | null) => setOpenYear(openYear === year ? null : year);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#1e293b] pb-24 font-sans selection:bg-indigo-100">
+    <div className="min-h-screen bg-[#FDFDFD] text-[#1e293b] pb-24 font-sans selection:bg-indigo-100">
+      {/* Header Section */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between mb-6">
@@ -139,6 +147,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
         </div>
       </div>
 
+      {/* Main Content Area */}
       <main className="max-w-5xl mx-auto px-6 mt-8 space-y-4">
         {Object.entries(organizedData).sort().map(([courseName, years]) => (
           <div key={courseName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
@@ -211,20 +220,6 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
             )}
           </div>
         ))}
-         {Object.keys(organizedData).length === 0 && (
-          <div className="py-20 text-center bg-white rounded-[2rem] border-2 border-dashed border-gray-200">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="text-gray-300" size={32} />
-            </div>
-            <p className="text-gray-500 font-bold">No results found for your filters.</p>
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="mt-4 text-indigo-600 text-sm font-bold underline"
-            >
-              Reset Search
-            </button>
-          </div>
-        )}
       </main>
     </div>
   );
