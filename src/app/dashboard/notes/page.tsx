@@ -2,21 +2,26 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import {
-  BookCopy,
-  Star,
-  Search,
-  BookOpen,
-  GraduationCap,
-  Calendar,
-  ChevronRight,
+import { 
+  BookCopy, 
+  Star, 
+  Search, 
+  BookOpen, 
+  GraduationCap, 
+  Calendar, 
+  ChevronRight, 
   ChevronDown,
   Library,
   BookMarked,
   Loader2
 } from 'lucide-react';
 import { fetchAllNotes, type Note } from '@/services/notes';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
+const THEME = {
+  pageBg: 'bg-slate-50',
+  card: 'bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300',
+  accent: 'indigo'
+};
 
 // Re-usable Note Card Component
 function NoteCard({ note }: { note: Note }) {
@@ -58,25 +63,33 @@ function NoteCard({ note }: { note: Note }) {
   );
 }
 
-
-// Main Client Component for the Notes Library
+// Client Component for interactivity
 function NotesPageClient({ initialNotes }: { initialNotes: Note[] }) {
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+
+  const processedNotes = useMemo(() => {
+    return initialNotes.map(note => ({
+      ...note,
+      displayCourse: (note.course || "General").trim(),
+      displaySubject: (note.subject || "Uncategorized").toUpperCase().trim(),
+    }));
+  }, [initialNotes]);
+
   const filteredNotes = useMemo(() => {
-    if (!searchQuery) return initialNotes;
+    if (!searchQuery) return processedNotes;
     const lowercasedQuery = searchQuery.toLowerCase();
-    return initialNotes.filter(note =>
+    return processedNotes.filter(note =>
       note.title.toLowerCase().includes(lowercasedQuery) ||
-      (note.subject || '').toLowerCase().includes(lowercasedQuery) ||
-      (note.course || '').toLowerCase().includes(lowercasedQuery)
+      note.displaySubject.toLowerCase().includes(lowercasedQuery) ||
+      note.displayCourse.toLowerCase().includes(lowercasedQuery)
     );
-  }, [searchQuery, initialNotes]);
+  }, [searchQuery, processedNotes]);
 
   const groupedNotes = useMemo(() => {
     return filteredNotes.reduce((acc, note) => {
-      const course = note.course || 'General';
-      const subject = (note.subject || 'Uncategorized').toUpperCase();
+      const course = note.displayCourse;
+      const subject = note.displaySubject;
       if (!acc[course]) acc[course] = {};
       if (!acc[course][subject]) acc[course][subject] = [];
       acc[course][subject].push(note);
@@ -84,9 +97,17 @@ function NotesPageClient({ initialNotes }: { initialNotes: Note[] }) {
     }, {} as Record<string, Record<string, Note[]>>);
   }, [filteredNotes]);
 
+  const orderedCourses = Object.keys(groupedNotes).sort((a,b) => a.localeCompare(b));
+
+  const toggleSection = (key: string) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
   return (
     <div className="bg-slate-50 min-h-screen font-sans text-slate-900">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -108,7 +129,6 @@ function NotesPageClient({ initialNotes }: { initialNotes: Note[] }) {
         </div>
       </header>
 
-      {/* Hero */}
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase tracking-widest mb-4 border border-indigo-100">
@@ -123,10 +143,9 @@ function NotesPageClient({ initialNotes }: { initialNotes: Note[] }) {
           </p>
         </div>
       </div>
-
-      {/* Main Content */}
+      
       <main className="max-w-7xl mx-auto px-4 py-12">
-        {Object.keys(groupedNotes).length === 0 ? (
+        {orderedCourses.length === 0 ? (
           <div className="py-20 text-center">
             <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
               <Search size={32} />
@@ -135,51 +154,44 @@ function NotesPageClient({ initialNotes }: { initialNotes: Note[] }) {
             <p className="text-slate-500">Try adjusting your search query.</p>
           </div>
         ) : (
-          <Accordion type="single" collapsible className="w-full space-y-8" defaultValue={Object.keys(groupedNotes)[0]}>
-            {Object.entries(groupedNotes).map(([course, subjects]) => (
-              <AccordionItem key={course} value={course} className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
-                <AccordionTrigger className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50 transition-colors group text-left hover:no-underline">
-                   <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <GraduationCap size={24} />
-                      </div>
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{course}</h2>
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{Object.keys(subjects).length} Subjects</p>
-                      </div>
-                    </div>
-                    <ChevronDown className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200" />
-                </AccordionTrigger>
-                <AccordionContent className="px-8 pb-8 animate-in fade-in slide-in-from-top-4 duration-300">
-                   <Accordion type="single" collapsible className="w-full space-y-4" defaultValue={Object.keys(subjects)[0]}>
-                    {Object.entries(subjects).map(([subject, notesList]) => (
-                       <AccordionItem key={subject} value={subject} className="bg-slate-50/70 rounded-2xl border border-slate-100">
-                         <AccordionTrigger className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-100 transition-colors group text-left hover:no-underline rounded-2xl">
-                           <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-white text-indigo-600 flex items-center justify-center">
-                                <BookCopy size={16} />
-                              </div>
-                              <div>
-                                <h3 className="text-base font-bold text-slate-800">{subject}</h3>
-                                <p className="text-xs font-medium text-slate-500">{notesList.length} Notes</p>
-                              </div>
+          <div className="space-y-8">
+            {orderedCourses.map(course => (
+              <div key={course}>
+                <h2 className="text-2xl font-bold text-slate-800 mb-4">{course}</h2>
+                <div className="space-y-4">
+                  {Object.entries(groupedNotes[course]).map(([subject, notesList]) => (
+                     <div key={subject} className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
+                        <button 
+                          onClick={() => toggleSection(`${course}-${subject}`)}
+                          className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50 transition-colors group text-left"
+                        >
+                          <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                              <BookCopy size={24} />
                             </div>
-                           <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200" />
-                         </AccordionTrigger>
-                         <AccordionContent className="p-6 pt-2">
-                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4 border-t border-slate-200">
+                            <div>
+                               <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{subject}</h3>
+                               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{notesList.length} Documents</p>
+                            </div>
+                          </div>
+                          <ChevronDown className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${openSections[`${course}-${subject}`] ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {openSections[`${course}-${subject}`] && (
+                           <div className="px-8 pb-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4 border-t">
                               {notesList.map(note => (
                                 <NoteCard key={note.id} note={note} />
                               ))}
                             </div>
-                         </AccordionContent>
-                       </AccordionItem>
-                    ))}
-                   </Accordion>
-                </AccordionContent>
-              </AccordionItem>
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
-          </Accordion>
+          </div>
         )}
       </main>
     </div>
