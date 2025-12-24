@@ -1,48 +1,65 @@
-
 // src/app/api/a2gadmin/notes/route.ts
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { fetchAllNotes } from "@/services/notes";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/firebase/config";
-import { isAdminAuthenticated } from "@/lib/verifyAdminSession";
+
 import { adminDb } from "@/lib/firebaseAdmin";
+import { isAdminAuthenticated } from "@/lib/verifyAdminSession";
+import { FieldValue } from "firebase-admin/firestore";
 
-
-/* ------------------------
+/* ================================
    GET — list notes OR get single note (admin)
-   ------------------------ */
+================================ */
 export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const id = url.searchParams.get("id");
-
   try {
-    // If an ID is provided, fetch a single note
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+
+    // Fetch single note
     if (id) {
-        const noteRef = doc(db, "notes", id);
-        const noteSnap = await getDoc(noteRef);
+      const snap = await adminDb.collection("notes").doc(id).get();
 
-        if (!noteSnap.exists()) {
-            return NextResponse.json({ error: "Note not found" }, { status: 404 });
-        }
-        
-        const noteData = noteSnap.data();
-        const note = {
-            id: noteSnap.id,
-            ...noteData,
-            createdAt: noteData.createdAt?.toDate ? noteData.createdAt.toDate().toISOString() : new Date().toISOString(),
-            updatedAt: noteData.updatedAt?.toDate ? noteData.updatedAt.toDate().toISOString() : null,
-        }
+      if (!snap.exists) {
+        return NextResponse.json({ error: "Note not found" }, { status: 404 });
+      }
 
-        return NextResponse.json({ note });
+      const data = snap.data()!;
+      const note = {
+        id: snap.id,
+        ...data,
+        createdAt: data.createdAt?.toDate
+          ? data.createdAt.toDate().toISOString()
+          : null,
+        updatedAt: data.updatedAt?.toDate
+          ? data.updatedAt.toDate().toISOString()
+          : null,
+      };
+
+      return NextResponse.json({ note });
     }
 
-    // Otherwise, fetch all notes using the reliable client-sdk service
-    const notes = await fetchAllNotes();
-    return NextResponse.json({ notes });
+    // Fetch all notes
+    const snaps = await adminDb
+      .collection("notes")
+      .orderBy("updatedAt", "desc")
+      .get();
 
+    const notes = snaps.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate
+          ? data.createdAt.toDate().toISOString()
+          : null,
+        updatedAt: data.updatedAt?.toDate
+          ? data.updatedAt.toDate().toISOString()
+          : null,
+      };
+    });
+
+    return NextResponse.json({ notes });
   } catch (err: any) {
     console.error("Admin GET notes error:", err);
     return NextResponse.json(
@@ -55,41 +72,45 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/* ------------------------
-   PUT — update note (admin)
-   ------------------------ */
+/* ================================
+   PUT — update note (admin only)
+================================ */
 export async function PUT(req: NextRequest) {
-  if (! await isAdminAuthenticated(req)) {
+  // 🔐 Admin verification (server-side)
+  if (!(await isAdminAuthenticated(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
+
   if (!id) {
-    return NextResponse.json({ error: "Note ID is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Note ID is required" },
+      { status: 400 }
+    );
   }
 
   try {
     const formData = await req.formData();
-    const dataToUpdate: { [key: string]: any } = {};
+    const dataToUpdate: Record<string, any> = {};
 
     formData.forEach((value, key) => {
-        if (key === 'isPremium') {
-            dataToUpdate[key] = value === 'true';
-        } else if (key === 'price') {
-             dataToUpdate[key] = value ? Number(value) : null;
-        } else {
-            dataToUpdate[key] = value;
-        }
+      if (key === "isPremium") {
+        dataToUpdate[key] = value === "true";
+      } else if (key === "price") {
+        dataToUpdate[key] = value ? Number(value) : null;
+      } else {
+        dataToUpdate[key] = value;
+      }
     });
 
-    const noteRef = adminDb.collection("notes").doc(id);
-    await noteRef.update({
-        ...dataToUpdate,
-        updatedAt: serverTimestamp(),
+    await adminDb.collection("notes").doc(id).update({
+      ...dataToUpdate,
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
-    return NextResponse.json({ success: true, id: id });
+    return NextResponse.json({ success: true, id });
   } catch (err: any) {
     console.error("Admin PUT note error:", err);
     return NextResponse.json(
@@ -102,7 +123,9 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-
-// NOTE: POST, DELETE operations have been removed as they were not being used
-// and keeping them would require a more complex admin-sdk setup.
-// The app currently uses client-side mutations from the admin pages directly.
+/*
+  NOTE:
+  - POST & DELETE intentionally omitted
+  - Admin writes are handled ONLY via Admin SDK
+  - Firestore rules are NOT involved here
+*/
