@@ -1,53 +1,68 @@
 
 import React from "react";
 import type { MCQSet } from "@/services/mcq";
+import { Button } from "../ui/button";
+import { Play, Star } from "lucide-react";
 
 type Props = {
   set: MCQSet;
   onStart?: () => void;
 };
 
-export default function MCQCard({ set: data, onStart }: Props) {
+export default function McqSetCard({ set: data, onStart }: Props) {
   const total = Array.isArray(data.questions) ? data.questions.length : 0;
-  const attempted = (() => {
-    try {
-      if (typeof window === 'undefined') return 0;
+  const isPremium = data.isPremium === true;
+
+  let attemptStatus = {
+    text: "Not attempted",
+    color: "text-muted-foreground",
+  };
+  try {
+    if (typeof window !== 'undefined') {
       const raw = localStorage.getItem(`mcq_attempt_${data.id}`);
-      if (!raw) return 0;
-      const st = JSON.parse(raw);
-      return st?.scoreCount ?? 0;
-    } catch {
-      return 0;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.score !== undefined) {
+          attemptStatus = {
+            text: `Last Score: ${parsed.score}/${total}`,
+            color: "text-blue-600 font-medium",
+          };
+        }
+      }
     }
-  })();
+  } catch {}
 
   return (
-    <article className="bg-white border rounded-xl p-4 shadow flex flex-col">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="font-semibold text-lg">{data.title}</h3>
-          <div className="text-sm text-gray-500">{data.subject || "General"} • {data.course || "—"}</div>
+    <article className="group bg-card rounded-2xl p-5 shadow-lg border border-primary/10 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:border-primary/30 hover:-translate-y-1 h-full">
+      <div className="flex-grow">
+        <div className="flex justify-between items-start gap-3">
+          <h3 className="font-headline text-lg font-bold text-gray-900 leading-tight pr-2">
+            {data.title}
+          </h3>
+          {isPremium && (
+            <div className="flex-shrink-0 p-1.5 rounded-full bg-amber-100 text-amber-600" title="Premium Set">
+              <Star className="w-4 h-4" />
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-2 flex flex-wrap gap-2 text-xs">
+            <span className="bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">{data.course || "General"}</span>
+            <span className="bg-secondary text-secondary-foreground px-2 py-1 rounded-full font-medium">{data.subject}</span>
         </div>
 
-        <div className="text-xs text-gray-400 text-right">
-          <div>{total} Q</div>
-          <div className="mt-2">{data.timeLimit ? `${data.timeLimit} min` : "No time"}</div>
-        </div>
+        {data.description && <p className="text-sm text-muted-foreground mt-3 line-clamp-3">{data.description}</p>}
       </div>
 
-      {data.description && <p className="text-sm text-gray-700 mt-3 line-clamp-3">{data.description}</p>}
-
-      <div className="mt-4 flex items-center gap-3">
-        <button
-          onClick={onStart}
-          className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm"
-        >
-          Start
-        </button>
-
-        <div className="ml-auto text-sm text-gray-500">
-          {attempted ? <span>Last score: {attempted}</span> : <span>Not attempted</span>}
+      <div className="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center">
+        <div className="text-sm">
+          <p className="font-semibold">{total} Questions</p>
+          <p className={`text-xs ${attemptStatus.color}`}>{attemptStatus.text}</p>
         </div>
+        <Button onClick={onStart}>
+          <Play className="mr-2 h-4 w-4" />
+          Start
+        </Button>
       </div>
     </article>
   );
