@@ -1,17 +1,20 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Search, 
-  BookOpen, 
-  Star, 
-  ChevronDown, 
-  GraduationCap, 
+import {
+  Search,
+  BookOpen,
+  Star,
+  ChevronDown,
+  ChevronRight,
+  GraduationCap,
   Calendar,
   Layers,
   ArrowRight,
   BookMarked,
-  Info
+  Info,
+  Sparkles,
+  Award,
 } from 'lucide-react';
 import type { Note } from '@/services/notes';
 import Link from 'next/link';
@@ -25,10 +28,9 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
   useEffect(() => {
     if (initialNotes.length > 0 && !openCourse) {
       const firstCourse = Object.keys(organizedData)[0];
-      if(firstCourse) setOpenCourse(firstCourse);
+      if (firstCourse) setOpenCourse(firstCourse);
     }
-  }, [initialNotes]);
-
+  }, [initialNotes, openCourse]);
 
   const yearOrder: { [key: string]: number } = {
     "1st Year": 1,
@@ -53,7 +55,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
   const organizedData = useMemo(() => {
     const tree: { [key: string]: { [key: string]: { [key: string]: Note[] } } } = {};
     const filtered = initialNotes.filter(n => 
-      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (n.title && n.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (n.subject && n.subject.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
@@ -74,11 +76,13 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
 
   const toggleCourse = (course: string) => setOpenCourse(openCourse === course ? null : course);
   const toggleYear = (year: string) => setOpenYear(openYear === year ? null : year);
-  
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 sticky top-4 z-30">
-        <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-[#FDFDFD] text-[#1e293b] pb-24 font-sans selection:bg-indigo-100">
+      {/* Header Section */}
+      <div className="bg-white border-b border-slate-200 sticky top-16 md:top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex items-center justify-between mb-6">
             <div className="space-y-1">
               <h1 className="text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
                 <BookMarked size={24} className="text-indigo-600" />
@@ -89,8 +93,14 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
                 <span>GPAT-Focused Content Available for 2025</span>
               </div>
             </div>
-        </div>
-        <div className="relative group">
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded border border-slate-200 bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <Star size={12} className="text-amber-500 fill-amber-500" /> Premium Active
+              </div>
+            </div>
+          </div>
+
+          <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
             <input 
               type="text" 
@@ -99,12 +109,13 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
         </div>
       </div>
-      
-      <main className="space-y-4">
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-4">
         {Object.keys(organizedData).length === 0 ? (
-           <div className="py-20 text-center bg-white rounded-2xl border-2 border-dashed border-gray-200">
+          <div className="py-20 text-center bg-white rounded-2xl border-2 border-dashed border-gray-200">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="text-gray-300" size={32} />
             </div>
@@ -118,7 +129,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
           </div>
         ) : (
           Object.entries(organizedData).sort().map(([courseName, years]) => (
-            <div key={courseName} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div key={courseName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
               <button 
                 onClick={() => toggleCourse(courseName)}
                 className={`w-full flex items-center justify-between p-5 text-left transition-all relative border-l-4 ${
@@ -164,6 +175,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
                           </div>
                           <ChevronDown size={18} className={`transition-transform duration-300 ${openYear === yearName ? 'rotate-180 text-white' : 'text-slate-300'}`} />
                         </button>
+                        
                         {openYear === yearName && (
                           <div className="p-4 bg-slate-50/50 border-t border-slate-100">
                              {Object.entries(subjects).map(([subjectName, notes]: [string, Note[]]) => (
@@ -174,7 +186,9 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {notes.map(note => (
-                                      <NoteCard key={note.id} note={note} />
+                                      <Link key={note.id} href={`/dashboard/notes/view/${note.id}`} className="group block h-full">
+                                        <NoteCard note={note} />
+                                      </Link>
                                     ))}
                                   </div>
                                </div>
@@ -193,39 +207,36 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
   );
 }
 
-
 function NoteCard({ note }: { note: Note }) {
   return (
-    <Link href={`/dashboard/notes/view/${note.id}`} className="group block h-full">
-        <div className="bg-white rounded-lg border border-slate-200 p-4 transition-all hover:border-indigo-300 hover:shadow-lg flex flex-col h-full relative cursor-pointer">
-        <div className="flex justify-between items-start mb-4">
-            <div className={`w-9 h-9 rounded flex items-center justify-center text-white shadow-sm ${note.color || 'bg-gray-400'}`}>
-            <BookOpen size={18} />
-            </div>
-            {note.isPremium && (
-            <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2 py-1 rounded border border-amber-100">
-                <Star size={10} className="fill-amber-500 text-amber-500" />
-                <span className="text-[9px] font-black uppercase tracking-tight">Pro</span>
-            </div>
-            )}
+    <div className="group bg-white rounded-lg border border-slate-200 p-4 transition-all hover:border-indigo-300 hover:shadow-lg flex flex-col h-full relative cursor-pointer">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`w-9 h-9 rounded flex items-center justify-center text-white shadow-sm ${note.color || 'bg-gray-400'}`}>
+          <BookOpen size={18} />
         </div>
+        {note.isPremium && (
+          <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2 py-1 rounded border border-amber-100">
+            <Star size={10} className="fill-amber-500 text-amber-500" />
+            <span className="text-[9px] font-black uppercase tracking-tight">Pro</span>
+          </div>
+        )}
+      </div>
 
-        <div className="flex-1">
-            <h4 className="text-sm font-semibold text-slate-800 leading-snug group-hover:text-indigo-700 transition-colors line-clamp-2 mb-4">
-            {note.title}
-            </h4>
-        </div>
+      <div className="flex-1">
+        <h4 className="text-sm font-semibold text-slate-800 leading-snug group-hover:text-indigo-700 transition-colors line-clamp-2 mb-4">
+          {note.title}
+        </h4>
+      </div>
 
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-            <Layers size={12} />
-            Verified Source
-            </div>
-            <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-            Study <ChevronRight size={14} />
-            </div>
+      <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+          <Layers size={12} />
+          Verified Source
         </div>
+        <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
+          Study <ChevronRight size={14} />
         </div>
-    </Link>
+      </div>
+    </div>
   );
 }
