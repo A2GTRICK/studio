@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -13,7 +14,6 @@ import {
   BookMarked,
   Info,
   Award,
-  Sparkles,
 } from 'lucide-react';
 import type { Note } from '@/services/notes';
 import Link from 'next/link';
@@ -223,38 +223,93 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
 }
 
 function NoteCard({ note }: { note: Note }) {
+  const progressKey = `note-progress-${note.id}`;
+
+  const [progress, setProgress] = React.useState<
+    'new' | 'in-progress' | 'completed'
+  >('new');
+
+  // Load progress
+  React.useEffect(() => {
+    const saved = localStorage.getItem(progressKey) as
+      | 'new'
+      | 'in-progress'
+      | 'completed'
+      | null;
+    if (saved) setProgress(saved);
+  }, [progressKey]);
+
+  // Mark as in-progress on click
+  const handleClick = () => {
+    if (progress === 'new') {
+      localStorage.setItem(progressKey, 'in-progress');
+      setProgress('in-progress');
+    }
+  };
+
   return (
-    <Link href={`/dashboard/notes/view/${note.id}`} className="group block h-full">
-      <div className="bg-white rounded-[1.5rem] border border-slate-200 p-5 shadow-sm hover:shadow-xl hover:border-indigo-400 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full relative overflow-hidden active:scale-[0.97]">
-        <div className={`absolute top-0 right-0 w-12 h-12 bg-indigo-600 opacity-5 rounded-bl-[3rem] transition-all group-hover:scale-150`} />
-        
-        <div className="flex justify-between items-start mb-4">
-          <div className={`w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/20`}>
-            <BookOpen size={24} />
+    <Link
+      href={`/dashboard/notes/view/${note.id}`}
+      onClick={handleClick}
+      className="group block h-full"
+    >
+      <div className="relative flex h-full flex-col rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+
+        {/* HEADER */}
+        <div className="mb-4 flex items-start justify-between">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
+            <BookOpen size={22} />
           </div>
+
+          {/* PREMIUM BADGE + TOOLTIP */}
           {note.isPremium && (
-            <div className="flex items-center gap-1.5 bg-amber-50 text-amber-600 px-3 py-1 rounded-full border border-amber-100 shadow-sm">
+            <div className="relative flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-600 text-[10px] font-black">
               <Star size={12} className="fill-amber-500 text-amber-500" />
-              <span className="text-[10px] font-black uppercase tracking-tight">PREMIUM</span>
+              PREMIUM
+              <span className="group/info relative ml-1 cursor-pointer text-amber-500">
+                ⓘ
+                <span className="pointer-events-none absolute right-0 top-6 z-20 w-56 rounded-xl border border-slate-200 bg-white p-3 text-[11px] font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover/info:opacity-100">
+                  Includes exam-focused notes, PYQs, expert explanations
+                </span>
+              </span>
             </div>
           )}
         </div>
 
+        {/* CONTENT */}
         <div className="flex-1">
-          <div className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.15em] mb-2">{note.subject}</div>
-          <h4 className="text-[15px] font-black text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-2 mb-4">
+          <div className="mb-2 text-[9px] font-black uppercase tracking-widest text-indigo-600">
+            {note.subject}
+          </div>
+
+          <h4 className="mb-4 line-clamp-2 text-[15px] font-black text-slate-800 group-hover:text-indigo-600">
             {note.title}
           </h4>
         </div>
 
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
-              <Layers size={12} className="text-slate-400" />
-            </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase">Archive No. {note.id}</span>
+        {/* FOOTER */}
+        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
+
+          {/* PROGRESS INDICATOR */}
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase">
+            {progress === 'new' && (
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-500">
+                ● New
+              </span>
+            )}
+            {progress === 'in-progress' && (
+              <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-600">
+                ● In Progress
+              </span>
+            )}
+            {progress === 'completed' && (
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-600">
+                ● Completed
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-1 text-[11px] font-black text-indigo-600 group-hover:gap-2 transition-all">
+
+          <div className="flex items-center gap-1 text-[11px] font-black text-indigo-600">
             STUDY NOW <ChevronRight size={18} />
           </div>
         </div>
