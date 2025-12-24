@@ -1,14 +1,12 @@
 // src/app/dashboard/notes/page.tsx (Server Component)
-
 import React, { Suspense } from 'react';
 import { fetchAllNotes, type Note } from '@/services/notes';
 import NotesPageClient from './notes-page-client';
 import { Loader2 } from 'lucide-react';
-import { Search } from 'lucide-react';
 
 /**
  * Server component to pre-fetch data and pass it to the client.
- * This pattern is optimal for performance and SEO.
+ * This is the optimal pattern for performance and SEO.
  */
 async function NotesData() {
   const notes: Note[] = await fetchAllNotes();
