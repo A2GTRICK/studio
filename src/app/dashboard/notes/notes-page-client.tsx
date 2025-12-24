@@ -15,6 +15,7 @@ import {
   BookMarked,
   Info,
   Award,
+  Sparkles
 } from 'lucide-react';
 import type { Note } from '@/services/notes';
 import Link from 'next/link';
@@ -117,7 +118,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
         <div className="flex items-center justify-center gap-2 py-2 px-4 bg-white/50 border border-white rounded-full w-fit mx-auto text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-sm">
           <Info size={12} className="text-indigo-500" />
-          GPAT-Focused Content Updated for 2025
+          Verified Academic Resources
         </div>
 
         {Object.keys(organizedData).length === 0 ? (
@@ -195,7 +196,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
                                     <div className="w-1 h-4 bg-indigo-500 rounded-full" />
                                     <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">{subjectName}</h3>
                                   </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {notes.map(note => (
                                       <NoteCard key={note.id} note={note} />
                                     ))}
@@ -256,5 +257,3 @@ function NoteCard({ note }: { note: Note }) {
     </Link>
   );
 }
-
-    
