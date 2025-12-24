@@ -12,6 +12,7 @@ export interface Note extends GenerateNotesInput {
     id: string;
     notes: string;
     createdAt: any; // Can be Date or Firebase Timestamp
+    updatedAt?: any;
     short?: string;
     isPremium?: boolean;
     content?: string;
@@ -53,7 +54,8 @@ export async function fetchAllNotes(): Promise<Note[]> {
         return {
             id: doc.id,
             ...data,
-            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : null,
         } as Note;
     });
   } catch (error) {
