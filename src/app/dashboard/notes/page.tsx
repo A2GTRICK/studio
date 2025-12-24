@@ -3,215 +3,223 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
-  BookCopy, 
-  Star, 
-  Search, 
-  BookOpen, 
-  GraduationCap, 
-  Calendar, 
   ChevronRight, 
-  ChevronDown,
-  Library,
+  ChevronDown, 
+  BookOpen, 
+  Award,
+  Search, 
+  GraduationCap, 
+  Calendar,
+  Layers,
   BookMarked,
   Loader2
 } from 'lucide-react';
 import { fetchAllNotes, type Note } from '@/services/notes';
 
-const THEME = {
-  pageBg: 'bg-slate-50',
-  card: 'bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300',
-  accent: 'indigo'
-};
+// Main Page Component
+export default function NotesLibraryPage() {
+  const [initialNotes, setInitialNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
 
-// Re-usable Note Card Component
-function NoteCard({ note }: { note: Note }) {
-  return (
-    <a href={`/dashboard/notes/view/${note.id}`} className="group flex flex-col h-full bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-indigo-200 hover:bg-white hover:shadow-xl transition-all duration-500 overflow-hidden">
-      <div className="p-6 flex-1">
-        <div className="flex justify-between items-start mb-6">
-          <div className="p-3 rounded-2xl bg-white shadow-sm text-slate-400 group-hover:text-indigo-600 transition-colors">
-            <BookOpen size={20} />
-          </div>
-          {note.isPremium && (
-            <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-amber-100 border border-amber-200">
-              <Star size={12} className="text-amber-600 fill-amber-600" />
-              <span className="text-[10px] font-black text-amber-700 uppercase tracking-tighter">Premium</span>
-            </div>
-          )}
-        </div>
+  useEffect(() => {
+    fetchAllNotes()
+      .then(notes => {
+        setInitialNotes(notes);
+      })
+      .catch(err => {
+        console.error("Failed to fetch notes:", err);
+        // Optionally set an error state to show in the UI
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
-        <h3 className="text-lg font-bold text-slate-800 leading-snug mb-6 group-hover:text-indigo-600 transition-colors line-clamp-2 min-h-[3.5rem]">
-          {note.title}
-        </h3>
-
-        <div className="space-y-3 pt-4 border-t border-slate-200/50">
-          <div className="flex items-center gap-2 text-slate-500">
-            <GraduationCap size={14} />
-            {/* COMBINED COURSE AND YEAR ON ONE LINE */}
-            <span className="text-xs font-bold">{note.course || 'General'} • {note.year || 'All Years'}</span>
-          </div>
-        </div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
       </div>
+    );
+  }
 
-      <div className="p-6 pt-0 mt-auto">
-        <div className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-2xl text-sm font-bold group-hover:bg-indigo-600 transition-all shadow-lg group-hover:shadow-indigo-200">
-          Study Now
-          <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-        </div>
-      </div>
-    </a>
-  );
+  return <NotesPageClient initialNotes={initialNotes} />;
 }
 
-// Client Component for interactivity
+
+/**
+ * CLIENT COMPONENT
+ * Handles interactivity, searching, and filtering.
+ */
 function NotesPageClient({ initialNotes }: { initialNotes: Note[] }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [activeCourse, setActiveCourse] = useState<string | null>(null);
+  const [activeYear, setActiveYear] = useState<string | null>(null);
+  const [activeSubject, setActiveSubject] = useState<string | null>(null);
 
-  const processedNotes = useMemo(() => {
-    return initialNotes.map(note => ({
-      ...note,
-      displayCourse: (note.course || "General").trim(),
-      displaySubject: (note.subject || "Uncategorized").toUpperCase().trim(),
-    }));
-  }, [initialNotes]);
+  // Advanced Categorization Logic
+  const categorizedData = useMemo(() => {
+    const tree: Record<string, Record<string, Record<string, Note[]>>> = {};
+    
+    initialNotes.filter(item => 
+      (item.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (item.subject?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+    ).forEach(item => {
+      const course = item.course || "Other Courses";
+      const year = item.year || "General Year";
+      const subject = item.subject?.toUpperCase() || "UNCATEGORIZED";
 
-  const filteredNotes = useMemo(() => {
-    if (!searchQuery) return processedNotes;
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return processedNotes.filter(note =>
-      note.title.toLowerCase().includes(lowercasedQuery) ||
-      note.displaySubject.toLowerCase().includes(lowercasedQuery) ||
-      note.displayCourse.toLowerCase().includes(lowercasedQuery)
-    );
-  }, [searchQuery, processedNotes]);
-
-  const groupedNotes = useMemo(() => {
-    return filteredNotes.reduce((acc, note) => {
-      const course = note.displayCourse;
-      const subject = note.displaySubject;
-      if (!acc[course]) acc[course] = {};
-      if (!acc[course][subject]) acc[course][subject] = [];
-      acc[course][subject].push(note);
-      return acc;
-    }, {} as Record<string, Record<string, Note[]>>);
-  }, [filteredNotes]);
-
-  const orderedCourses = Object.keys(groupedNotes).sort((a,b) => a.localeCompare(b));
-
-  const toggleSection = (key: string) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
+      if (!tree[course]) tree[course] = {};
+      if (!tree[course][year]) tree[course][year] = {};
+      if (!tree[course][year][subject]) tree[course][year][subject] = [];
+      
+      tree[course][year][subject].push(item);
+    });
+    return tree;
+  }, [searchQuery, initialNotes]);
 
   return (
-    <div className="bg-slate-50 min-h-screen font-sans text-slate-900">
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-xl">
-              <Library className="text-white" size={24} />
-            </div>
-            <span className="text-xl font-bold tracking-tight hidden sm:block">Notes Library</span>
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 pb-10">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <div className="bg-indigo-600 p-1.5 rounded-lg">
+                <BookMarked className="text-white" size={18} />
+              </div>
+              <span>Notes Library</span>
+            </h1>
+            <button className="text-[10px] font-bold bg-amber-100 text-amber-700 px-3 py-1 rounded-full border border-amber-200">
+              PREMIUM ACCESS
+            </button>
           </div>
-          <div className="relative flex-1 max-w-xl group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
+          
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
-              type="text" 
-              placeholder="Search notes by title, subject, or course..."
-              className="w-full bg-slate-100 border-none rounded-full py-3 pl-12 pr-4 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+              type="text"
+              placeholder="Search notes, subjects, or keywords..."
+              className="w-full bg-slate-100 border-none rounded-xl py-3 pl-11 pr-4 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-      </header>
-
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase tracking-widest mb-4 border border-indigo-100">
-            <BookMarked size={12} />
-            Verified Study Resources
-          </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
-            Learning <span className="text-indigo-600">Hub</span>
-          </h1>
-          <p className="text-slate-500 text-lg max-w-2xl">
-            Access organized, top-tier pharmacy notes and predicted questions for your academic success.
-          </p>
-        </div>
       </div>
-      
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        {orderedCourses.length === 0 ? (
-          <div className="py-20 text-center">
-            <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-              <Search size={32} />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800">No resources found</h3>
-            <p className="text-slate-500">Try adjusting your search query.</p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {orderedCourses.map(course => (
-              <div key={course}>
-                <h2 className="text-2xl font-bold text-slate-800 mb-4">{course}</h2>
-                <div className="space-y-4">
-                  {Object.entries(groupedNotes[course]).map(([subject, notesList]) => (
-                     <div key={subject} className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
-                        <button 
-                          onClick={() => toggleSection(`${course}-${subject}`)}
-                          className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50 transition-colors group text-left"
-                        >
-                          <div className="flex items-center gap-4">
-                             <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                              <BookCopy size={24} />
+
+      {/* Accordion List */}
+      <div className="max-w-5xl mx-auto px-4 mt-6 space-y-3">
+        {Object.keys(categorizedData).length > 0 ? (
+          Object.entries(categorizedData).map(([course, years]) => (
+            <div key={course} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <button 
+                onClick={() => {
+                  setActiveCourse(activeCourse === course ? null : course);
+                  setActiveYear(null);
+                  setActiveSubject(null);
+                }}
+                className={`w-full flex items-center justify-between p-5 text-left transition-colors ${activeCourse === course ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl ${activeCourse === course ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <GraduationCap size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{course}</p>
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{Object.keys(years).length} Academic Years</p>
+                  </div>
+                </div>
+                <ChevronDown size={18} className={`transition-transform duration-300 text-slate-400 ${activeCourse === course ? 'rotate-180 text-indigo-600' : ''}`} />
+              </button>
+
+              {activeCourse === course && (
+                <div className="border-t border-slate-100 bg-slate-50/30 p-2 space-y-2">
+                  {Object.entries(years).map(([year, subjects]) => (
+                    <div key={year} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                      <button 
+                        onClick={() => {
+                          setActiveYear(activeYear === year ? null : year);
+                          setActiveSubject(null);
+                        }}
+                        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Calendar size={16} className={activeYear === year ? 'text-indigo-600' : 'text-slate-400'} />
+                          <span className="text-sm font-bold text-slate-700">{year}</span>
+                        </div>
+                        <ChevronDown size={16} className={`transition-transform duration-300 text-slate-300 ${activeYear === year ? 'rotate-180 text-indigo-600' : ''}`} />
+                      </button>
+
+                      {activeYear === year && (
+                        <div className="p-2 space-y-1 bg-slate-50/50">
+                          {Object.entries(subjects).map(([subject, notes]) => (
+                            <div key={subject} className="rounded-lg overflow-hidden border border-slate-100 bg-white">
+                              <button 
+                                onClick={() => setActiveSubject(activeSubject === subject ? null : subject)}
+                                className="w-full flex items-center justify-between p-3 text-left hover:bg-indigo-50/30 transition-colors group"
+                              >
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                  <Layers size={14} className="text-slate-300 group-hover:text-indigo-400" />
+                                  <span className="text-xs font-bold text-slate-600 truncate">{subject}</span>
+                                </div>
+                                <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">{notes.length}</span>
+                              </button>
+
+                              {activeSubject === subject && (
+                                <div className="p-2 grid grid-cols-1 md:grid-cols-2 gap-2 bg-white border-t border-slate-50">
+                                  {notes.map(note => (
+                                    <NoteCard key={note.id} note={note} />
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            <div>
-                               <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{subject}</h3>
-                               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{notesList.length} Documents</p>
-                            </div>
-                          </div>
-                          <ChevronDown className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${openSections[`${course}-${subject}`] ? 'rotate-180' : ''}`} />
-                        </button>
-                        
-                        {openSections[`${course}-${subject}`] && (
-                           <div className="px-8 pb-8 animate-in fade-in slide-in-from-top-4 duration-300">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4 border-t">
-                              {notesList.map(note => (
-                                <NoteCard key={note.id} note={note} />
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="py-20 text-center opacity-50">
+            <Search size={40} className="mx-auto mb-3" />
+            <p className="text-sm font-medium">No documents found matching your search.</p>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
 
-// Server Component Wrapper
-async function NotesData() {
-  const notes = await fetchAllNotes();
-  return <NotesPageClient initialNotes={notes} />;
-}
-
-export default function NotesLibraryPage() {
+function NoteCard({ note }: { note: Note }) {
   return (
-    <React.Suspense fallback={
-        <div className="flex items-center justify-center h-screen">
-            <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+    <a href={`/dashboard/notes/view/${note.id}`} className="group flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer">
+      <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${note.isPremium ? 'bg-amber-50 text-amber-500' : 'bg-slate-50 text-slate-400'}`}>
+        {note.isPremium ? <Award size={20} /> : <BookOpen size={20} />}
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <h4 className="text-xs font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">
+            {note.title}
+          </h4>
+          {note.isPremium && (
+            <span className="shrink-0 text-[8px] font-black bg-amber-500 text-white px-1.5 py-0.5 rounded uppercase">PRO</span>
+          )}
         </div>
-    }>
-        <NotesData />
-    </React.Suspense>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-slate-400 font-medium">Verified Note</span>
+          <span className="w-1 h-1 rounded-full bg-slate-200" />
+          <span className="text-[10px] text-indigo-500 font-bold uppercase">Study Now</span>
+        </div>
+      </div>
+
+      <div className="shrink-0 p-1.5 bg-slate-50 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-all">
+        <ChevronRight size={14} />
+      </div>
+    </a>
   );
 }
