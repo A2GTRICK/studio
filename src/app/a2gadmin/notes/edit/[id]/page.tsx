@@ -212,7 +212,7 @@ function renderMarkdownToHtml(md: string) {
 export default function EditNotePageClient() {
   const params = useParams() as any;
   const rawId = params?.id;
-  const id = Array.isArray(rawId) ? rawId[0] : rawId;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId[0];
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
