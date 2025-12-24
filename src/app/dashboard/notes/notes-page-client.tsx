@@ -6,21 +6,29 @@ import {
   BookOpen, 
   Star, 
   ChevronDown, 
-  ChevronRight,
   GraduationCap, 
   Calendar,
   Layers,
   ArrowRight,
   BookMarked,
-  Info,
+  Info
 } from 'lucide-react';
 import type { Note } from '@/services/notes';
 import Link from 'next/link';
 
 export default function NotesPageClient({ initialNotes }: { initialNotes: Note[] }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [openCourse, setOpenCourse] = useState<string | null>('B.Pharm');
+  const [openCourse, setOpenCourse] = useState<string | null>(null);
   const [openYear, setOpenYear] = useState<string | null>(null);
+
+  // Set the default open course when notes are loaded
+  useEffect(() => {
+    if (initialNotes.length > 0 && !openCourse) {
+      const firstCourse = Object.keys(organizedData)[0];
+      if(firstCourse) setOpenCourse(firstCourse);
+    }
+  }, [initialNotes]);
+
 
   const yearOrder: { [key: string]: number } = {
     "1st Year": 1,
@@ -30,15 +38,17 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
     "2024 Edition": 5,
     "General": 6,
   };
-
+  
   const yearColors: { [key: string]: string } = {
     "1st Year": "border-blue-500",
     "2nd Year": "border-emerald-500",
     "3rd Year": "border-amber-500",
     "4th Year": "border-rose-500",
+    "5th Year": "border-gray-500",
     "2024 Edition": "border-cyan-500",
     "General": "border-slate-400",
   };
+
 
   const organizedData = useMemo(() => {
     const tree: { [key: string]: { [key: string]: { [key: string]: Note[] } } } = {};
@@ -64,12 +74,11 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
 
   const toggleCourse = (course: string) => setOpenCourse(openCourse === course ? null : course);
   const toggleYear = (year: string) => setOpenYear(openYear === year ? null : year);
-
+  
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-[#1e293b] pb-24 font-sans selection:bg-indigo-100">
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sticky top-4 z-30">
+        <div className="flex items-center justify-between mb-4">
             <div className="space-y-1">
               <h1 className="text-2xl font-semibold text-slate-900 tracking-tight flex items-center gap-2">
                 <BookMarked size={24} className="text-indigo-600" />
@@ -80,8 +89,8 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
                 <span>GPAT-Focused Content Available for 2025</span>
               </div>
             </div>
-          </div>
-          <div className="relative group">
+        </div>
+        <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
             <input 
               type="text" 
@@ -90,11 +99,10 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
         </div>
       </div>
-
-      <main className="max-w-7xl mx-auto px-6 mt-8 space-y-4">
+      
+      <main className="space-y-4">
         {Object.keys(organizedData).length === 0 ? (
            <div className="py-20 text-center bg-white rounded-2xl border-2 border-dashed border-gray-200">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -110,10 +118,14 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
           </div>
         ) : (
           Object.entries(organizedData).sort().map(([courseName, years]) => (
-            <div key={courseName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+            <div key={courseName} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
               <button 
                 onClick={() => toggleCourse(courseName)}
-                className={`w-full flex items-center justify-between p-5 text-left transition-all relative border-l-4 ${ openCourse === courseName ? 'bg-indigo-50/50 border-indigo-600' : 'hover:bg-slate-50 border-transparent' }`}
+                className={`w-full flex items-center justify-between p-5 text-left transition-all relative border-l-4 ${
+                  openCourse === courseName 
+                  ? 'bg-indigo-50/50 border-indigo-600' 
+                  : 'hover:bg-slate-50 border-transparent'
+                }`}
               >
                 <div className="flex items-center gap-4">
                   <div className={`p-2.5 rounded ${openCourse === courseName ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -134,10 +146,10 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
                   {Object.entries(years)
                     .sort((a, b) => (yearOrder[a[0]] || 99) - (yearOrder[b[0]] || 99))
                     .map(([yearName, subjects]) => (
-                      <div key={yearName} className={`rounded-lg border bg-white overflow-hidden transition-shadow hover:shadow-md border-l-4 ${yearColors[yearName] || 'border-slate-400'}`}>
+                      <div key={yearName} className={`rounded-xl border bg-white overflow-hidden transition-shadow hover:shadow-md border-l-4 ${yearColors[yearName] || 'border-slate-400'}`}>
                         <button 
                           onClick={() => toggleYear(yearName)}
-                          className={`w-full flex items-center justify-between p-4 text-left transition-all ${openYear === yearName ? 'bg-slate-900 text-white' : 'hover:bg-slate-50'}`}
+                          className={`w-full flex items-center justify-between p-4 text-left transition-all ${openYear === yearName ? 'bg-slate-800 text-white' : 'hover:bg-slate-50'}`}
                         >
                           <div className="flex items-center gap-4">
                             <Calendar size={18} className={openYear === yearName ? 'text-indigo-400' : 'text-slate-400'} />
@@ -157,10 +169,10 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
                              {Object.entries(subjects).map(([subjectName, notes]: [string, Note[]]) => (
                                <div key={subjectName} className="mb-6 last:mb-0">
                                   <div className="flex items-center gap-2 mb-3 px-1">
-                                    <div className="w-0.5 h-3 bg-indigo-500 rounded-full" />
+                                    <div className="w-0.5 h-3 bg-indigo-600 rounded-full" />
                                     <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">{subjectName}</h3>
                                   </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {notes.map(note => (
                                       <NoteCard key={note.id} note={note} />
                                     ))}
@@ -180,6 +192,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
     </div>
   );
 }
+
 
 function NoteCard({ note }: { note: Note }) {
   return (
@@ -209,7 +222,7 @@ function NoteCard({ note }: { note: Note }) {
             Verified Source
             </div>
             <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-            Study <ArrowRight size={14} />
+            Study <ChevronRight size={14} />
             </div>
         </div>
         </div>
