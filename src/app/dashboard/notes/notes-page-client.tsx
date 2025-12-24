@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -82,7 +81,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] text-[#1e293b] pb-24 font-sans antialiased">
+    <div className="min-h-screen bg-[#F0F2F5] pb-24">
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200 sticky top-16 md:top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -113,7 +112,7 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+      <main className="max-w-7xl mx-auto mt-6 space-y-6 px-4">
         {/* Intelligence Cue */}
         <div className="flex items-center justify-center gap-2 py-2 px-4 bg-white/50 border border-white rounded-full w-fit mx-auto text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] shadow-sm">
            <Info size={12} className="text-indigo-500" />
@@ -191,9 +190,20 @@ export default function NotesPageClient({ initialNotes }: { initialNotes: Note[]
                             <div className="p-4 bg-[#F1F5F9]">
                                {Object.entries(subjects).map(([subjectName, notes]: [string, Note[]]) => (
                                  <div key={subjectName} className="mb-8 last:mb-0">
-                                    <div className="flex items-center gap-3 mb-4 p-3 bg-white border border-slate-200 rounded-xl">
-                                      <div className="w-1 h-4 bg-indigo-500 rounded-full" />
-                                      <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">{subjectName}</h3>
+                                    <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                          <div className="h-4 w-1 rounded-full bg-indigo-500" />
+                                          <h3 className="text-xs font-black uppercase tracking-widest text-slate-600">
+                                            {subjectName}
+                                          </h3>
+                                        </div>
+
+                                        {/* Subject intelligence */}
+                                        <span className="text-[10px] font-bold text-slate-400">
+                                          {notes.length} Notes
+                                        </span>
+                                      </div>
                                     </div>
                                     <div
                                         className="grid gap-4"
@@ -229,7 +239,6 @@ function NoteCard({ note }: { note: Note }) {
     'new' | 'in-progress' | 'completed'
   >('new');
 
-  // Load progress
   React.useEffect(() => {
     const saved = localStorage.getItem(progressKey) as
       | 'new'
@@ -239,7 +248,6 @@ function NoteCard({ note }: { note: Note }) {
     if (saved) setProgress(saved);
   }, [progressKey]);
 
-  // Mark as in-progress on click
   const handleClick = () => {
     if (progress === 'new') {
       localStorage.setItem(progressKey, 'in-progress');
@@ -253,22 +261,21 @@ function NoteCard({ note }: { note: Note }) {
       onClick={handleClick}
       className="group block h-full"
     >
-      <div className="relative flex h-full flex-col rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+      <div className="relative flex h-full flex-col rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
 
         {/* HEADER */}
-        <div className="mb-4 flex items-start justify-between">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
-            <BookOpen size={22} />
+        <div className="mb-3 flex items-start justify-between">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white">
+            <BookOpen size={20} />
           </div>
 
-          {/* PREMIUM BADGE + TOOLTIP */}
           {note.isPremium && (
-            <div className="relative flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-600 text-[10px] font-black">
-              <Star size={12} className="fill-amber-500 text-amber-500" />
+            <div className="relative flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[9px] font-black text-amber-600">
+              <Star size={10} className="fill-amber-500 text-amber-500" />
               PREMIUM
-              <span className="group/info relative ml-1 cursor-pointer text-amber-500">
+              <span className="group/info ml-1 cursor-pointer">
                 ⓘ
-                <span className="pointer-events-none absolute right-0 top-6 z-20 w-56 rounded-xl border border-slate-200 bg-white p-3 text-[11px] font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover/info:opacity-100">
+                <span className="pointer-events-none absolute right-0 top-6 z-20 w-56 rounded-lg border bg-white p-3 text-[11px] font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover/info:opacity-100">
                   Includes exam-focused notes, PYQs, expert explanations
                 </span>
               </span>
@@ -278,40 +285,33 @@ function NoteCard({ note }: { note: Note }) {
 
         {/* CONTENT */}
         <div className="flex-1">
-          <div className="mb-2 text-[9px] font-black uppercase tracking-widest text-indigo-600">
+          <div className="mb-1 text-[9px] font-black uppercase tracking-widest text-indigo-600">
             {note.subject}
           </div>
 
-          <h4 className="mb-4 line-clamp-2 text-[15px] font-black text-slate-800 group-hover:text-indigo-600">
+          <h4 className="mb-3 line-clamp-2 text-[15px] font-black text-slate-800 group-hover:text-indigo-600">
             {note.title}
           </h4>
+
+          {/* ROLE / INTELLIGENCE CHIP (NON-COLOR) */}
+          <div className="mb-2 inline-block rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-600">
+            Exam Focused
+          </div>
         </div>
 
         {/* FOOTER */}
-        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
+        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
 
-          {/* PROGRESS INDICATOR */}
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase">
-            {progress === 'new' && (
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-500">
-                ● New
-              </span>
-            )}
-            {progress === 'in-progress' && (
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-600">
-                ● In Progress
-              </span>
-            )}
-            {progress === 'completed' && (
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-600">
-                ● Completed
-              </span>
-            )}
-          </div>
+          {/* PROGRESS */}
+          <span className="text-[10px] font-black uppercase text-slate-500">
+            {progress === 'new' && '• New'}
+            {progress === 'in-progress' && '• In Progress'}
+            {progress === 'completed' && '• Completed'}
+          </span>
 
-          <div className="flex items-center gap-1 text-[11px] font-black text-indigo-600">
-            STUDY NOW <ChevronRight size={18} />
-          </div>
+          <span className="flex items-center gap-1 text-[11px] font-black text-indigo-600">
+            STUDY NOW <ChevronRight size={16} />
+          </span>
         </div>
       </div>
     </Link>
