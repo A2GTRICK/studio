@@ -1,4 +1,6 @@
 
+"use client";
+
 import React from "react";
 import type { MCQSet } from "@/services/mcq";
 import { Button } from "../ui/button";
@@ -17,20 +19,34 @@ export default function McqSetCard({ set: data, onStart }: Props) {
     text: "Not attempted",
     color: "text-muted-foreground",
   };
-  try {
-    if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem(`mcq_attempt_${data.id}`);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.score !== undefined) {
-          attemptStatus = {
-            text: `Last Score: ${parsed.score}/${total}`,
-            color: "text-blue-600 font-medium",
-          };
+  
+  // This logic must run on the client, so we check for `window`
+  if (typeof window !== 'undefined') {
+    try {
+      const key = `mcq_attempt_log_${data.id}`;
+      // Find the most recent attempt
+      let mostRecentAttempt = null;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k?.startsWith(key)) {
+           const item = JSON.parse(localStorage.getItem(k) || '{}');
+           if (!mostRecentAttempt || new Date(item.date) > new Date(mostRecentAttempt.date)) {
+               mostRecentAttempt = item;
+           }
         }
       }
+
+      if (mostRecentAttempt) {
+        attemptStatus = {
+          text: `Last Score: ${mostRecentAttempt.score}/${mostRecentAttempt.total}`,
+          color: "text-blue-600 font-medium",
+        };
+      }
+    } catch {
+      // If parsing fails, default to "Not attempted"
     }
-  } catch {}
+  }
+
 
   return (
     <article className="group bg-card rounded-2xl p-5 shadow-lg border border-primary/10 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:border-primary/30 hover:-translate-y-1 h-full">
