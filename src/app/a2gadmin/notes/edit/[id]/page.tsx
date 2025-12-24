@@ -328,6 +328,7 @@ export default function EditNotePageClient() {
       formData.append("content", note.content ?? "");
       const res = await fetch(`/api/a2gadmin/notes?id=${encodeURIComponent(id)}`, {
         method: "PUT",
+        credentials: "include",
         body: formData,
       });
       if (!res.ok) {
@@ -564,4 +565,3 @@ export default function EditNotePageClient() {
   );
 }
 
-    
