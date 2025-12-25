@@ -33,7 +33,7 @@ const admin = require("firebase-admin");
 // --- ⚙️ CONFIGURATION ---
 // Set to `false` to perform the actual database writes.
 // In `true` (dry run) mode, the script will only log what it would do.
-const DRY_RUN = true;
+const DRY_RUN = false;
 
 // --- CANONICAL SUBJECT MAPPING ---
 // Maps a canonical name to a list of its found variants (case-insensitive).
