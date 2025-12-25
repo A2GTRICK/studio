@@ -21,25 +21,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function NotesListPage({ params }: Props) {
     const notes = await fetchAllNotes();
-    const subjectName = decodeURIComponent(params.subject);
+    const decodedCourse = decodeURIComponent(params.course);
+    const decodedYear = decodeURIComponent(params.year);
+    const decodedSubject = decodeURIComponent(params.subject);
 
-    // Correctly filter notes where the note's subject matches the URL parameter
     const filteredNotes = notes.filter(n => 
-        n.course === params.course && 
-        n.year === params.year && 
-        n.subject === subjectName
+        n.course === decodedCourse && 
+        n.year === decodedYear && 
+        n.subject === decodedSubject
     );
 
     if (filteredNotes.length === 0) {
-        // This is a good practice in case the URL is accessed directly with no matching notes.
         notFound();
     }
 
     return (
         <div className="container mx-auto px-4 py-12">
-            <h1 className="text-3xl font-bold">Subject: {subjectName}</h1>
+            <h1 className="text-3xl font-bold">Subject: {decodedSubject}</h1>
              <p className="mt-2 text-muted-foreground">
-                Showing notes for {decodeURIComponent(params.course)} - {decodeURIComponent(params.year)}.
+                Showing notes for {decodedCourse} - {decodedYear}.
             </p>
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {filteredNotes.map(note => (

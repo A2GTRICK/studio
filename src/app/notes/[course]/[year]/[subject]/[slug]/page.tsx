@@ -13,11 +13,15 @@ type Props = {
 
 async function getNote(params: Props['params']): Promise<Note | null> {
     const notes = await fetchAllNotes();
-    // Correctly find the note by its ID, which is passed as the 'slug' parameter
+    const decodedCourse = decodeURIComponent(params.course);
+    const decodedYear = decodeURIComponent(params.year);
+    const decodedSubject = decodeURIComponent(params.subject);
+
+    // Find the note by its ID, which is passed as the 'slug' parameter
     const note = notes.find(n => n.id === params.slug);
     
-    // Extra validation to ensure the note's path matches the URL structure
-    if (note && note.course === params.course && note.year === params.year && note.subject === params.subject) {
+    // Extra validation to ensure the note's path matches the decoded URL structure
+    if (note && note.course === decodedCourse && note.year === decodedYear && note.subject === decodedSubject) {
         return note;
     }
     return null;
