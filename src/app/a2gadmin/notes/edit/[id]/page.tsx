@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, FileText, Repeat, Eye, Download, Trash } from "lucide-react";
 import { db } from "@/firebase/config";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, collection, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
@@ -235,6 +235,7 @@ export default function EditNotePageClient() {
 
   // version history (in-memory)
   const [history, setHistory] = useState<string[]>([]);
+  const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
 
   // diff modal
   const [diffOpen, setDiffOpen] = useState(false);
@@ -255,19 +256,21 @@ export default function EditNotePageClient() {
       return;
     }
     let mounted = true;
-    (async () => {
+
+    async function loadData() {
       try {
-        const noteRef = doc(db, "notes", id);
-        const noteSnap = await getDoc(noteRef);
+        const [noteSnap, subjectsSnap] = await Promise.all([
+          getDoc(doc(db, "notes", id)),
+          getDocs(collection(db, "notes"))
+        ]);
+
+        if (!mounted) return;
 
         if (!noteSnap.exists()) {
            throw new Error("Note not found.");
         }
         
         const n = noteSnap.data();
-
-        if (!mounted) return;
-
         const incomingContent = n.content ?? n.notes ?? "";
         const local = typeof window !== 'undefined' ? localStorage.getItem(draftKey) : null;
         const contentToUse = local ?? incomingContent;
@@ -286,6 +289,10 @@ export default function EditNotePageClient() {
           ...n,
         });
         setHistory([(incomingContent ?? "")]);
+
+        const subjects = subjectsSnap.docs.map(doc => doc.data().subject).filter(Boolean);
+        setExistingSubjects([...new Set(subjects)].sort());
+        
         setMsg(null);
       } catch (err: any) {
         console.error("Load note error:", err);
@@ -293,7 +300,8 @@ export default function EditNotePageClient() {
       } finally {
         if (mounted) setLoading(false);
       }
-    })();
+    }
+    loadData();
     return () => {
       mounted = false;
     };
@@ -321,11 +329,11 @@ export default function EditNotePageClient() {
       
       const noteRef = doc(db, "notes", id);
       await updateDoc(noteRef, {
-          title: note.title ?? "",
-          subject: note.subject ?? "",
-          course: note.course ?? "",
-          year: note.year ?? "",
-          topic: note.topic ?? "",
+          title: note.title?.trim() ?? "",
+          subject: note.subject?.trim() ?? "",
+          course: note.course?.trim() ?? "",
+          year: note.year?.trim() ?? "",
+          topic: note.topic?.trim() ?? "",
           isPremium: !!note.isPremium,
           price: note.isPremium && note.price ? Number(note.price) : null,
           content: note.content ?? "",
@@ -428,7 +436,17 @@ export default function EditNotePageClient() {
 
       <div className="grid md:grid-cols-2 gap-4">
         <Input value={note.title ?? ""} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Title" required />
-        <Input value={note.subject ?? ""} onChange={(e) => setNote({ ...note, subject: e.target.value })} placeholder="Subject" />
+        <div>
+            <Input 
+              list="subjects-datalist"
+              value={note.subject ?? ""} 
+              onChange={(e) => setNote({ ...note, subject: e.target.value })} 
+              placeholder="Subject"
+            />
+            <datalist id="subjects-datalist">
+              {existingSubjects.map(s => <option key={s} value={s} />)}
+            </datalist>
+        </div>
         <Input value={note.course ?? ""} onChange={(e) => setNote({ ...note, course: e.target.value })} placeholder="Course" />
         <Input value={note.year ?? ""} onChange={(e) => setNote({ ...note, year: e.target.value })} placeholder="Year" />
       </div>

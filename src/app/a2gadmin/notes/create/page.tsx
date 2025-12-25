@@ -2,12 +2,12 @@
 // src/app/a2gadmin/notes/create/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 import { db } from "@/firebase/config";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,16 @@ export default function CreateNoteAdminPage() {
 
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [existingSubjects, setExistingSubjects] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchSubjects() {
+      const snapshot = await getDocs(collection(db, "notes"));
+      const subjects = snapshot.docs.map(doc => doc.data().subject).filter(Boolean);
+      setExistingSubjects([...new Set(subjects)].sort());
+    }
+    fetchSubjects();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,13 +49,13 @@ export default function CreateNoteAdminPage() {
 
     try {
       const docRef = await addDoc(collection(db, "notes"), {
-          title,
-          subject,
-          course,
-          year,
-          topic,
-          universitySyllabus,
-          short: shortText,
+          title: title.trim(),
+          subject: subject.trim(),
+          course: course.trim(),
+          year: year.trim(),
+          topic: topic.trim(),
+          universitySyllabus: universitySyllabus.trim(),
+          short: shortText.trim(),
           isPremium,
           content,
           externalLinks: JSON.parse(externalLinksJson),
@@ -71,7 +81,17 @@ export default function CreateNoteAdminPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required />
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" />
+          <div>
+            <Input 
+              list="subjects-datalist"
+              value={subject} 
+              onChange={(e) => setSubject(e.target.value)} 
+              placeholder="Subject (e.g., Pharmacology)" 
+            />
+            <datalist id="subjects-datalist">
+              {existingSubjects.map(s => <option key={s} value={s} />)}
+            </datalist>
+          </div>
           <Input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Course (e.g. B.Pharm)" />
           <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year (e.g. 2nd Year)" />
           <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Topic" />
