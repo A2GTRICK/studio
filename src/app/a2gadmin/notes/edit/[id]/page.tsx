@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Save, FileText, Repeat, Eye, Download, Trash } from "lucide-react";
+import { db } from "@/firebase/config";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -214,6 +217,7 @@ export default function EditNotePageClient() {
   const rawId = params?.id;
   const id = Array.isArray(rawId) ? rawId[0] : rawId[0];
   const router = useRouter();
+  const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -253,21 +257,18 @@ export default function EditNotePageClient() {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetch(`/api/a2gadmin/notes?id=${encodeURIComponent(id)}`, { cache: "no-store" });
-        if (!res.ok) {
-          const txt = await res.text().catch(() => "");
-          throw new Error(`Failed to load: ${res.status} ${txt}`);
+        const noteRef = doc(db, "notes", id);
+        const noteSnap = await getDoc(noteRef);
+
+        if (!noteSnap.exists()) {
+           throw new Error("Note not found.");
         }
-        const payload = await res.json().catch(() => ({}));
-        let n: NoteShape | undefined;
-        if (Array.isArray(payload?.notes)) n = payload.notes.find((x: any) => x.id === id) ?? payload.notes[0];
-        else if (payload?.note) n = payload.note;
-        else if (payload?.id) n = payload;
-        if (!n) throw new Error("Note not found from API");
+        
+        const n = noteSnap.data();
+
         if (!mounted) return;
 
         const incomingContent = n.content ?? n.notes ?? "";
-        // if a draft exists in localStorage, prefer it (admin might have unsaved work)
         const local = typeof window !== 'undefined' ? localStorage.getItem(draftKey) : null;
         const contentToUse = local ?? incomingContent;
 
@@ -317,30 +318,34 @@ export default function EditNotePageClient() {
     setMsg(null);
     try {
       if (!id) throw new Error("Missing id");
-      const formData = new FormData();
-      formData.append("title", note.title ?? "");
-      formData.append("subject", note.subject ?? "");
-      formData.append("course", note.course ?? "");
-      formData.append("year", note.year ?? "");
-      formData.append("topic", note.topic ?? "");
-      formData.append("isPremium", String(!!note.isPremium));
-      formData.append("price", note.isPremium && note.price ? String(note.price) : '');
-      formData.append("content", note.content ?? "");
-      const res = await fetch(`/api/a2gadmin/notes?id=${encodeURIComponent(id)}`, {
-        method: "PUT",
-        credentials: "include",
-        body: formData,
+      
+      const noteRef = doc(db, "notes", id);
+      await updateDoc(noteRef, {
+          title: note.title ?? "",
+          subject: note.subject ?? "",
+          course: note.course ?? "",
+          year: note.year ?? "",
+          topic: note.topic ?? "",
+          isPremium: !!note.isPremium,
+          price: note.isPremium && note.price ? Number(note.price) : null,
+          content: note.content ?? "",
+          updatedAt: serverTimestamp(),
       });
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`Save failed: ${res.status} ${body}`);
-      }
+
+      toast({
+        title: "Note updated successfully.",
+      });
       setMsg("Note updated successfully.");
       setHistory((h) => [note.content ?? "", ...h].slice(0, 20));
       // remove draft on successful save
       try { localStorage.removeItem(draftKey); } catch (e) {}
     } catch (err: any) {
       console.error("Save error:", err);
+      toast({
+        variant: "destructive",
+        title: "Save failed",
+        description: err.message || "Could not save the note.",
+      });
       setMsg(String(err.message ?? "Save failed"));
     } finally {
       setSaving(false);
@@ -564,4 +569,3 @@ export default function EditNotePageClient() {
     </form>
   );
 }
-
