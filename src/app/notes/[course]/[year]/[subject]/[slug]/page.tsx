@@ -2,11 +2,32 @@
 import { fetchAllNotes, Note } from "@/services/notes";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+
+/* =============================================================================
+   SEO-ONLY PUBLIC NOTE PAGE
+   Purpose:
+   - Google indexing
+   - Topic discovery
+   - Preview only
+   - All real reading happens in /dashboard/notes
+============================================================================= */
+
+/**
+ * Removes links, embeds, and URLs to prevent premium leakage
+ */
+function sanitizeText(text: string): string {
+  if (!text) return "";
+
+  return text
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/gi, "$1")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<embed[\s\S]*?>/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 type Props = {
   params: {
@@ -16,31 +37,6 @@ type Props = {
     slug: string;
   };
 };
-
-/**
- * 🔒 STRIP ALL LINKS & EMBEDS
- * This ensures premium content cannot leak via:
- * - Google Drive links
- * - Markdown links
- * - Bare URLs
- * - iframes / embeds
- */
-function stripLinks(text: string): string {
-  if (!text) return "";
-
-  return text
-    // Remove markdown links: [text](url)
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/gi, "$1")
-    // Remove bare URLs
-    .replace(/https?:\/\/\S+/gi, "")
-    // Remove iframe blocks
-    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
-    // Remove embed tags
-    .replace(/<embed[\s\S]*?>/gi, "")
-    // Cleanup extra whitespace
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
 
 async function getNote(params: Props["params"]): Promise<Note | null> {
   const notes = await fetchAllNotes();
@@ -73,8 +69,10 @@ export async function generateMetadata({
   const year = decodeURIComponent(params.year);
   const subject = decodeURIComponent(params.subject);
 
-  const title = `${note.title} | ${subject} | ${course} Notes | pharmA2G`;
-  const description = `Exam-focused ${subject} notes for ${course} ${year} on the topic "${note.title}", aligned with GPAT and university syllabus.`;
+  const title = `${note.title} | ${subject} | ${course} ${year} Notes`;
+  const description =
+    (note as any).seoSummary ||
+    `Syllabus-aligned ${subject} notes for ${course} ${year}. Preview topics covered and read full structured notes inside the pharmA2G dashboard.`;
 
   const url = `${
     process.env.NEXT_PUBLIC_BASE_URL || "https://pharma2g.com"
@@ -83,9 +81,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: {
-      canonical: url,
-    },
+    alternates: { canonical: url },
     openGraph: {
       title,
       description,
@@ -97,60 +93,93 @@ export async function generateMetadata({
 
 export default async function PublicNotePage({ params }: Props) {
   const note = await getNote(params);
-
-  if (!note) {
-    notFound();
-  }
+  if (!note) notFound();
 
   const isPremium = note.isPremium === true;
 
-  /**
-   * 🔐 PREMIUM RULE
-   * - Free notes → full content
-   * - Premium notes → text-only sanitized preview
-   */
-  const rawPreview = note.short || note.content || "";
+  /* --------------------------------------------------------------------------
+     SEO CONTENT SOURCES
+     Priority:
+     1. seoSummary / seoPoints (explicit, best)
+     2. Derived preview (sanitized, safe fallback)
+  -------------------------------------------------------------------------- */
 
-  const contentToShow = isPremium
-    ? stripLinks(rawPreview).substring(0, 300) + "..."
-    : note.content || "";
+  const summary =
+    (note as any).seoSummary ||
+    sanitizeText(note.short || note.content || "").slice(0, 280);
 
-  /**
-   * 🚫 Disable raw HTML rendering for premium notes
-   */
-  const rehypePlugins = isPremium ? [] : [rehypeRaw];
+  const points =
+    (Array.isArray((note as any).seoPoints) && (note as any).seoPoints.length > 0)
+      ? (note as any).seoPoints
+      : sanitizeText(note.content || "")
+          .split("\n")
+          .filter((line) => line.length > 20)
+          .slice(0, 5);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">
+      {/* ------------------------------------------------------------------ */}
+      {/* HEADER */}
+      {/* ------------------------------------------------------------------ */}
       <h1 className="text-3xl font-bold">{note.title}</h1>
 
       <p className="text-muted-foreground mt-2">
         {note.course} • {note.year} • {note.subject}
       </p>
 
-      <article className="prose lg:prose-lg mt-8 max-w-none">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={rehypePlugins}
-        >
-          {contentToShow}
-        </ReactMarkdown>
-      </article>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Preview for discovery. Full notes available inside the dashboard.
+      </p>
 
-      {isPremium && (
-        <div className="mt-10 text-center p-6 border-dashed border-2 rounded-lg bg-secondary">
-          <h3 className="font-bold text-lg">This is a premium note.</h3>
-          <p className="text-muted-foreground mt-1">
-            Continue reading on pharmA2G to unlock the full content.
-          </p>
-
-          <Button asChild className="mt-4">
-            <Link href={`/dashboard/notes/view/${note.id}`}>
-              Unlock Full Content
-            </Link>
-          </Button>
-        </div>
+      {/* ------------------------------------------------------------------ */}
+      {/* SUMMARY */}
+      {/* ------------------------------------------------------------------ */}
+      {summary && (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold">Summary</h2>
+          <p className="mt-2 text-muted-foreground">{summary}</p>
+        </section>
       )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* TOPICS COVERED */}
+      {/* ------------------------------------------------------------------ */}
+      {points && points.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold">Topics Covered</h2>
+          <ul className="mt-3 list-disc pl-5 space-y-1 text-muted-foreground">
+            {points.map((point: string, i: number) => (
+              <li key={i}>{point}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* CTA */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="mt-10 text-center p-6 border rounded-lg bg-secondary">
+        <h3 className="font-semibold text-lg">
+          Read the full structured notes
+        </h3>
+
+        <p className="text-muted-foreground mt-1">
+          Detailed explanations, examples, and downloadable resources are
+          available inside the pharmA2G dashboard.
+        </p>
+
+        <Button asChild className="mt-4">
+          <Link href={`/dashboard/notes/view/${note.id}`}>
+            Open in Dashboard
+          </Link>
+        </Button>
+
+        {isPremium && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Premium note • Full access requires login
+          </p>
+        )}
+      </div>
     </div>
   );
 }
