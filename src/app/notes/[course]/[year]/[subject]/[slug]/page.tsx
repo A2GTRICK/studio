@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -17,10 +18,8 @@ async function getNote(params: Props['params']): Promise<Note | null> {
     const decodedYear = decodeURIComponent(params.year);
     const decodedSubject = decodeURIComponent(params.subject);
 
-    // Find the note by its ID, which is passed as the 'slug' parameter
     const note = notes.find(n => n.id === params.slug);
     
-    // Extra validation to ensure the note's path matches the decoded URL structure
     if (note && note.course === decodedCourse && note.year === decodedYear && note.subject === decodedSubject) {
         return note;
     }
@@ -61,22 +60,28 @@ export default async function PublicNotePage({ params }: Props) {
     if (!note) {
         notFound();
     }
+    
+    const isPremium = note.isPremium === true;
 
-    const contentToShow = note.isPremium 
-        ? (note.short || note.content?.substring(0, 500) || '') + '...'
+    // For premium notes, only show a short text preview. For free notes, show full content.
+    const contentToShow = isPremium 
+        ? (note.short || note.content?.substring(0, 300) || '') + '...'
         : note.content || '';
+
+    // For premium notes, we pass an empty array to rehypePlugins to disable raw HTML rendering.
+    const rehypePluginsForContent = isPremium ? [] : [rehypeRaw];
 
     return (
         <div className="container mx-auto px-4 py-12 max-w-3xl">
             <h1 className="text-3xl font-bold">{note.title}</h1>
             <p className="text-muted-foreground mt-2">{note.course} • {note.year} • {note.subject}</p>
             <article className="prose lg:prose-lg mt-8 max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={rehypePluginsForContent}>
                     {contentToShow}
                 </ReactMarkdown>
             </article>
 
-            {note.isPremium && (
+            {isPremium && (
                 <div className="mt-8 text-center p-6 border-dashed border-2 rounded-lg bg-secondary">
                     <h3 className="font-bold text-lg">This is a premium note.</h3>
                     <p className="text-muted-foreground mt-1">
