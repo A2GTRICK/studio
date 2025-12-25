@@ -1,3 +1,4 @@
+
 import { fetchAllNotes, Note } from "@/services/notes";
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
@@ -12,8 +13,10 @@ type Props = {
 
 async function getNote(params: Props['params']): Promise<Note | null> {
     const notes = await fetchAllNotes();
+    // Correctly find the note by its ID, which is passed as the 'slug' parameter
     const note = notes.find(n => n.id === params.slug);
-    // Extra validation to ensure the note matches the URL structure
+    
+    // Extra validation to ensure the note's path matches the URL structure
     if (note && note.course === params.course && note.year === params.year && note.subject === params.subject) {
         return note;
     }
@@ -29,9 +32,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const year = decodeURIComponent(params.year);
   const subject = decodeURIComponent(params.subject);
 
-  const title = `${note.title} | ${subject} | ${course} Notes | A2G`;
+  const title = `${note.title} | ${subject} | ${course} Notes | pharmA2G`;
   const description = `Exam-focused ${subject} notes for ${course} ${year} on the topic "${note.title}", aligned with GPAT and university syllabus.`;
-  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/notes/${params.course}/${params.year}/${params.subject}/${params.slug}`;
+  const url = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://pharma2g.com'}/notes/${params.course}/${params.year}/${params.subject}/${params.slug}`;
 
   return {
     title,
@@ -73,7 +76,7 @@ export default async function PublicNotePage({ params }: Props) {
                 <div className="mt-8 text-center p-6 border-dashed border-2 rounded-lg bg-secondary">
                     <h3 className="font-bold text-lg">This is a premium note.</h3>
                     <p className="text-muted-foreground mt-1">
-                        Continue reading on A2G to unlock the full content.
+                        Continue reading on pharmA2G to unlock the full content.
                     </p>
                     <Button asChild className="mt-4">
                         <Link href={`/dashboard/notes/view/${note.id}`}>
