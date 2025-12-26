@@ -1,6 +1,7 @@
+
 import { NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
-import { adminDb } from "@/firebase/admin"; 
+import { adminDb } from "@/firebase/admin";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
@@ -14,48 +15,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1️⃣ Verify user's Firebase session from the cookie
-    // Note: The user's browser must send the __session cookie.
-    // This requires the client to be authenticated via Firebase Client SDK first.
-    const sessionCookie = cookies().get("__session")?.value;
-    if (!sessionCookie) {
-      // Fallback or attempt to use Authorization header if client sends ID token
-      const authHeader = req.headers.get('Authorization');
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-         return NextResponse.json(
-          { error: "Unauthorized: No session cookie or token." },
-          { status: 401 }
-        );
-      }
-      
-      const idToken = authHeader.split('Bearer ')[1];
-       try {
-        await getAuth().verifyIdToken(idToken);
-      } catch (e) {
-         return NextResponse.json(
-          { error: "Unauthorized: Invalid token." },
-          { status: 401 }
-        );
-      }
-
-    } else {
-       try {
-         await getAuth().verifySessionCookie(sessionCookie, true);
-       } catch(e) {
-          return NextResponse.json(
-            { error: "Unauthorized: Invalid session." },
-            { status: 401 }
-          );
-       }
+    // 1. Get the ID token from the Authorization header.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Unauthorized: No token provided." },
+        { status: 401 }
+      );
     }
-    
-    // For simplicity in this example, we'll assume the user is authenticated if they get past the initial checks.
-    // In a real app, you'd extract the UID from the decoded token.
-    // const decoded = await getAuth().verifyIdToken(token);
-    // const uid = decoded.uid;
-    const uid = "some-mock-user-id-for-now"; // Replace with real UID extraction
+    const idToken = authHeader.split("Bearer ")[1];
 
-    // 2️⃣ Load test
+    // 2. Verify the ID token using the Firebase Admin SDK.
+    const decodedToken = await getAuth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+
+    // 3. Load the test details.
     const testSnap = await adminDb
       .collection("test_series")
       .doc(testId)
@@ -72,30 +46,41 @@ export async function POST(req: Request) {
     const isPaidTest =
       test?.isPremium === true && (test?.price ?? 0) > 0;
 
-    // 3️⃣ If paid → verify purchase (example logic)
+    // 4. If it's a paid test, verify the user's purchase or subscription.
     if (isPaidTest) {
-      // This is example logic. You'd check against your 'users' collection or a dedicated 'purchases' subcollection.
       const userSnap = await adminDb.collection("users").doc(uid).get();
       const userData = userSnap.data();
 
-      const hasActiveSubscription = userData?.plan === 'pro' && new Date(userData.premiumUntil) > new Date();
+      const hasActiveSubscription =
+        userData?.plan === "pro" &&
+        new Date(userData.premiumUntil) > new Date();
       const hasSpecificGrant = userData?.grantedTestIds?.includes(testId);
-      
+
       if (!hasActiveSubscription && !hasSpecificGrant) {
         return NextResponse.json(
           { error: "Payment required" },
-          { status: 403 }
+          { status: 403 } // 403 Forbidden is more appropriate here
         );
       }
     }
 
-    // 4️⃣ Allow test start
+    // 5. If all checks pass, allow the test to start.
     return NextResponse.json({ ok: true });
-  } catch (err) {
+    
+  } catch (err: any) {
+    // This will catch invalid tokens, expired tokens, etc.
     console.error("API /api/mock-test/start error:", err);
+    
+    if (err.code === 'auth/id-token-expired') {
+        return NextResponse.json(
+          { error: "Unauthorized: Session has expired. Please log in again." },
+          { status: 401 }
+        );
+    }
+    
     return NextResponse.json(
-      { error: "Server error" },
-      { status: 500 }
+      { error: "Unauthorized: Invalid token." },
+      { status: 401 }
     );
   }
 }
