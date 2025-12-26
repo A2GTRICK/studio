@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -251,18 +252,10 @@ export default function MockTestVaultPage() {
                                     
                                     <div className="flex items-center gap-4 mb-6">
                                       <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-bold">
-                                        <Clock className="w-3.5 h-3.5" /> {test.duration || 60}m
+                                        <Clock className="w-3.5 h-3.5" /> {test.duration || 45}m
                                       </div>
                                       <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-bold">
-                                        <CircleDot className="w-3.5 h-3.5" />
-                                        {Array.isArray(test.questions)
-                                          ? test.questions.length
-                                          : Array.isArray(test.mcqs)
-                                          ? test.mcqs.length
-                                          : typeof test.questionCount === "number"
-                                          ? test.questionCount
-                                          : 0}{" "}
-                                        Qs
+                                        <BookOpen className="w-3.5 h-3.5" /> Practice Module
                                       </div>
                                     </div>
 
