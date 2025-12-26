@@ -254,7 +254,7 @@ export default function MockTestVaultPage() {
                                         <Clock className="w-3.5 h-3.5" /> {test.duration || 60}m
                                       </div>
                                       <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-bold">
-                                        <CircleDot className="w-3.5 h-3.5" /> 50 Qs
+                                        <CircleDot className="w-3.5 h-3.5" /> {test.questionCount || 0} Qs
                                       </div>
                                     </div>
 
