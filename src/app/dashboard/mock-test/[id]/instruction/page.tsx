@@ -95,7 +95,10 @@ export default function MockTestInstructionPage() {
 
 
   const handleSinglePurchase = async () => {
-    if (!testId || !test?.price || !user) return;
+    // Use test.price if available and > 0, otherwise default to 2
+    const purchasePrice = (test?.price > 0) ? test.price : 2;
+
+    if (!testId || !purchasePrice || !user) return;
     if (!user.emailVerified) {
         toast({
             variant: "destructive",
@@ -109,7 +112,7 @@ export default function MockTestInstructionPage() {
       const orderRes = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: test.price, plan: "single_test", contentId: testId }),
+        body: JSON.stringify({ amount: purchasePrice, plan: "single_test", contentId: testId }),
       });
       const order = await orderRes.json();
 
@@ -188,6 +191,7 @@ export default function MockTestInstructionPage() {
 
   /* ---------------- PREMIUM LOCK UI ---------------- */
   if (!canAccess) {
+    const displayPrice = test?.price > 0 ? test.price : 2;
     return (
       <div className="min-h-screen bg-slate-50/50 py-12 px-4 font-sans">
         <div className="max-w-xl mx-auto space-y-6">
@@ -220,7 +224,6 @@ export default function MockTestInstructionPage() {
               </div>
 
               <div className="pt-4 space-y-4">
-                {test?.price > 0 && (
                   <button
                     onClick={handleSinglePurchase}
                     disabled={isProcessing}
@@ -231,11 +234,10 @@ export default function MockTestInstructionPage() {
                     ) : (
                       <>
                         <Sparkles className="h-5 w-5 fill-white/20" />
-                        Buy This Test • <IndianRupee className="h-4 w-4" />{test.price}
+                        Buy This Test • <IndianRupee className="h-4 w-4" />{displayPrice}
                       </>
                     )}
                   </button>
-                )}
 
                 <div className="relative py-2">
                   <div className="absolute inset-0 flex items-center">
@@ -383,5 +385,3 @@ function Instruction({ icon, title, text, subtext }: {icon: React.ReactNode, tit
     </div>
   );
 }
-
-    
