@@ -6,3 +6,9 @@ build:
 
 backend:
   root_directory: .
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyAj5hjPVD5klr6galuSkk0gdZ8Wd7l66l8"
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "a2g-smart-notes-1st"

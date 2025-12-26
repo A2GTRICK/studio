@@ -1,22 +1,34 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+  apiKey: "AIzaSyAj5hjPVD5klr6galuSkk0gdZ8Wd7l66l8",
+  authDomain: "a2g-smart-notes-1st.firebaseapp.com",
+  databaseURL: "https://a2g-smart-notes-1st-default-rtdb.firebaseio.com",
+  projectId: "a2g-smart-notes-1st",
+  storageBucket: "a2g-smart-notes-1st.firebasestorage.app",
+  messagingSenderId: "593098306784",
+  appId: "1:593098306784:web:e534cab5ec68ae820e4c85",
+  measurementId: "G-Z2K1QYDZR9"
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// 1. Initialize Firebase only if it hasn't been initialized already
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+// 2. Safely initialize Analytics (only in the browser)
+let analytics = null;
+if (typeof window !== "undefined") {
+  isSupported().then((supported) => {
+    if (supported) analytics = getAnalytics(app);
+  });
+}
+
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 // Enable offline persistence
 try {
@@ -36,3 +48,5 @@ try {
 } catch (e) {
   console.error("Error enabling Firestore offline persistence", e);
 }
+
+export { app, analytics, auth, db, storage };
