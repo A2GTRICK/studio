@@ -20,7 +20,7 @@ import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { db, auth as firebaseAuth } from '@/firebase/config';
 import { useAuthSession } from '@/auth/AuthSessionProvider';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
 
