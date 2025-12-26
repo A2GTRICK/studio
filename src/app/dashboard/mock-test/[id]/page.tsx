@@ -69,12 +69,8 @@ export default function CBTMockTestPage() {
   const [timeLeft, setTimeLeft] = useState(3600);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmittingManually, setIsSubmittingManually] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasEnteredFullscreen, setHasEnteredFullscreen] = useState(false);
-
-  /* CBT WARNINGS */
-  const [warnings, setWarnings] = useState(0);
-  const MAX_WARNINGS = 3;
 
   /* =========================
      SUBMIT HANDLER (RELIABLE)
@@ -83,13 +79,7 @@ export default function CBTMockTestPage() {
   async function handleSubmit() {
     if (isSubmitting) return;
     setIsSubmitting(true);
-
-    // Safely exit fullscreen
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      }
-    } catch {}
+    setShowConfirmDialog(false);
 
     let correct = 0;
     let wrong = 0;
@@ -146,27 +136,6 @@ export default function CBTMockTestPage() {
     router.push("/dashboard/mock-test/result");
   }
 
-
-  /* =========================
-     VIOLATION HANDLER
-  ========================= */
-
-  function violation(reason: string) {
-    if (isSubmittingManually || isSubmitting) return; // ⛔ ignore during submit
-    setWarnings((w) => {
-      const next = w + 1;
-      alert(
-        `⚠ CBT WARNING ${next}/${MAX_WARNINGS}\n\n${reason}\n\n` +
-          (next >= MAX_WARNINGS
-            ? "Test will be submitted now."
-            : "Further violations will auto-submit.")
-      );
-      if (next >= MAX_WARNINGS) {
-        handleSubmit();
-      }
-      return next;
-    });
-  }
 
   /* =========================
      LOAD TEST (AUTH SAFE)
@@ -246,35 +215,6 @@ export default function CBTMockTestPage() {
   }, [questions, instructionAccepted, isSubmitting]);
 
   /* =========================
-     CHEAT DETECTION
-  ========================= */
-
-  useEffect(() => {
-    if (instructionAccepted !== true || isSubmitting) return;
-
-    const fs = () => {
-      if (!document.fullscreenElement) violation("Exited fullscreen mode");
-    };
-    const blur = () => violation("Tab switched or minimized");
-    const vis = () =>
-      document.visibilityState === "hidden" &&
-      violation("Tab visibility changed");
-
-    document.addEventListener("fullscreenchange", fs);
-    window.addEventListener("blur", blur);
-    document.addEventListener("visibilitychange", vis);
-
-    window.onbeforeunload = () => "Leaving will submit the test.";
-
-    return () => {
-      document.removeEventListener("fullscreenchange", fs);
-      window.removeEventListener("blur", blur);
-      document.removeEventListener("visibilitychange", vis);
-      window.onbeforeunload = null;
-    };
-  }, [instructionAccepted, isSubmitting]);
-
-  /* =========================
      VISIT TRACK
   ========================= */
 
@@ -324,123 +264,137 @@ export default function CBTMockTestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b px-6 py-4 flex justify-between">
-        <h1 className="font-bold">{title}</h1>
-        <div className="flex gap-4 items-center">
-          <span className="text-red-600 font-semibold">
-            Warnings: {warnings}/{MAX_WARNINGS}
-          </span>
-          <span>
-            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
-          </span>
-          <Button
-            variant="destructive"
-            disabled={isSubmitting}
-            onClick={() => {
-              setIsSubmittingManually(true);
-              setTimeout(() => {
-                const ok = confirm("Are you sure you want to submit the test?");
-                if (ok) {
-                  handleSubmit();
-                } else {
-                  setIsSubmittingManually(false);
-                }
-              }, 0);
-            }}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : "Submit Test"
-            }
-          </Button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-3 space-y-4 max-w-3xl mx-auto w-full">
-          <div className="bg-white border rounded p-5">
-            <p className="font-semibold mb-3">
-              Q{current + 1}. {q.text}
-            </p>
-
-            <div className="space-y-2">
-              {q.options.map((opt, i) => {
-                const label = typeof opt === "string" ? opt : opt.text;
-                return (
-                  <label
-                    key={i}
-                    className="flex items-center gap-2 border rounded p-2 cursor-pointer hover:bg-gray-50 has-[input:checked]:bg-indigo-50 has-[input:checked]:border-indigo-300"
-                  >
-                    <input
-                      type="radio"
-                      name={`q-${current}`}
-                      checked={answers[current] === i}
-                      onChange={() => setAnswers({ ...answers, [current]: i })}
-                    />
-                    {label}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex justify-between">
+    <>
+      <div className="min-h-screen bg-slate-50">
+        <div className="bg-white border-b px-6 py-4 flex justify-between items-center">
+          <h1 className="font-bold">{title}</h1>
+          <div className="flex gap-4 items-center">
+            <span>
+              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}
+            </span>
             <Button
-              variant="outline"
-              disabled={current === 0}
-              onClick={() => setCurrent(current - 1)}
+              variant="destructive"
+              disabled={isSubmitting}
+              onClick={() => setShowConfirmDialog(true)}
             >
-              Previous
+              {isSubmitting ? "Submitting..." : "Submit Test"}
             </Button>
+          </div>
+        </div>
 
-            <div className="flex gap-2">
+        <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="md:col-span-3 space-y-4 max-w-3xl mx-auto w-full">
+            <div className="bg-white border rounded p-5">
+              <p className="font-semibold mb-3">
+                Q{current + 1}. {q.text}
+              </p>
+
+              <div className="space-y-2">
+                {q.options.map((opt, i) => {
+                  const label = typeof opt === "string" ? opt : opt.text;
+                  return (
+                    <label
+                      key={i}
+                      className="flex items-center gap-2 border rounded p-2 cursor-pointer hover:bg-gray-50 has-[input:checked]:bg-indigo-50 has-[input:checked]:border-indigo-300"
+                    >
+                      <input
+                        type="radio"
+                        name={`q-${current}`}
+                        checked={answers[current] === i}
+                        onChange={() => setAnswers({ ...answers, [current]: i })}
+                      />
+                      {label}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-between">
               <Button
-                variant="secondary"
-                onClick={() => {
-                  const m = [...marked];
-                  m[current] = !m[current];
-                  setMarked(m);
-                }}
+                variant="outline"
+                disabled={current === 0}
+                onClick={() => setCurrent(current - 1)}
               >
-                Mark for Review
+                Previous
               </Button>
 
-              <Button
-                onClick={() =>
-                  setCurrent(
-                    current === questions.length - 1
-                      ? current
-                      : current + 1
-                  )
-                }
-              >
-                Save & Next
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    const m = [...marked];
+                    m[current] = !m[current];
+                    setMarked(m);
+                  }}
+                >
+                  Mark for Review
+                </Button>
+
+                <Button
+                  onClick={() =>
+                    setCurrent(
+                      current === questions.length - 1
+                        ? current
+                        : current + 1
+                    )
+                  }
+                >
+                  Save & Next
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border rounded p-4 h-fit md:sticky md:top-24">
+            <h2 className="font-semibold mb-3">Question Palette</h2>
+            <div className="grid grid-cols-5 gap-2">
+              {questions.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrent(i)}
+                  className={`p-2 rounded text-sm ${paletteColor(i)}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
             </div>
           </div>
         </div>
-
-        <div className="bg-white border rounded p-4 h-fit md:sticky md:top-24">
-          <h2 className="font-semibold mb-3">Question Palette</h2>
-          <div className="grid grid-cols-5 gap-2">
-            {questions.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`p-2 rounded text-sm ${paletteColor(i)}`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
-    </div>
+      
+      {showConfirmDialog && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+                  <h2 className="text-lg font-bold">Confirm Submission</h2>
+                  <p className="text-sm text-muted-foreground mt-2">
+                      Are you sure you want to end the test? You cannot make any more changes after this.
+                  </p>
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-green-50 border border-green-200 p-2 rounded-md">
+                        <div className="text-2xl font-bold text-green-700">{Object.keys(answers).length}</div>
+                        <div className="text-xs font-medium">Answered</div>
+                    </div>
+                     <div className="bg-yellow-50 border border-yellow-200 p-2 rounded-md">
+                        <div className="text-2xl font-bold text-yellow-700">{questions.length - Object.keys(answers).length}</div>
+                        <div className="text-xs font-medium">Skipped</div>
+                    </div>
+                     <div className="bg-blue-50 border border-blue-200 p-2 rounded-md">
+                        <div className="text-2xl font-bold text-blue-700">{marked.filter(Boolean).length}</div>
+                        <div className="text-xs font-medium">Marked</div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 mt-6">
+                      <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+                          Go Back
+                      </Button>
+                      <Button variant="destructive" onClick={handleSubmit} disabled={isSubmitting}>
+                          {isSubmitting ? "Submitting..." : "Submit Test"}
+                      </Button>
+                  </div>
+              </div>
+          </div>
+      )}
+    </>
   );
 }
-
-    
