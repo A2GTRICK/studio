@@ -282,8 +282,8 @@ export default function CBTMockTestPage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="md:col-span-3 space-y-4 max-w-3xl mx-auto w-full">
+        <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 md:grid-cols-[1fr_280px] gap-6">
+          <div className="space-y-4">
             <div className="bg-white border rounded p-5">
               <p className="font-semibold mb-3">
                 Q{current + 1}. {q.text}
