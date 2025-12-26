@@ -305,8 +305,8 @@ export default function MockTestInstructionPage() {
             <Instruction 
               icon={<BookOpen />} 
               title="Assessment" 
-              text={`${test?.questionCount || 0} Objective Questions`}
-              subtext="Multiple choice format with negative marking."
+              text="Multiple Choice Questions"
+              subtext="Format follows standard competitive exams."
             />
             <Instruction 
               icon={<Monitor />} 
@@ -353,7 +353,6 @@ export default function MockTestInstructionPage() {
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">
            <span className="flex items-center gap-2"><Lock className="h-3.5 w-3.5" /> End-to-End Encrypted</span>
            <span className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5" /> Identity Verified</span>
-           <span className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5" /> ISO 27001 Certified</span>
         </div>
       </div>
     </div>
