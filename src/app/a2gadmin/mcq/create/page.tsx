@@ -1,4 +1,3 @@
-// Combined MCQ Create + Edit (Premium) — upgraded with auto-validated correct-answer dropdown (Option C UI) and improved validation
 
 // File: src/app/a2gadmin/mcq/create/page.tsx
 "use client";

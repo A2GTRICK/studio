@@ -12,7 +12,7 @@ function sanitize(value: any): any {
   if (value === null || value === undefined) return null;
   if (value instanceof File) return value; // Keep files for upload handling if needed
   if (Array.isArray(value)) return value.map(sanitize);
-  if (typeof value === 'object') {
+  if (typeof value === 'object' && !Buffer.isBuffer(value)) {
       const sanitizedObject: { [key: string]: any } = {};
       for (const key in value) {
           if (Object.prototype.hasOwnProperty.call(value, key)) {

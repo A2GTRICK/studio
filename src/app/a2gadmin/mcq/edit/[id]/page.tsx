@@ -102,9 +102,9 @@ export default function EditMcqSetPagePremium() {
 
         setHistory([incoming]);
         setMsg(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setMsg("Network error loading MCQ set");
+        setMsg(err.message || "Network error loading MCQ set");
       } finally {
         if (mounted) setLoading(false);
       }
