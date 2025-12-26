@@ -27,6 +27,7 @@ import {
   Info,
   Bell,
   User,
+  Archive,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -83,7 +84,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   
-  const isMockTest = pathname.startsWith("/dashboard/mock-test");
+  const isMockTest = pathname.startsWith("/dashboard/mock-test") && !pathname.includes("vault");
 
   if (isMockTest) {
     // FULL VIEWPORT – NO SIDEBAR – NO CONSTRAINTS
@@ -102,6 +103,7 @@ export default function DashboardLayout({
     if (pathname === '/dashboard') return 'Dashboard';
     if (pathname.startsWith('/dashboard/notes')) return 'Notes Library';
     if (pathname.startsWith('/dashboard/mcq-practice')) return 'MCQ Practice';
+    if (pathname.startsWith('/dashboard/mock-test/vault')) return 'Mock Test Vault';
     if (pathname.startsWith('/dashboard/mock-test')) return 'Mock Test';
     if (pathname.startsWith('/dashboard/services')) return 'Academic Services';
     if (pathname.startsWith('/dashboard/profile')) return 'Profile';
@@ -151,11 +153,11 @@ export default function DashboardLayout({
                   />
 
                   <NavItem
-                    href="/dashboard/mock-test"
-                    icon={BarChart3}
-                    label="Mock Test"
+                    href="/dashboard/mock-test/vault"
+                    icon={Archive}
+                    label="Mock Test Vault"
                   />
-
+                  
                   <NavItem
                     href="/dashboard/services"
                     icon={HelpingHand}
